@@ -18,10 +18,21 @@ class WorkspaceViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.initUI()
+        self.initEvents()
     }
 
     func initUI() {
         
+    }
+    
+    func initEvents() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(viewDidTap(_:)))
+        self.view.addGestureRecognizer(tap)
+    }
+    
+    @objc func viewDidTap(_ recognizer: UITapGestureRecognizer) {
+        Log.debug("view did tap")
+        self.view.endEditing(true)
     }
     
     @IBAction func addBtnDidTap(_ sender: Any) {

@@ -79,11 +79,13 @@ class PopupView: UIView {
     
     @IBAction func cancelDidTap(_ sender: Any) {
         Log.debug("Cancel did tap")
+        self.delegate?.cancelDidTap(sender)
     }
     
     
     @IBAction func doneDidTap(_ sender: Any) {
         Log.debug("Done did tap")
+        self.delegate?.doneDidTap(sender)
     }
     
     func animateSlideIn(_ completion: (() -> Void)? = nil) {
