@@ -2,8 +2,8 @@
 //  AppDelegate.swift
 //  Restor
 //
-//  Created by Jaseem V V on 02/12/19.
-//  Copyright © 2019 Jaseem V V. All rights reserved.
+//  Created by jsloop on 02/12/19.
+//  Copyright © 2019 EstoApps. All rights reserved.
 //
 
 import UIKit
