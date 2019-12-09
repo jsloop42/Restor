@@ -1,70 +1,52 @@
 //
-//  ViewController.swift
+//  ProjectViewController.swift
 //  Restor
 //
-//  Created by jsloop on 02/12/19.
+//  Created by jsloop on 09/12/19.
 //  Copyright © 2019 EstoApps. All rights reserved.
 //
 
+import Foundation
 import UIKit
 
-class WorkspaceViewController: UIViewController {
+class ProjectViewController: UIViewController {
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!
+    private var workspace: Workspace?
     private var addItemPopupView: PopupView?
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
     private var keyboardHeight: CGFloat = 0.0
     
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        State.selectedWorkspace = nil
-    }
-    
     override func viewDidLoad() {
         super.viewDidLoad()
+        Log.debug("project view did load")
         self.initUI()
-        self.initEvents()
     }
-
+    
     func initUI() {
+        Log.debug("init UI")
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
         // TODO: test
-        self.createNewWorkspace(name: "Test workspace", desc: "Test workspace desc")
+        self.addProject(name: "Test project", desc: "My awesome project")
         // end test
     }
     
-    func initEvents() {
-        //let tap = UITapGestureRecognizer(target: self, action: #selector(viewDidTap(_:)))
-        //self.view.addGestureRecognizer(tap)
-    }
-    
-    @objc func viewDidTap(_ recognizer: UITapGestureRecognizer) {
-        Log.debug("view did tap")
-        self.view.endEditing(true)
-    }
-    
-    @IBAction func addBtnDidTap(_ sender: Any) {
-        Log.debug("add btn did tap")
-        self.viewAlert(vc: self, storyboard: self.storyboard!)
-    }
-    
-    func viewAlert(vc: UIViewController, storyboard: UIStoryboard, message: String? = nil, title: String? = nil) {
-        let alert = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
-        alert.addAction(UIAlertAction(title: "New Workspace", style: .default, handler: { action in
-            Log.debug("new workspace did tap")
-            self.viewPopup(type: .workspace)
-        }))
-        alert.modalPresentationStyle = .popover
-        if let popoverPresentationController = alert.popoverPresentationController {
-            popoverPresentationController.sourceView = vc.view
-            popoverPresentationController.sourceRect = vc.view.bounds
-            popoverPresentationController.permittedArrowDirections = []
+    func addProject(name: String, desc: String) {
+        if let aWorkspace = self.workspace {
+            let proj = Project(name: name, desc: desc, workspace: aWorkspace)
+            aWorkspace.projects.append(proj)
+            self.tableView.reloadData()
         }
-        vc.present(alert, animated: true, completion: nil)
+    }
+    
+    func project(_ index: Int) -> Project? {
+        if let aWorkspace = self.workspace, index < aWorkspace.projects.count {
+            return aWorkspace.projects[index]
+        }
+        return nil
     }
     
     func updateConstraints() {
@@ -95,7 +77,7 @@ class WorkspaceViewController: UIViewController {
                 popup.setDescriptionPlaceholder("API tests for my personal projects")
             } else if type == .project {
                 popup.setTitle("New Project")
-                popup.setNamePlaceholder("API server")
+                popup.setNamePlaceholder("App server")
                 popup.setDescriptionPlaceholder("APIs for my app server")
             }
             popup.translatesAutoresizingMaskIntoConstraints = false
@@ -109,14 +91,29 @@ class WorkspaceViewController: UIViewController {
         }
     }
     
-    func createNewWorkspace(name: String, desc: String) {
-        let ws = Workspace(name: name, desc: desc)
-        State.workspaces.append(ws)
-        self.tableView.reloadData()
+    @IBAction func addBtnDidTap(_ sender: Any) {
+        Log.debug("add button did tap")
+        self.viewAlert(vc: self, storyboard: self.storyboard!)
+    }
+    
+    func viewAlert(vc: UIViewController, storyboard: UIStoryboard, message: String? = nil, title: String? = nil) {
+        let alert = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
+        alert.addAction(UIAlertAction(title: "New Project", style: .default, handler: { action in
+            Log.debug("new project did tap")
+            self.viewPopup(type: .project)
+        }))
+        alert.modalPresentationStyle = .popover
+        if let popoverPresentationController = alert.popoverPresentationController {
+            popoverPresentationController.sourceView = vc.view
+            popoverPresentationController.sourceRect = vc.view.bounds
+            popoverPresentationController.permittedArrowDirections = []
+        }
+        vc.present(alert, animated: true, completion: nil)
     }
 }
 
-extension WorkspaceViewController: PopupViewDelegate {
+extension ProjectViewController: PopupViewDelegate {
     func cancelDidTap(_ sender: Any) {
         Log.debug("cancel did tap")
         if let popup = self.addItemPopupView {
@@ -142,7 +139,7 @@ extension WorkspaceViewController: PopupViewDelegate {
                 }
                 let name = popup.nameTextField.text
                 let desc = popup.descTextField.text
-                self.createNewWorkspace(name: name!, desc: desc ?? "")
+                self.addProject(name: name!, desc: desc ?? "")
                 popup.animateSlideOut {
                     popup.nameTextField.text = ""
                     popup.removeFromSuperview()
@@ -157,31 +154,30 @@ extension WorkspaceViewController: PopupViewDelegate {
     }
 }
 
-class WorkspaceCell: UITableViewCell {
+
+class ProjectCell: UITableViewCell {
     @IBOutlet weak var nameLbl: UILabel!
     @IBOutlet weak var descLbl: UILabel!
 }
 
-extension WorkspaceViewController: UITableViewDelegate, UITableViewDataSource {
+extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return State.workspaces.count
+        if let selectedIndex = State.selectedWorkspace, let aWorkspace = State.workspace(forIndex: selectedIndex) {
+            self.workspace = aWorkspace
+            return aWorkspace.projects.count
+        }
+        return 0
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: TableCellId.workspaceCell.rawValue, for: indexPath) as! WorkspaceCell
-        let row = indexPath.row
+        let cell = tableView.dequeueReusableCell(withIdentifier: TableCellId.projectCell.rawValue, for: indexPath) as! ProjectCell
         cell.nameLbl.text = ""
         cell.descLbl.text = ""
-        if let workspace = State.workspace(forIndex: row) {
-            cell.nameLbl.text = workspace.name
-            cell.descLbl.text = workspace.desc
+        let row = indexPath.row
+        if let project = self.project(row) {
+            cell.nameLbl.text = project.name
+            cell.descLbl.text = project.desc
         }
         return cell
-    }
-    
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        Log.debug("workspace cell did select \(indexPath.row)")
-        State.selectedWorkspace = indexPath.row
-        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.projectVC.rawValue)
     }
 }

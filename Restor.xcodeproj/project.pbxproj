@@ -24,6 +24,8 @@
 		9E926FA323945E7D002DF561 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */; };
 		9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FAD23945E7D002DF561 /* RestorTests.swift */; };
 		9E926FB923945E7D002DF561 /* RestorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FB823945E7D002DF561 /* RestorUITests.swift */; };
+		9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */; };
+		9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A91239EA4AA00A1CA68 /* Const.swift */; };
 		9EFACA1A23998A1B0004AB91 /* RestorDeps in Frameworks */ = {isa = PBXBuildFile; productRef = 9EFACA1923998A1B0004AB91 /* RestorDeps */; };
 /* End PBXBuildFile section */
 
@@ -68,6 +70,8 @@
 		9E926FB423945E7D002DF561 /* RestorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RestorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926FB823945E7D002DF561 /* RestorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorUITests.swift; sourceTree = "<group>"; };
 		9E926FBA23945E7D002DF561 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectViewController.swift; sourceTree = "<group>"; };
+		9EEA7A91239EA4AA00A1CA68 /* Const.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Const.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -151,6 +155,8 @@
 				9E538DAF2399536B0025C14C /* Model */,
 				9E538DB6239958A10025C14C /* Workspace */,
 				9E926F9323945E79002DF561 /* AppDelegate.swift */,
+				9EEA7A91239EA4AA00A1CA68 /* Const.swift */,
+				9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */,
 				9E926F9523945E79002DF561 /* SceneDelegate.swift */,
 				9E538DAD239953460025C14C /* State.swift */,
 				9E538DAB239951790025C14C /* UI.swift */,
@@ -332,9 +338,11 @@
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
 				9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */,
 				9E538DAE239953460025C14C /* State.swift in Sources */,
+				9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */,
 				9E538DB5239954280025C14C /* Request.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
 				9E538DB32399538C0025C14C /* Project.swift in Sources */,
+				9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -10,6 +10,13 @@ import Foundation
 
 class Project: Codable {
     var name: String
+    var desc: String = ""
     weak var workspace: Workspace?
     var requests: [Request] = []
+    
+    init(name: String, desc: String, workspace: Workspace) {
+        self.name = name
+        self.desc = desc
+        self.workspace = workspace
+    }
 }

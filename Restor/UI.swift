@@ -37,6 +37,13 @@ class UI {
         borderLayer.frame = view.bounds
         view.layer.addSublayer(borderLayer)
     }
+    
+    static func pushScreen(_ navVC: UINavigationController, storyboardId: String) {
+        if let storyboard = navVC.storyboard {
+            let vc = storyboard.instantiateViewController(withIdentifier: storyboardId)
+            navVC.pushViewController(vc, animated: true)
+        }
+    }
 }
 
 extension UIView {
