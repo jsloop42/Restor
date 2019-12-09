@@ -14,7 +14,8 @@
 		9E538DB5239954280025C14C /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DB4239954280025C14C /* Request.swift */; };
 		9E538DB9239958FF0025C14C /* PopupView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E538DB8239958FF0025C14C /* PopupView.xib */; };
 		9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DBA23995B3E0025C14C /* PopupView.swift */; };
-		9E78D1D1239EBB4E005FC692 /* RequestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestViewController.swift */; };
+		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
+		9E78D1D3239EC930005FC692 /* RequestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D2239EC930005FC692 /* RequestViewController.swift */; };
 		9E8759062396C6A700F949D1 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* Utils.swift */; };
 		9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9323945E79002DF561 /* AppDelegate.swift */; };
 		9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9523945E79002DF561 /* SceneDelegate.swift */; };
@@ -55,7 +56,8 @@
 		9E538DB4239954280025C14C /* Request.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
 		9E538DB8239958FF0025C14C /* PopupView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PopupView.xib; sourceTree = "<group>"; };
 		9E538DBA23995B3E0025C14C /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
-		9E78D1D0239EBB4E005FC692 /* RequestViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestViewController.swift; sourceTree = "<group>"; };
+		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
+		9E78D1D2239EC930005FC692 /* RequestViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestViewController.swift; sourceTree = "<group>"; };
 		9E8759052396C6A700F949D1 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		9E926F9023945E78002DF561 /* Restor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Restor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926F9323945E79002DF561 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -164,7 +166,8 @@
 				9E538DAB239951790025C14C /* UI.swift */,
 				9E8759052396C6A700F949D1 /* Utils.swift */,
 				9E926F9923945E79002DF561 /* Main.storyboard */,
-				9E78D1D0239EBB4E005FC692 /* RequestViewController.swift */,
+				9E78D1D2239EC930005FC692 /* RequestViewController.swift */,
+				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
 				9E926F9F23945E7D002DF561 /* Assets.xcassets */,
 				9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */,
 				9E926FA423945E7D002DF561 /* Info.plist */,
@@ -335,7 +338,8 @@
 			files = (
 				9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */,
 				9E8759062396C6A700F949D1 /* Utils.swift in Sources */,
-				9E78D1D1239EBB4E005FC692 /* RequestViewController.swift in Sources */,
+				9E78D1D3239EC930005FC692 /* RequestViewController.swift in Sources */,
+				9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */,
 				9E538DB1239953760025C14C /* Workspace.swift in Sources */,
 				9E926F9823945E79002DF561 /* WorkspaceViewController.swift in Sources */,
 				9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */,

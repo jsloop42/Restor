@@ -190,6 +190,6 @@ extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("project cell did select \(indexPath.row)")
-        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestVC.rawValue)
+        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestListVC.rawValue)
     }
 }
