@@ -17,7 +17,14 @@ class ProjectViewController: UIViewController {
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
     private var keyboardHeight: CGFloat = 0.0
+    private let utils: Utils = Utils.shared
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationItem.title = "Projects"
+        self.navigationItem.rightBarButtonItem = self.utils.addSettingsBarButton()
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("project view did load")

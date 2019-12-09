@@ -7,7 +7,7 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
-        <!--Workspace-->
+        <!--Workspace View Controller-->
         <scene sceneID="tne-QT-ifu">
             <objects>
                 <viewController storyboardIdentifier="workspaceVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="BYZ-38-t0r" customClass="WorkspaceViewController" customModule="Restor" customModuleProvider="target" sceneMemberID="viewController">
@@ -86,9 +86,7 @@
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
-                    <navigationItem key="navigationItem" title="Workspace" id="5tH-c5-FkJ">
-                        <barButtonItem key="rightBarButtonItem" title="Settings" image="gear" catalog="system" id="Gi4-8T-YWr" userLabel="Settings Bar Button"/>
-                    </navigationItem>
+                    <navigationItem key="navigationItem" id="5tH-c5-FkJ"/>
                     <connections>
                         <outlet property="tableView" destination="Nna-Jj-lzM" id="cIo-La-cJ4"/>
                         <outlet property="toolbar" destination="t1Z-9X-0xA" id="C1l-Yz-mDd"/>
@@ -302,7 +300,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="gear" catalog="system" width="64" height="58"/>
         <image name="line.horizontal.3.decrease.circle" catalog="system" width="64" height="60"/>
         <image name="square.grid.2x2" catalog="system" width="64" height="56"/>
     </resources>

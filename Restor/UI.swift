@@ -10,6 +10,18 @@ import Foundation
 import UIKit
 
 class UI {
+    static func setGlobalStyle() {
+        self.clearBackButtonText()
+    }
+    
+static func clearBackButtonText() {
+    // Clear back button text
+    let BarButtonItemAppearance = UIBarButtonItem.appearance()
+    BarButtonItemAppearance.setTitleTextAttributes([.foregroundColor: UIColor.clear, .backgroundColor: UIColor.clear], for: .normal)
+    BarButtonItemAppearance.setTitleTextAttributes([.foregroundColor: UIColor.clear, .backgroundColor: UIColor.clear], for: .highlighted)
+    BarButtonItemAppearance.setTitleTextAttributes([.foregroundColor: UIColor.clear, .backgroundColor: UIColor.clear], for: .selected)
+}
+    
     static func roundTopCornersWithBorder(view: UIView, borderColor: UIColor? = nil, name: String) {
         // Round corners with mask
         let path = UIBezierPath(roundedRect: view.bounds, byRoundingCorners:[.topLeft, .topRight], cornerRadii: CGSize(width: 12.0, height: 12.0))

@@ -15,10 +15,17 @@ class WorkspaceViewController: UIViewController {
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
     private var keyboardHeight: CGFloat = 0.0
+    private let utils: Utils = Utils.shared
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+    }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         State.selectedWorkspace = nil
+        self.navigationItem.title = "Workspaces"
+        self.navigationItem.rightBarButtonItem = self.utils.addSettingsBarButton()
     }
     
     override func viewDidLoad() {
@@ -49,6 +56,10 @@ class WorkspaceViewController: UIViewController {
     @IBAction func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
         self.viewAlert(vc: self, storyboard: self.storyboard!)
+    }
+    
+    @objc func settingsBtnDidTap(_ sender: Any) {
+        Log.debug("settings button did tap")
     }
     
     func viewAlert(vc: UIViewController, storyboard: UIStoryboard, message: String? = nil, title: String? = nil) {

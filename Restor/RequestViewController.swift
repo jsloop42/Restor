@@ -16,6 +16,13 @@ class RequestViewController: UIViewController {
     @IBOutlet weak var windowBtn: UIBarButtonItem!
     @IBOutlet weak var addBtn: UIBarButtonItem!
     private var requests: [Request] = []
+    private let utils: Utils = Utils.shared
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationItem.title = "Requests"
+        self.navigationItem.rightBarButtonItem = self.utils.addSettingsBarButton()
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
