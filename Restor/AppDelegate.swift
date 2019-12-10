@@ -8,15 +8,21 @@
 
 import UIKit
 import CoreData
-import RestorDeps
+import IQKeyboardManagerSwift
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
+    private let keyboardManager = IQKeyboardManager.shared
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         UI.setGlobalStyle()
-        RestorDeps.enableIQKeyboardManager()
+        self.enableIQKeyboardManager()
         return true
+    }
+    
+    func enableIQKeyboardManager() {
+        self.keyboardManager.enable = true
+        self.keyboardManager.enableAutoToolbar = false
     }
 
     // MARK: UISceneSession Lifecycle

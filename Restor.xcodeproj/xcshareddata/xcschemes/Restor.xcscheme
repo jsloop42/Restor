@@ -14,20 +14,6 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "RestorDeps"
-               BuildableName = "RestorDeps"
-               BlueprintName = "RestorDeps"
-               ReferencedContainer = "container:RestorDeps">
-            </BuildableReference>
-         </BuildActionEntry>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "YES"
-            buildForArchiving = "YES"
-            buildForAnalyzing = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
                BlueprintIdentifier = "9E926F8F23945E78002DF561"
                BuildableName = "Restor.app"
                BlueprintName = "Restor"
