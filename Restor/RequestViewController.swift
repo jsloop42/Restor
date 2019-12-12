@@ -141,6 +141,7 @@ class InfoTableCell: UITableViewCell {
     @IBOutlet weak var valueTextField: EATextField!
     @IBOutlet var keyTextFieldHeight: NSLayoutConstraint!
     @IBOutlet var valueTextFieldHeight: NSLayoutConstraint!
+    var isTextFieldDelegateSet = false
 }
 
 class InfoTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
@@ -187,6 +188,8 @@ class InfoTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource
         } else {
             self.updateStyleForInfoField(cell.keyTextField, height: cell.keyTextFieldHeight)
             self.updateStyleForInfoField(cell.valueTextField, height: cell.valueTextFieldHeight)
+            cell.keyTextField.returnKeyType = .next
+            cell.valueTextField.returnKeyType = .done
         }
     }
     
@@ -211,11 +214,36 @@ class InfoTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource
             cell.valueTextField.text = ""
         }
         
+        cell.keyTextField.tag = row * 2
+        cell.valueTextField.tag = row * 2 + 1
+        
+        if !cell.isTextFieldDelegateSet {
+            cell.keyTextField.delegate = self
+            cell.valueTextField.delegate = self
+            cell.isTextFieldDelegateSet = true
+        }
+        
         if row < model.count {
             let x = model[row]
             cell.keyTextField.text = x.name
             cell.valueTextField.text = String(describing: x.value)
         }
         return cell
+    }
+}
+
+extension InfoTableViewManager: UITextFieldDelegate {
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        Log.debug("text field did end editing")
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        Log.debug("text field should return")
+        if let tf = textField.superview?.viewWithTag(textField.tag + 1) {
+            tf.becomeFirstResponder()
+        } else {
+            textField.resignFirstResponder()
+        }
+        return false
     }
 }

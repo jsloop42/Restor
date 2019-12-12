@@ -434,7 +434,7 @@
                                                                                             <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="42" id="hVc-Br-jNZ"/>
                                                                                         </constraints>
                                                                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                                                        <textInputTraits key="textInputTraits"/>
+                                                                                        <textInputTraits key="textInputTraits" returnKeyType="next"/>
                                                                                     </textField>
                                                                                     <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="bxn-Ys-cxw" userLabel="Value Text Field" customClass="EATextField" customModule="Restor" customModuleProvider="target">
                                                                                         <rect key="frame" x="193" y="0.0" width="189" height="42"/>
@@ -442,7 +442,7 @@
                                                                                             <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="42" id="GAf-Uz-1a3"/>
                                                                                         </constraints>
                                                                                         <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                                                        <textInputTraits key="textInputTraits"/>
+                                                                                        <textInputTraits key="textInputTraits" returnKeyType="done"/>
                                                                                     </textField>
                                                                                 </subviews>
                                                                             </stackView>
