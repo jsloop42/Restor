@@ -14,6 +14,7 @@
 		9E538DB5239954280025C14C /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DB4239954280025C14C /* Request.swift */; };
 		9E538DB9239958FF0025C14C /* PopupView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E538DB8239958FF0025C14C /* PopupView.xib */; };
 		9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DBA23995B3E0025C14C /* PopupView.swift */; };
+		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
 		9E78D1D3239EC930005FC692 /* RequestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D2239EC930005FC692 /* RequestViewController.swift */; };
 		9E8759062396C6A700F949D1 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* Utils.swift */; };
@@ -57,6 +58,7 @@
 		9E538DB4239954280025C14C /* Request.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
 		9E538DB8239958FF0025C14C /* PopupView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PopupView.xib; sourceTree = "<group>"; };
 		9E538DBA23995B3E0025C14C /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
+		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
 		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
 		9E78D1D2239EC930005FC692 /* RequestViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestViewController.swift; sourceTree = "<group>"; };
 		9E8759052396C6A700F949D1 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
@@ -109,9 +111,10 @@
 		9E538DAF2399536B0025C14C /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				9E538DB0239953760025C14C /* Workspace.swift */,
+				9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */,
 				9E538DB22399538C0025C14C /* Project.swift */,
 				9E538DB4239954280025C14C /* Request.swift */,
+				9E538DB0239953760025C14C /* Workspace.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -130,6 +133,17 @@
 			children = (
 				9E538DB8239958FF0025C14C /* PopupView.xib */,
 				9E538DBA23995B3E0025C14C /* PopupView.swift */,
+			);
+			path = View;
+			sourceTree = "<group>";
+		};
+		9E7585F023A2B24300AD6E8B /* View */ = {
+			isa = PBXGroup;
+			children = (
+				9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */,
+				9E926F9923945E79002DF561 /* Main.storyboard */,
+				9E538DAB239951790025C14C /* UI.swift */,
+				9E7585F123A2B27B00AD6E8B /* EATextField.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -159,21 +173,18 @@
 			isa = PBXGroup;
 			children = (
 				9E538DAF2399536B0025C14C /* Model */,
+				9E7585F023A2B24300AD6E8B /* View */,
 				9E538DB6239958A10025C14C /* Workspace */,
 				9E926F9323945E79002DF561 /* AppDelegate.swift */,
 				9EEA7A91239EA4AA00A1CA68 /* Const.swift */,
 				9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */,
 				9E926F9523945E79002DF561 /* SceneDelegate.swift */,
 				9E538DAD239953460025C14C /* State.swift */,
-				9E538DAB239951790025C14C /* UI.swift */,
 				9E8759052396C6A700F949D1 /* Utils.swift */,
-				9E926F9923945E79002DF561 /* Main.storyboard */,
 				9E78D1D2239EC930005FC692 /* RequestViewController.swift */,
 				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
 				9E926F9F23945E7D002DF561 /* Assets.xcassets */,
-				9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */,
 				9E926FA423945E7D002DF561 /* Info.plist */,
-				9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */,
 			);
 			path = Restor;
 			sourceTree = "<group>";
@@ -354,6 +365,7 @@
 				9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */,
 				9E538DAE239953460025C14C /* State.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */,
+				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
 				9E538DB5239954280025C14C /* Request.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
 				9E538DB32399538C0025C14C /* Project.swift in Sources */,

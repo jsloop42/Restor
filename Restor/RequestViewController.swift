@@ -18,6 +18,11 @@ class HeaderCollectionViewCell: UICollectionViewCell {
     }
 }
 
+struct InfoField {
+    var name: String
+    var value: Any
+}
+
 class RequestViewController: UITableViewController {
     @IBOutlet weak var headerCollectionView: InfiniteCollectionView!
     @IBOutlet weak var requestInfoCell: UITableViewCell!
@@ -29,14 +34,18 @@ class RequestViewController: UITableViewController {
         return [self.descriptionTextView, self.infoTableView]
     }()
     private var requestInfo: RequestHeaderInfo = .description
+    private var headerData: [InfoField] = []
+    private var urlParamsData: [InfoField] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("request vc did load")
         self.headerCollectionView.infiniteLayout.isEnabled = false
         self.infoTableViewManager.delegate = self
-        self.infoTableView.delegate = self.infoTableViewManager
-        self.infoTableView.dataSource = self.infoTableViewManager
+//        self.infoTableView.delegate = self.infoTableViewManager
+//        self.infoTableView.dataSource = self.infoTableViewManager
+        self.infoTableView.estimatedRowHeight = 44
+        self.infoTableView.rowHeight = UITableView.automaticDimension
         self.headerCollectionView.reloadData()
         self.hideInfoElements()
         self.descriptionTextView.isHidden = false
@@ -55,6 +64,7 @@ class RequestViewController: UITableViewController {
             self.descriptionTextView.isHidden = false
         case .headers:
             self.infoTableView.isHidden = false
+            self.infoTableView.reloadData()
         default:
             break
         }
@@ -106,20 +116,36 @@ extension RequestViewController: InfoTableViewDelegate {
     func currentRequestInfo() -> RequestHeaderInfo {
         return self.requestInfo
     }
+    
+    func model() -> [InfoField] {
+        switch self.requestInfo {
+        case .headers:
+            return self.headerData
+        case .urlParams:
+            return self.urlParamsData
+        default:
+            return []
+        }
+    }
 }
 
 // MARK: - Header Info
 
 protocol InfoTableViewDelegate: class {
     func currentRequestInfo() -> RequestHeaderInfo
+    func model() -> [InfoField]
 }
 
 class InfoTableCell: UITableViewCell {
-    
+    @IBOutlet weak var keyTextField: EATextField!
+    @IBOutlet weak var valueTextField: EATextField!
+    @IBOutlet var keyTextFieldHeight: NSLayoutConstraint!
+    @IBOutlet var valueTextFieldHeight: NSLayoutConstraint!
 }
 
 class InfoTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     weak var delegate: InfoTableViewDelegate?
+    private let textFieldBorderColor: UIColor = UITextField(frame: .zero).borderColor!
     
     override init() {
         super.init()
@@ -127,11 +153,69 @@ class InfoTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return 0
+        if let delegate = self.delegate {
+            return delegate.model().count + 2
+        }
+        return 2
+    }
+    
+    func updateStyleForInfoFieldHeader(_ textField: EATextField, height: NSLayoutConstraint) {
+        textField.isEnabled = false
+        textField.isColor = false
+        height.isActive = false
+        height.constant = 32
+        height.isActive = true
+        textField.setNeedsDisplay()
+    }
+    
+    func updateStyleForInfoField(_ textField: EATextField, height: NSLayoutConstraint) {
+        textField.isEnabled = true
+        textField.isColor = true
+        height.isActive = false
+        height.constant = 42
+        height.isActive = true
+        textField.setNeedsDisplay()
+    }
+    
+    func updateStyleForInfoFieldRow(_ cell: InfoTableCell) {
+        cell.keyTextField.borderStyle = .none
+        cell.valueTextField.borderStyle = .none
+        
+        if cell.tag == 0 {
+            self.updateStyleForInfoFieldHeader(cell.keyTextField, height: cell.keyTextFieldHeight)
+            self.updateStyleForInfoFieldHeader(cell.valueTextField, height: cell.valueTextFieldHeight)
+        } else {
+            self.updateStyleForInfoField(cell.keyTextField, height: cell.keyTextFieldHeight)
+            self.updateStyleForInfoField(cell.valueTextField, height: cell.valueTextFieldHeight)
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "infoCell", for: indexPath) as! InfoTableCell
+        let row = indexPath.row
+        cell.tag = row
+        self.updateStyleForInfoFieldRow(cell)
+        guard let delegate = self.delegate else { return cell }
+        let model = delegate.model()
+        
+        switch delegate.currentRequestInfo() {
+        case .headers:
+            if row == 0 {
+                cell.keyTextField.text = "Header Name"
+                cell.valueTextField.text = "Header Value"
+            }
+            cell.keyTextField.placeholder = "Add Header Name"
+            cell.valueTextField.placeholder = "Add Header Value"
+        default:
+            cell.keyTextField.text = ""
+            cell.valueTextField.text = ""
+        }
+        
+        if row < model.count {
+            let x = model[row]
+            cell.keyTextField.text = x.name
+            cell.valueTextField.text = String(describing: x.value)
+        }
         return cell
     }
 }

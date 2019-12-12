@@ -56,6 +56,10 @@ static func clearBackButtonText() {
             navVC.pushViewController(vc, animated: true)
         }
     }
+    
+    static func isDarkMode() -> Bool {
+        return UIScreen.main.traitCollection.userInterfaceStyle == .dark
+    }
 }
 
 extension UIView {
@@ -143,12 +147,50 @@ extension UIView {
         }
     }
     
+    func addTopBorderWithColor(color: UIColor, width: CGFloat) {
+        let border = CALayer()
+        border.backgroundColor = color.cgColor
+        border.frame = CGRect(x: 0, y: 0, width: self.frame.size.width, height: width)
+        self.layer.addSublayer(border)
+    }
+
+    func addRightBorderWithColor(color: UIColor, width: CGFloat) {
+        let border = CALayer()
+        border.backgroundColor = color.cgColor
+        border.frame = CGRect(x: self.frame.size.width - width, y: 0, width: width, height: self.frame.size.height)
+        self.layer.addSublayer(border)
+    }
+
+    func addBottomBorderWithColor(color: UIColor, width: CGFloat, name: String) {
+        let border = CALayer()
+        border.name = name
+        border.backgroundColor = color.cgColor
+        border.frame = CGRect(x: 0, y: self.frame.size.height - width, width: self.frame.size.width, height: width)
+        self.layer.addSublayer(border)
+    }
+    
+    func addLeftBorderWithColor(color: UIColor, width: CGFloat) {
+        let border = CALayer()
+        border.backgroundColor = color.cgColor
+        border.frame = CGRect(x: 0, y: 0, width: width, height: self.frame.size.height)
+        self.layer.addSublayer(border)
+    }
+    
+    func removeBottomBorder(name: String) {
+        self.layer.sublayers?.forEach({ aLayer in
+            if aLayer.name == name {
+                aLayer.removeFromSuperlayer()
+                return
+            }
+        })
+    }
+
     func addBorderWithColor(color: UIColor, width: CGFloat) {
         self.layer.cornerRadius = 5
         self.layer.borderWidth = width
         self.layer.borderColor = color.cgColor
     }
-    
+
     func removeBorder() {
         self.layer.borderColor = UIColor.clear.cgColor
     }
