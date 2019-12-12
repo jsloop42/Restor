@@ -69,6 +69,10 @@ class RequestViewController: UITableViewController {
             break
         }
     }
+    
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        Log.debug("main table view did select \(indexPath.row)")
+    }
 }
 
 extension RequestViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
@@ -127,6 +131,36 @@ extension RequestViewController: InfoTableViewDelegate {
             return []
         }
     }
+    
+    func updateModel(_ info: InfoField, index: Int) {
+        switch self.requestInfo {
+        case .headers:
+            if self.headerData.count > index {
+                self.headerData[index] = info
+            } else {
+                self.headerData.append(info)
+            }
+        default:
+            break
+        }
+    }
+    
+    func reloadInfoTableView(_ callback: @escaping () -> Void) {
+        self.infoTableView.reloadData {
+            callback()
+        }
+        //self.tableView.reloadData()
+    }
+    
+    func reloadInfoTableView() {
+        self.infoTableView.reloadData()
+    }
+    
+    func becomeFirstResponder(_ tag: Int) {
+        if let cell = self.infoTableView.cellForRow(at: IndexPath(row: tag, section: 0)) as? InfoTableCell {
+            cell.keyTextField.becomeFirstResponder()
+        }
+    }
 }
 
 // MARK: - Header Info
@@ -134,6 +168,10 @@ extension RequestViewController: InfoTableViewDelegate {
 protocol InfoTableViewDelegate: class {
     func currentRequestInfo() -> RequestHeaderInfo
     func model() -> [InfoField]
+    func updateModel(_ info: InfoField, index: Int)
+    func reloadInfoTableView(_ callback: @escaping () -> Void)
+    func reloadInfoTableView()
+    func becomeFirstResponder(_ tag: Int)
 }
 
 class InfoTableCell: UITableViewCell {
@@ -173,7 +211,7 @@ class InfoTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource
         textField.isEnabled = true
         textField.isColor = true
         height.isActive = false
-        height.constant = 42
+        height.constant = 40
         height.isActive = true
         textField.setNeedsDisplay()
     }
@@ -210,8 +248,7 @@ class InfoTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource
             cell.keyTextField.placeholder = "Add Header Name"
             cell.valueTextField.placeholder = "Add Header Value"
         default:
-            cell.keyTextField.text = ""
-            cell.valueTextField.text = ""
+            break
         }
         
         cell.keyTextField.tag = row * 2
@@ -222,13 +259,16 @@ class InfoTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource
             cell.valueTextField.delegate = self
             cell.isTextFieldDelegateSet = true
         }
-        
-        if row < model.count {
-            let x = model[row]
+        if row > 0 && row <= model.count {
+            let x = model[row - 1]
             cell.keyTextField.text = x.name
             cell.valueTextField.text = String(describing: x.value)
         }
         return cell
+    }
+    
+    func rowToIndex(_ row: Int) -> Int {
+        return row % 2 == 0 ? row / 2 - 1 : (row - 1) / 2 - 1
     }
 }
 
@@ -239,9 +279,18 @@ extension InfoTableViewManager: UITextFieldDelegate {
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         Log.debug("text field should return")
-        if let tf = textField.superview?.viewWithTag(textField.tag + 1) {
+        let row = textField.tag
+        if let tf = textField.superview?.viewWithTag(row + 1) {
             tf.becomeFirstResponder()
         } else {
+            var name = ""
+            if let tf = textField.superview?.viewWithTag(row - 1) as? EATextField {
+                name = tf.text ?? ""
+            }
+            if !name.isEmpty {
+                self.delegate?.updateModel(InfoField(name: name, value: textField.text ?? ""), index: self.rowToIndex(row))
+                self.delegate?.reloadInfoTableView()
+            }
             textField.resignFirstResponder()
         }
         return false
