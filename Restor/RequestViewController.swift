@@ -20,13 +20,44 @@ class HeaderCollectionViewCell: UICollectionViewCell {
 
 class RequestViewController: UITableViewController {
     @IBOutlet weak var headerCollectionView: InfiniteCollectionView!
+    @IBOutlet weak var requestInfoCell: UITableViewCell!
+    @IBOutlet weak var descriptionTextView: UITextView!
+    @IBOutlet var infoTableViewManager: InfoTableViewManager!
+    @IBOutlet weak var infoTableView: UITableView!
     let header: [String] = ["Description", "Headers", "URL Params", "Body", "Auth", "Options"]
+    lazy var infoxs: [UIView] = {
+        return [self.descriptionTextView, self.infoTableView]
+    }()
+    private var requestInfo: RequestHeaderInfo = .description
     
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("request vc did load")
         self.headerCollectionView.infiniteLayout.isEnabled = false
+        self.infoTableViewManager.delegate = self
+        self.infoTableView.delegate = self.infoTableViewManager
+        self.infoTableView.dataSource = self.infoTableViewManager
         self.headerCollectionView.reloadData()
+        self.hideInfoElements()
+        self.descriptionTextView.isHidden = false
+    }
+    
+    func hideInfoElements() {
+        self.infoxs.forEach { v in v.isHidden = true }
+    }
+    
+    func processCollectionViewTap(_ info: RequestHeaderInfo) {
+        Log.debug("selected element: \(String(describing: info))")
+        self.requestInfo = info
+        self.hideInfoElements()
+        switch info {
+        case .description:
+            self.descriptionTextView.isHidden = false
+        case .headers:
+            self.infoTableView.isHidden = false
+        default:
+            break
+        }
     }
 }
 
@@ -63,5 +94,44 @@ extension RequestViewController: UICollectionViewDelegate, UICollectionViewDataS
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, insetForSectionAt section: Int) -> UIEdgeInsets {
         return UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        Log.debug("collection view did select \(indexPath.row)")
+        self.processCollectionViewTap(RequestHeaderInfo(rawValue: indexPath.row) ?? .description)
+    }
+}
+
+extension RequestViewController: InfoTableViewDelegate {
+    func currentRequestInfo() -> RequestHeaderInfo {
+        return self.requestInfo
+    }
+}
+
+// MARK: - Header Info
+
+protocol InfoTableViewDelegate: class {
+    func currentRequestInfo() -> RequestHeaderInfo
+}
+
+class InfoTableCell: UITableViewCell {
+    
+}
+
+class InfoTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
+    weak var delegate: InfoTableViewDelegate?
+    
+    override init() {
+        super.init()
+        Log.debug("info table view manager init")
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return 0
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "infoCell", for: indexPath) as! InfoTableCell
+        return cell
     }
 }

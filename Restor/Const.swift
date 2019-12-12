@@ -23,3 +23,13 @@ enum StoryboardId: String {
     case requestListVC
     case requestVC
 }
+
+/// The request option elements
+enum RequestHeaderInfo: Int {
+    case description = 0
+    case headers
+    case urlParams
+    case body
+    case auth
+    case options
+}

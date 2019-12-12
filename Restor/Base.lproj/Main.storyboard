@@ -297,7 +297,7 @@
                         <sections>
                             <tableViewSection id="s3e-31-FWB">
                                 <cells>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" rowHeight="50" id="n9b-Dt-8w7">
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" rowHeight="50" id="n9b-Dt-8w7" userLabel="URL Cell">
                                         <rect key="frame" x="0.0" y="28" width="414" height="50"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="n9b-Dt-8w7" id="Reo-dv-Eub">
@@ -340,7 +340,7 @@
                                             </constraints>
                                         </tableViewCellContentView>
                                     </tableViewCell>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" id="Kmt-om-Wag">
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" id="Kmt-om-Wag" userLabel="Request Info Header Cell">
                                         <rect key="frame" x="0.0" y="78" width="414" height="43.5"/>
                                         <autoresizingMask key="autoresizingMask"/>
                                         <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="Kmt-om-Wag" id="5Fl-fP-ecU">
@@ -395,6 +395,50 @@
                                             </constraints>
                                         </tableViewCellContentView>
                                     </tableViewCell>
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" rowHeight="171" id="N3f-vF-sLO">
+                                        <rect key="frame" x="0.0" y="121.5" width="414" height="171"/>
+                                        <autoresizingMask key="autoresizingMask"/>
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="N3f-vF-sLO" id="M7Q-is-mRD">
+                                            <rect key="frame" x="0.0" y="0.0" width="414" height="171"/>
+                                            <autoresizingMask key="autoresizingMask"/>
+                                            <subviews>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Pe4-iP-OTd" userLabel="Container View">
+                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="171"/>
+                                                    <subviews>
+                                                        <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="riJ-XM-91s" userLabel="Description Text View">
+                                                            <rect key="frame" x="8" y="0.0" width="398" height="163"/>
+                                                            <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                                            <string key="text">Lorem ipsum dolor sit er elit lamet, consectetaur cillium adipisicing pecu, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Nam liber te conscient to factor tum poen legum odioque civiuda.</string>
+                                                            <color key="textColor" systemColor="labelColor" cocoaTouchSystemColor="darkTextColor"/>
+                                                            <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                                            <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
+                                                        </textView>
+                                                        <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="w4Y-uI-MXI" userLabel="Info Table View">
+                                                            <rect key="frame" x="8" y="0.0" width="398" height="163"/>
+                                                            <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                                        </tableView>
+                                                    </subviews>
+                                                    <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="trailing" secondItem="riJ-XM-91s" secondAttribute="trailing" constant="8" id="Bxr-bT-sah"/>
+                                                        <constraint firstAttribute="bottom" secondItem="w4Y-uI-MXI" secondAttribute="bottom" constant="8" id="HSw-vB-BkU"/>
+                                                        <constraint firstAttribute="trailing" secondItem="w4Y-uI-MXI" secondAttribute="trailing" constant="8" id="R8R-FY-4uE"/>
+                                                        <constraint firstItem="w4Y-uI-MXI" firstAttribute="top" secondItem="Pe4-iP-OTd" secondAttribute="top" id="RkY-Xc-RTC"/>
+                                                        <constraint firstAttribute="bottom" secondItem="riJ-XM-91s" secondAttribute="bottom" constant="8" id="SQx-kI-cPE"/>
+                                                        <constraint firstItem="riJ-XM-91s" firstAttribute="leading" secondItem="Pe4-iP-OTd" secondAttribute="leading" constant="8" id="cld-th-YKo"/>
+                                                        <constraint firstItem="w4Y-uI-MXI" firstAttribute="leading" secondItem="Pe4-iP-OTd" secondAttribute="leading" constant="8" id="mbG-mD-aue"/>
+                                                        <constraint firstItem="riJ-XM-91s" firstAttribute="top" secondItem="Pe4-iP-OTd" secondAttribute="top" id="z7w-h2-fWD"/>
+                                                    </constraints>
+                                                </view>
+                                            </subviews>
+                                            <constraints>
+                                                <constraint firstItem="Pe4-iP-OTd" firstAttribute="top" secondItem="M7Q-is-mRD" secondAttribute="top" id="N7O-SG-gIB"/>
+                                                <constraint firstItem="Pe4-iP-OTd" firstAttribute="leading" secondItem="M7Q-is-mRD" secondAttribute="leading" id="TtX-Im-hq3"/>
+                                                <constraint firstAttribute="bottom" secondItem="Pe4-iP-OTd" secondAttribute="bottom" id="ZKE-aL-Plv"/>
+                                                <constraint firstAttribute="trailing" secondItem="Pe4-iP-OTd" secondAttribute="trailing" id="Zv0-j3-s9F"/>
+                                            </constraints>
+                                        </tableViewCellContentView>
+                                    </tableViewCell>
                                 </cells>
                             </tableViewSection>
                         </sections>
@@ -404,10 +448,15 @@
                         </connections>
                     </tableView>
                     <connections>
+                        <outlet property="descriptionTextView" destination="riJ-XM-91s" id="afq-cQ-7zB"/>
                         <outlet property="headerCollectionView" destination="cNu-F2-3BO" id="7sH-ny-g5E"/>
+                        <outlet property="infoTableView" destination="w4Y-uI-MXI" id="eQS-7X-hRA"/>
+                        <outlet property="infoTableViewManager" destination="znh-RH-pu4" id="1cR-bt-EOD"/>
+                        <outlet property="requestInfoCell" destination="N3f-vF-sLO" id="cYG-76-w2h"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="FqM-fe-Ecn" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
+                <customObject id="znh-RH-pu4" customClass="InfoTableViewManager" customModule="Restor" customModuleProvider="target"/>
             </objects>
             <point key="canvasLocation" x="3634.7826086956525" y="135.9375"/>
         </scene>
