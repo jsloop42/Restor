@@ -3,12 +3,17 @@
 //  Restor
 //
 //  Created by jsloop on 02/12/19.
-//  Copyright © 2019 EstoApps. All rights reserved.
+//  Copyright © 2019 EstoApps OÜ. All rights reserved.
 //
 
 import UIKit
 
+protocol WorkspaceVCDelegate: class {
+    func updateWorkspaceName()
+}
+
 class WorkspaceViewController: UIViewController {
+    static weak var shared: WorkspaceViewController?
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!
     private var addItemPopupView: PopupView?
@@ -16,6 +21,8 @@ class WorkspaceViewController: UIViewController {
     private var isKeyboardActive = false
     private var keyboardHeight: CGFloat = 0.0
     private let utils: Utils = Utils.shared
+    private let app: App = App.shared
+    weak var delegate: WorkspaceVCDelegate?
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
@@ -23,9 +30,10 @@ class WorkspaceViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        State.selectedWorkspace = nil
+        WorkspaceViewController.shared = self
+        AppState.selectedWorkspace = nil
         self.navigationItem.title = "Workspaces"
-        self.navigationItem.rightBarButtonItem = self.utils.addSettingsBarButton()
+        self.navigationItem.leftBarButtonItem = self.app.addSettingsBarButton()
     }
     
     override func viewDidLoad() {
@@ -122,7 +130,7 @@ class WorkspaceViewController: UIViewController {
     
     func createNewWorkspace(name: String, desc: String) {
         let ws = Workspace(name: name, desc: desc)
-        State.workspaces.append(ws)
+        AppState.workspaces.append(ws)
         self.tableView.reloadData()
     }
 }
@@ -175,7 +183,7 @@ class WorkspaceCell: UITableViewCell {
 
 extension WorkspaceViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return State.workspaces.count
+        return AppState.workspaces.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -183,7 +191,7 @@ extension WorkspaceViewController: UITableViewDelegate, UITableViewDataSource {
         let row = indexPath.row
         cell.nameLbl.text = ""
         cell.descLbl.text = ""
-        if let workspace = State.workspace(forIndex: row) {
+        if let workspace = AppState.workspace(forIndex: row) {
             cell.nameLbl.text = workspace.name
             cell.descLbl.text = workspace.desc
         }
@@ -192,7 +200,8 @@ extension WorkspaceViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("workspace cell did select \(indexPath.row)")
-        State.selectedWorkspace = indexPath.row
-        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.projectVC.rawValue)
+        AppState.selectedWorkspace = indexPath.row
+        self.delegate?.updateWorkspaceName()
+        self.dismiss(animated: true, completion: nil)
     }
 }

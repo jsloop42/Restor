@@ -8,7 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		9E538DAC239951790025C14C /* UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAB239951790025C14C /* UI.swift */; };
-		9E538DAE239953460025C14C /* State.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* State.swift */; };
+		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
 		9E538DB1239953760025C14C /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DB0239953760025C14C /* Workspace.swift */; };
 		9E538DB32399538C0025C14C /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DB22399538C0025C14C /* Project.swift */; };
 		9E538DB5239954280025C14C /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DB4239954280025C14C /* Request.swift */; };
@@ -29,6 +29,8 @@
 		9E926FA323945E7D002DF561 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */; };
 		9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FAD23945E7D002DF561 /* RestorTests.swift */; };
 		9E926FB923945E7D002DF561 /* RestorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FB823945E7D002DF561 /* RestorUITests.swift */; };
+		9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */; };
+		9EE34CA323D9F67C00CA08F2 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE34CA223D9F67C00CA08F2 /* App.swift */; };
 		9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */; };
 		9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A91239EA4AA00A1CA68 /* Const.swift */; };
 /* End PBXBuildFile section */
@@ -52,7 +54,7 @@
 
 /* Begin PBXFileReference section */
 		9E538DAB239951790025C14C /* UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI.swift; sourceTree = "<group>"; };
-		9E538DAD239953460025C14C /* State.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = State.swift; sourceTree = "<group>"; };
+		9E538DAD239953460025C14C /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		9E538DB0239953760025C14C /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
 		9E538DB22399538C0025C14C /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
 		9E538DB4239954280025C14C /* Request.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
@@ -77,6 +79,8 @@
 		9E926FB423945E7D002DF561 /* RestorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RestorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926FB823945E7D002DF561 /* RestorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorUITests.swift; sourceTree = "<group>"; };
 		9E926FBA23945E7D002DF561 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAExtensions.swift; sourceTree = "<group>"; };
+		9EE34CA223D9F67C00CA08F2 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectViewController.swift; sourceTree = "<group>"; };
 		9EEA7A91239EA4AA00A1CA68 /* Const.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Const.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -142,8 +146,8 @@
 			children = (
 				9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */,
 				9E926F9923945E79002DF561 /* Main.storyboard */,
-				9E538DAB239951790025C14C /* UI.swift */,
 				9E7585F123A2B27B00AD6E8B /* EATextField.swift */,
+				9E538DAB239951790025C14C /* UI.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -174,15 +178,16 @@
 			children = (
 				9E538DAF2399536B0025C14C /* Model */,
 				9E7585F023A2B24300AD6E8B /* View */,
+				9EE34CA423D9F6C800CA08F2 /* Request */,
 				9E538DB6239958A10025C14C /* Workspace */,
+				9EE34CA223D9F67C00CA08F2 /* App.swift */,
 				9E926F9323945E79002DF561 /* AppDelegate.swift */,
+				9E538DAD239953460025C14C /* AppState.swift */,
 				9EEA7A91239EA4AA00A1CA68 /* Const.swift */,
+				9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */,
 				9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */,
 				9E926F9523945E79002DF561 /* SceneDelegate.swift */,
-				9E538DAD239953460025C14C /* State.swift */,
 				9E8759052396C6A700F949D1 /* Utils.swift */,
-				9E78D1D2239EC930005FC692 /* RequestViewController.swift */,
-				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
 				9E926F9F23945E7D002DF561 /* Assets.xcassets */,
 				9E926FA423945E7D002DF561 /* Info.plist */,
 			);
@@ -205,6 +210,15 @@
 				9E926FBA23945E7D002DF561 /* Info.plist */,
 			);
 			path = RestorUITests;
+			sourceTree = "<group>";
+		};
+		9EE34CA423D9F6C800CA08F2 /* Request */ = {
+			isa = PBXGroup;
+			children = (
+				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
+				9E78D1D2239EC930005FC692 /* RequestViewController.swift */,
+			);
+			path = Request;
 			sourceTree = "<group>";
 		};
 		9EFACA1823998A1B0004AB91 /* Frameworks */ = {
@@ -282,7 +296,7 @@
 			attributes = {
 				LastSwiftUpdateCheck = 1120;
 				LastUpgradeCheck = 1120;
-				ORGANIZATIONNAME = EstoApps;
+				ORGANIZATIONNAME = "EstoApps OÜ";
 				TargetAttributes = {
 					9E926F8F23945E78002DF561 = {
 						CreatedOnToolsVersion = 11.2.1;
@@ -363,12 +377,14 @@
 				9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */,
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
 				9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */,
-				9E538DAE239953460025C14C /* State.swift in Sources */,
+				9EE34CA323D9F67C00CA08F2 /* App.swift in Sources */,
+				9E538DAE239953460025C14C /* AppState.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */,
 				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
 				9E538DB5239954280025C14C /* Request.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
 				9E538DB32399538C0025C14C /* Project.swift in Sources */,
+				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
 				9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -474,7 +490,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -528,7 +544,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -543,13 +559,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 7S7UE44956;
+				DEVELOPMENT_TEAM = J7Q5T569K8;
 				INFOPLIST_FILE = Restor/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.estoapps.ios.Restor;
+				PRODUCT_BUNDLE_IDENTIFIER = com.estoapps.ios.restor8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -561,13 +578,14 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 7S7UE44956;
+				DEVELOPMENT_TEAM = J7Q5T569K8;
 				INFOPLIST_FILE = Restor/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.estoapps.ios.Restor;
+				PRODUCT_BUNDLE_IDENTIFIER = com.estoapps.ios.restor8;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

@@ -3,7 +3,7 @@
 //  Restor
 //
 //  Created by jsloop on 09/12/19.
-//  Copyright © 2019 EstoApps. All rights reserved.
+//  Copyright © 2019 EstoApps OÜ. All rights reserved.
 //
 
 import Foundation
@@ -12,17 +12,21 @@ import UIKit
 class ProjectViewController: UIViewController {
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var workspaceBtn: UIButton!
     private var workspace: Workspace?
     private var addItemPopupView: PopupView?
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
     private var keyboardHeight: CGFloat = 0.0
     private let utils: Utils = Utils.shared
+    private let app: App = App.shared
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationItem.title = "Projects"
-        self.navigationItem.rightBarButtonItem = self.utils.addSettingsBarButton()
+        self.navigationItem.leftBarButtonItem = self.app.addSettingsBarButton()
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
+        self.updateUIState()
     }
 
     override func viewDidLoad() {
@@ -39,6 +43,14 @@ class ProjectViewController: UIViewController {
         // TODO: test
         self.addProject(name: "Test project", desc: "My awesome project")
         // end test
+    }
+    
+    func updateUIState() {
+        
+    }
+    
+    @objc func workspaceDidTap() {
+        Log.debug("workspace did tap")
     }
     
     func addProject(name: String, desc: String) {
@@ -98,9 +110,21 @@ class ProjectViewController: UIViewController {
         }
     }
     
-    @IBAction func addBtnDidTap(_ sender: Any) {
+    @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add button did tap")
         self.viewAlert(vc: self, storyboard: self.storyboard!)
+    }
+    
+    @IBAction func workspaceDidTap(_ sender: Any) {
+        Log.debug("workspace did tap")
+    }
+    
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "workspaceSegue" {
+            if let vc = segue.destination as? WorkspaceViewController {
+                vc.delegate = self
+            }
+        }
     }
     
     func viewAlert(vc: UIViewController, storyboard: UIStoryboard, message: String? = nil, title: String? = nil) {
@@ -169,7 +193,7 @@ class ProjectCell: UITableViewCell {
 
 extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if let selectedIndex = State.selectedWorkspace, let aWorkspace = State.workspace(forIndex: selectedIndex) {
+        if let selectedIndex = AppState.selectedWorkspace, let aWorkspace = AppState.workspace(forIndex: selectedIndex) {
             self.workspace = aWorkspace
             return aWorkspace.projects.count
         }
@@ -191,5 +215,11 @@ extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("project cell did select \(indexPath.row)")
         UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestListVC.rawValue)
+    }
+}
+
+extension ProjectViewController: WorkspaceVCDelegate {
+    func updateWorkspaceName() {
+        self.workspaceBtn.setTitle(AppState.currentWorkspaceName(), for: .normal)
     }
 }

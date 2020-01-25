@@ -3,12 +3,12 @@
 //  Restor
 //
 //  Created by jsloop on 05/12/19.
-//  Copyright © 2019 EstoApps. All rights reserved.
+//  Copyright © 2019 EstoApps OÜ. All rights reserved.
 //
 
 import Foundation
 
-struct State {
+struct AppState {
     static var workspaces: [Workspace] = []
     static var selectedWorkspace: Int? = nil
     static var selectedProject: Int? = nil
@@ -37,5 +37,15 @@ struct State {
             }
         }
         return nil
+    }
+    
+    static func currentWorkspaceName() -> String {
+        if let idx = self.selectedWorkspace {
+            return self.workspaces[idx].name
+        }
+        if let ws = self.workspaces.first {
+            return ws.name
+        }
+        return "Workspace"
     }
 }

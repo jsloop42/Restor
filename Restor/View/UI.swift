@@ -3,24 +3,27 @@
 //  Restor
 //
 //  Created by jsloop on 05/12/19.
-//  Copyright © 2019 EstoApps. All rights reserved.
+//  Copyright © 2019 EstoApps OÜ. All rights reserved.
 //
 
 import Foundation
 import UIKit
 
 class UI {
+    private static var toastQueue: Set<String> = Set<String>()
+    private static var isToastPresenting = false
+    
     static func setGlobalStyle() {
         self.clearBackButtonText()
     }
     
-static func clearBackButtonText() {
-    // Clear back button text
-    let BarButtonItemAppearance = UIBarButtonItem.appearance()
-    BarButtonItemAppearance.setTitleTextAttributes([.foregroundColor: UIColor.clear, .backgroundColor: UIColor.clear], for: .normal)
-    BarButtonItemAppearance.setTitleTextAttributes([.foregroundColor: UIColor.clear, .backgroundColor: UIColor.clear], for: .highlighted)
-    BarButtonItemAppearance.setTitleTextAttributes([.foregroundColor: UIColor.clear, .backgroundColor: UIColor.clear], for: .selected)
-}
+    static func clearBackButtonText() {
+        // Clear back button text
+        let BarButtonItemAppearance = UIBarButtonItem.appearance()
+        BarButtonItemAppearance.setTitleTextAttributes([.foregroundColor: UIColor.clear, .backgroundColor: UIColor.clear], for: .normal)
+        BarButtonItemAppearance.setTitleTextAttributes([.foregroundColor: UIColor.clear, .backgroundColor: UIColor.clear], for: .highlighted)
+        BarButtonItemAppearance.setTitleTextAttributes([.foregroundColor: UIColor.clear, .backgroundColor: UIColor.clear], for: .selected)
+    }
     
     static func roundTopCornersWithBorder(view: UIView, borderColor: UIColor? = nil, name: String) {
         // Round corners with mask
@@ -58,7 +61,111 @@ static func clearBackButtonText() {
     }
     
     static func isDarkMode() -> Bool {
-        return UIScreen.main.traitCollection.userInterfaceStyle == .dark
+        if #available(iOS 12.0, *) {
+            return UIScreen.main.traitCollection.userInterfaceStyle == .dark
+        }
+        return false
+    }
+           
+    /// Present the given view controller from the storyboard
+    static func presentScreen(_ vc: UIViewController, storyboard: UIStoryboard, storyboardId: String) {
+        let parent = storyboard.instantiateViewController(withIdentifier: storyboardId)
+        vc.present(parent, animated: true, completion: nil)
+    }
+   
+    /// Push the given view controller from the storyboard
+    static func pushScreen(_ vc: UINavigationController, storyboard: UIStoryboard, storyboardId: String) {
+        let navVC = storyboard.instantiateViewController(withIdentifier: storyboardId)
+        navVC.hidesBottomBarWhenPushed = true
+        vc.pushViewController(navVC, animated: true)
+    }
+   
+    static func hideNavigationBar(_ navVC: UINavigationController) {
+        navVC.setNavigationBarHidden(true, animated: true)
+    }
+   
+    static func showNavigationBar(_ navVC: UINavigationController) {
+        navVC.setNavigationBarHidden(false, animated: true)
+    }
+   
+    /// Remove the text from navigation bar back button. The text depends on the master view. So this has to be called in the `viewWillDisappear`.
+    /// - Parameter navItem: The navigationItem as in `self.navigationItem`.
+    static func clearNavigationBackButtonText(_ navItem: UINavigationItem) {
+        navItem.backBarButtonItem = UIBarButtonItem(title: "", style: .plain, target: nil, action: nil)
+    }
+   
+    /// Handler method which queues toast events for display
+    static func displayToast(_ msg: String) {
+        if self.isToastPresenting {
+            self.toastQueue.insert(msg)
+        } else {
+            if let vc = WorkspaceViewController.shared {
+                self.viewToast(msg, vc: vc)
+            }
+        }
+    }
+   
+    /// Display toast using the presented view controller
+    static func viewToast(_ message: String, hideSec: Double? = 3, vc: UIViewController) {
+        self.isToastPresenting = true
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .actionSheet)
+        DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + (hideSec ?? 3), execute: {
+            self.isToastPresenting = false
+            alert.dismiss(animated: true, completion: {
+                if !self.toastQueue.isEmpty, let msg = self.toastQueue.popFirst() {
+                    self.viewToast(msg, hideSec: hideSec, vc: vc)
+                }
+            })
+        })
+        alert.modalPresentationStyle = .popover
+        if let popoverPresentationController = alert.popoverPresentationController {
+            popoverPresentationController.sourceView = vc.view
+            popoverPresentationController.sourceRect = vc.view.bounds
+            popoverPresentationController.permittedArrowDirections = []
+        }
+        DispatchQueue.main.async {
+            vc.present(alert, animated: true, completion: nil)
+        }
+    }
+   
+    static func activityIndicator() -> UIActivityIndicatorView {
+        let activityIndicator: UIActivityIndicatorView = UIActivityIndicatorView.init(style: UIActivityIndicatorView.Style.gray)
+        activityIndicator.alpha = 1.0
+        activityIndicator.center = CGPoint(x: UIScreen.main.bounds.size.width / 2, y: UIScreen.main.bounds.size.height / 3)
+        activityIndicator.startAnimating()
+        return activityIndicator
+    }
+   
+    static func showLoading(_ indicator: UIActivityIndicatorView?) {
+        DispatchQueue.main.async {
+            guard let indicator = indicator else { return }
+            indicator.startAnimating()
+            indicator.backgroundColor = UIColor.white
+        }
+    }
+
+    static func hideLoading(_ indicator: UIActivityIndicatorView?) {
+        guard let indicator = indicator else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.0, execute: {
+            indicator.stopAnimating()
+            indicator.hidesWhenStopped = true
+        })
+    }
+
+    static func addActivityIndicator(indicator: UIActivityIndicatorView?, view: UIView) {
+        guard let indicator = indicator else { return }
+        DispatchQueue.main.async {
+            indicator.style = UIActivityIndicatorView.Style.gray
+            indicator.center = view.center
+            view.addSubview(indicator)
+        }
+    }
+   
+    static func removeActivityIndicator(indicator: UIActivityIndicatorView?) {
+        guard let indicator = indicator else { return }
+        DispatchQueue.main.async {
+            indicator.removeFromSuperview()
+        }
     }
 }
 

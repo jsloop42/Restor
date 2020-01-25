@@ -3,7 +3,7 @@
 //  Restor
 //
 //  Created by jsloop on 12/12/19.
-//  Copyright © 2019 EstoApps. All rights reserved.
+//  Copyright © 2019 EstoApps OÜ. All rights reserved.
 //
 
 import Foundation

@@ -3,7 +3,7 @@
 //  Restor
 //
 //  Created by jsloop on 09/12/19.
-//  Copyright © 2019 EstoApps. All rights reserved.
+//  Copyright © 2019 EstoApps OÜ. All rights reserved.
 //
 
 import Foundation
@@ -17,11 +17,12 @@ class RequestListViewController: UIViewController {
     @IBOutlet weak var addBtn: UIBarButtonItem!
     private var requests: [Request] = []
     private let utils: Utils = Utils.shared
+    private let app: App = App.shared
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         self.navigationItem.title = "Requests"
-        self.navigationItem.rightBarButtonItem = self.utils.addSettingsBarButton()
+        self.navigationItem.leftBarButtonItem = self.app.addSettingsBarButton()
     }
     
     override func viewDidLoad() {
@@ -30,7 +31,7 @@ class RequestListViewController: UIViewController {
     }
     
     func initUI() {
-        if let idx = State.selectedProject, let projects = State.project(forIndex: idx) {
+        if let idx = AppState.selectedProject, let projects = AppState.project(forIndex: idx) {
             self.requests = projects.requests
         }
         self.tableView.reloadData()
