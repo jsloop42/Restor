@@ -28,7 +28,7 @@ class PopupView: UIView {
     @IBOutlet weak var nameFieldValidationLabel: UILabel!
     weak var delegate: PopupViewDelegate?
     var centerY: NSLayoutYAxisAnchor?
-    private static var popupView: PopupView?
+    private static weak var popupView: PopupView?
     var type: PopupType = .workspace {
         didSet {
             if type == .workspace {
@@ -38,6 +38,7 @@ class PopupView: UIView {
             }
         }
     }
+    private var isInit = false
     
     static func initFromNib(owner: Any? = nil) -> UIView? {
         if let aPopupView = self.popupView {
@@ -54,15 +55,23 @@ class PopupView: UIView {
         super.init(coder: coder)
     }
 
+    deinit {
+        Log.debug("popup deinit")
+    }
+    
     override func layoutSubviews() {
         Log.debug("layout subviews")
         self.initUIStyle()
     }
 
     func initUIStyle() {
-        UI.roundTopCornersWithBorder(view: self.navbarView, name: "topBorder")
-        self.nameTextField.cornerRadius = 5
-        self.hideValidationError()
+        if !self.isInit {
+            UI.roundTopCornersWithBorder(view: self.navbarView, name: "topBorder")
+            self.nameTextField.cornerRadius = 5
+            self.nameFieldValidationLabel.textColor = UIColor.red
+            self.hideValidationError()
+            self.isInit = true
+        }
     }
     
     func setTitle(_ text: String) {
@@ -112,7 +121,9 @@ class PopupView: UIView {
     }
 
     func viewValidationError(_ msg: String) {
+        Log.debug("show validation error")
         self.nameFieldValidationLabel.text = msg
+        self.nameFieldValidationLabel.isHidden = false
         UIView.animate(withDuration: 0.3) {
             self.layoutIfNeeded()
             self.nameTextField.addBorderWithColor(color: .red, width: 0.75)
@@ -123,7 +134,9 @@ class PopupView: UIView {
     }
 
     func hideValidationError() {
+        Log.debug("hide validation error")
         self.nameFieldValidationLabel.text = ""
+        self.nameFieldValidationLabel.isHidden = true
         UIView.animate(withDuration: 0.3) {
             self.layoutIfNeeded()
             self.nameTextField.removeBorder()

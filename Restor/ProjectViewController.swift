@@ -14,7 +14,7 @@ class ProjectViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var workspaceBtn: UIButton!
     private var workspace: Workspace?
-    private var addItemPopupView: PopupView?
+    private weak var addItemPopupView: PopupView?
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
     private var keyboardHeight: CGFloat = 0.0
@@ -150,8 +150,9 @@ extension ProjectViewController: PopupViewDelegate {
         if let popup = self.addItemPopupView {
             popup.animateSlideOut {
                 popup.nameTextField.text = ""
-                popup.removeFromSuperview()
+                popup.delegate = nil
                 self.addItemPopupView = nil
+                popup.removeFromSuperview()
             }
         }
     }
