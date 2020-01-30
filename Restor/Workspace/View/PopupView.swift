@@ -13,6 +13,8 @@ protocol PopupViewDelegate: class {
     func cancelDidTap(_ sender: Any)
     /// Return a flag indicating if the keyboard can be dismissed if present
     func doneDidTap(_ sender: Any) -> Bool
+    /// Perform input text validation returning true is valid
+    func validateText(_ text: String?) -> Bool
 }
 
 enum PopupType {
@@ -26,6 +28,7 @@ class PopupView: UIView {
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var navbarView: UIView!
     @IBOutlet weak var nameFieldValidationLabel: UILabel!
+    @IBOutlet weak var iCloudSyncSwitch: UISwitch!
     weak var delegate: PopupViewDelegate?
     var centerY: NSLayoutYAxisAnchor?
     private static weak var popupView: PopupView?
@@ -39,12 +42,16 @@ class PopupView: UIView {
         }
     }
     private var isInit = false
+    private var isValidationsSuccess = true
+    private var isValidated = false
     
     static func initFromNib(owner: Any? = nil) -> UIView? {
         if let aPopupView = self.popupView {
             return aPopupView
         } else if let aPopupView = UINib(nibName: "PopupView", bundle: nil).instantiate(withOwner: owner, options: nil)[0] as? PopupView {
             aPopupView.initUIStyle()
+            aPopupView.nameTextField.delegate = aPopupView
+            aPopupView.descTextField.delegate = aPopupView
             self.popupView = aPopupView
             return aPopupView
         }
@@ -91,10 +98,15 @@ class PopupView: UIView {
         self.delegate?.cancelDidTap(sender)
     }
     
-    
     @IBAction func doneDidTap(_ sender: Any) {
         Log.debug("Done did tap")
-        self.delegate?.doneDidTap(sender)
+        if !self.isValidated {
+            self.isValidationsSuccess = self.delegate?.validateText(self.nameTextField.text) ?? false
+            self.isValidated = true
+        }
+        if self.isValidationsSuccess {
+            self.delegate?.doneDidTap(sender)
+        }
     }
     
     func animateSlideIn(_ completion: (() -> Void)? = nil) {
@@ -154,9 +166,16 @@ extension PopupView: UITextFieldDelegate {
 
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         Log.debug("text field should return")
-        if let status = self.delegate?.doneDidTap(textField) {
-            if status { textField.resignFirstResponder() }
+        if textField == self.nameTextField, let status = self.delegate?.validateText(textField.text) {
+            self.isValidationsSuccess = status
+            self.isValidated = true
+            if status {
+                //textField.resignFirstResponder()
+                self.descTextField.becomeFirstResponder()
+            }
             return status
+        } else if textField == self.descTextField {
+            textField.resignFirstResponder()
         }
         return true
     }

@@ -85,7 +85,6 @@ class ProjectViewController: UIViewController {
     func viewPopup(type: PopupType) {
         if self.addItemPopupView == nil, let popup = PopupView.initFromNib(owner: self) as? PopupView {
             popup.delegate = self
-            popup.nameTextField.delegate = popup
             popup.type = type
             popup.alpha = 0.0
             self.view.addSubview(popup)
@@ -145,6 +144,23 @@ class ProjectViewController: UIViewController {
 }
 
 extension ProjectViewController: PopupViewDelegate {
+    func validateText(_ text: String?) -> Bool {
+        guard let popup = self.addItemPopupView else { return false }
+        guard let text = text else {
+            popup.viewValidationError("Please enter a name")
+            return false
+        }
+        if text.isEmpty {
+            popup.viewValidationError("Please enter a name")
+            return false
+        }
+        if text.trimmingCharacters(in: .whitespaces) == "" {
+            popup.viewValidationError("Please enter a valid name")
+            return false
+        }
+        return true
+    }
+    
     func cancelDidTap(_ sender: Any) {
         Log.debug("cancel did tap")
         if let popup = self.addItemPopupView {
@@ -161,17 +177,8 @@ extension ProjectViewController: PopupViewDelegate {
         Log.debug("done did tap")
         if let popup = self.addItemPopupView {
             if let name = popup.nameTextField.text {
-                if name.isEmpty {
-                    popup.viewValidationError("Please enter a name")
-                    return false
-                }
-                if name.trimmingCharacters(in: .whitespaces) == "" {
-                    popup.viewValidationError("Please enter a valid name")
-                    return false
-                }
-                let name = popup.nameTextField.text
                 let desc = popup.descTextField.text
-                self.addProject(name: name!, desc: desc ?? "")
+                self.addProject(name: name, desc: desc ?? "")
                 popup.animateSlideOut {
                     popup.nameTextField.text = ""
                     popup.removeFromSuperview()

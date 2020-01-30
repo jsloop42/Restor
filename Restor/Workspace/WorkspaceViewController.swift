@@ -136,6 +136,23 @@ class WorkspaceViewController: UIViewController {
 }
 
 extension WorkspaceViewController: PopupViewDelegate {
+    func validateText(_ text: String?) -> Bool {
+        guard let popup = self.addItemPopupView else { return false }
+        guard let text = text else {
+            popup.viewValidationError("Please enter a name")
+            return false
+        }
+        if text.isEmpty {
+            popup.viewValidationError("Please enter a name")
+            return false
+        }
+        if text.trimmingCharacters(in: .whitespaces) == "" {
+            popup.viewValidationError("Please enter a valid name")
+            return false
+        }
+        return true
+    }
+    
     func cancelDidTap(_ sender: Any) {
         Log.debug("cancel did tap")
         if let popup = self.addItemPopupView {
@@ -151,17 +168,8 @@ extension WorkspaceViewController: PopupViewDelegate {
         Log.debug("done did tap")
         if let popup = self.addItemPopupView {
             if let name = popup.nameTextField.text {
-                if name.isEmpty {
-                    popup.viewValidationError("Please enter a name")
-                    return false
-                }
-                if name.trimmingCharacters(in: .whitespaces) == "" {
-                    popup.viewValidationError("Please enter a valid name")
-                    return false
-                }
-                let name = popup.nameTextField.text
                 let desc = popup.descTextField.text
-                self.createNewWorkspace(name: name!, desc: desc ?? "")
+                self.createNewWorkspace(name: name, desc: desc ?? "")
                 popup.animateSlideOut {
                     popup.nameTextField.text = ""
                     popup.removeFromSuperview()
