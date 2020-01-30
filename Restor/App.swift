@@ -24,8 +24,8 @@ class App {
     }
     
     func initDefaultWorspace() {
-        let ws = Workspace(name: "Default", desc: "Default workspace")
-        let _ = Project(name: "Default", desc: "Default project", workspace: ws)
+        let ws = Workspace(name: "Default Workspace", desc: "Default workspace")
+        let _ = Project(name: "Default Project", desc: "Default project", workspace: ws)
         AppState.workspaces.append(ws)
         AppState.selectedWorkspace = 0
         AppState.selectedProject = 0

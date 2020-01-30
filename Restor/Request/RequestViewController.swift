@@ -37,6 +37,11 @@ class RequestViewController: UITableViewController {
     private var headerData: [InfoField] = []
     private var urlParamsData: [InfoField] = []
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.navigationItem.title = "New Request"
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("request vc did load")

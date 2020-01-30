@@ -36,6 +36,7 @@ class ProjectViewController: UIViewController {
         self.app.initDefaultWorspace()
         if let ws = AppState.currentWorkspace() {
             self.workspace = ws
+            self.updateWorkspaceName()
         }
     }
     
