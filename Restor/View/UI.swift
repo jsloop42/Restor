@@ -42,7 +42,7 @@ class UI {
                 }
             }
         }
-
+        
         // Add border
         let borderLayer = CAShapeLayer()
         borderLayer.name = name

@@ -38,7 +38,6 @@
                             <nil key="highlightedColor"/>
                         </label>
                     </subviews>
-                    <color key="backgroundColor" systemColor="systemGroupedBackgroundColor" red="0.94901960780000005" green="0.94901960780000005" blue="0.96862745100000003" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                     <accessibility key="accessibilityConfiguration">
                         <bool key="isElement" value="YES"/>
                     </accessibility>
@@ -58,6 +57,7 @@
                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Vvs-Hk-TqL" userLabel="Name Label">
                     <rect key="frame" x="16" y="72.5" width="38" height="17"/>
                     <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                    <nil key="textColor"/>
                     <nil key="highlightedColor"/>
                 </label>
                 <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Personal " textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="SoW-sz-MPb" userLabel="Name text field">
@@ -99,7 +99,6 @@
                     <rect key="frame" x="101" y="171" width="51" height="31"/>
                 </switch>
             </subviews>
-            <color key="backgroundColor" red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
             <constraints>
                 <constraint firstItem="mqa-0c-Woy" firstAttribute="centerY" secondItem="bfH-8e-wpp" secondAttribute="centerY" id="28P-uY-TIM"/>
                 <constraint firstItem="mqa-0c-Woy" firstAttribute="leading" secondItem="fqL-Du-jnK" secondAttribute="leading" id="2Cl-Rf-Sli"/>

@@ -69,15 +69,27 @@ class PopupView: UIView {
     override func layoutSubviews() {
         Log.debug("layout subviews")
         self.initUIStyle()
+        self.renderTheme()
     }
-
+    
     func initUIStyle() {
         if !self.isInit {
             UI.roundTopCornersWithBorder(view: self.navbarView, name: "topBorder")
+            self.renderTheme()
             self.nameTextField.cornerRadius = 5
             self.nameFieldValidationLabel.textColor = UIColor.red
             self.hideValidationError()
             self.isInit = true
+        }
+    }
+    
+    func renderTheme() {
+        if #available(iOS 13.0, *) {
+            self.backgroundColor = .systemBackground
+            self.navbarView.backgroundColor = .quaternarySystemFill
+        } else {
+            self.backgroundColor = .white
+            self.navbarView.backgroundColor = UIColor(red: 0.969, green: 0.969, blue: 0.969, alpha: 1.0)
         }
     }
     
@@ -170,7 +182,7 @@ extension PopupView: UITextFieldDelegate {
             self.isValidationsSuccess = status
             self.isValidated = true
             if status {
-                //textField.resignFirstResponder()
+                self.hideValidationError()
                 self.descTextField.becomeFirstResponder()
             }
             return status
