@@ -22,6 +22,24 @@ class App {
     @objc func settingsBtnDidTap(_ sender: Any) {
         Log.debug("settings btn did tap")
     }
+    
+    func initDefaultWorspace() {
+        let ws = Workspace(name: "Default", desc: "Default workspace")
+        let _ = Project(name: "Default", desc: "Default project", workspace: ws)
+        AppState.workspaces.append(ws)
+        AppState.selectedWorkspace = 0
+        AppState.selectedProject = 0
+    }
+
+    func addWorkspace(_ ws: Workspace) {
+        AppState.workspaces.append(ws)
+    }
+    
+    func addProject(_ project: Project) {
+        if let wsIdx = AppState.selectedWorkspace {
+            AppState.workspaces[wsIdx].projects.append(project)
+        }
+    }
 }
 
 enum TableCellId: String {

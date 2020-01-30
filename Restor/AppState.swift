@@ -48,4 +48,11 @@ struct AppState {
         }
         return "Workspace"
     }
+    
+    static func currentWorkspace() -> Workspace? {
+        if let idx = self.selectedWorkspace {
+            return self.workspaces[idx]
+        }
+        return nil
+    }
 }

@@ -33,6 +33,10 @@ class ProjectViewController: UIViewController {
         super.viewDidLoad()
         Log.debug("project view did load")
         self.initUI()
+        self.app.initDefaultWorspace()
+        if let ws = AppState.currentWorkspace() {
+            self.workspace = ws
+        }
     }
     
     func initUI() {
@@ -179,6 +183,7 @@ extension ProjectViewController: PopupViewDelegate {
             if let name = popup.nameTextField.text {
                 let desc = popup.descTextField.text
                 self.addProject(name: name, desc: desc ?? "")
+                self.tableView.reloadData()
                 popup.animateSlideOut {
                     popup.nameTextField.text = ""
                     popup.removeFromSuperview()
