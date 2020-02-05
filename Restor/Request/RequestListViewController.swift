@@ -30,13 +30,14 @@ class RequestListViewController: UIViewController {
     }
     
     func initUI() {
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
         if let idx = AppState.selectedProject, let projects = AppState.project(forIndex: idx) {
             self.requests = projects.requests
         }
         self.tableView.reloadData()
     }
     
-    @IBAction func addBtnDidTap(_ sender: Any) {
+    @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
         UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestVC.rawValue)
     }

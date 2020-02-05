@@ -16,7 +16,7 @@
 		9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DBA23995B3E0025C14C /* PopupView.swift */; };
 		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
-		9E78D1D3239EC930005FC692 /* RequestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D2239EC930005FC692 /* RequestViewController.swift */; };
+		9E78D1D3239EC930005FC692 /* RequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */; };
 		9E8759062396C6A700F949D1 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* Utils.swift */; };
 		9E910A23239FF8700076B325 /* InfiniteLayout in Frameworks */ = {isa = PBXBuildFile; productRef = 9E910A22239FF8700076B325 /* InfiniteLayout */; };
 		9E910A26239FF8B80076B325 /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 9E910A25239FF8B80076B325 /* IQKeyboardManagerSwift */; };
@@ -29,6 +29,7 @@
 		9E926FA323945E7D002DF561 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */; };
 		9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FAD23945E7D002DF561 /* RestorTests.swift */; };
 		9E926FB923945E7D002DF561 /* RestorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FB823945E7D002DF561 /* RestorUITests.swift */; };
+		9E9DE3B523E35AF90071BA2F /* RequestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9DE3B423E35AF90071BA2F /* RequestViewController.swift */; };
 		9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */; };
 		9EE34CA323D9F67C00CA08F2 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE34CA223D9F67C00CA08F2 /* App.swift */; };
 		9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */; };
@@ -62,7 +63,7 @@
 		9E538DBA23995B3E0025C14C /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
 		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
 		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
-		9E78D1D2239EC930005FC692 /* RequestViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestViewController.swift; sourceTree = "<group>"; };
+		9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTableViewController.swift; sourceTree = "<group>"; };
 		9E8759052396C6A700F949D1 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		9E926F9023945E78002DF561 /* Restor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Restor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926F9323945E79002DF561 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -79,6 +80,7 @@
 		9E926FB423945E7D002DF561 /* RestorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RestorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926FB823945E7D002DF561 /* RestorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorUITests.swift; sourceTree = "<group>"; };
 		9E926FBA23945E7D002DF561 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9E9DE3B423E35AF90071BA2F /* RequestViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestViewController.swift; sourceTree = "<group>"; };
 		9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAExtensions.swift; sourceTree = "<group>"; };
 		9EE34CA223D9F67C00CA08F2 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
 		9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectViewController.swift; sourceTree = "<group>"; };
@@ -216,7 +218,8 @@
 			isa = PBXGroup;
 			children = (
 				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
-				9E78D1D2239EC930005FC692 /* RequestViewController.swift */,
+				9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */,
+				9E9DE3B423E35AF90071BA2F /* RequestViewController.swift */,
 			);
 			path = Request;
 			sourceTree = "<group>";
@@ -370,12 +373,13 @@
 			files = (
 				9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */,
 				9E8759062396C6A700F949D1 /* Utils.swift in Sources */,
-				9E78D1D3239EC930005FC692 /* RequestViewController.swift in Sources */,
+				9E78D1D3239EC930005FC692 /* RequestTableViewController.swift in Sources */,
 				9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */,
 				9E538DB1239953760025C14C /* Workspace.swift in Sources */,
 				9E926F9823945E79002DF561 /* WorkspaceViewController.swift in Sources */,
 				9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */,
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
+				9E9DE3B523E35AF90071BA2F /* RequestViewController.swift in Sources */,
 				9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */,
 				9EE34CA323D9F67C00CA08F2 /* App.swift in Sources */,
 				9E538DAE239953460025C14C /* AppState.swift in Sources */,
