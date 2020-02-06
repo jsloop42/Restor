@@ -38,6 +38,9 @@ class ProjectViewController: UIViewController {
             self.workspace = ws
             self.updateWorkspaceName()
         }
+        // test
+        self.addProject(name: "Test Project", desc: "My awesome project")
+        // end test
     }
     
     func initUI() {

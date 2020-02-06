@@ -16,18 +16,269 @@ class RequestTableViewController: UITableViewController {
     @IBOutlet weak var nameTextField: UITextField!
     @IBOutlet weak var descTextView: UITextView!
     @IBOutlet var infoTableViewManager: InfoTableViewManager!
+    @IBOutlet var kvTableViewManager: KVTableViewManager!
+    @IBOutlet weak var kvTableView: UITableView!
+    /// Whether the request is running, in which case, we don't remove any listeners
+    var isActive = false
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        if !self.isActive {
+            self.kvTableViewManager.destroy()
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("request table vc view did load")
-        let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
-        self.view.addGestureRecognizer(tap)
+//        let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
+//        self.view.addGestureRecognizer(tap)
+        self.kvTableViewManager.kvTableView = self.kvTableView
+        self.kvTableViewManager.delegate = self
+        self.kvTableViewManager.bootstrap()
+        self.kvTableViewManager.reloadData()
+        self.tableView.estimatedRowHeight = 44
+        self.tableView.rowHeight = UITableView.automaticDimension
+        self.tableView.reloadData()
     }
     
     @objc func endEditing() {
+        Log.debug("end editing")
         UIApplication.shared.sendAction(#selector(UIApplication.resignFirstResponder), to: nil, from: nil, for: nil)
     }
     
+    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        Log.debug("request table view did select")
+        if indexPath.row == 2 {
+            if let tv = self.kvTableViewManager.kvTableView { self.kvTableViewManager.tableView(tv, didSelectRowAt: indexPath)
+            }
+        }
+    }
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if indexPath.row == 2 {
+            return self.kvTableViewManager.getHeight()
+        }
+        return UITableView.automaticDimension
+    }
+}
+
+extension RequestTableViewController: KVTableViewDelegate {
+    func reloadData() {
+        self.tableView.reloadData()
+    }
+}
+
+protocol KVTableViewDelegate: class {
+    func reloadData()
+}
+
+class KVHeaderCell: UITableViewCell {
+    @IBOutlet weak var headerTitleBtn: UIButton!
+}
+
+protocol KVContentCellDelegate: class {
+    func enableEditing(indexPath: IndexPath)
+    func disableEditing(indexPath: IndexPath)
+    func clearEditing()
+    func deleteRow(indexPath: IndexPath)
+}
+
+class KVContentCell: UITableViewCell {
+    @IBOutlet weak var keyTextField: UITextField!
+    @IBOutlet weak var valueTextField: UITextField!
+    @IBOutlet weak var deleteBtn: UIButton!
+    @IBOutlet weak var deleteView: UIView!
+    @IBOutlet weak var containerView: UIView!
+    weak var delegate: KVContentCellDelegate?
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        Log.debug("kvcontentcell awake from nib")
+        self.initUI()
+        self.initEvents()
+    }
+    
+    func initUI() {
+        self.deleteView.isHidden = true
+    }
+    
+    func initEvents() {
+        let deleteBtnTap = UITapGestureRecognizer(target: self, action: #selector(self.deleteBtnDidTap))
+        deleteBtnTap.cancelsTouchesInView = false
+        self.deleteBtn.addGestureRecognizer(deleteBtnTap)
+        let deleteViewTap = UITapGestureRecognizer(target: self, action: #selector(self.deleteViewDidTap))
+        self.deleteView.addGestureRecognizer(deleteViewTap)
+    }
+    
+    @objc func deleteBtnDidTap() {
+        Log.debug("delete row did tap")
+        self.delegate?.clearEditing()
+        self.delegate?.enableEditing(indexPath: IndexPath(row: self.tag, section: 0))
+        UIView.transition(with: self, duration: 0.5, options: .curveEaseIn, animations: {
+            self.deleteView.isHidden = false
+        }, completion: nil)
+    }
+    
+    @objc func deleteViewDidTap() {
+        Log.debug("delete view did tap")
+        self.delegate?.deleteRow(indexPath: IndexPath(row: self.tag, section: 0))
+    }
+}
+
+class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
+    weak var kvTableView: UITableView?
+    weak var delegate: KVTableViewDelegate?
+    var model: [RequestDataProtocol] = []
+    var height: CGFloat = 44
+    var editingIndexPath: IndexPath?
+    
+    deinit {
+        Log.debug("kvTableViewManager deinit")
+    }
+    
+    override init() {
+        super.init()
+        Log.debug("kvTableViewManger init")
+    }
+    
+    func destroy() {
+        self.delegate = nil
+    }
+    
+    func bootstrap() {
+        self.kvTableView?.estimatedRowHeight = 44
+        self.kvTableView?.rowHeight = UITableView.automaticDimension
+        self.kvTableView?.allowsMultipleSelectionDuringEditing = false
+    }
+    
+    func addRequestDataToModel(_ data: RequestDataProtocol) {
+        self.model.append(data)
+    }
+    
+    func removeRequestDataFromModel(_ index: Int) {
+        if self.model.count > index {
+            self.model.remove(at: index)
+        }
+    }
+    
+    func reloadData() {
+        self.kvTableView?.reloadData()
+    }
+    
+    func getHeight() -> CGFloat {
+        return CGFloat(self.model.count * 114 + 44)
+    }
+    
+//    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+//        if indexPath == self.editingIndexPath {
+//            return true
+//        }
+//        return false
+//    }
+    
+//    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+//        if indexPath.section == 0 {
+//            if editingStyle == .delete {
+//                let row = indexPath.row
+//                if self.model.count > row {
+//                    self.model.remove(at: row)
+//                }
+//            }
+//        }
+//    }
+//
+//    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+//        let deleteAction = UIContextualAction(style: .destructive, title: "Delete") { (action: UIContextualAction, view: UIView, success: @escaping (Bool) -> Void) in
+//            success(true)
+//        }
+//        deleteAction.backgroundColor = .red
+//        return UISwipeActionsConfiguration(actions: [deleteAction])
+//    }
+
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 2
+    }
+    
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if section == 0 {
+            return self.model.count
+        }
+        return 1
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if indexPath.section == 0 {
+            let cell = tableView.dequeueReusableCell(withIdentifier: "kvContentCell", for: indexPath) as! KVContentCell
+            cell.delegate = self
+            let row = indexPath.row
+            self.hideDeleteRowView(cell: cell)
+            if self.model.count > row {
+                let data = self.model[row]
+                cell.keyTextField.text = data.getKey()
+                cell.valueTextField.text = data.getValue()
+                cell.tag = row
+            }
+            return cell
+        }
+        let cell = tableView.dequeueReusableCell(withIdentifier: "kvHeaderCell", for: indexPath) as! KVHeaderCell
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        Log.debug("kvTableView row did select")
+        self.clearEditing()
+        if indexPath.section == 1 {  // header
+            self.addRequestDataToModel(RequestData())
+            self.disableEditing(indexPath: indexPath)
+            self.reloadData()
+            self.delegate?.reloadData()
+        }
+    }
+    
+    func previewActions(forCellAt indexPath: IndexPath) {
+        guard let cell = self.kvTableView?.cellForRow(at: indexPath) as? KVContentCell else { return }
+
+        UIView.animate(withDuration: 0.3, animations: {
+            cell.containerView.transform = CGAffineTransform.identity.translatedBy(x: -64, y: 0)
+        }, completion: nil)
+    }
+    
+    func hideDeleteRowView(cell: KVContentCell) {
+        cell.containerView.transform = CGAffineTransform.identity
+        cell.deleteView.isHidden = true
+    }
+    
+    func hideActions(forCellAt indexPath: IndexPath) {
+        Log.debug("hide actions")
+        guard let cell = self.kvTableView?.cellForRow(at: indexPath) as? KVContentCell else { return }
+        UIView.animate(withDuration: 0.3, animations: {
+            self.hideDeleteRowView(cell: cell)
+        }, completion: nil)
+    }
+}
+
+extension KVTableViewManager: KVContentCellDelegate {
+    func enableEditing(indexPath: IndexPath) {
+        self.editingIndexPath = indexPath
+        self.previewActions(forCellAt: indexPath)
+    }
+    
+    func disableEditing(indexPath: IndexPath) {
+        self.editingIndexPath = nil
+        self.hideActions(forCellAt: indexPath)
+    }
+    
+    func clearEditing() {
+        if let indexPath = self.editingIndexPath {
+            self.hideActions(forCellAt: indexPath)
+        }
+    }
+    
+    func deleteRow(indexPath: IndexPath) {
+        self.removeRequestDataFromModel(indexPath.row)
+        self.reloadData()
+        self.delegate?.reloadData()
+    }
 }
 
 //class HeaderCollectionViewCell: UICollectionViewCell {
