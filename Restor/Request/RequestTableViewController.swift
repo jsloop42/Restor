@@ -16,14 +16,16 @@ class RequestTableViewController: UITableViewController {
     @IBOutlet weak var nameTextField: UITextField!
     @IBOutlet weak var descTextView: UITextView!
     @IBOutlet var infoTableViewManager: InfoTableViewManager!
-    @IBOutlet var kvTableViewManager: KVTableViewManager!
-    @IBOutlet weak var kvTableView: UITableView!
+    @IBOutlet var headerKVTableViewManager: KVTableViewManager!
+    @IBOutlet var paramsKVTableViewManager: KVTableViewManager!
+    @IBOutlet weak var headersTableView: UITableView!
+    @IBOutlet weak var paramsTableView: UITableView!
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     
     override func viewWillDisappear(_ animated: Bool) {
         if !self.isActive {
-            self.kvTableViewManager.destroy()
+            self.headerKVTableViewManager.destroy()
         }
     }
     
@@ -32,13 +34,27 @@ class RequestTableViewController: UITableViewController {
         Log.debug("request table vc view did load")
 //        let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
 //        self.view.addGestureRecognizer(tap)
-        self.kvTableViewManager.kvTableView = self.kvTableView
-        self.kvTableViewManager.delegate = self
-        self.kvTableViewManager.bootstrap()
-        self.kvTableViewManager.reloadData()
+        self.initHeadersTableViewManager()
+        self.initParamsTableViewManager()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
+    }
+    
+    func initHeadersTableViewManager() {
+        self.headerKVTableViewManager.kvTableView = self.headersTableView
+        self.headerKVTableViewManager.delegate = self
+        self.headerKVTableViewManager.tableViewType = .header
+        self.headerKVTableViewManager.bootstrap()
+        self.headerKVTableViewManager.reloadData()
+    }
+    
+    func initParamsTableViewManager() {
+        self.paramsKVTableViewManager.kvTableView = self.paramsTableView
+        self.paramsKVTableViewManager.delegate = self
+        self.paramsKVTableViewManager.tableViewType = .params
+        self.paramsKVTableViewManager.bootstrap()
+        self.paramsKVTableViewManager.reloadData()
     }
     
     @objc func endEditing() {
@@ -49,16 +65,26 @@ class RequestTableViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("request table view did select")
         if indexPath.row == 2 {
-            if let tv = self.kvTableViewManager.kvTableView { self.kvTableViewManager.tableView(tv, didSelectRowAt: indexPath)
+            if let tv = self.headerKVTableViewManager.kvTableView { self.headerKVTableViewManager.tableView(tv, didSelectRowAt: indexPath)
+            }
+        } else if indexPath.row == 3 {
+            if let tv = self.paramsKVTableViewManager.kvTableView {
+                self.paramsKVTableViewManager.tableView(tv, didSelectRowAt: indexPath)
             }
         }
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        if indexPath.row == 2 {
-            return self.kvTableViewManager.getHeight()
+        var height: CGFloat!
+        if indexPath.row == 2 && indexPath.section == 0 {
+            height = self.headerKVTableViewManager.getHeight()
+        } else if indexPath.row == 3 && indexPath.section == 0 {
+            height = self.paramsKVTableViewManager.getHeight()
+        } else {
+            height = UITableView.automaticDimension
         }
-        return UITableView.automaticDimension
+        Log.debug("height: \(height)")
+        return height
     }
 }
 
@@ -66,6 +92,11 @@ extension RequestTableViewController: KVTableViewDelegate {
     func reloadData() {
         self.tableView.reloadData()
     }
+}
+
+enum KVTableViewType {
+    case header
+    case params
 }
 
 protocol KVTableViewDelegate: class {
@@ -131,6 +162,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     var model: [RequestDataProtocol] = []
     var height: CGFloat = 44
     var editingIndexPath: IndexPath?
+    var tableViewType: KVTableViewType = .header
     
     deinit {
         Log.debug("kvTableViewManager deinit")
@@ -153,6 +185,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func addRequestDataToModel(_ data: RequestDataProtocol) {
         self.model.append(data)
+        Log.debug("model count: \(self.model.count)")
     }
     
     func removeRequestDataFromModel(_ index: Int) {
@@ -220,7 +253,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             }
             return cell
         }
-        let cell = tableView.dequeueReusableCell(withIdentifier: "kvHeaderCell", for: indexPath) as! KVHeaderCell
+        let cell = tableView.dequeueReusableCell(withIdentifier: "kvTitleCell", for: indexPath) as! KVHeaderCell
         return cell
     }
     
