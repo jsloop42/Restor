@@ -14,7 +14,7 @@ class RequestTableViewController: UITableViewController {
     @IBOutlet weak var urlTextField: UITextField!
     @IBOutlet weak var goBtn: UIButton!
     @IBOutlet weak var nameTextField: UITextField!
-    @IBOutlet weak var descTextView: UITextView!
+    @IBOutlet weak var descTextView: EATextView!
     @IBOutlet var headerKVTableViewManager: KVTableViewManager!
     @IBOutlet var paramsKVTableViewManager: KVTableViewManager!
     @IBOutlet var bodyKVTableViewManager: KVTableViewManager!
@@ -41,8 +41,9 @@ class RequestTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("request table vc view did load")
-//        let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
-//        self.view.addGestureRecognizer(tap)
+        let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
+        tap.cancelsTouchesInView = false
+        self.view.addGestureRecognizer(tap)
         self.initHeadersTableViewManager()
         self.initParamsTableViewManager()
         self.initBodyTableViewManager()
@@ -99,7 +100,7 @@ class RequestTableViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         var height: CGFloat!
         if indexPath.row == CellId.name.rawValue {
-            height = 163
+            height = 152
         } else if indexPath.row == CellId.header.rawValue && indexPath.section == 0 {
             height = self.headerKVTableViewManager.getHeight()
         } else if indexPath.row == CellId.params.rawValue && indexPath.section == 0 {
@@ -344,7 +345,15 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func getHeight() -> CGFloat {
         if self.tableViewType == .body {
-            //return self.kvTableView?.contentSize.height ?? 0
+            if let tv = self.kvTableView {
+                let h = tv.contentSize.height
+                if h < 300 {
+                    return 300
+                }
+                if h > 500 {
+                    return 500
+                }
+            }
             return 300
         }
         return CGFloat(self.model.count * 114 + 44)
