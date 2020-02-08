@@ -225,11 +225,11 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet weak var keyTextField: UITextField!
     @IBOutlet weak var valueTypeBtn: UIButton!
     @IBOutlet weak var valueTextField: UITextField!
-    @IBOutlet weak var rawTextView: UITextView!
+    @IBOutlet weak var rawTextView: EATextView!
     @IBOutlet var bodyLabelViewWidth: NSLayoutConstraint!
     @IBOutlet weak var typeLabel: UILabel!
     weak var delegate: KVContentCellDelegate?
-    private var optionsData: [String] = ["raw", "form", "multipart", "binary"]
+    private var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -242,6 +242,9 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     func initUI() {
         self.kvStackView.isHidden = true
         self.rawStackView.isHidden = false
+        let font = UIFont.monospacedDigitSystemFont(ofSize: 14, weight: .regular)
+        self.rawTextView.font = font
+        self.rawTextView.placeholderFont = font
     }
     
     func initEvents() {
@@ -286,13 +289,35 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.typeLabel.text = "(\(self.optionsData[idx]))"
         self.bodyLabelViewWidth.isActive = false
         switch idx {
-        case 0:
+        case 0:  // json
             self.bodyLabelViewWidth.constant = 60
-        case 1:
+            self.rawTextView.placeholder =
+            """
+            {
+              "loc": "entangled",
+              "num": "8",
+              "state": "quasi"
+            }
+            """
+        case 1:  // xml
+            self.bodyLabelViewWidth.constant = 60
+            self.rawTextView.placeholder =
+                """
+                <?xml version="1.0" encoding="UTF-8"?>
+                <request code="zeta">
+                  <messages>
+                    <message key="input">42</message>
+                  </messages>
+                </response>
+                """
+        case 2:  // raw
+            self.bodyLabelViewWidth.constant = 60
+            self.rawTextView.placeholder = "Raw string"
+        case 3:  // form
             self.bodyLabelViewWidth.constant = 63
-        case 2:
+        case 4:  // multipart
             self.bodyLabelViewWidth.constant = 78
-        case 3:
+        case 5:  // binary
             self.bodyLabelViewWidth.constant = 63
         default:
             break
