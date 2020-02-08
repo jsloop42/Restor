@@ -230,10 +230,21 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet weak var typeLabel: UILabel!
     weak var delegate: KVContentCellDelegate?
     private var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
+    private struct State {
+        var json: String = ""
+        var xml: String = ""
+        var raw: String = ""
+        var form: Any?
+        var multipart: Any?
+        var binary: Data?
+        var selected: Int = OptionsPickerState.selected
+    }
+    private var state: State = State()
     
     override func awakeFromNib() {
         super.awakeFromNib()
         Log.debug("kvcontentcell awake from nib")
+        self.rawTextView.delegate = self
         self.initUI()
         self.initEvents()
         self.updateState()
@@ -242,7 +253,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     func initUI() {
         self.kvStackView.isHidden = true
         self.rawStackView.isHidden = false
-        let font = UIFont.monospacedDigitSystemFont(ofSize: 14, weight: .regular)
+        let font = UIFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
         self.rawTextView.font = font
         self.rawTextView.placeholderFont = font
     }
@@ -299,6 +310,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
               "state": "quasi"
             }
             """
+            self.rawTextView.text = self.state.json
         case 1:  // xml
             self.bodyLabelViewWidth.constant = 60
             self.rawTextView.placeholder =
@@ -310,9 +322,14 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
                   </messages>
                 </response>
                 """
+            self.rawTextView.text = self.state.xml
         case 2:  // raw
             self.bodyLabelViewWidth.constant = 60
-            self.rawTextView.placeholder = "Raw string"
+            self.rawTextView.placeholder =
+                """
+                {"sub":"api-test","res":"ok","code":"0"}
+                """
+            self.rawTextView.text = self.state.raw
         case 3:  // form
             self.bodyLabelViewWidth.constant = 63
         case 4:  // multipart
@@ -323,6 +340,23 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
             break
         }
         self.bodyLabelViewWidth.isActive = true
+    }
+}
+
+extension KVBodyContentCell: UITextViewDelegate {
+    func textViewDidChange(_ textView: UITextView) {
+        let txt = textView.text ?? ""
+        Log.debug("text changed: \(txt)")
+        switch OptionsPickerState.selected {
+        case 0:
+            self.state.json = txt
+        case 1:
+            self.state.xml = txt
+        case 2:
+            self.state.raw = txt
+        default:
+            break
+        }
     }
 }
 
