@@ -24,6 +24,14 @@ class RequestTableViewController: UITableViewController {
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     
+    enum CellId: Int {
+        case url = 0
+        case name = 1
+        case header = 2
+        case params = 3
+        case body = 4
+    }
+    
     override func viewWillDisappear(_ animated: Bool) {
         if !self.isActive {
             self.headerKVTableViewManager.destroy()
@@ -74,14 +82,14 @@ class RequestTableViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("request table view did select")
-        if indexPath.row == 2 {
+        if indexPath.row == CellId.header.rawValue {
             if let tv = self.headerKVTableViewManager.kvTableView { self.headerKVTableViewManager.tableView(tv, didSelectRowAt: indexPath)
             }
-        } else if indexPath.row == 3 {
+        } else if indexPath.row == CellId.params.rawValue {
             if let tv = self.paramsKVTableViewManager.kvTableView {
                 self.paramsKVTableViewManager.tableView(tv, didSelectRowAt: indexPath)
             }
-        } else if indexPath.row == 4 {
+        } else if indexPath.row == CellId.body.rawValue {
             if let tv = self.bodyKVTableViewManager.kvTableView {
                 self.bodyKVTableViewManager.tableView(tv, didSelectRowAt: indexPath)
             }
@@ -90,13 +98,13 @@ class RequestTableViewController: UITableViewController {
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         var height: CGFloat!
-        if indexPath.row == 1 {
+        if indexPath.row == CellId.name.rawValue {
             height = 163
-        } else if indexPath.row == 2 && indexPath.section == 0 {
+        } else if indexPath.row == CellId.header.rawValue && indexPath.section == 0 {
             height = self.headerKVTableViewManager.getHeight()
-        } else if indexPath.row == 3 && indexPath.section == 0 {
+        } else if indexPath.row == CellId.params.rawValue && indexPath.section == 0 {
             height = self.paramsKVTableViewManager.getHeight()
-        } else if indexPath.row == 4 && indexPath.section == 0 {
+        } else if indexPath.row == CellId.body.rawValue && indexPath.section == 0 {
             height = self.bodyKVTableViewManager.getHeight()
         } else {
             height = UITableView.automaticDimension
@@ -110,6 +118,22 @@ extension RequestTableViewController: KVTableViewDelegate {
     func reloadData() {
         self.tableView.reloadData()
     }
+    
+    func presentOptionsVC(_ data: [String], selected: Int) {
+        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.optionsPickerVC.rawValue) as? OptionsPickerViewController {
+            vc.optionsDelegate = self
+            OptionsPickerState.data = data
+            OptionsPickerState.selected = selected
+            self.navigationController?.present(vc, animated: true, completion: nil)
+        }
+    }
+}
+
+extension RequestTableViewController: OptionsPickerViewDelegate {
+    func reloadOptionsData() {
+        self.bodyKVTableViewManager.reloadData()
+        self.tableView.reloadRows(at: [IndexPath(row: CellId.body.rawValue, section: 0)], with: .none)
+    }
 }
 
 enum KVTableViewType {
@@ -120,6 +144,7 @@ enum KVTableViewType {
 
 protocol KVTableViewDelegate: class {
     func reloadData()
+    func presentOptionsVC(_ data: [String], selected: Int)
 }
 
 class KVHeaderCell: UITableViewCell {
@@ -131,6 +156,7 @@ protocol KVContentCellDelegate: class {
     func disableEditing(indexPath: IndexPath)
     func clearEditing()
     func deleteRow(indexPath: IndexPath)
+    func presentOptionsVC(_ data: [String], selected: Int)
 }
 
 protocol KVContentCellType: class {
@@ -199,13 +225,17 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet weak var valueTypeBtn: UIButton!
     @IBOutlet weak var valueTextField: UITextField!
     @IBOutlet weak var rawTextView: UITextView!
+    @IBOutlet var bodyLabelViewWidth: NSLayoutConstraint!
+    @IBOutlet weak var typeLabel: UILabel!
     weak var delegate: KVContentCellDelegate?
+    private var optionsData: [String] = ["raw", "form", "multipart", "binary"]
     
     override func awakeFromNib() {
         super.awakeFromNib()
         Log.debug("kvcontentcell awake from nib")
         self.initUI()
         self.initEvents()
+        self.updateState()
     }
     
     func initUI() {
@@ -219,6 +249,8 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.deleteBtn.addGestureRecognizer(deleteBtnTap)
         let deleteViewTap = UITapGestureRecognizer(target: self, action: #selector(self.deleteViewDidTap))
         self.deleteView.addGestureRecognizer(deleteViewTap)
+        let typeLabelTap = UITapGestureRecognizer(target: self, action: #selector(self.typeBtnDidTap(_:)))
+        self.typeLabel.addGestureRecognizer(typeLabelTap)
     }
     
     @objc func deleteBtnDidTap() {
@@ -237,7 +269,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     @IBAction func typeBtnDidTap(_ sender: Any) {
         Log.debug("type name did tap")
-        // TODO: display modal vc
+        self.delegate?.presentOptionsVC(self.optionsData, selected: OptionsPickerState.selected)
     }
     
     func getDeleteView() -> UIView {
@@ -246,6 +278,25 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     func getContainerView() -> UIView {
         return self.containerView
+    }
+    
+    func updateState() {
+        let idx = OptionsPickerState.selected
+        self.typeLabel.text = "(\(self.optionsData[idx]))"
+        self.bodyLabelViewWidth.isActive = false
+        switch idx {
+        case 0:
+            self.bodyLabelViewWidth.constant = 60
+        case 1:
+            self.bodyLabelViewWidth.constant = 63
+        case 2:
+            self.bodyLabelViewWidth.constant = 78
+        case 3:
+            self.bodyLabelViewWidth.constant = 63
+        default:
+            break
+        }
+        self.bodyLabelViewWidth.isActive = true
     }
 }
 
@@ -333,9 +384,10 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 self.hideDeleteRowView(cell: cell)
                 if self.model.count > row {
                     let data = self.model[row]
+                    cell.tag = row
                     cell.keyTextField.text = data.getKey()
                     cell.valueTextField.text = data.getValue()
-                    cell.tag = row
+                    cell.updateState()
                 }
                 return cell
             } else {
@@ -410,6 +462,10 @@ extension KVTableViewManager: KVContentCellDelegate {
         self.removeRequestDataFromModel(indexPath.row)
         self.reloadData()
         self.delegate?.reloadData()
+    }
+    
+    func presentOptionsVC(_ data: [String], selected: Int) {
+        self.delegate?.presentOptionsVC(data, selected: selected)
     }
 }
 

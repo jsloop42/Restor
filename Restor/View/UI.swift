@@ -68,9 +68,10 @@ class UI {
     }
            
     /// Present the given view controller from the storyboard
-    static func presentScreen(_ vc: UIViewController, storyboard: UIStoryboard, storyboardId: String) {
+    static func presentScreen(_ vc: UIViewController, storyboard: UIStoryboard, storyboardId: String) -> UIViewController {
         let parent = storyboard.instantiateViewController(withIdentifier: storyboardId)
         vc.present(parent, animated: true, completion: nil)
+        return parent
     }
    
     /// Push the given view controller from the storyboard

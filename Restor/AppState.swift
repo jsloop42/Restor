@@ -12,6 +12,7 @@ struct AppState {
     static var workspaces: [Workspace] = []
     static var selectedWorkspace: Int? = nil
     static var selectedProject: Int? = nil
+    static var optionsPickerData: OptionsPickerState?
     
     static func workspace(forIndex index: Int) -> Workspace? {
         if index < self.workspaces.count {
@@ -55,4 +56,10 @@ struct AppState {
         }
         return nil
     }
+}
+
+struct OptionsPickerState {
+    static var data: [String] = []
+    static var selected: Int = 0
+    static var title: String = "body"
 }
