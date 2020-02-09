@@ -1029,33 +1029,6 @@
                                                                                                     <constraint firstItem="ReX-hQ-Pqh" firstAttribute="centerX" secondItem="G6K-hu-Pdz" secondAttribute="centerX" id="qNd-IM-JBv"/>
                                                                                                 </constraints>
                                                                                             </view>
-                                                                                            <stackView hidden="YES" opaque="NO" contentMode="scaleToFill" axis="vertical" distribution="fillEqually" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="j29-tg-j1r" userLabel="KV Stack View">
-                                                                                                <rect key="frame" x="64" y="0.0" width="2" height="74"/>
-                                                                                                <subviews>
-                                                                                                    <stackView opaque="NO" contentMode="scaleToFill" spacing="2" translatesAutoresizingMaskIntoConstraints="NO" id="rTd-a3-CzD">
-                                                                                                        <rect key="frame" x="0.0" y="0.0" width="2" height="33"/>
-                                                                                                        <subviews>
-                                                                                                            <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Key" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="jgO-1Q-vy2" userLabel="Key Text Field">
-                                                                                                                <rect key="frame" x="0.0" y="0.0" width="0.0" height="33"/>
-                                                                                                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                                                                                <textInputTraits key="textInputTraits"/>
-                                                                                                            </textField>
-                                                                                                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" adjustsImageSizeForAccessibilityContentSizeCategory="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="TEW-PZ-fLL" userLabel="Text/File Button">
-                                                                                                                <rect key="frame" x="2" y="0.0" width="0.0" height="33"/>
-                                                                                                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                                                                                <state key="normal" title="Text" image="arrowtriangle.down.circle" catalog="system">
-                                                                                                                    <color key="titleColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-                                                                                                                </state>
-                                                                                                            </button>
-                                                                                                        </subviews>
-                                                                                                    </stackView>
-                                                                                                    <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" placeholder="Value" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="9tq-xp-JJa" userLabel="Value Text Field">
-                                                                                                        <rect key="frame" x="0.0" y="41" width="2" height="33"/>
-                                                                                                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                                                                        <textInputTraits key="textInputTraits"/>
-                                                                                                    </textField>
-                                                                                                </subviews>
-                                                                                            </stackView>
                                                                                             <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" distribution="fillEqually" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="p1n-Xr-lUu" userLabel="Raw Stack View">
                                                                                                 <rect key="frame" x="65" y="0.0" width="283" height="74"/>
                                                                                                 <subviews>
@@ -1077,7 +1050,54 @@
                                                                                                     <constraint firstAttribute="bottom" secondItem="r0l-PP-Spy" secondAttribute="bottom" id="sha-nV-2zZ"/>
                                                                                                 </constraints>
                                                                                             </stackView>
+                                                                                            <tableView hidden="YES" clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="kvBodyFieldTableView" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="Pij-6a-uiW" userLabel="Body Field Table View" customClass="KVBodyFieldTableView" customModule="Restor" customModuleProvider="target">
+                                                                                                <rect key="frame" x="348" y="0.0" width="0.0" height="74"/>
+                                                                                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                                                                                <prototypes>
+                                                                                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="kvBodyTableViewCell" id="oeM-lP-YEO" customClass="KVBodyFieldTableViewCell" customModule="Restor" customModuleProvider="target">
+                                                                                                        <rect key="frame" x="0.0" y="28" width="0.0" height="76.5"/>
+                                                                                                        <autoresizingMask key="autoresizingMask"/>
+                                                                                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="oeM-lP-YEO" id="u7s-hB-aJq">
+                                                                                                            <rect key="frame" x="0.0" y="0.0" width="0.0" height="76.5"/>
+                                                                                                            <autoresizingMask key="autoresizingMask"/>
+                                                                                                            <subviews>
+                                                                                                                <stackView opaque="NO" contentMode="scaleToFill" ambiguous="YES" axis="vertical" distribution="fillEqually" spacing="8" translatesAutoresizingMaskIntoConstraints="NO" id="K53-zA-z88">
+                                                                                                                    <rect key="frame" x="0.0" y="0.0" width="231" height="76.5"/>
+                                                                                                                    <subviews>
+                                                                                                                        <textField opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="eIB-BK-yWP" userLabel="Key Text Field">
+                                                                                                                            <rect key="frame" x="0.0" y="0.0" width="231" height="34.5"/>
+                                                                                                                            <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                                                                                                            <textInputTraits key="textInputTraits"/>
+                                                                                                                        </textField>
+                                                                                                                        <textField opaque="NO" contentMode="scaleToFill" ambiguous="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="k3J-HW-Rrf" userLabel="Value Text Field">
+                                                                                                                            <rect key="frame" x="0.0" y="42.5" width="231" height="34"/>
+                                                                                                                            <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                                                                                                            <textInputTraits key="textInputTraits"/>
+                                                                                                                        </textField>
+                                                                                                                    </subviews>
+                                                                                                                </stackView>
+                                                                                                            </subviews>
+                                                                                                            <constraints>
+                                                                                                                <constraint firstAttribute="bottom" secondItem="K53-zA-z88" secondAttribute="bottom" id="3xL-Zs-FF1"/>
+                                                                                                                <constraint firstItem="K53-zA-z88" firstAttribute="leading" secondItem="u7s-hB-aJq" secondAttribute="leading" id="Xgc-sp-hBZ"/>
+                                                                                                                <constraint firstItem="K53-zA-z88" firstAttribute="top" secondItem="u7s-hB-aJq" secondAttribute="top" id="dJ3-my-IoG"/>
+                                                                                                                <constraint firstAttribute="trailing" secondItem="K53-zA-z88" secondAttribute="trailing" id="sud-1Q-jBq"/>
+                                                                                                            </constraints>
+                                                                                                        </tableViewCellContentView>
+                                                                                                        <connections>
+                                                                                                            <outlet property="keyTextField" destination="eIB-BK-yWP" id="BK2-nt-Jfq"/>
+                                                                                                            <outlet property="valueTextField" destination="k3J-HW-Rrf" id="bGD-Bi-6jf"/>
+                                                                                                        </connections>
+                                                                                                    </tableViewCell>
+                                                                                                </prototypes>
+                                                                                            </tableView>
                                                                                         </subviews>
+                                                                                        <constraints>
+                                                                                            <constraint firstAttribute="trailing" secondItem="Pij-6a-uiW" secondAttribute="trailing" id="4EA-Rw-rXB"/>
+                                                                                            <constraint firstItem="Pij-6a-uiW" firstAttribute="top" secondItem="nzB-YM-eYb" secondAttribute="top" id="PHo-dk-4Yu"/>
+                                                                                            <constraint firstAttribute="bottom" secondItem="Pij-6a-uiW" secondAttribute="bottom" id="fHz-ng-LEu"/>
+                                                                                            <constraint firstItem="Pij-6a-uiW" firstAttribute="centerY" secondItem="nzB-YM-eYb" secondAttribute="centerY" id="k0t-L7-3Yt"/>
+                                                                                        </constraints>
                                                                                     </stackView>
                                                                                 </subviews>
                                                                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
@@ -1119,18 +1139,15 @@
                                                                         </constraints>
                                                                     </tableViewCellContentView>
                                                                     <connections>
+                                                                        <outlet property="bodyFieldTableView" destination="Pij-6a-uiW" id="lTU-hd-doA"/>
                                                                         <outlet property="bodyLabelViewWidth" destination="Lev-ZR-RUK" id="0oY-j4-6F7"/>
                                                                         <outlet property="containerView" destination="P2e-vn-UEM" id="bQn-JT-1ih"/>
                                                                         <outlet property="deleteBtn" destination="hQz-iS-P24" id="fMC-rP-m7G"/>
                                                                         <outlet property="deleteView" destination="5xv-Yy-HJ1" id="htj-un-5ne"/>
-                                                                        <outlet property="keyTextField" destination="jgO-1Q-vy2" id="brV-D9-uY6"/>
-                                                                        <outlet property="kvStackView" destination="j29-tg-j1r" id="GqK-p7-H3u"/>
                                                                         <outlet property="rawStackView" destination="p1n-Xr-lUu" id="A9Z-mg-KLV"/>
                                                                         <outlet property="rawTextView" destination="r0l-PP-Spy" id="dFm-EX-ZKb"/>
                                                                         <outlet property="typeLabel" destination="ReX-hQ-Pqh" id="ga1-ml-zxy"/>
                                                                         <outlet property="typeNameBtn" destination="G6K-hu-Pdz" id="Ib9-WZ-pYe"/>
-                                                                        <outlet property="valueTextField" destination="9tq-xp-JJa" id="lfZ-YG-CU4"/>
-                                                                        <outlet property="valueTypeBtn" destination="TEW-PZ-fLL" id="T5g-2F-gMB"/>
                                                                     </connections>
                                                                 </tableViewCell>
                                                                 <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="kvTitleCell" id="noP-9p-kYp" userLabel="BodyTitleCell" customClass="KVHeaderCell" customModule="Restor" customModuleProvider="target">
@@ -1230,7 +1247,6 @@
         </scene>
     </scenes>
     <resources>
-        <image name="arrowtriangle.down.circle" catalog="system" width="64" height="60"/>
         <image name="greaterthan" catalog="system" width="64" height="54"/>
         <image name="line.horizontal.3.decrease.circle" catalog="system" width="64" height="60"/>
         <image name="minus.circle.fill" catalog="system" width="64" height="60"/>

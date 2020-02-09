@@ -46,3 +46,13 @@ class RequestData: RequestDataProtocol, Codable {
         return value
     }
 }
+
+class RequestBodyData: Codable {
+    var json: String?
+    var xml: String?
+    var raw: String?
+    var form: [RequestData] = []
+    var multipart: [RequestData] = []
+    var binary: String?
+    var selected: Int = 0
+}

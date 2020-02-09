@@ -220,26 +220,14 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet weak var containerView: UIView!
     @IBOutlet weak var deleteView: UIView!
     @IBOutlet weak var typeNameBtn: UIButton!
-    @IBOutlet weak var kvStackView: UIStackView!
     @IBOutlet weak var rawStackView: UIStackView!
-    @IBOutlet weak var keyTextField: UITextField!
-    @IBOutlet weak var valueTypeBtn: UIButton!
-    @IBOutlet weak var valueTextField: UITextField!
     @IBOutlet weak var rawTextView: EATextView!
     @IBOutlet var bodyLabelViewWidth: NSLayoutConstraint!
     @IBOutlet weak var typeLabel: UILabel!
+    @IBOutlet weak var bodyFieldTableView: KVBodyFieldTableView!
     weak var delegate: KVContentCellDelegate?
-    private var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
-    private struct State {
-        var json: String = ""
-        var xml: String = ""
-        var raw: String = ""
-        var form: Any?
-        var multipart: Any?
-        var binary: Data?
-        var selected: Int = OptionsPickerState.selected
-    }
-    private var state: State = State()
+    var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
+    var state = RequestBodyData()
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -247,11 +235,11 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.rawTextView.delegate = self
         self.initUI()
         self.initEvents()
-        self.updateState()
+        self.updateState(self.state)
     }
     
     func initUI() {
-        self.kvStackView.isHidden = true
+        self.bodyFieldTableView.isHidden = true
         self.rawStackView.isHidden = false
         let font = UIFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
         self.rawTextView.font = font
@@ -295,10 +283,26 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         return self.containerView
     }
     
-    func updateState() {
+    func displayFormFields() {
+        self.bodyFieldTableView.isHidden = false
+        self.rawStackView.isHidden = true
+        self.bodyFieldTableView.data = self.state.form
+        // test
+        self.bodyFieldTableView.data = [RequestData(key: "test", value: "test")]
+        // end test
+        self.bodyFieldTableView.reloadData()
+    }
+    
+    func hideFormFields() {
+        self.bodyFieldTableView.isHidden = true
+        self.rawStackView.isHidden = false
+    }
+    
+    func updateState(_ data: RequestBodyData) {
         let idx = OptionsPickerState.selected
         self.typeLabel.text = "(\(self.optionsData[idx]))"
         self.bodyLabelViewWidth.isActive = false
+        self.state.selected = OptionsPickerState.selected
         switch idx {
         case 0:  // json
             self.bodyLabelViewWidth.constant = 60
@@ -332,6 +336,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
             self.rawTextView.text = self.state.raw
         case 3:  // form
             self.bodyLabelViewWidth.constant = 63
+            self.displayFormFields()
         case 4:  // multipart
             self.bodyLabelViewWidth.constant = 78
         case 5:  // binary
@@ -360,10 +365,58 @@ extension KVBodyContentCell: UITextViewDelegate {
     }
 }
 
+class KVBodyFieldTableViewCell: UITableViewCell {
+    @IBOutlet weak var keyTextField: UITextField!
+    @IBOutlet weak var valueTextField: UITextField!
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+    }
+}
+
+class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSource {
+    private let cellId = "kvBodyTableViewCell"
+    var data: [RequestDataProtocol] = []
+    var isCellRegistered = false
+    
+    override init(frame: CGRect, style: UITableView.Style) {
+        super.init(frame: frame, style: style)
+        Log.debug("kvbodyfieldtableview init")
+        self.bootstrap()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        Log.debug("kvbodyfieldtableview init coder")
+        self.bootstrap()
+    }
+    
+    func bootstrap() {
+        self.delegate = self
+        self.dataSource = self
+    }
+        
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return self.data.count
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: self.cellId, for: indexPath) as! KVBodyFieldTableViewCell
+        let row = indexPath.row
+        if self.data.count > row {
+            let x = self.data[row]
+            cell.keyTextField.text = x.getKey()
+            cell.valueTextField.text = x.getValue()
+        }
+        return cell
+    }
+}
+
 class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     weak var kvTableView: UITableView?
     weak var delegate: KVTableViewDelegate?
     var model: [RequestDataProtocol] = []
+    var bodyModel: RequestBodyData?
     var height: CGFloat = 44
     var editingIndexPath: IndexPath?
     var tableViewType: KVTableViewType = .header
@@ -399,6 +452,11 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func reloadData() {
+        if self.tableViewType == .body {
+            if let cell = self.kvTableView?.cellForRow(at: IndexPath(row: 0, section: 0)) as? KVBodyContentCell {
+                cell.state.selected = OptionsPickerState.selected
+            }
+        }
         self.kvTableView?.reloadData()
     }
     
@@ -447,15 +505,17 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         if indexPath.section == 0 {
             if self.tableViewType == .body {
                 let cell = tableView.dequeueReusableCell(withIdentifier: "bodyContentCell", for: indexPath) as! KVBodyContentCell
-                cell.delegate = self
                 let row = indexPath.row
+                if cell.state.selected == 3 {  // form
+                    cell.displayFormFields()
+                } else {
+                    cell.hideFormFields()
+                }
+                cell.delegate = self
                 self.hideDeleteRowView(cell: cell)
                 if self.model.count > row {
-                    let data = self.model[row]
                     cell.tag = row
-                    cell.keyTextField.text = data.getKey()
-                    cell.valueTextField.text = data.getValue()
-                    cell.updateState()
+                    cell.updateState(self.bodyModel ?? cell.state)
                 }
                 return cell
             } else {
