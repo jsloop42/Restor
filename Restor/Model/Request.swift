@@ -15,7 +15,7 @@ class Request: Codable {
     var url: String
     var method: String
     var headers: [RequestData] = []
-    var body: Data?
+    var body: RequestBodyData?
     weak var project: Project?
 }
 

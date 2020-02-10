@@ -10,6 +10,8 @@ import Foundation
 import UIKit
 import InfiniteLayout
 
+typealias RequestVC = RequestTableViewController
+
 class RequestTableViewController: UITableViewController {
     @IBOutlet weak var urlTextField: UITextField!
     @IBOutlet weak var goBtn: UIButton!
@@ -23,6 +25,8 @@ class RequestTableViewController: UITableViewController {
     @IBOutlet weak var bodyTableView: UITableView!
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
+    private let nc = NotificationCenter.default
+    static var state: Request?
     
     enum CellId: Int {
         case url = 0
@@ -30,6 +34,10 @@ class RequestTableViewController: UITableViewController {
         case header = 2
         case params = 3
         case body = 4
+    }
+    
+    deinit {
+        self.nc.removeObserver(self)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -47,9 +55,14 @@ class RequestTableViewController: UITableViewController {
         self.initHeadersTableViewManager()
         self.initParamsTableViewManager()
         self.initBodyTableViewManager()
+        self.initEvents()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
+    }
+    
+    func initEvents() {
+        self.nc.addObserver(self, selector: #selector(self.reloadTableView), name: NotificationKey.reloadRequestTableView, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -112,6 +125,12 @@ class RequestTableViewController: UITableViewController {
         }
         Log.debug("height: \(height)")
         return height
+    }
+    
+    @objc func reloadTableView() {
+        Log.debug("request table view reload")
+        self.bodyKVTableViewManager.reloadData()
+        self.reloadData()
     }
 }
 
@@ -287,9 +306,6 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.bodyFieldTableView.isHidden = false
         self.rawStackView.isHidden = true
         self.bodyFieldTableView.data = self.state.form
-        // test
-        self.bodyFieldTableView.data = [RequestData(key: "test", value: "test")]
-        // end test
         self.bodyFieldTableView.reloadData()
     }
     
@@ -365,19 +381,45 @@ extension KVBodyContentCell: UITextViewDelegate {
     }
 }
 
-class KVBodyFieldTableViewCell: UITableViewCell {
+protocol KVBodyFieldTableViewCellDelegate: class {
+    func setData(_ data: RequestDataProtocol, for row: Int)
+}
+
+class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     @IBOutlet weak var keyTextField: UITextField!
     @IBOutlet weak var valueTextField: UITextField!
-    
+    weak var delegate: KVBodyFieldTableViewCellDelegate?
+    var isValueTextFieldActive = false
+
     override func awakeFromNib() {
         super.awakeFromNib()
+        self.bootstrap()
+    }
+    
+    func bootstrap() {
+        self.keyTextField.delegate = self
+        self.valueTextField.delegate = self
+    }
+    
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        self.isValueTextFieldActive = textField == self.valueTextField
+    }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        if textField == self.keyTextField {
+            self.delegate?.setData(RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? ""), for: self.tag)
+            self.isValueTextFieldActive = true
+        } else if textField == self.valueTextField {
+            self.delegate?.setData(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""), for: self.tag)
+        }
     }
 }
 
-class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSource {
+class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSource, KVBodyFieldTableViewCellDelegate {
     private let cellId = "kvBodyTableViewCell"
     var data: [RequestDataProtocol] = []
     var isCellRegistered = false
+    private let nc = NotificationCenter.default
     
     override init(frame: CGRect, style: UITableView.Style) {
         super.init(frame: frame, style: style)
@@ -397,18 +439,42 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
         
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.data.count
+        if self.data.count == 0 { return 1 }
+        if let last = self.data.last {
+            if last.getKey().isEmpty && last.getValue().isEmpty {
+                return self.data.count
+            }
+        }
+        return self.data.count + 1
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: self.cellId, for: indexPath) as! KVBodyFieldTableViewCell
         let row = indexPath.row
+        cell.tag = row
+        cell.delegate = self
         if self.data.count > row {
             let x = self.data[row]
             cell.keyTextField.text = x.getKey()
             cell.valueTextField.text = x.getValue()
         }
         return cell
+    }
+    
+    func setData(_ data: RequestDataProtocol, for row: Int) {
+        Log.debug("set data: \(row)")
+        if self.data.count > row {
+            self.data[row] = data
+        } else {
+            self.data.append(data)
+        }
+        self.reloadData()
+        if let cell = self.cellForRow(at: IndexPath(row: row, section: 0)) as? KVBodyFieldTableViewCell {
+            if cell.isValueTextFieldActive {
+                cell.valueTextField.becomeFirstResponder()
+            }
+        }
+        // TODO: reload to update the cell height, update RequestVC.state
     }
 }
 
