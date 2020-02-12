@@ -12,7 +12,8 @@ import InfiniteLayout
 
 typealias RequestVC = RequestTableViewController
 
-class RequestTableViewController: UITableViewController {
+class RequestTableViewController: UITableViewController, UITextFieldDelegate, UITextViewDelegate {
+    static weak var shared: RequestTableViewController?
     @IBOutlet weak var urlTextField: UITextField!
     @IBOutlet weak var goBtn: UIButton!
     @IBOutlet weak var nameTextField: UITextField!
@@ -26,7 +27,7 @@ class RequestTableViewController: UITableViewController {
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     private let nc = NotificationCenter.default
-    static var state: Request?
+    static var state: Request = Request()
     
     enum CellId: Int {
         case url = 0
@@ -37,6 +38,7 @@ class RequestTableViewController: UITableViewController {
     }
     
     deinit {
+        RequestTableViewController.shared = nil
         self.nc.removeObserver(self)
     }
     
@@ -48,20 +50,28 @@ class RequestTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        RequestTableViewController.shared = self
         Log.debug("request table vc view did load")
-        let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
-        tap.cancelsTouchesInView = false
-        self.view.addGestureRecognizer(tap)
+        self.initUI()
+        self.initEvents()
+    }
+    
+    func initUI() {
         self.initHeadersTableViewManager()
         self.initParamsTableViewManager()
         self.initBodyTableViewManager()
-        self.initEvents()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
+        self.urlTextField.delegate = self
+        self.nameTextField.delegate = self
+        self.descTextView.delegate = self
     }
     
     func initEvents() {
+        let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
+        tap.cancelsTouchesInView = false
+        self.view.addGestureRecognizer(tap)
         self.nc.addObserver(self, selector: #selector(self.reloadTableView), name: NotificationKey.reloadRequestTableView, object: nil)
     }
     
@@ -132,6 +142,26 @@ class RequestTableViewController: UITableViewController {
         self.bodyKVTableViewManager.reloadData()
         self.reloadData()
     }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        if textField == self.urlTextField {
+            RequestVC.state.url = textField.text ?? ""
+        } else if textField == self.nameTextField {
+            RequestVC.state.name = textField.text ?? ""
+        }
+    }
+    
+    func textViewDidEndEditing(_ textView: UITextView) {
+        if textView == self.descTextView {
+            RequestVC.state.desc = textView.text ?? ""
+        }
+    }
+    
+    static func addRequestBodyToState() {
+        if self.state.body == nil {
+            self.state.body = RequestBodyData()
+        }
+    }
 }
 
 extension RequestTableViewController: KVTableViewDelegate {
@@ -142,8 +172,11 @@ extension RequestTableViewController: KVTableViewDelegate {
     func presentOptionsVC(_ data: [String], selected: Int) {
         if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.optionsPickerVC.rawValue) as? OptionsPickerViewController {
             vc.optionsDelegate = self
+            if RequestVC.state.body == nil {
+                RequestVC.state.body = RequestBodyData()
+            }
+            RequestVC.state.body!.selected = selected
             OptionsPickerState.data = data
-            OptionsPickerState.selected = selected
             self.navigationController?.present(vc, animated: true, completion: nil)
         }
     }
@@ -183,6 +216,8 @@ protocol KVContentCellType: class {
     func getDeleteView() -> UIView
     func getContainerView() -> UIView
 }
+
+// MARK: - Key-Value content cell
 
 class KVContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet weak var keyTextField: UITextField!
@@ -233,6 +268,8 @@ class KVContentCell: UITableViewCell, KVContentCellType {
         return self.containerView
     }
 }
+
+// MARK: - Body cell
 
 class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet weak var deleteBtn: UIButton!
@@ -291,7 +328,11 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     @IBAction func typeBtnDidTap(_ sender: Any) {
         Log.debug("type name did tap")
-        self.delegate?.presentOptionsVC(self.optionsData, selected: OptionsPickerState.selected)
+        var selected: Int! = 0
+        if let body = RequestVC.state.body {
+            selected = body.selected
+        }
+        self.delegate?.presentOptionsVC(self.optionsData, selected: selected)
     }
     
     func getDeleteView() -> UIView {
@@ -305,7 +346,8 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     func displayFormFields() {
         self.bodyFieldTableView.isHidden = false
         self.rawStackView.isHidden = true
-        self.bodyFieldTableView.data = self.state.form
+        RequestVC.addRequestBodyToState()
+        self.bodyFieldTableView.selectedType = RequestBodyType(rawValue: RequestVC.state.body!.selected)!
         self.bodyFieldTableView.reloadData()
     }
     
@@ -315,10 +357,12 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     }
     
     func updateState(_ data: RequestBodyData) {
-        let idx = OptionsPickerState.selected
+        let idx: Int = OptionsPickerState.selected
+        RequestVC.addRequestBodyToState()
+        RequestVC.state.body!.selected = idx
         self.typeLabel.text = "(\(self.optionsData[idx]))"
         self.bodyLabelViewWidth.isActive = false
-        self.state.selected = OptionsPickerState.selected
+        self.state.selected = idx
         switch idx {
         case 0:  // json
             self.bodyLabelViewWidth.constant = 60
@@ -368,7 +412,9 @@ extension KVBodyContentCell: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         let txt = textView.text ?? ""
         Log.debug("text changed: \(txt)")
-        switch OptionsPickerState.selected {
+        guard let body = RequestVC.state.body else { return }
+        let selected = body.selected
+        switch selected {
         case 0:
             self.state.json = txt
         case 1:
@@ -381,8 +427,10 @@ extension KVBodyContentCell: UITextViewDelegate {
     }
 }
 
+// MARK: - Body field table view
+
 protocol KVBodyFieldTableViewCellDelegate: class {
-    func setData(_ data: RequestDataProtocol, for row: Int)
+    func updateUIState(_ row: Int)
 }
 
 class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
@@ -390,6 +438,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     @IBOutlet weak var valueTextField: UITextField!
     weak var delegate: KVBodyFieldTableViewCellDelegate?
     var isValueTextFieldActive = false
+    var selectedType: RequestBodyType = .form
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -405,21 +454,42 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         self.isValueTextFieldActive = textField == self.valueTextField
     }
     
+    func updateState(_ data: RequestData) {
+        RequestVC.addRequestBodyToState()
+        guard let body = RequestVC.state.body else { return }
+        body.selected = self.selectedType.rawValue
+        if self.selectedType == .form {
+            if body.form.count > self.tag {
+                body.form[self.tag] = data
+            } else {
+                body.form.append(data)
+            }
+        } else if self.selectedType == .multipart {
+            if body.multipart.count > self.tag {
+                body.multipart[self.tag] = data
+            } else {
+                body.multipart.append(data)
+            }
+        }
+        RequestVC.state.body = body
+    }
+    
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField == self.keyTextField {
-            self.delegate?.setData(RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? ""), for: self.tag)
+            self.updateState(RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? ""))
             self.isValueTextFieldActive = true
         } else if textField == self.valueTextField {
-            self.delegate?.setData(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""), for: self.tag)
+            self.updateState(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""))
         }
+        self.delegate?.updateUIState(self.tag)
     }
 }
 
 class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSource, KVBodyFieldTableViewCellDelegate {
     private let cellId = "kvBodyTableViewCell"
-    var data: [RequestDataProtocol] = []
     var isCellRegistered = false
     private let nc = NotificationCenter.default
+    var selectedType: RequestBodyType = .form
     
     override init(frame: CGRect, style: UITableView.Style) {
         super.init(frame: frame, style: style)
@@ -439,13 +509,19 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
         
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if self.data.count == 0 { return 1 }
-        if let last = self.data.last {
+        guard let body = RequestVC.state.body else { return 0 }
+        let data: [RequestData] = {
+            if self.selectedType == .form {
+                return body.form
+            }
+            return body.multipart
+        }()
+        if let last = data.last {
             if last.getKey().isEmpty && last.getValue().isEmpty {
-                return self.data.count
+                return data.count
             }
         }
-        return self.data.count + 1
+        return data.count + 1
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -453,30 +529,36 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         let row = indexPath.row
         cell.tag = row
         cell.delegate = self
-        if self.data.count > row {
-            let x = self.data[row]
+        var data: [RequestDataProtocol] = []
+        if let body = RequestVC.state.body {
+            if self.selectedType == .form {
+                data = body.form
+            } else if self.selectedType == .multipart {
+                data = body.multipart
+            }
+        }
+        if data.count > row {
+            let x = data[row]
             cell.keyTextField.text = x.getKey()
             cell.valueTextField.text = x.getValue()
         }
         return cell
     }
     
-    func setData(_ data: RequestDataProtocol, for row: Int) {
-        Log.debug("set data: \(row)")
-        if self.data.count > row {
-            self.data[row] = data
-        } else {
-            self.data.append(data)
-        }
+    func updateUIState(_ row: Int) {
+        Log.debug("update UI state: \(row)")
         self.reloadData()
+        RequestVC.shared?.reloadData()
         if let cell = self.cellForRow(at: IndexPath(row: row, section: 0)) as? KVBodyFieldTableViewCell {
             if cell.isValueTextFieldActive {
                 cell.valueTextField.becomeFirstResponder()
             }
         }
-        // TODO: reload to update the cell height, update RequestVC.state
+        // TODO: update table view height
     }
 }
+
+// MARK: - Table view manager
 
 class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     weak var kvTableView: UITableView?
@@ -520,7 +602,12 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     func reloadData() {
         if self.tableViewType == .body {
             if let cell = self.kvTableView?.cellForRow(at: IndexPath(row: 0, section: 0)) as? KVBodyContentCell {
-                cell.state.selected = OptionsPickerState.selected
+                cell.state.selected = {
+                    if let body = RequestVC.state.body {
+                        return body.selected
+                    }
+                    return 0
+                }()
             }
         }
         self.kvTableView?.reloadData()

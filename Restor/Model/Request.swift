@@ -9,14 +9,24 @@
 import Foundation
 
 class Request: Codable {
-    var name: String
-    var desc: String
+    var name: String = ""
+    var desc: String = ""
     var tags: [String] = []
-    var url: String
-    var method: String
+    var url: String = ""
+    var method: String = RequestMethod.get.rawValue
     var headers: [RequestData] = []
     var body: RequestBodyData?
     weak var project: Project?
+    
+    init() {}
+}
+
+enum RequestMethod: String, Codable {
+    case get = "GET"
+    case post = "POST"
+    case put = "PUT"
+    case option = "OPTION"
+    case delete = "DELETE"
 }
 
 protocol RequestDataProtocol {
@@ -54,5 +64,14 @@ class RequestBodyData: Codable {
     var form: [RequestData] = []
     var multipart: [RequestData] = []
     var binary: String?
-    var selected: Int = 0
+    var selected: Int = RequestBodyType.json.rawValue
+}
+
+enum RequestBodyType: Int, Codable {
+    case json
+    case xml
+    case raw
+    case form
+    case multipart
+    case binary
 }
