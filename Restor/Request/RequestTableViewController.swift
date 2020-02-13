@@ -43,9 +43,18 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     }
     
     override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
         if !self.isActive {
             self.headerKVTableViewManager.destroy()
+            self.paramsKVTableViewManager.destroy()
+            self.bodyKVTableViewManager.destroy()
+            RequestVC.shared = nil
         }
+    }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        RequestVC.shared = self
     }
     
     override func viewDidLoad() {
@@ -186,6 +195,10 @@ extension RequestTableViewController: OptionsPickerViewDelegate {
     func reloadOptionsData() {
         self.bodyKVTableViewManager.reloadData()
         self.tableView.reloadRows(at: [IndexPath(row: CellId.body.rawValue, section: 0)], with: .none)
+    }
+    
+    func optionDidSelect(_ row: Int) {
+        RequestVC.state.body!.selected = row
     }
 }
 
@@ -506,6 +519,8 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     func bootstrap() {
         self.delegate = self
         self.dataSource = self
+        self.estimatedRowHeight = 44
+        self.rowHeight = UITableView.automaticDimension
     }
         
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -537,6 +552,8 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 data = body.multipart
             }
         }
+        cell.keyTextField.text = ""
+        cell.valueTextField.text = ""
         if data.count > row {
             let x = data[row]
             cell.keyTextField.text = x.getKey()
@@ -554,7 +571,6 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 cell.valueTextField.becomeFirstResponder()
             }
         }
-        // TODO: update table view height
     }
 }
 
@@ -615,16 +631,18 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func getHeight() -> CGFloat {
         if self.tableViewType == .body {
-            if let tv = self.kvTableView {
-                let h = tv.contentSize.height
-                if h < 300 {
-                    return 300
+            if let body = RequestVC.state.body {
+                if body.selected == RequestBodyType.form.rawValue {
+                    let h = CGFloat((body.form.count + 1) * 114)
+                    Log.debug("form cell height: \(h)")
+                    if h > 700 { return 700 }
                 }
-                if h > 500 {
-                    return 500
+                if body.selected == RequestBodyType.multipart.rawValue {
+                    let h = CGFloat((body.multipart.count + 1) * 114)
+                    Log.debug("multipart cell height: \(h)")
+                    if h > 700 { return 700 }
                 }
             }
-            return 300
         }
         return CGFloat(self.model.count * 114 + 44)
     }
@@ -698,6 +716,11 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             self.reloadData()
             self.delegate?.reloadData()
         }
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        let h = self.getHeight()
+        return h > 500 ? 500 : h
     }
     
     func previewActions(forCellAt indexPath: IndexPath) {

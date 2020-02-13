@@ -10,6 +10,7 @@ import Foundation
 import UIKit
 
 protocol OptionsPickerViewDelegate: class {
+    func optionDidSelect(_ row: Int)
     func reloadOptionsData()
 }
 
@@ -61,7 +62,9 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        OptionsPickerState.selected = indexPath.row
+        let row = indexPath.row
+        OptionsPickerState.selected = row
+        self.optionsDelegate?.optionDidSelect(row)
         self.close()
     }
 }
