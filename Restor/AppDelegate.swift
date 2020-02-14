@@ -7,22 +7,22 @@
 //
 
 import UIKit
-import IQKeyboardManagerSwift
+//import IQKeyboardManagerSwift
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
-    private let keyboardManager = IQKeyboardManager.shared
+    //private let keyboardManager = IQKeyboardManager.shared
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         UI.setGlobalStyle()
-        self.enableIQKeyboardManager()
+        //self.enableIQKeyboardManager()
         return true
     }
     
     func enableIQKeyboardManager() {
-        self.keyboardManager.enable = true
-        self.keyboardManager.enableAutoToolbar = false
+//        self.keyboardManager.enable = true
+//        self.keyboardManager.enableAutoToolbar = false
     }
 
     // MARK: UISceneSession Lifecycle

@@ -139,10 +139,13 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
             height = self.paramsKVTableViewManager.getHeight()
         } else if indexPath.row == CellId.body.rawValue && indexPath.section == 0 {
             height = self.bodyKVTableViewManager.getHeight()
+            if let body = RequestVC.state.body, body.selected == RequestBodyType.form.rawValue {
+                return 400
+            }
         } else {
             height = UITableView.automaticDimension
         }
-        Log.debug("height: \(height)")
+        Log.debug("height: \(height) for index: \(indexPath)")
         return height
     }
     
@@ -464,7 +467,13 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
-        self.isValueTextFieldActive = textField == self.valueTextField
+        if textField == self.valueTextField && !self.isValueTextFieldActive {
+            self.isValueTextFieldActive = true
+            self.delegate?.updateUIState(self.tag)
+            // TODO: test
+        } else {
+            self.isValueTextFieldActive = false
+        }
     }
     
     func updateState(_ data: RequestData) {
@@ -488,13 +497,13 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        if textField == self.keyTextField {
-            self.updateState(RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? ""))
-            self.isValueTextFieldActive = true
-        } else if textField == self.valueTextField {
-            self.updateState(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""))
+        if !self.isValueTextFieldActive {
+            if textField == self.keyTextField {
+                self.updateState(RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? ""))
+            } else if textField == self.valueTextField {
+                self.updateState(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""))
+            }
         }
-        self.delegate?.updateUIState(self.tag)
     }
 }
 
@@ -562,14 +571,28 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         return cell
     }
     
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 84
+    }
+    
     func updateUIState(_ row: Int) {
         Log.debug("update UI state: \(row)")
         self.reloadData()
         RequestVC.shared?.reloadData()
-        if let cell = self.cellForRow(at: IndexPath(row: row, section: 0)) as? KVBodyFieldTableViewCell {
-            if cell.isValueTextFieldActive {
-                cell.valueTextField.becomeFirstResponder()
+        var aRow = 0
+        if let body = RequestVC.state.body {
+            if body.selected == RequestBodyType.form.rawValue {
+                aRow = body.form.count - 1
+            } else if body.selected == RequestBodyType.multipart.rawValue {
+                aRow = body.multipart.count - 1
             }
+        }
+        self.scrollToRow(at: IndexPath(row: aRow, section: 0), at: .top, animated: true)
+        if let cell = self.cellForRow(at: IndexPath(row: row, section: 0)) as? KVBodyFieldTableViewCell {
+            cell.valueTextField.becomeFirstResponder()
+//            if cell.isValueTextFieldActive {
+//                cell.valueTextField.becomeFirstResponder()
+//            }
         }
     }
 }
@@ -579,8 +602,6 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
 class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     weak var kvTableView: UITableView?
     weak var delegate: KVTableViewDelegate?
-    var model: [RequestDataProtocol] = []
-    var bodyModel: RequestBodyData?
     var height: CGFloat = 44
     var editingIndexPath: IndexPath?
     var tableViewType: KVTableViewType = .header
@@ -605,13 +626,50 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func addRequestDataToModel(_ data: RequestDataProtocol) {
-        self.model.append(data)
-        Log.debug("model count: \(self.model.count)")
+        switch self.tableViewType {
+        case .header:
+            if let aData = data as? RequestData {
+                RequestVC.state.headers.append(aData)
+            }
+        case .params:
+            if let aData = data as? RequestData {
+                RequestVC.state.params.append(aData)
+            }
+        case .body:
+            if RequestVC.state.body == nil {
+                RequestVC.addRequestBodyToState()
+            }
+            if let aData = data as? RequestData {
+                if RequestVC.state.body!.selected == RequestBodyType.form.rawValue {
+                    RequestVC.state.body!.form.append(aData)
+                } else if RequestVC.state.body!.selected == RequestBodyType.multipart.rawValue {
+                    RequestVC.state.body!.multipart.append(aData)
+                }
+            }
+        }
     }
     
     func removeRequestDataFromModel(_ index: Int) {
-        if self.model.count > index {
-            self.model.remove(at: index)
+        switch self.tableViewType {
+        case .header:
+            if RequestVC.state.headers.count > index {
+                RequestVC.state.headers.remove(at: index)
+            }
+        case .params:
+            if RequestVC.state.params.count > index {
+                RequestVC.state.params.remove(at: index)
+            }
+        case .body:
+            if RequestVC.state.body == nil { return }
+            if RequestVC.state.body!.selected == RequestBodyType.form.rawValue {
+                if RequestVC.state.body!.form.count > index {
+                    RequestVC.state.body!.form.remove(at: index)
+                }
+            } else if RequestVC.state.body!.selected == RequestBodyType.multipart.rawValue {
+                if RequestVC.state.body!.multipart.count > index {
+                   RequestVC.state.body!.multipart.remove(at: index)
+               }
+            }
         }
     }
     
@@ -630,21 +688,35 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func getHeight() -> CGFloat {
-        if self.tableViewType == .body {
+        var height: CGFloat = 44
+        switch self.tableViewType {
+        case .header:
+            height = CGFloat(RequestVC.state.headers.count * 114 + 44)
+        case .params:
+            height = CGFloat(RequestVC.state.params.count * 114 + 44)
+        case .body:
             if let body = RequestVC.state.body {
-                if body.selected == RequestBodyType.form.rawValue {
-                    let h = CGFloat((body.form.count + 1) * 114)
-                    Log.debug("form cell height: \(h)")
-                    if h > 700 { return 700 }
-                }
-                if body.selected == RequestBodyType.multipart.rawValue {
-                    let h = CGFloat((body.multipart.count + 1) * 114)
-                    Log.debug("multipart cell height: \(h)")
-                    if h > 700 { return 700 }
+                if body.selected == RequestBodyType.json.rawValue {
+                    height = 300  // TODO: update dynamic
+                } else if body.selected == RequestBodyType.xml.rawValue {
+                    height = 300
+                } else if body.selected == RequestBodyType.raw.rawValue {
+                    height = 300
+                } else if body.selected == RequestBodyType.form.rawValue {
+                    height = CGFloat((body.form.count + 1) * 114)
+                    Log.debug("form cell height: \(height)")
+                    //if height > 700 { height = 700 }
+                } else if body.selected == RequestBodyType.multipart.rawValue {
+                    height = CGFloat((body.multipart.count + 1) * 114)
+                    Log.debug("multipart cell height: \(height)")
+                    //if height > 700 { height = 700 }
+                } else if body.selected == RequestBodyType.binary.rawValue {
+                    height = 300
                 }
             }
         }
-        return CGFloat(self.model.count * 114 + 44)
+        Log.debug("kvtableview getHeight: \(height) for type: \(self.tableViewType)")
+        return height
     }
     
     func getContentCellId() -> String {
@@ -663,10 +735,26 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        let state = RequestVC.state
         if section == 0 {
-            return self.model.count
+            switch self.tableViewType {
+            case .header:
+                return state.headers.count
+            case .params:
+                return state.params.count
+            case .body:
+                if state.body == nil { return 0 }
+//                if state.body!.selected == RequestBodyType.form.rawValue {
+//                    return state.body!.form.count + 1
+//                }
+//                if state.body!.selected == RequestBodyType.multipart.rawValue {
+//                    return state.body!.multipart.count + 1
+//                }
+                return 1
+            }
         }
-        if self.tableViewType == .body && self.model.count > 0 {
+        // section 1 (header)
+        if self.tableViewType == .body && RequestVC.state.body != nil {
             return 0
         }
         return 1
@@ -683,10 +771,10 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                     cell.hideFormFields()
                 }
                 cell.delegate = self
+                cell.tag = row
                 self.hideDeleteRowView(cell: cell)
-                if self.model.count > row {
-                    cell.tag = row
-                    cell.updateState(self.bodyModel ?? cell.state)
+                if RequestVC.state.body != nil {
+                    cell.updateState(RequestVC.state.body!)
                 }
                 return cell
             } else {
@@ -694,11 +782,21 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 cell.delegate = self
                 let row = indexPath.row
                 self.hideDeleteRowView(cell: cell)
-                if self.model.count > row {
-                    let data = self.model[row]
-                    cell.keyTextField.text = data.getKey()
-                    cell.valueTextField.text = data.getValue()
-                    cell.tag = row
+                switch self.tableViewType {
+                case .header:
+                    if RequestVC.state.headers.count > row {
+                        let data = RequestVC.state.headers[row]
+                        cell.keyTextField.text = data.getKey()
+                        cell.valueTextField.text = data.getValue()
+                    }
+                case .params:
+                    if RequestVC.state.params.count > row {
+                        let data = RequestVC.state.params[row]
+                        cell.keyTextField.text = data.getKey()
+                        cell.valueTextField.text = data.getValue()
+                    }
+                default:
+                    break
                 }
                 return cell
             }
@@ -720,7 +818,14 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         let h = self.getHeight()
-        return h > 500 ? 500 : h
+        if self.tableViewType == .body {
+            if let body = RequestVC.state.body, body.selected == RequestBodyType.form.rawValue {
+                return 400
+            }
+            Log.debug("kvtableview: height: \(h)")
+            return h
+        }
+        return h
     }
     
     func previewActions(forCellAt indexPath: IndexPath) {

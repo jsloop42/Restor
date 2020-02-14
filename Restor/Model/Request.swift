@@ -15,6 +15,7 @@ class Request: Codable {
     var url: String = ""
     var method: String = RequestMethod.get.rawValue
     var headers: [RequestData] = []
+    var params: [RequestData] = []
     var body: RequestBodyData?
     weak var project: Project?
     
