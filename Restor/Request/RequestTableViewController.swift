@@ -585,6 +585,52 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         }
     }
     
+    // Swipe to delete
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
+            Log.debug("delete row: \(indexPath)")
+            guard let body = RequestVC.state.body else { completion(false); return }
+            var shouldReload = false
+            if self.selectedType == .form {
+                if body.form.count > indexPath.row {
+                    RequestVC.state.body!.form.remove(at: indexPath.row)
+                    shouldReload = true
+                }
+            } else if self.selectedType == .multipart {
+                if body.multipart.count > indexPath.row {
+                    RequestVC.state.body!.multipart.remove(at: indexPath.row)
+                    shouldReload = true
+                }
+            }
+            if shouldReload {
+                self.reloadAllTableViews()
+            }
+            completion(true)
+        }
+        let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete])
+        swipeActionConfig.performsFirstActionWithFullSwipe = false
+        return swipeActionConfig
+    }
+    
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        if indexPath.section == 0 {
+            if let body = RequestVC.state.body {
+                if (self.selectedType == .form && body.form.count <= 1) || (self.selectedType == .multipart && body.multipart.count <= 1) {
+                    return false
+                }
+            }
+            return true
+        }
+        return false
+    }
+    
+    func reloadAllTableViews() {
+        self.reloadData()
+        RequestVC.shared?.reloadData()
+        RequestVC.shared?.bodyKVTableViewManager.reloadData()
+    }
+    
     // MARK: - Delegate
     
     func updateUIState(_ row: Int, callback: () -> Void) {
