@@ -168,6 +168,19 @@ class UI {
             indicator.removeFromSuperview()
         }
     }
+    
+    static func getTextHeight(_ text: String, width: CGFloat, font: UIFont) -> CGFloat {
+        let frame = NSString(string: text)
+                        .boundingRect(with: CGSize(width: width, height: .infinity),
+                                      options: [.usesFontLeading, .usesLineFragmentOrigin],
+                                      attributes: [.font : font],
+                                      context: nil)
+        return frame.size.height
+    }
+    
+    static func endEditing() {
+        UIApplication.shared.sendAction(#selector(UIApplication.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 }
 
 extension UIView {

@@ -11,6 +11,8 @@ import UIKit
 
 class EATextField: UITextField {
     var isColor = true
+    /// Used during table view reload where we need to maintain the focus
+    var canResign = true
     
     override var tintColor: UIColor! {
         didSet {
@@ -31,5 +33,9 @@ class EATextField: UITextField {
             UIColor.clear.setStroke()
         }
         path.stroke()
+    }
+    
+    override var canResignFirstResponder: Bool {
+        return self.canResign
     }
 }

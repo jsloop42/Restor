@@ -38,6 +38,7 @@ protocol RequestDataProtocol {
 class RequestData: RequestDataProtocol, Codable {
     var key: String
     var value: String
+    var isEditing: Bool = false
     
     init() {
         key = ""
