@@ -13,6 +13,8 @@ class EATextField: UITextField {
     var isColor = true
     /// Indiciates whether the textfield can resign as first responder.
     var canResign = true
+    /// To add more padding to the bottom border
+    var borderOffsetY: CGFloat = 0
     
     override var tintColor: UIColor! {
         didSet {
@@ -22,8 +24,8 @@ class EATextField: UITextField {
 
     /// Adds a bottom border if tint color is set.
     override func draw(_ rect: CGRect) {
-        let startingPoint = CGPoint(x: rect.minX, y: rect.maxY)
-        let endingPoint = CGPoint(x: rect.maxX, y: rect.maxY)
+        let startingPoint = CGPoint(x: rect.minX, y: rect.maxY + self.borderOffsetY)
+        let endingPoint = CGPoint(x: rect.maxX, y: rect.maxY + self.borderOffsetY)
         let path = UIBezierPath()
         path.move(to: startingPoint)
         path.addLine(to: endingPoint)

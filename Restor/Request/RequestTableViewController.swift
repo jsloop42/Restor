@@ -43,10 +43,14 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     enum CellId: Int {
         case url = 0
-        case name = 1
-        case header = 2
-        case params = 3
-        case body = 4
+        case spacerAfterUrl = 1
+        case name = 2
+        case spacerAfterName = 3
+        case header = 4
+        case spacerAfterHeader = 5
+        case params = 6
+        case spacerAfterParams = 7
+        case body = 8
     }
     
     deinit {
@@ -89,8 +93,11 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.nameTextField.delegate = self
         self.descTextView.delegate = self
         // Set bottom border
-        self.app.updateTextFieldWithBottomBorder(self.urlTextField)
-        self.app.updateTextFieldWithBottomBorder(self.nameTextField)
+        //self.app.updateTextFieldWithBottomBorder(self.urlTextField)
+        self.urlTextField.isColor = false
+        //self.nameTextField.borderOffsetY = 2
+        self.nameTextField.isColor = false
+        //self.app.updateTextFieldWithBottomBorder(self.nameTextField)
         // test
         self.urlCell.borderColor = .clear
         self.nameCell.borderColor = .clear
@@ -182,12 +189,22 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         var height: CGFloat!
-        if indexPath.row == CellId.name.rawValue {
+        if indexPath.row == CellId.url.rawValue {
+            height = 54
+        } else if indexPath.row == CellId.spacerAfterUrl.rawValue {
+            height = 12
+        } else if indexPath.row == CellId.name.rawValue {
             height = 167
+        } else if indexPath.row == CellId.spacerAfterName.rawValue {
+            height = 16
         } else if indexPath.row == CellId.header.rawValue && indexPath.section == 0 {
             height = self.headerKVTableViewManager.getHeight()
+        } else if indexPath.row == CellId.spacerAfterHeader.rawValue {
+            height = 12
         } else if indexPath.row == CellId.params.rawValue && indexPath.section == 0 {
             height = self.paramsKVTableViewManager.getHeight()
+        } else if indexPath.row == CellId.spacerAfterParams.rawValue {
+            height = 12
         } else if indexPath.row == CellId.body.rawValue && indexPath.section == 0 {
             if let body = RequestVC.state.body, body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue {
                 return RequestVC.bodyFormCellHeight()
@@ -244,9 +261,9 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     static func bodyFormCellHeight() -> CGFloat {
         if let body = RequestVC.state.body {
             let count = body.form.count == 0 ? 1 : body.form.count
-            return CGFloat(count * 84) + 81  // 84: field cell, 81: title cell
+            return CGFloat(count * 88) + 57  // 84: field cell, 81: title cell
         }
-        return 165  // 84 + 81
+        return 167  // 84 + 77
     }
 }
 
@@ -409,6 +426,14 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         let font = UIFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
         self.rawTextView.font = font
         self.rawTextView.placeholderFont = font
+        self.updateLayoutConstraints()
+    }
+    
+    func updateLayoutConstraints() {
+//        self.rawTextViewHeight.isActive = false
+//        let h = self.frame.height - 16
+//        self.rawTextViewHeight.constant = h < 120 ? 120 : h
+//        self.rawTextViewHeight.isActive = true
     }
     
     func initEvents() {
@@ -465,6 +490,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     func hideFormFields() {
         self.bodyFieldTableView.isHidden = true
         self.rawStackView.isHidden = false
+        self.updateLayoutConstraints()
     }
     
     func updateState(_ data: RequestBodyData) {
@@ -527,14 +553,15 @@ extension KVBodyContentCell: UITextViewDelegate {
         let selected = body.selected
         switch selected {
         case 0:
-            self.state.json = txt
+            body.json = txt
         case 1:
-            self.state.xml = txt
+            body.xml = txt
         case 2:
-            self.state.raw = txt
+            body.raw = txt
         default:
             break
         }
+        RequestVC.state.body = body
     }
 }
 
@@ -548,6 +575,7 @@ protocol KVBodyFieldTableViewCellDelegate: class {
 class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     @IBOutlet weak var keyTextField: EATextField!
     @IBOutlet weak var valueTextField: EATextField!
+    @IBOutlet weak var containerView: UIView!
     weak var delegate: KVBodyFieldTableViewCellDelegate?
     var isValueTextFieldActive = false
     var selectedType: RequestBodyType = .form
@@ -817,12 +845,12 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func getTextHeight(_ txt: String) -> CGFloat {
-        var height: CGFloat = UI.getTextHeight(txt, width: 283, font: UIFont.systemFont(ofSize: 14))
-        if height > 300 {
-            height = 300
-        } else if height < 78 {
-            height = 150
+        var width = UIScreen.main.bounds.width - 131
+        if let cell = self.kvTableView?.cellForRow(at: IndexPath(row: 0, section: 0)) as? KVBodyContentCell {
+            width = UIScreen.main.bounds.width - cell.bodyLabelViewWidth.constant
         }
+        var height: CGFloat = UI.getTextHeight(txt, width: width, font: UIFont.systemFont(ofSize: 14))
+        if height < 120 { height = 120 }
         return height
     }
     
@@ -832,7 +860,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         case .header:
             height = CGFloat(RequestVC.state.headers.count * 94 + 44)
         case .params:
-            height = CGFloat(RequestVC.state.params.count * 94 + 48)
+            height = CGFloat(RequestVC.state.params.count * 94 + 44)
         case .body:
             if let body = RequestVC.state.body {
                 if body.selected == RequestBodyType.json.rawValue {
@@ -854,7 +882,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                     height = 300
                 }
             } else {
-                height = 48
+                height = 44
             }
         }
         Log.debug("kvtableview getHeight: \(height) for type: \(self.tableViewType)")
