@@ -13,9 +13,9 @@ typealias RequestVC = RequestTableViewController
 
 class RequestTableViewController: UITableViewController, UITextFieldDelegate, UITextViewDelegate {
     static weak var shared: RequestTableViewController?
-    @IBOutlet weak var urlTextField: UITextField!
+    @IBOutlet weak var urlTextField: EATextField!
     @IBOutlet weak var goBtn: UIButton!
-    @IBOutlet weak var nameTextField: UITextField!
+    @IBOutlet weak var nameTextField: EATextField!
     @IBOutlet weak var descTextView: EATextView!
     @IBOutlet var headerKVTableViewManager: KVTableViewManager!
     @IBOutlet var paramsKVTableViewManager: KVTableViewManager!
@@ -23,9 +23,21 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     @IBOutlet weak var headersTableView: UITableView!
     @IBOutlet weak var paramsTableView: UITableView!
     @IBOutlet weak var bodyTableView: UITableView!
+    @IBOutlet weak var urlCellView: UIView!
+    @IBOutlet weak var nameCellView: UIView!
+    @IBOutlet weak var headerCellView: UIView!
+    @IBOutlet weak var paramsCellView: UIView!
+    @IBOutlet weak var bodyCellView: UIView!
+    @IBOutlet weak var urlCell: UITableViewCell!
+    @IBOutlet weak var nameCell: UITableViewCell!
+    @IBOutlet weak var headerCell: UITableViewCell!
+    @IBOutlet weak var paramsCell: UITableViewCell!
+    @IBOutlet weak var bodyCell: UITableViewCell!
+    
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     private let nc = NotificationCenter.default
+    private let app = App.shared
     static var state: Request = Request()
     var isEndEditing = false
     
@@ -75,6 +87,16 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.urlTextField.delegate = self
         self.nameTextField.delegate = self
         self.descTextView.delegate = self
+        // Set bottom border
+        self.app.updateTextFieldWithBottomBorder(self.urlTextField)
+        self.app.updateTextFieldWithBottomBorder(self.nameTextField)
+        // test
+//        self.urlCell.borderColor = .clear
+//        self.nameCell.borderColor = .clear
+//        self.headerCell.borderColor = .clear
+//        self.paramsCell.borderColor = .clear
+//        self.bodyCell.borderColor = .clear
+        // end test
     }
     
     func initEvents() {
@@ -235,7 +257,7 @@ class KVHeaderCell: UITableViewCell {
 protocol KVContentCellDelegate: class {
     func enableEditing(indexPath: IndexPath)
     func disableEditing(indexPath: IndexPath)
-    func clearEditing()
+    func clearEditing(completion: ((Bool) -> Void)?)
     func deleteRow(indexPath: IndexPath)
     func presentOptionsVC(_ data: [String], selected: Int)
 }
@@ -247,23 +269,30 @@ protocol KVContentCellType: class {
 
 // MARK: - Key-Value content cell
 
-class KVContentCell: UITableViewCell, KVContentCellType {
-    @IBOutlet weak var keyTextField: UITextField!
-    @IBOutlet weak var valueTextField: UITextField!
+class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
+    @IBOutlet weak var keyTextField: EATextField!
+    @IBOutlet weak var valueTextField: EATextField!
     @IBOutlet weak var deleteBtn: UIButton!
     @IBOutlet weak var deleteView: UIView!
     @IBOutlet weak var containerView: UIView!
     weak var delegate: KVContentCellDelegate?
+    private let app = App.shared
+    var editingIndexPath: IndexPath?
+    var isEditingActive = false
     
     override func awakeFromNib() {
         super.awakeFromNib()
         Log.debug("kvcontentcell awake from nib")
+        self.keyTextField.delegate = self
+        self.valueTextField.delegate = self
         self.initUI()
         self.initEvents()
     }
     
     func initUI() {
         self.deleteView.isHidden = true
+        self.app.updateTextFieldWithBottomBorder(self.keyTextField)
+        self.app.updateTextFieldWithBottomBorder(self.valueTextField)
     }
     
     func initEvents() {
@@ -276,11 +305,14 @@ class KVContentCell: UITableViewCell, KVContentCellType {
     
     @objc func deleteBtnDidTap() {
         Log.debug("delete row did tap")
-        self.delegate?.clearEditing()
-        self.delegate?.enableEditing(indexPath: IndexPath(row: self.tag, section: 0))
-        UIView.transition(with: self, duration: 0.5, options: .curveEaseIn, animations: {
-            self.deleteView.isHidden = false
-        }, completion: nil)
+        self.delegate?.clearEditing(completion: { _ in
+            let idxPath = IndexPath(row: self.tag, section: 0)
+            self.editingIndexPath = idxPath
+            self.delegate?.enableEditing(indexPath: idxPath)
+            UIView.transition(with: self, duration: 0.5, options: .curveEaseIn, animations: {
+                self.deleteView.isHidden = false
+            }, completion: nil)
+        })
     }
     
     @objc func deleteViewDidTap() {
@@ -294,6 +326,11 @@ class KVContentCell: UITableViewCell, KVContentCellType {
     
     func getContainerView() -> UIView {
         return self.containerView
+    }
+    
+    // MARK: - Delegate
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        self.delegate?.clearEditing(completion: nil)
     }
 }
 
@@ -342,11 +379,12 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     @objc func deleteBtnDidTap() {
         Log.debug("delete row did tap")
-        self.delegate?.clearEditing()
-        self.delegate?.enableEditing(indexPath: IndexPath(row: self.tag, section: 0))
-        UIView.transition(with: self, duration: 0.5, options: .curveEaseIn, animations: {
-            self.deleteView.isHidden = false
-        }, completion: nil)
+        self.delegate?.clearEditing(completion: { _ in
+            self.delegate?.enableEditing(indexPath: IndexPath(row: self.tag, section: 0))
+            UIView.transition(with: self, duration: 0.5, options: .curveEaseIn, animations: {
+                self.deleteView.isHidden = false
+            }, completion: nil)
+        })
     }
     
     @objc func deleteViewDidTap() {
@@ -487,8 +525,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         Log.debug("textfield did end editing")
         if textField == self.keyTextField {
-            var data = RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? "")
-            self.delegate?.updateUIState(self.tag, callback: {})
+            self.delegate?.updateState(RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? ""))
         } else if textField == self.valueTextField {
             self.delegate?.updateState(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""))
         }
@@ -764,7 +801,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         var height: CGFloat = 44
         switch self.tableViewType {
         case .header:
-            height = CGFloat(RequestVC.state.headers.count * 114 + 44)
+            height = CGFloat(RequestVC.state.headers.count * 94 + 44)
         case .params:
             height = CGFloat(RequestVC.state.params.count * 114 + 44)
         case .body:
@@ -833,13 +870,14 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             if self.tableViewType == .body {
                 let cell = tableView.dequeueReusableCell(withIdentifier: "bodyContentCell", for: indexPath) as! KVBodyContentCell
                 let row = indexPath.row
+                cell.tag = row
+                cell.delegate = self
                 if cell.state.selected == 3 {  // form
                     cell.displayFormFields()
                 } else {
                     cell.hideFormFields()
                 }
-                cell.delegate = self
-                cell.tag = row
+                
                 self.hideDeleteRowView(cell: cell)
                 if RequestVC.state.body != nil {
                     cell.updateState(RequestVC.state.body!)
@@ -847,8 +885,9 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 return cell
             } else {
                 let cell = tableView.dequeueReusableCell(withIdentifier: "kvContentCell", for: indexPath) as! KVContentCell
-                cell.delegate = self
                 let row = indexPath.row
+                cell.tag = row
+                cell.delegate = self
                 self.hideDeleteRowView(cell: cell)
                 switch self.tableViewType {
                 case .header:
@@ -889,18 +928,17 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        var h = self.getHeight()
         if self.tableViewType == .body {
             if let body = RequestVC.state.body, body.selected == RequestBodyType.form.rawValue {
                 return RequestVC.bodyFormCellHeight()
             }
-            Log.debug("kvtableview: height: \(h)")
         }
-        return h
+        return UITableView.automaticDimension
     }
     
     func previewActions(forCellAt indexPath: IndexPath) {
         guard let tv = self.kvTableView else { return }
+        tv.reloadData()
         guard let cell: KVContentCellType = tv.cellForRow(at: indexPath) as? KVContentCellType else { return }
         UIView.animate(withDuration: 0.3, animations: {
             cell.getContainerView().transform = CGAffineTransform.identity.translatedBy(x: -64, y: 0)
@@ -912,29 +950,40 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         cell.getDeleteView().isHidden = true
     }
     
-    func hideActions(forCellAt indexPath: IndexPath) {
+    func hideActions(forCellAt indexPath: IndexPath, completion: ((Bool) -> Void)? = nil) {
         Log.debug("hide actions")
         guard let cell = self.kvTableView?.cellForRow(at: indexPath) as? KVContentCell else { return }
+        cell.isEditingActive = false
+        cell.editingIndexPath = nil
         UIView.animate(withDuration: 0.3, animations: {
             self.hideDeleteRowView(cell: cell)
-        }, completion: nil)
+            self.editingIndexPath = nil
+        }, completion: completion)
     }
 }
 
 extension KVTableViewManager: KVContentCellDelegate {
     func enableEditing(indexPath: IndexPath) {
-        self.editingIndexPath = indexPath
-        self.previewActions(forCellAt: indexPath)
+        if self.editingIndexPath != nil {
+            self.hideActions(forCellAt: self.editingIndexPath!) { _ in
+                self.editingIndexPath = indexPath
+                self.previewActions(forCellAt: indexPath)
+            }
+        } else {
+            self.editingIndexPath = indexPath
+            self.previewActions(forCellAt: indexPath)
+        }
     }
     
     func disableEditing(indexPath: IndexPath) {
-        self.editingIndexPath = nil
         self.hideActions(forCellAt: indexPath)
     }
     
-    func clearEditing() {
+    func clearEditing(completion: ((Bool) -> Void)? = nil) {
         if let indexPath = self.editingIndexPath {
-            self.hideActions(forCellAt: indexPath)
+            self.hideActions(forCellAt: indexPath, completion: completion)
+        } else {
+            if let cb = completion { cb(true) }
         }
     }
     

@@ -40,6 +40,16 @@ class App {
             AppState.workspaces[wsIdx].projects.append(project)
         }
     }
+    
+    /// Draws a bottom border to the given text field
+    func updateTextFieldWithBottomBorder(_ tf: EATextField) {
+        tf.borderStyle = .none
+        if #available(iOS 13.0, *) {
+            tf.tintColor = .secondaryLabel
+        } else {
+            tf.tintColor = .lightGray
+        }
+    }
 }
 
 enum TableCellId: String {

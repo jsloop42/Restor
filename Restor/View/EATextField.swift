@@ -11,8 +11,9 @@ import UIKit
 
 class EATextField: UITextField {
     var isColor = true
-    /// Used during table view reload where we need to maintain the focus
+    /// Indiciates whether the textfield can resign as first responder.
     var canResign = true
+    
     
     override var tintColor: UIColor! {
         didSet {
@@ -20,13 +21,14 @@ class EATextField: UITextField {
         }
     }
 
+    /// Adds a bottom border if tint color is set.
     override func draw(_ rect: CGRect) {
-        let startingPoint = CGPoint(x: rect.minX, y: rect.maxY - 4)
-        let endingPoint = CGPoint(x: rect.maxX, y: rect.maxY - 4)
+        let startingPoint = CGPoint(x: rect.minX, y: rect.maxY)
+        let endingPoint = CGPoint(x: rect.maxX, y: rect.maxY)
         let path = UIBezierPath()
         path.move(to: startingPoint)
         path.addLine(to: endingPoint)
-        path.lineWidth = 1.0
+        path.lineWidth = 0.5
         if self.isColor {
             tintColor.setStroke()
         } else {
