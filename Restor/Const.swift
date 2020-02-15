@@ -12,5 +12,6 @@ struct Const {
 }
 
 struct NotificationKey {
-    static let reloadRequestTableView = Notification.Name("reloadRequestTableView")
+    static let requestTableViewReload = Notification.Name("requestTableViewReload")
+    static let requestViewClearEditing = Notification.Name("requestViewClearEditing")
 }

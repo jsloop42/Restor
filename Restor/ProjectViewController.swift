@@ -23,6 +23,7 @@ class ProjectViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        AppState.activeScreen = .projectListing
         self.navigationItem.title = "Projects"
         self.navigationItem.leftBarButtonItem = self.app.addSettingsBarButton()
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))

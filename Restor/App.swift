@@ -76,3 +76,12 @@ enum RequestHeaderInfo: Int {
     case auth
     case options
 }
+
+enum Screen {
+    case workspaceListing
+    case projectListing
+    case requestListing
+    case request
+    case requestEdit
+    case optionListing
+}

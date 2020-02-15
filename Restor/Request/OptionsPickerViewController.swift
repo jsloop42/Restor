@@ -20,6 +20,11 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     @IBOutlet weak var titleLabel: UILabel!
     weak var optionsDelegate: OptionsPickerViewDelegate?
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        AppState.activeScreen = .optionListing
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("options picker vc view did load")

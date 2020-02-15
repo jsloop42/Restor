@@ -21,6 +21,7 @@ class RequestListViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        AppState.activeScreen = .requestListing
         self.navigationItem.title = "Requests"
     }
     

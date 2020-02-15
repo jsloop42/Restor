@@ -14,7 +14,6 @@ class EATextField: UITextField {
     /// Indiciates whether the textfield can resign as first responder.
     var canResign = true
     
-    
     override var tintColor: UIColor! {
         didSet {
             setNeedsDisplay()

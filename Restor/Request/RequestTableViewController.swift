@@ -66,6 +66,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        AppState.activeScreen = .requestEdit
         RequestVC.shared = self
     }
     
@@ -91,11 +92,11 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.app.updateTextFieldWithBottomBorder(self.urlTextField)
         self.app.updateTextFieldWithBottomBorder(self.nameTextField)
         // test
-//        self.urlCell.borderColor = .clear
-//        self.nameCell.borderColor = .clear
-//        self.headerCell.borderColor = .clear
-//        self.paramsCell.borderColor = .clear
-//        self.bodyCell.borderColor = .clear
+        self.urlCell.borderColor = .clear
+        self.nameCell.borderColor = .clear
+        self.headerCell.borderColor = .clear
+        self.paramsCell.borderColor = .clear
+        self.bodyCell.borderColor = .clear
         // end test
     }
     
@@ -103,7 +104,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
         tap.cancelsTouchesInView = false
         self.view.addGestureRecognizer(tap)
-        self.nc.addObserver(self, selector: #selector(self.reloadTableView), name: NotificationKey.reloadRequestTableView, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.reloadTableView), name: NotificationKey.requestTableViewReload, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.clearEditing), name: NotificationKey.requestViewClearEditing, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -134,13 +136,36 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         Log.debug("end editing")
         self.isEndEditing = true
         UI.endEditing()
+        self.clearEditing()
         DispatchQueue.main.async {
             self.isEndEditing = false
         }
     }
     
+    @objc func clearEditing(_ completion: (() -> Void)? = nil) {
+        var status = ["header": false, "params": false, "body": false]
+        let cb: () -> Void = {
+            if status.values.allSatisfy({ flag -> Bool in return flag }) {
+                if completion != nil { completion!() }
+            }
+        }
+        self.headerKVTableViewManager.clearEditing { _ in
+            status["header"] = true
+            cb()
+        }
+        self.paramsKVTableViewManager.clearEditing { _ in
+            status["params"] = true
+            cb()
+        }
+        self.bodyKVTableViewManager.clearEditing { _ in
+            status["body"] = true
+            cb()
+        }
+    }
+    
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("request table view did select")
+        self.clearEditing()
         if indexPath.row == CellId.header.rawValue {
             if let tv = self.headerKVTableViewManager.kvTableView { self.headerKVTableViewManager.tableView(tv, didSelectRowAt: indexPath)
             }
@@ -158,7 +183,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         var height: CGFloat!
         if indexPath.row == CellId.name.rawValue {
-            height = 152
+            height = 167
         } else if indexPath.row == CellId.header.rawValue && indexPath.section == 0 {
             height = self.headerKVTableViewManager.getHeight()
         } else if indexPath.row == CellId.params.rawValue && indexPath.section == 0 {
@@ -181,12 +206,27 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.reloadData()
     }
     
+    func reloadAllTableViews() {
+        self.headerKVTableViewManager.reloadData()
+        self.paramsKVTableViewManager.reloadData()
+        self.bodyKVTableViewManager.reloadData()
+        self.tableView.reloadData()
+    }
+    
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+        RequestVC.shared?.clearEditing()
+    }
+    
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField == self.urlTextField {
             RequestVC.state.url = textField.text ?? ""
         } else if textField == self.nameTextField {
             RequestVC.state.name = textField.text ?? ""
         }
+    }
+    
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        RequestVC.shared?.clearEditing()
     }
     
     func textViewDidEndEditing(_ textView: UITextView) {
@@ -263,6 +303,8 @@ protocol KVContentCellDelegate: class {
 }
 
 protocol KVContentCellType: class {
+    var isEditingActive: Bool { get set }
+    var editingIndexPath: IndexPath? { get set }
     func getDeleteView() -> UIView
     func getContainerView() -> UIView
 }
@@ -305,7 +347,8 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
     
     @objc func deleteBtnDidTap() {
         Log.debug("delete row did tap")
-        self.delegate?.clearEditing(completion: { _ in
+        RequestVC.shared?.clearEditing({
+        //self.delegate?.clearEditing(completion: { _ in
             let idxPath = IndexPath(row: self.tag, section: 0)
             self.editingIndexPath = idxPath
             self.delegate?.enableEditing(indexPath: idxPath)
@@ -330,7 +373,7 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
     
     // MARK: - Delegate
     func textFieldDidBeginEditing(_ textField: UITextField) {
-        self.delegate?.clearEditing(completion: nil)
+        RequestVC.shared?.clearEditing()
     }
 }
 
@@ -349,6 +392,8 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     weak var delegate: KVContentCellDelegate?
     var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
     var state = RequestBodyData()
+    var isEditingActive: Bool = false
+    var editingIndexPath: IndexPath?
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -379,17 +424,24 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     @objc func deleteBtnDidTap() {
         Log.debug("delete row did tap")
-        self.delegate?.clearEditing(completion: { _ in
+        RequestVC.shared?.clearEditing({
             self.delegate?.enableEditing(indexPath: IndexPath(row: self.tag, section: 0))
             UIView.transition(with: self, duration: 0.5, options: .curveEaseIn, animations: {
                 self.deleteView.isHidden = false
             }, completion: nil)
         })
+//        self.delegate?.clearEditing(completion: { _ in
+//            self.delegate?.enableEditing(indexPath: IndexPath(row: self.tag, section: 0))
+//            UIView.transition(with: self, duration: 0.5, options: .curveEaseIn, animations: {
+//                self.deleteView.isHidden = false
+//            }, completion: nil)
+//        })
     }
     
     @objc func deleteViewDidTap() {
         Log.debug("delete view did tap")
         self.delegate?.deleteRow(indexPath: IndexPath(row: self.tag, section: 0))
+        self.bodyFieldTableView.reloadData()
     }
     
     @IBAction func typeBtnDidTap(_ sender: Any) {
@@ -520,6 +572,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         Log.debug("text field did begin editing")
+        RequestVC.shared?.clearEditing()
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
@@ -531,7 +584,6 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         }
         // TODO: update state
     }
-    
 }
 
 class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSource, KVBodyFieldTableViewCellDelegate {
@@ -760,30 +812,11 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 RequestVC.state.params.remove(at: index)
             }
         case .body:
-            if RequestVC.state.body == nil { return }
-            if RequestVC.state.body!.selected == RequestBodyType.form.rawValue {
-                if RequestVC.state.body!.form.count > index {
-                    RequestVC.state.body!.form.remove(at: index)
-                }
-            } else if RequestVC.state.body!.selected == RequestBodyType.multipart.rawValue {
-                if RequestVC.state.body!.multipart.count > index {
-                   RequestVC.state.body!.multipart.remove(at: index)
-               }
-            }
+            RequestVC.state.body = nil
         }
     }
     
     func reloadData() {
-        if self.tableViewType == .body {
-            if let cell = self.kvTableView?.cellForRow(at: IndexPath(row: 0, section: 0)) as? KVBodyContentCell {
-                cell.state.selected = {
-                    if let body = RequestVC.state.body {
-                        return body.selected
-                    }
-                    return 0
-                }()
-            }
-        }
         self.kvTableView?.reloadData()
     }
     
@@ -803,7 +836,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         case .header:
             height = CGFloat(RequestVC.state.headers.count * 94 + 44)
         case .params:
-            height = CGFloat(RequestVC.state.params.count * 114 + 44)
+            height = CGFloat(RequestVC.state.params.count * 94 + 48)
         case .body:
             if let body = RequestVC.state.body {
                 if body.selected == RequestBodyType.json.rawValue {
@@ -824,6 +857,8 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 } else if body.selected == RequestBodyType.binary.rawValue {
                     height = 300
                 }
+            } else {
+                height = 48
             }
         }
         Log.debug("kvtableview getHeight: \(height) for type: \(self.tableViewType)")
@@ -872,13 +907,18 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 let row = indexPath.row
                 cell.tag = row
                 cell.delegate = self
+                self.hideDeleteRowView(cell: cell)
+                cell.state.selected = {
+                    if let body = RequestVC.state.body {
+                        return body.selected
+                    }
+                    return 0
+                }()
                 if cell.state.selected == 3 {  // form
                     cell.displayFormFields()
                 } else {
                     cell.hideFormFields()
                 }
-                
-                self.hideDeleteRowView(cell: cell)
                 if RequestVC.state.body != nil {
                     cell.updateState(RequestVC.state.body!)
                 }
@@ -914,7 +954,8 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("kvTableView row did select")
-        self.clearEditing()
+        //self.clearEditing()
+        RequestVC.shared?.clearEditing()
         if let reqVC = RequestVC.shared, reqVC.isEndEditing {
             UI.endEditing()
             return
@@ -952,7 +993,16 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func hideActions(forCellAt indexPath: IndexPath, completion: ((Bool) -> Void)? = nil) {
         Log.debug("hide actions")
-        guard let cell = self.kvTableView?.cellForRow(at: indexPath) as? KVContentCell else { return }
+        var cell: KVContentCellType!
+        if let aCell = self.kvTableView?.cellForRow(at: indexPath) as? KVContentCell {
+            cell = aCell
+        } else if let aCell = self.kvTableView?.cellForRow(at: indexPath) as? KVBodyContentCell {
+            cell = aCell
+        }
+        if cell == nil {
+            if let cb = completion { cb(false) }
+            return
+        }
         cell.isEditingActive = false
         cell.editingIndexPath = nil
         UIView.animate(withDuration: 0.3, animations: {

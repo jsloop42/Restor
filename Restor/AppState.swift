@@ -13,6 +13,7 @@ struct AppState {
     static var selectedWorkspace: Int? = nil
     static var selectedProject: Int? = nil
     static var optionsPickerData: OptionsPickerState?
+    static var activeScreen: Screen = .projectListing
     
     static func workspace(forIndex index: Int) -> Workspace? {
         if index < self.workspaces.count {

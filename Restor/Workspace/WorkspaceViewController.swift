@@ -31,6 +31,7 @@ class WorkspaceViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         WorkspaceViewController.shared = self
+        AppState.activeScreen = .workspaceListing
         AppState.selectedWorkspace = nil
         self.navigationItem.title = "Workspaces"
         self.navigationItem.leftBarButtonItem = self.app.addSettingsBarButton()
