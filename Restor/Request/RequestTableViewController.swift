@@ -244,9 +244,9 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     static func bodyFormCellHeight() -> CGFloat {
         if let body = RequestVC.state.body {
             let count = body.form.count == 0 ? 1 : body.form.count
-            return CGFloat(count * 84) + 77  // 84: field cell, 77: title cell
+            return CGFloat(count * 84) + 81  // 84: field cell, 81: title cell
         }
-        return 161  // 84 + 77
+        return 165  // 84 + 81
     }
 }
 
@@ -348,7 +348,6 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
     @objc func deleteBtnDidTap() {
         Log.debug("delete row did tap")
         RequestVC.shared?.clearEditing({
-        //self.delegate?.clearEditing(completion: { _ in
             let idxPath = IndexPath(row: self.tag, section: 0)
             self.editingIndexPath = idxPath
             self.delegate?.enableEditing(indexPath: idxPath)
@@ -430,12 +429,6 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
                 self.deleteView.isHidden = false
             }, completion: nil)
         })
-//        self.delegate?.clearEditing(completion: { _ in
-//            self.delegate?.enableEditing(indexPath: IndexPath(row: self.tag, section: 0))
-//            UIView.transition(with: self, duration: 0.5, options: .curveEaseIn, animations: {
-//                self.deleteView.isHidden = false
-//            }, completion: nil)
-//        })
     }
     
     @objc func deleteViewDidTap() {
@@ -559,6 +552,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     var isValueTextFieldActive = false
     var selectedType: RequestBodyType = .form
     var isKeyTextFieldActive = false
+    private let app = App.shared
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -568,6 +562,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     func bootstrap() {
         self.keyTextField.delegate = self
         self.valueTextField.delegate = self
+        self.app.updateTextFieldWithBottomBorder(self.keyTextField)
+        self.app.updateTextFieldWithBottomBorder(self.valueTextField)
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
