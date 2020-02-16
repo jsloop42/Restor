@@ -278,9 +278,7 @@ extension RequestTableViewController: KVTableViewDelegate {
     func presentOptionsVC(_ data: [String], selected: Int) {
         if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.optionsPickerVC.rawValue) as? OptionsPickerViewController {
             vc.optionsDelegate = self
-            if RequestVC.state.body == nil {
-                RequestVC.state.body = RequestBodyData()
-            }
+            RequestVC.addRequestBodyToState()
             RequestVC.state.body!.selected = selected
             OptionsPickerState.data = data
             self.navigationController?.present(vc, animated: true, completion: nil)
@@ -417,7 +415,6 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet weak var bodyFieldTableView: KVBodyFieldTableView!
     weak var delegate: KVContentCellDelegate?
     var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
-    var state = RequestBodyData()
     var isEditingActive: Bool = false
     var editingIndexPath: IndexPath?
     
@@ -427,7 +424,8 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.rawTextView.delegate = self
         self.initUI()
         self.initEvents()
-        self.updateState(self.state)
+        RequestVC.addRequestBodyToState()
+        self.updateState(RequestVC.state.body!)
     }
     
     func initUI() {
@@ -496,20 +494,18 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     func updateState(_ data: RequestBodyData) {
         let idx: Int = OptionsPickerState.selected
-        RequestVC.addRequestBodyToState()
         RequestVC.state.body!.selected = idx
         self.typeLabel.text = "(\(self.optionsData[idx]))"
         self.bodyLabelViewWidth.isActive = false
-        self.state.selected = idx
         switch idx {
         case 0:  // json
-            self.rawTextView.text = self.state.json
+            self.rawTextView.text = data.json
             self.bodyLabelViewWidth.constant = 60
         case 1:  // xml
-            self.rawTextView.text = self.state.xml
+            self.rawTextView.text = data.xml
             self.bodyLabelViewWidth.constant = 60
         case 2:  // raw
-            self.rawTextView.text = self.state.raw
+            self.rawTextView.text = data.raw
             self.bodyLabelViewWidth.constant = 60
         case 3:  // form
             self.displayFormFields()
@@ -685,6 +681,12 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             cell.valueTextField.text = x.getValue()
         }
         return cell
+    }
+    
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if indexPath.section == 1 { return 44 }
+        return UITableView.automaticDimension
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -924,16 +926,30 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 cell.tag = row
                 cell.delegate = self
                 self.hideDeleteRowView(cell: cell)
-                cell.state.selected = {
+                let selectedIdx: Int = {
                     if let body = RequestVC.state.body {
                         return body.selected
                     }
                     return 0
                 }()
-                if cell.state.selected == 3 {  // form
-                    cell.displayFormFields()
-                } else {
+                switch selectedIdx {
+                case RequestBodyType.json.rawValue:
+                    cell.rawTextView.text = RequestVC.state.body?.json ?? ""
                     cell.hideFormFields()
+                case RequestBodyType.xml.rawValue:
+                    cell.rawTextView.text = RequestVC.state.body?.xml ?? ""
+                    cell.hideFormFields()
+                case RequestBodyType.raw.rawValue:
+                    cell.rawTextView.text = RequestVC.state.body?.raw ?? ""
+                    cell.hideFormFields()
+                case RequestBodyType.form.rawValue:
+                    cell.displayFormFields()
+                case RequestBodyType.multipart.rawValue:
+                    cell.hideFormFields()
+                case RequestBodyType.binary.rawValue:
+                    cell.hideFormFields()
+                default:
+                    break
                 }
                 if RequestVC.state.body != nil {
                     cell.updateState(RequestVC.state.body!)
@@ -992,7 +1008,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 }
             }
         }
-        if indexPath.section == 1 { return 44 }
+        if indexPath.section == 1 { return 44 }  // Prevents the collapse warning
         return UITableView.automaticDimension
     }
     

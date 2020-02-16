@@ -30,6 +30,8 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
         Log.debug("options picker vc view did load")
         self.tableView.delegate = self
         self.tableView.dataSource = self
+        self.tableView.estimatedRowHeight = 44
+        self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
         initUI()
     }
@@ -64,6 +66,10 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
             }
         }
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 44
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
