@@ -509,33 +509,12 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         switch idx {
         case 0:  // json
             self.bodyLabelViewWidth.constant = 60
-            self.rawTextView.placeholder =
-            """
-            {
-              "loc": "entangled",
-              "num": "8",
-              "state": "quasi"
-            }
-            """
             self.rawTextView.text = self.state.json
         case 1:  // xml
             self.bodyLabelViewWidth.constant = 60
-            self.rawTextView.placeholder =
-                """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <request code="zeta">
-                  <messages>
-                    <message key="input">42</message>
-                  </messages>
-                </response>
-                """
             self.rawTextView.text = self.state.xml
         case 2:  // raw
             self.bodyLabelViewWidth.constant = 60
-            self.rawTextView.placeholder =
-                """
-                {"sub":"api-test","res":"ok","code":"0"}
-                """
             self.rawTextView.text = self.state.raw
         case 3:  // form
             self.bodyLabelViewWidth.constant = 63
