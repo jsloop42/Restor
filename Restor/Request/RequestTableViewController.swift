@@ -350,8 +350,8 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
     
     func initUI() {
         self.deleteView.isHidden = true
-        self.app.updateTextFieldWithBottomBorder(self.keyTextField)
-        self.app.updateTextFieldWithBottomBorder(self.valueTextField)
+        self.keyTextField.isColor = false
+        self.valueTextField.isColor = false
     }
     
     func initEvents() {
@@ -568,7 +568,6 @@ extension KVBodyContentCell: UITextViewDelegate {
 // MARK: - Body field table view
 
 protocol KVBodyFieldTableViewCellDelegate: class {
-    func updateUIState(_ row: Int, callback: () -> Void)
     func updateState(_ data: RequestData, row: Int)
 }
 
@@ -649,7 +648,6 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         RequestVC.shared?.bodyKVTableViewManager.reloadData()
         RequestVC.shared?.reloadData()
     }
-    
     
     func numberOfSections(in tableView: UITableView) -> Int {
         if self.selectedType == .form || self.selectedType == .multipart {
@@ -761,14 +759,6 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     // MARK: - Delegate
     
-    func updateUIState(_ row: Int, callback: () -> Void) {
-        Log.debug("update UI state: \(row)")
-        //self.scrollToRow(at: IndexPath(row: aRow, section: 0), at: .top, animated: true)
-        RequestVC.shared?.bodyKVTableViewManager.reloadData()
-        RequestVC.shared?.reloadData()
-        callback()
-    }
-    
     func updateState(_ data: RequestData, row: Int) {
         RequestVC.addRequestBodyToState()
         guard let body = RequestVC.state.body else { return }
@@ -854,6 +844,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             }
         case .body:
             RequestVC.state.body = nil
+            OptionsPickerState.selected = 0
         }
     }
     
@@ -868,6 +859,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         }
         var height: CGFloat = UI.getTextHeight(txt, width: width, font: UIFont.systemFont(ofSize: 14))
         if height < 120 { height = 120 }
+        height = 89
         return height
     }
     
@@ -875,9 +867,17 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         var height: CGFloat = 44
         switch self.tableViewType {
         case .header:
-            height = CGFloat(RequestVC.state.headers.count * 94 + 44)
+            if RequestVC.state.headers.count == 0 {
+                height = 48
+            } else {
+                height = CGFloat(Double(RequestVC.state.headers.count) * 92.5 + 50)
+            }
         case .params:
-            height = CGFloat(RequestVC.state.params.count * 94 + 44)
+            if RequestVC.state.params.count == 0 {
+                height = 48
+            } else {
+                height = CGFloat(Double(RequestVC.state.params.count) * 92.5 + 50)
+            }
         case .body:
             if let body = RequestVC.state.body {
                 if body.selected == RequestBodyType.json.rawValue {
