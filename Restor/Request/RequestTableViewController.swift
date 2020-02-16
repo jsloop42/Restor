@@ -260,10 +260,10 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     static func bodyFormCellHeight() -> CGFloat {
         if let body = RequestVC.state.body {
-            let count = body.form.count == 0 ? 1 : body.form.count
-            return CGFloat(count * 88) + 57  // 84: field cell, 81: title cell
+            let count: Double = body.form.count == 0 ? 1 : Double(body.form.count)
+            return CGFloat(count * 92.5) + 57  // 84: field cell, 81: title cell
         }
-        return 167  // 84 + 77
+        return 92.5 + 57  // 84 + 77
     }
 }
 
@@ -569,7 +569,7 @@ extension KVBodyContentCell: UITextViewDelegate {
 
 protocol KVBodyFieldTableViewCellDelegate: class {
     func updateUIState(_ row: Int, callback: () -> Void)
-    func updateState(_ data: RequestData)
+    func updateState(_ data: RequestData, row: Int)
 }
 
 class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
@@ -590,8 +590,10 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     func bootstrap() {
         self.keyTextField.delegate = self
         self.valueTextField.delegate = self
-        self.app.updateTextFieldWithBottomBorder(self.keyTextField)
-        self.app.updateTextFieldWithBottomBorder(self.valueTextField)
+        self.keyTextField.isColor = false
+        self.valueTextField.isColor = false
+        //self.app.updateTextFieldWithBottomBorder(self.keyTextField)
+        //self.app.updateTextFieldWithBottomBorder(self.valueTextField)
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -602,11 +604,10 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     func textFieldDidEndEditing(_ textField: UITextField) {
         Log.debug("textfield did end editing")
         if textField == self.keyTextField {
-            self.delegate?.updateState(RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? ""))
+            self.delegate?.updateState(RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? ""), row: self.tag)
         } else if textField == self.valueTextField {
-            self.delegate?.updateState(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""))
+            self.delegate?.updateState(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""), row: self.tag)
         }
-        // TODO: update state
     }
 }
 
@@ -637,7 +638,13 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     func addFields() {
         let data = RequestData(key: "", value: "")
-        self.updateState(data)
+        if RequestVC.state.body != nil {
+            if RequestVC.state.body!.selected == RequestBodyType.form.rawValue {
+                RequestVC.state.body!.form.append(data)
+            } else if RequestVC.state.body!.selected == RequestBodyType.multipart.rawValue {
+                RequestVC.state.body!.multipart.append(data)
+            }
+        }
         self.reloadData()
         RequestVC.shared?.bodyKVTableViewManager.reloadData()
         RequestVC.shared?.reloadData()
@@ -658,11 +665,19 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         }
         let data: [RequestData] = {
             if self.selectedType == .form {
+                if body.form.count == 0 {
+                    RequestVC.state.body!.form.append(RequestData(key: "", value: ""))
+                    return RequestVC.state.body!.form
+                }
                 return body.form
+            }
+            if body.multipart.count == 0 {
+                RequestVC.state.body!.multipart.append(RequestData(key: "", value: ""))
+                return RequestVC.state.body!.multipart
             }
             return body.multipart
         }()
-        return data.count > 0 ? data.count : 1
+        return data.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -754,20 +769,22 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         callback()
     }
     
-    func updateState(_ data: RequestData) {
+    func updateState(_ data: RequestData, row: Int) {
         RequestVC.addRequestBodyToState()
         guard let body = RequestVC.state.body else { return }
         body.selected = self.selectedType.rawValue
         if self.selectedType == .form {
             if body.form.count == 0 {
-                body.form.append(RequestData(key: "", value: ""))
+                body.form.append(data)
+            } else if body.form.count > row {
+                body.form[row] = data
             }
-            body.form.append(data)
         } else if self.selectedType == .multipart {
             if body.multipart.count == 0 {
-                body.multipart.append(RequestData(key: "", value: ""))
+                body.multipart.append(data)
+            } else if body.multipart.count > row {
+                body.multipart[row] = data
             }
-            body.multipart.append(data)
         }
         RequestVC.state.body = body
     }
