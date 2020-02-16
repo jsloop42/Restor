@@ -13,6 +13,8 @@ typealias RequestVC = RequestTableViewController
 
 class RequestTableViewController: UITableViewController, UITextFieldDelegate, UITextViewDelegate {
     static weak var shared: RequestTableViewController?
+    @IBOutlet weak var methodView: UIView!
+    @IBOutlet weak var methodLabel: UILabel!
     @IBOutlet weak var urlTextField: EATextField!
     @IBOutlet weak var goBtn: UIButton!
     @IBOutlet weak var nameTextField: EATextField!
@@ -39,6 +41,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     private let app = App.shared
     static var state: Request = Request()
     var isEndEditing = false
+    private let methods = ["GET", "POST", "PUT", "OPTION", "DELETE"]
+    private var methodIndex = 0
     
     enum CellId: Int {
         case url = 0
@@ -54,6 +58,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     }
     
     deinit {
+        Log.debug("request tableview deinit")
         RequestTableViewController.shared = nil
         self.nc.removeObserver(self)
     }
@@ -90,7 +95,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.initBodyTableViewManager()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
-        self.tableView.reloadData()
+        self.methodLabel.text = self.methods[self.methodIndex]
         self.urlTextField.delegate = self
         self.nameTextField.delegate = self
         self.descTextView.delegate = self
@@ -107,6 +112,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.paramsCell.borderColor = .clear
         self.bodyCell.borderColor = .clear
         // end test
+        self.renderTheme()
+        self.tableView.reloadData()
     }
     
     func initEvents() {
@@ -115,8 +122,11 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.view.addGestureRecognizer(tap)
         self.nc.addObserver(self, selector: #selector(self.reloadTableView), name: NotificationKey.requestTableViewReload, object: nil)
         self.nc.addObserver(self, selector: #selector(self.clearEditing), name: NotificationKey.requestViewClearEditing, object: nil)
+        let methodTap = UITapGestureRecognizer(target: self, action: #selector(self.methodViewDidTap))
+        self.methodView.addGestureRecognizer(methodTap)
+        self.nc.addObserver(self, selector: #selector(self.requestMethodDidChange(_:)), name: NotificationKey.requestMethodDidChange, object: nil)
     }
-    
+
     func initHeadersTableViewManager() {
         self.headerKVTableViewManager.kvTableView = self.headersTableView
         self.headerKVTableViewManager.delegate = self
@@ -139,6 +149,27 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.bodyKVTableViewManager.tableViewType = .body
         self.bodyKVTableViewManager.bootstrap()
         self.bodyKVTableViewManager.reloadData()
+    }
+    
+    func renderTheme() {
+        self.methodView.backgroundColor = App.Color.requestMethodBg
+    }
+    
+    @objc func methodViewDidTap() {
+        Log.debug("method view did tap")
+        OptionsPickerState.data = self.methods
+        OptionsPickerState.selected = self.methodIndex
+        self.app.presentOptionPicker(.requestMethod, storyboard: self.storyboard, delegate: nil, navVC: self.navigationController)
+    }
+    
+    @objc func requestMethodDidChange(_ notif: Notification) {
+        if let info = notif.userInfo as? [String: Any], let name = info[Const.requestMethodNameKey] as? String, let idx = info[Const.optionSelectedIndexKey] as? Int {
+            DispatchQueue.main.async {
+                self.methodLabel.text = name
+                self.methodIndex = idx
+                self.tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .none)
+            }
+        }
     }
     
     @objc func endEditing() {

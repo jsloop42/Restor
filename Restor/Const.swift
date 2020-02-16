@@ -9,9 +9,12 @@
 import Foundation
 
 struct Const {
+    static let requestMethodNameKey = "requestMethodName"
+    static let optionSelectedIndexKey = "optionSelectedIndexKey"
 }
 
 struct NotificationKey {
     static let requestTableViewReload = Notification.Name("requestTableViewReload")
     static let requestViewClearEditing = Notification.Name("requestViewClearEditing")
+    static let requestMethodDidChange = Notification.Name("requestMethodDidChange")
 }

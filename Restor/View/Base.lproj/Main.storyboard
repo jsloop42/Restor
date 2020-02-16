@@ -403,8 +403,31 @@
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="r8D-Ov-8O3">
                                                     <rect key="frame" x="0.0" y="4" width="414" height="50"/>
                                                     <subviews>
+                                                        <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Ezz-3P-G3h" userLabel="Method View">
+                                                            <rect key="frame" x="16" y="8" width="38.5" height="34"/>
+                                                            <subviews>
+                                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="POST" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" minimumFontSize="9" translatesAutoresizingMaskIntoConstraints="NO" id="Psv-o7-PnW">
+                                                                    <rect key="frame" x="4" y="10" width="30.5" height="14"/>
+                                                                    <fontDescription key="fontDescription" type="system" weight="medium" pointSize="11"/>
+                                                                    <color key="textColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                                                    <nil key="highlightedColor"/>
+                                                                </label>
+                                                            </subviews>
+                                                            <color key="backgroundColor" systemColor="systemGreenColor" red="0.20392156859999999" green="0.78039215689999997" blue="0.34901960780000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                                            <constraints>
+                                                                <constraint firstAttribute="trailing" secondItem="Psv-o7-PnW" secondAttribute="trailing" constant="4" id="E7t-Lp-H2x"/>
+                                                                <constraint firstItem="Psv-o7-PnW" firstAttribute="leading" secondItem="Ezz-3P-G3h" secondAttribute="leading" constant="4" id="Ggy-ch-Ol6"/>
+                                                                <constraint firstItem="Psv-o7-PnW" firstAttribute="centerY" secondItem="Ezz-3P-G3h" secondAttribute="centerY" id="ftO-j5-lfU"/>
+                                                                <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="38.5" id="tkg-Wo-CCr"/>
+                                                            </constraints>
+                                                            <userDefinedRuntimeAttributes>
+                                                                <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                                    <real key="value" value="6"/>
+                                                                </userDefinedRuntimeAttribute>
+                                                            </userDefinedRuntimeAttributes>
+                                                        </view>
                                                         <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="https://example.com" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="kQ7-QS-4Qx" customClass="EATextField" customModule="Restor" customModuleProvider="target">
-                                                            <rect key="frame" x="16" y="8" width="359" height="34"/>
+                                                            <rect key="frame" x="62.5" y="8" width="312.5" height="34"/>
                                                             <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                             <textInputTraits key="textInputTraits" autocorrectionType="no" spellCheckingType="no" keyboardType="URL" smartDashesType="no" smartQuotesType="no" textContentType="url"/>
                                                         </textField>
@@ -422,11 +445,14 @@
                                                     <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                     <constraints>
                                                         <constraint firstItem="kQ7-QS-4Qx" firstAttribute="top" secondItem="r8D-Ov-8O3" secondAttribute="top" constant="8" id="6cM-fY-sK2"/>
+                                                        <constraint firstAttribute="bottom" secondItem="Ezz-3P-G3h" secondAttribute="bottom" constant="8" id="IWT-HN-n3C"/>
+                                                        <constraint firstItem="kQ7-QS-4Qx" firstAttribute="leading" secondItem="Ezz-3P-G3h" secondAttribute="trailing" constant="8" id="Jeh-qR-reu"/>
                                                         <constraint firstAttribute="bottom" secondItem="lOo-lh-R56" secondAttribute="bottom" constant="14" id="P2C-KJ-1eE"/>
-                                                        <constraint firstItem="kQ7-QS-4Qx" firstAttribute="leading" secondItem="r8D-Ov-8O3" secondAttribute="leading" constant="16" id="RBO-H6-hXy"/>
+                                                        <constraint firstItem="Ezz-3P-G3h" firstAttribute="leading" secondItem="r8D-Ov-8O3" secondAttribute="leading" constant="16" id="PLG-Sh-Qtf"/>
                                                         <constraint firstAttribute="bottom" secondItem="kQ7-QS-4Qx" secondAttribute="bottom" constant="8" id="TtG-hI-mPd"/>
                                                         <constraint firstItem="lOo-lh-R56" firstAttribute="leading" secondItem="kQ7-QS-4Qx" secondAttribute="trailing" constant="8" id="VTk-DL-AGG"/>
                                                         <constraint firstAttribute="trailing" secondItem="lOo-lh-R56" secondAttribute="trailing" constant="16" id="VsX-4l-3cB"/>
+                                                        <constraint firstItem="Ezz-3P-G3h" firstAttribute="top" secondItem="r8D-Ov-8O3" secondAttribute="top" constant="8" id="Zh1-lK-iXh"/>
                                                         <constraint firstItem="lOo-lh-R56" firstAttribute="top" secondItem="r8D-Ov-8O3" secondAttribute="top" constant="14" id="a3o-eS-qYh"/>
                                                     </constraints>
                                                 </view>
@@ -1354,6 +1380,8 @@
                         <outlet property="headerCellView" destination="wZG-Xt-lbQ" id="wzo-K4-7he"/>
                         <outlet property="headerKVTableViewManager" destination="a8s-7W-XG1" id="uKQ-kL-w6L"/>
                         <outlet property="headersTableView" destination="0cK-cB-8Sf" id="phy-Rc-R52"/>
+                        <outlet property="methodLabel" destination="Psv-o7-PnW" id="NrS-Tt-vZq"/>
+                        <outlet property="methodView" destination="Ezz-3P-G3h" id="3EW-ef-rO7"/>
                         <outlet property="nameCell" destination="qEr-aw-mrm" id="1ks-dx-N9u"/>
                         <outlet property="nameCellView" destination="Ahc-55-E3L" id="4jY-u8-wHN"/>
                         <outlet property="nameTextField" destination="UTJ-7s-D0j" id="ov7-SR-rpm"/>

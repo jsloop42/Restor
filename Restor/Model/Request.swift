@@ -22,14 +22,6 @@ class Request: Codable {
     init() {}
 }
 
-enum RequestMethod: String, Codable {
-    case get = "GET"
-    case post = "POST"
-    case put = "PUT"
-    case option = "OPTION"
-    case delete = "DELETE"
-}
-
 protocol RequestDataProtocol {
     func getKey() -> String
     func getValue() -> String

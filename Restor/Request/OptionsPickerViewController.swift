@@ -14,12 +14,19 @@ protocol OptionsPickerViewDelegate: class {
     func reloadOptionsData()
 }
 
+enum OptionPickerType {
+    case requestBodyForm
+    case requestMethod
+}
+
 class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var cancelBtn: UIButton!
     @IBOutlet weak var titleLabel: UILabel!
     weak var optionsDelegate: OptionsPickerViewDelegate?
     private let app = App.shared
+    var pickerType: OptionPickerType = .requestBodyForm
+    private let nc = NotificationCenter.default
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -35,6 +42,10 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
         initUI()
+    }
+    
+    func destroy() {
+        self.optionsDelegate = nil
     }
     
     func initUI() {
@@ -76,8 +87,15 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let row = indexPath.row
-        OptionsPickerState.selected = row
-        self.optionsDelegate?.optionDidSelect(row)
+        if self.pickerType == .requestBodyForm {
+            OptionsPickerState.selected = row
+            self.optionsDelegate?.optionDidSelect(row)
+        } else if self.pickerType == .requestMethod {
+            if OptionsPickerState.data.count > row {
+                self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
+                             userInfo: [Const.requestMethodNameKey: OptionsPickerState.data[row], Const.optionSelectedIndexKey: row])
+            }
+        }
         self.close()
     }
 }

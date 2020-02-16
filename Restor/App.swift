@@ -41,6 +41,15 @@ class App {
         }
     }
     
+    /// Presents an option picker view as a modal
+    func presentOptionPicker(_ pickerType: OptionPickerType, storyboard: UIStoryboard?, delegate: OptionsPickerViewDelegate?, navVC: UINavigationController?) {
+        if let vc = storyboard?.instantiateViewController(withIdentifier: StoryboardId.optionsPickerVC.rawValue) as? OptionsPickerViewController {
+            vc.optionsDelegate = delegate
+            vc.pickerType = pickerType
+            navVC?.present(vc, animated: true, completion: nil)
+        }
+    }
+    
     /// Draws a bottom border to the given text field
     func updateTextFieldWithBottomBorder(_ tf: EATextField) {
         tf.borderStyle = .none
@@ -74,6 +83,26 @@ class App {
         } else {
             view?.backgroundColor = UIColor.white
         }
+    }
+    
+    // MARK: - Theme
+    public struct Color {
+        //public static let lightGreen = UIColor(red: 196/255, green: 223/255, blue: 168/255, alpha: 1.0)
+        public static let lightGreen = UIColor(red: 120/255, green: 184/255, blue: 86/255, alpha: 1.0)
+        public static let darkGreen = UIColor(red: 91/255, green: 171/255, blue: 60/255, alpha: 1.0)
+        public static var requestMethodBg: UIColor = {
+            if #available(iOS 13, *) {
+                return UIColor { (UITraitCollection: UITraitCollection) -> UIColor in
+                    if UITraitCollection.userInterfaceStyle == .dark {
+                        return Color.darkGreen
+                    } else {
+                        return Color.lightGreen
+                    }
+                }
+            } else {
+                return Color.lightGreen
+            }
+        }()
     }
 }
 
@@ -109,4 +138,18 @@ enum Screen {
     case request
     case requestEdit
     case optionListing
+}
+
+enum RequestMethod: String, Codable {
+    case get = "GET"
+    case head = "HEAD"
+    
+    case post = "POST"
+    case put = "PUT"
+    case patch = "PATCH"
+    
+    case delete = "DELETE"
+    
+    case trace = "TRACE"
+    case option = "OPTIONS"
 }
