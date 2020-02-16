@@ -50,6 +50,31 @@ class App {
             tf.tintColor = .lightGray
         }
     }
+    
+    /// Fixes appearance of a translucent background during transition
+    func updateNavigationControllerBackground(_ navVC: UINavigationController?) {
+        if #available(iOS 13.0, *) {
+            navVC?.view.backgroundColor = UIColor.systemBackground
+        } else {
+            navVC?.view.backgroundColor = UIColor.white
+        }
+    }
+    
+    func updateWindowBackground(_ window: UIWindow?) {
+        if #available(iOS 13.0, *) {
+            window?.backgroundColor = UIColor.systemBackground
+        } else {
+            window?.backgroundColor = UIColor.white
+        }
+    }
+    
+    func updateViewBackground(_ view: UIView?) {
+        if #available(iOS 13.0, *) {
+            view?.backgroundColor = UIColor.systemBackground
+        } else {
+            view?.backgroundColor = UIColor.white
+        }
+    }
 }
 
 enum TableCellId: String {

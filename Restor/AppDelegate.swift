@@ -13,9 +13,11 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
     //private let keyboardManager = IQKeyboardManager.shared
+    private let app = App.shared
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         UI.setGlobalStyle()
+        self.app.updateWindowBackground(self.window)
         //self.enableIQKeyboardManager()
         return true
     }

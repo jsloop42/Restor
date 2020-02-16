@@ -49,12 +49,7 @@ class ProjectViewController: UIViewController {
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
-        // Fixes appearance of a translucent black background on the right during transition
-        if #available(iOS 13.0, *) {
-            self.navigationController?.view.backgroundColor = UIColor.systemBackground
-        } else {
-            self.navigationController?.view.backgroundColor = UIColor.white
-        }
+        self.app.updateNavigationControllerBackground(self.navigationController)
         // TODO: test
         self.addProject(name: "Test project", desc: "My awesome project")
         // end test

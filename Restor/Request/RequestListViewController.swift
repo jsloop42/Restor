@@ -31,6 +31,8 @@ class RequestListViewController: UIViewController {
     }
     
     func initUI() {
+        self.app.updateViewBackground(self.view)
+        self.app.updateNavigationControllerBackground(self.navigationController)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
         if let idx = AppState.selectedProject, let projects = AppState.project(forIndex: idx) {
             self.requests = projects.requests

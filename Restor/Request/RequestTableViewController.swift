@@ -33,7 +33,6 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     @IBOutlet weak var headerCell: UITableViewCell!
     @IBOutlet weak var paramsCell: UITableViewCell!
     @IBOutlet weak var bodyCell: UITableViewCell!
-    
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     private let nc = NotificationCenter.default
@@ -84,6 +83,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     }
     
     func initUI() {
+        self.app.updateViewBackground(self.view)
+        self.app.updateNavigationControllerBackground(self.navigationController)
         self.initHeadersTableViewManager()
         self.initParamsTableViewManager()
         self.initBodyTableViewManager()
@@ -569,8 +570,6 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         self.valueTextField.delegate = self
         self.keyTextField.isColor = false
         self.valueTextField.isColor = false
-        //self.app.updateTextFieldWithBottomBorder(self.keyTextField)
-        //self.app.updateTextFieldWithBottomBorder(self.valueTextField)
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {

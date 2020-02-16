@@ -19,6 +19,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     @IBOutlet weak var cancelBtn: UIButton!
     @IBOutlet weak var titleLabel: UILabel!
     weak var optionsDelegate: OptionsPickerViewDelegate?
+    private let app = App.shared
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -37,6 +38,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     }
     
     func initUI() {
+        self.app.updateViewBackground(self.view)
         self.titleLabel.text = OptionsPickerState.title
     }
     
