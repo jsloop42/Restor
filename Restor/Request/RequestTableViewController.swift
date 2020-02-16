@@ -317,6 +317,7 @@ protocol KVContentCellDelegate: class {
     func clearEditing(completion: ((Bool) -> Void)?)
     func deleteRow(indexPath: IndexPath)
     func presentOptionsVC(_ data: [String], selected: Int)
+    func dataDidChange(_ data: RequestData, row: Int)
 }
 
 protocol KVContentCellType: class {
@@ -390,6 +391,11 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
     // MARK: - Delegate
     func textFieldDidBeginEditing(_ textField: UITextField) {
         RequestVC.shared?.clearEditing()
+    }
+    
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        let data = RequestData(key: self.keyTextField.text ?? "", value: self.valueTextField.text ?? "")
+        self.delegate?.dataDidChange(data, row: self.tag)
     }
 }
 
@@ -1086,6 +1092,22 @@ extension KVTableViewManager: KVContentCellDelegate {
     
     func presentOptionsVC(_ data: [String], selected: Int) {
         self.delegate?.presentOptionsVC(data, selected: selected)
+    }
+    
+    func dataDidChange(_ data: RequestData, row: Int) {
+        if self.tableViewType == .header {
+            if RequestVC.state.headers.count > row {
+                RequestVC.state.headers[row] = data
+            } else {
+                RequestVC.state.headers.append(data)
+            }
+        } else if self.tableViewType == .params {
+            if RequestVC.state.params.count > row {
+                RequestVC.state.params[row] = data
+            } else {
+                RequestVC.state.params.append(data)
+            }
+        }
     }
 }
 
