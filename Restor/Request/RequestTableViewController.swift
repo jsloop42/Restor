@@ -51,6 +51,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         case params = 6
         case spacerAfterParams = 7
         case body = 8
+        case spacerAfterBody = 9
     }
     
     deinit {
@@ -210,6 +211,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
                 return RequestVC.bodyFormCellHeight()
             }
             height = self.bodyKVTableViewManager.getHeight()
+        } else if indexPath.row == CellId.spacerAfterBody.rawValue {
+            height = 12
         } else {
             height = UITableView.automaticDimension
         }
@@ -318,6 +321,7 @@ protocol KVContentCellDelegate: class {
     func deleteRow(indexPath: IndexPath)
     func presentOptionsVC(_ data: [String], selected: Int)
     func dataDidChange(_ data: RequestData, row: Int)
+    func refreshCell(indexPath: IndexPath, cell: KVContentCellType)
 }
 
 protocol KVContentCellType: class {
@@ -406,7 +410,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet weak var containerView: UIView!
     @IBOutlet weak var deleteView: UIView!
     @IBOutlet weak var typeNameBtn: UIButton!
-    @IBOutlet weak var rawStackView: UIStackView!
+    @IBOutlet weak var rawTextViewContainer: UIView!
     @IBOutlet weak var rawTextView: EATextView!
     @IBOutlet var bodyLabelViewWidth: NSLayoutConstraint!
     @IBOutlet weak var typeLabel: UILabel!
@@ -428,20 +432,12 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     func initUI() {
         self.bodyFieldTableView.isHidden = true
-        self.rawStackView.isHidden = false
-        let font = UIFont.monospacedDigitSystemFont(ofSize: 13, weight: .regular)
+        self.rawTextViewContainer.isHidden = false
+        let font = UIFont(name: "Menlo-Regular", size: 13)
         self.rawTextView.font = font
         self.rawTextView.placeholderFont = font
-        self.updateLayoutConstraints()
     }
-    
-    func updateLayoutConstraints() {
-//        self.rawTextViewHeight.isActive = false
-//        let h = self.frame.height - 16
-//        self.rawTextViewHeight.constant = h < 120 ? 120 : h
-//        self.rawTextViewHeight.isActive = true
-    }
-    
+        
     func initEvents() {
         let deleteBtnTap = UITapGestureRecognizer(target: self, action: #selector(self.deleteBtnDidTap))
         deleteBtnTap.cancelsTouchesInView = false
@@ -487,7 +483,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     func displayFormFields() {
         self.bodyFieldTableView.isHidden = false
-        self.rawStackView.isHidden = true
+        self.rawTextViewContainer.isHidden = true
         RequestVC.addRequestBodyToState()
         self.bodyFieldTableView.selectedType = RequestBodyType(rawValue: RequestVC.state.body!.selected)!
         self.bodyFieldTableView.reloadData()
@@ -495,8 +491,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     func hideFormFields() {
         self.bodyFieldTableView.isHidden = true
-        self.rawStackView.isHidden = false
-        self.updateLayoutConstraints()
+        self.rawTextViewContainer.isHidden = false
     }
     
     func updateState(_ data: RequestBodyData) {
@@ -508,17 +503,17 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.state.selected = idx
         switch idx {
         case 0:  // json
-            self.bodyLabelViewWidth.constant = 60
             self.rawTextView.text = self.state.json
+            self.bodyLabelViewWidth.constant = 60
         case 1:  // xml
-            self.bodyLabelViewWidth.constant = 60
             self.rawTextView.text = self.state.xml
-        case 2:  // raw
             self.bodyLabelViewWidth.constant = 60
+        case 2:  // raw
             self.rawTextView.text = self.state.raw
+            self.bodyLabelViewWidth.constant = 60
         case 3:  // form
-            self.bodyLabelViewWidth.constant = 63
             self.displayFormFields()
+            self.bodyLabelViewWidth.constant = 63
         case 4:  // multipart
             self.bodyLabelViewWidth.constant = 78
         case 5:  // binary
@@ -530,6 +525,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     }
 }
 
+// MARK: - Raw textview delegate
 extension KVBodyContentCell: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         let txt = textView.text ?? ""
@@ -547,6 +543,7 @@ extension KVBodyContentCell: UITextViewDelegate {
             break
         }
         RequestVC.state.body = body
+        self.delegate?.refreshCell(indexPath: IndexPath(row: self.tag, section: 0), cell: self)
     }
 }
 
@@ -837,14 +834,12 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         self.kvTableView?.reloadData()
     }
     
-    func getTextHeight(_ txt: String) -> CGFloat {
-        var width = UIScreen.main.bounds.width - 131
+    /// Returns the raw textview cell height
+    func getRowTextViewCellHeight() -> CGFloat {
         if let cell = self.kvTableView?.cellForRow(at: IndexPath(row: 0, section: 0)) as? KVBodyContentCell {
-            width = UIScreen.main.bounds.width - cell.bodyLabelViewWidth.constant
+            height = cell.frame.size.height
         }
-        var height: CGFloat = UI.getTextHeight(txt, width: width, font: UIFont.systemFont(ofSize: 14))
-        if height < 120 { height = 120 }
-        height = 89
+        Log.debug("raw text cell height: \(height)")
         return height
     }
     
@@ -865,15 +860,10 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             }
         case .body:
             if let body = RequestVC.state.body {
-                if body.selected == RequestBodyType.json.rawValue {
-                    let txt = RequestVC.state.body!.json ?? ""
-                    height = self.getTextHeight(txt)
-                } else if body.selected == RequestBodyType.xml.rawValue {
-                    let txt = RequestVC.state.body!.xml ?? ""
-                    height = self.getTextHeight(txt)
-                } else if body.selected == RequestBodyType.raw.rawValue {
-                    let txt = RequestVC.state.body!.raw ?? ""
-                    height = self.getTextHeight(txt)
+                if body.selected == RequestBodyType.json.rawValue ||
+                   body.selected == RequestBodyType.xml.rawValue ||
+                   body.selected == RequestBodyType.raw.rawValue {
+                    height = self.getRowTextViewCellHeight()
                 } else if body.selected == RequestBodyType.form.rawValue {
                     height = RequestVC.bodyFormCellHeight()
                     Log.debug("form cell height: \(height)")
@@ -980,7 +970,6 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("kvTableView row did select")
-        //self.clearEditing()
         RequestVC.shared?.clearEditing()
         if let reqVC = RequestVC.shared, reqVC.isEndEditing {
             UI.endEditing()
@@ -996,10 +985,14 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if self.tableViewType == .body {
-            if let body = RequestVC.state.body, body.selected == RequestBodyType.form.rawValue {
-                return RequestVC.bodyFormCellHeight()
+            if let body = RequestVC.state.body {
+                if indexPath.section == 1 { return 0 }
+                if body.selected == RequestBodyType.form.rawValue {
+                    return RequestVC.bodyFormCellHeight()
+                }
             }
         }
+        if indexPath.section == 1 { return 44 }
         return UITableView.automaticDimension
     }
     
@@ -1086,6 +1079,27 @@ extension KVTableViewManager: KVContentCellDelegate {
             } else {
                 RequestVC.state.params.append(data)
             }
+        }
+    }
+    
+    /// Refreshes the cell and scroll to the end of the growing text view cell.
+    func refreshCell(indexPath: IndexPath, cell: KVContentCellType) {
+        Log.debug("refresh cell")
+        UIView.setAnimationsEnabled(false)
+        self.kvTableView?.beginUpdates()
+        if let aCell = cell as? KVBodyContentCell {
+            aCell.rawTextView.scrollRangeToVisible(NSMakeRange(aCell.rawTextView.text.count - 1, 0))
+        }
+        self.kvTableView?.endUpdates()
+        UIView.setAnimationsEnabled(true)
+        self.kvTableView?.scrollToRow(at: indexPath, at: .bottom, animated: false)
+        let bodySpacerIdx = IndexPath(row: RequestVC.CellId.spacerAfterBody.rawValue, section: 0)
+        UIView.setAnimationsEnabled(false)
+        RequestVC.shared?.tableView.beginUpdates()
+        RequestVC.shared?.tableView.endUpdates()
+        UIView.setAnimationsEnabled(true)
+        if let vc = RequestVC.shared {
+            vc.tableView.scrollToRow(at: bodySpacerIdx, at: .bottom, animated: false)
         }
     }
 }
