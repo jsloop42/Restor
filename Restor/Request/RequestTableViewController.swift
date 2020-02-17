@@ -159,6 +159,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         Log.debug("method view did tap")
         OptionsPickerState.data = self.methods
         OptionsPickerState.selected = self.methodIndex
+        OptionsPickerState.title = "Request Method"
         self.app.presentOptionPicker(.requestMethod, storyboard: self.storyboard, delegate: nil, navVC: self.navigationController)
     }
     
@@ -167,6 +168,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
             DispatchQueue.main.async {
                 self.methodLabel.text = name
                 self.methodIndex = idx
+                RequestVC.state.method = name
                 self.tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .none)
             }
         }
