@@ -23,6 +23,11 @@ class WorkspaceViewController: UIViewController {
     private let utils: Utils = Utils.shared
     private let app: App = App.shared
     weak var delegate: WorkspaceVCDelegate?
+    private let nc = NotificationCenter.default
+    
+    deinit {
+        self.nc.removeObserver(self)
+    }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
@@ -55,11 +60,27 @@ class WorkspaceViewController: UIViewController {
     func initEvents() {
         //let tap = UITapGestureRecognizer(target: self, action: #selector(viewDidTap(_:)))
         //self.view.addGestureRecognizer(tap)
+        self.nc.addObserver(self, selector: #selector(self.keyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
     @objc func viewDidTap(_ recognizer: UITapGestureRecognizer) {
         Log.debug("view did tap")
         self.view.endEditing(true)
+    }
+    
+    @objc func keyboardWillShow(notif: Notification) {
+        if let userInfo = notif.userInfo, let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
+            AppState.keyboardHeight = keyboardSize.cgRectValue.height
+            if self.view.frame.origin.y == 0 {
+                // We need to offset in this case because the popup is contrained to the bottom of the view
+                self.view.frame.origin.y -=  AppState.keyboardHeight
+            }
+        }
+    }
+       
+    @objc func keyboardWillHide(notif: Notification) {
+        self.view.frame.origin.y = 0
     }
     
     @IBAction func addBtnDidTap(_ sender: Any) {
@@ -182,6 +203,10 @@ extension WorkspaceViewController: PopupViewDelegate {
             }
         }
         return true
+    }
+    
+    func popupStateDidChange(isErrorMode: Bool) {
+        // TODO:
     }
 }
 

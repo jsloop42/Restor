@@ -20,6 +20,11 @@ class ProjectViewController: UIViewController {
     private var keyboardHeight: CGFloat = 0.0
     private let utils: Utils = Utils.shared
     private let app: App = App.shared
+    private let nc = NotificationCenter.default
+    
+    deinit {
+        self.nc.removeObserver(self)
+    }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -34,6 +39,7 @@ class ProjectViewController: UIViewController {
         super.viewDidLoad()
         Log.debug("project view did load")
         self.initUI()
+        self.initEvent()
         self.app.initDefaultWorspace()
         if let ws = AppState.currentWorkspace() {
             self.workspace = ws
@@ -55,8 +61,27 @@ class ProjectViewController: UIViewController {
         // end test
     }
     
+    func initEvent() {
+        self.nc.addObserver(self, selector: #selector(self.keyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
     func updateUIState() {
         
+    }
+    
+    @objc func keyboardWillShow(notif: Notification) {
+        if let userInfo = notif.userInfo, let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
+            AppState.keyboardHeight = keyboardSize.cgRectValue.height
+            if self.view.frame.origin.y == 0 {
+                // We need to offset in this case because the popup is contrained to the bottom of the view
+                self.view.frame.origin.y -=  AppState.keyboardHeight
+            }
+        }
+    }
+    
+    @objc func keyboardWillHide(notif: Notification) {
+        self.view.frame.origin.y = 0
     }
     
     @objc func workspaceDidTap() {
@@ -201,6 +226,10 @@ extension ProjectViewController: PopupViewDelegate {
             }
         }
         return true
+    }
+    
+    func popupStateDidChange(isErrorMode: Bool) {
+        // TODO:
     }
 }
 

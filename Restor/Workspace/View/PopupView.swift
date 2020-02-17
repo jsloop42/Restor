@@ -15,6 +15,8 @@ protocol PopupViewDelegate: class {
     func doneDidTap(_ sender: Any) -> Bool
     /// Perform input text validation returning true is valid
     func validateText(_ text: String?) -> Bool
+    /// Invoked when popup state changes. Eg: display validation error label
+    func popupStateDidChange(isErrorMode: Bool)
 }
 
 enum PopupType {
@@ -47,6 +49,7 @@ class PopupView: UIView {
     
     static func initFromNib(owner: Any? = nil) -> UIView? {
         if let aPopupView = self.popupView {
+            aPopupView.resetUIState()
             return aPopupView
         } else if let aPopupView = UINib(nibName: "PopupView", bundle: nil).instantiate(withOwner: owner, options: nil)[0] as? PopupView {
             aPopupView.initUIStyle()
@@ -91,6 +94,12 @@ class PopupView: UIView {
             self.backgroundColor = .white
             self.navbarView.backgroundColor = UIColor(red: 0.969, green: 0.969, blue: 0.969, alpha: 1.0)
         }
+    }
+    
+    func resetUIState() {
+        self.isValidated = false
+        self.isValidationsSuccess = true
+        self.hideValidationError()
     }
     
     func setTitle(_ text: String) {
@@ -139,6 +148,7 @@ class PopupView: UIView {
             self.alpha = 0.0
             self.transform = CGAffineTransform(translationX: 0, y: self.bounds.height)
         }) { _ in
+            self.resetUIState()
             self.removeFromSuperview()
             if let cb = completion { cb() }
         }
@@ -148,6 +158,7 @@ class PopupView: UIView {
         Log.debug("show validation error")
         self.nameFieldValidationLabel.text = msg
         self.nameFieldValidationLabel.isHidden = false
+        self.delegate?.popupStateDidChange(isErrorMode: true)
         UIView.animate(withDuration: 0.3) {
             self.layoutIfNeeded()
             self.nameTextField.addBorderWithColor(color: .red, width: 0.75)
@@ -161,6 +172,7 @@ class PopupView: UIView {
         Log.debug("hide validation error")
         self.nameFieldValidationLabel.text = ""
         self.nameFieldValidationLabel.isHidden = true
+        self.delegate?.popupStateDidChange(isErrorMode: false)
         UIView.animate(withDuration: 0.3) {
             self.layoutIfNeeded()
             self.nameTextField.removeBorder()

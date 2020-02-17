@@ -27,6 +27,12 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     private let app = App.shared
     var pickerType: OptionPickerType = .requestBodyForm
     private let nc = NotificationCenter.default
+    @IBOutlet weak var footerView: UIView!
+    @IBOutlet weak var footerLabel: UILabel!
+    
+    deinit {
+        Log.debug("option picker vc deinit")
+    }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -41,16 +47,52 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
-        initUI()
+        self.initUI()
+        self.initEvent()
     }
     
     func destroy() {
         self.optionsDelegate = nil
+        self.nc.removeObserver(self)
     }
     
     func initUI() {
         self.app.updateViewBackground(self.view)
         self.titleLabel.text = OptionsPickerState.title
+        if self.pickerType == .requestMethod {
+            self.footerLabel.text = "add custom method"
+            self.footerLabel.isHidden = false
+        } else {
+            self.footerLabel.isHidden = true
+        }
+    }
+    
+    func initEvent() {
+        if self.pickerType == .requestMethod {
+            let footerTap = UITapGestureRecognizer(target: self, action: #selector(self.footerDidTap))
+            self.footerView.addGestureRecognizer(footerTap)
+            self.nc.addObserver(self, selector: #selector(self.keyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
+            self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+        }
+    }
+    
+    @objc func keyboardWillShow(notif: Notification) {
+        if let userInfo = notif.userInfo, let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
+            AppState.keyboardHeight = keyboardSize.cgRectValue.height
+            if self.view.frame.origin.y == 0 {
+                // We need to offset in this case because the popup is contrained to the bottom of the view
+                self.view.frame.origin.y -=  AppState.keyboardHeight
+            }
+        }
+    }
+    
+    @objc func keyboardWillHide(notif: Notification) {
+        self.view.frame.origin.y = 0
+    }
+    
+    @objc func footerDidTap() {
+        Log.debug("footer did tap")
+        self.app.viewPopup(type: .workspace, delegate: self, parentView: self.view, bottomView: self.view, vc: self)
     }
     
     @IBAction func cancelButtonDidTap() {
@@ -86,6 +128,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        Log.debug("option vc did select \(indexPath)")
         let row = indexPath.row
         if self.pickerType == .requestBodyForm {
             OptionsPickerState.selected = row
@@ -113,5 +156,40 @@ class OptionsTableViewCell: UITableViewCell {
     
     func deselectCell() {
         self.accessoryType = .none
+    }
+}
+
+extension OptionsPickerViewController: PopupViewDelegate {
+    func cancelDidTap(_ sender: Any) {
+        self.app.addItemPopupView?.animateSlideOut()
+    }
+    
+    func doneDidTap(_ sender: Any) -> Bool {
+        self.app.addItemPopupView?.animateSlideOut()
+        return true
+    }
+    
+    func validateText(_ text: String?) -> Bool {
+        guard let text = text else {
+            self.app.addItemPopupView?.viewValidationError("Please enter a name")
+            self.app.updatePopupConstraints(self.view, isErrorMode: true)
+            return false
+        }
+        if text.isEmpty {
+            self.app.addItemPopupView?.viewValidationError("Please enter a name")
+            self.app.updatePopupConstraints(self.view, isErrorMode: true)
+            return false
+        }
+        if text.trimmingCharacters(in: .whitespaces) == "" {
+            self.app.addItemPopupView?.viewValidationError("Please enter a valid name")
+            self.app.updatePopupConstraints(self.view, isErrorMode: true)
+            return false
+        }
+        self.app.updatePopupConstraints(self.view, isErrorMode: false)
+        return true
+    }
+    
+    func popupStateDidChange(isErrorMode: Bool) {
+        self.app.updatePopupConstraints(self.view, isErrorMode: isErrorMode)
     }
 }

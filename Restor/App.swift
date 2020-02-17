@@ -11,6 +11,8 @@ import UIKit
 
 class App {
     static let shared: App = App()
+    var addItemPopupView: PopupView?
+    var popupBottomContraints: NSLayoutConstraint?
     
     func addSettingsBarButton() -> UIBarButtonItem {
         if #available(iOS 13.0, *) {
@@ -83,6 +85,67 @@ class App {
         } else {
             view?.backgroundColor = UIColor.white
         }
+    }
+    
+    // MARK: - Popup
+    
+    func updatePopupConstraints(_ bottomView: UIView, isErrorMode: Bool? = false) {
+        let bottom: CGFloat = {
+            if isErrorMode != nil && isErrorMode! {
+                return -20
+            }
+            return 0
+        }()
+        if let popup = self.addItemPopupView {
+            self.popupBottomContraints?.isActive = false
+            if AppState.isKeyboardActive {
+                self.popupBottomContraints = popup.bottomAnchor.constraint(equalTo: bottomView.bottomAnchor,
+                                                                           constant: -AppState.keyboardHeight+bottom)
+            } else {
+                self.popupBottomContraints = popup.bottomAnchor.constraint(equalTo: bottomView.bottomAnchor, constant: bottom)
+            }
+            self.popupBottomContraints?.isActive = true
+            if isErrorMode != nil, isErrorMode! {
+                UIView.animate(withDuration: 0.3) {
+                    bottomView.layoutIfNeeded()
+                }
+            }
+        }
+    }
+    
+    /// Display popup view over the current view controller
+    /// - Parameters:
+    ///   - type: The popup type
+    ///   - delegate: The optional delegate
+    ///   - parentView: The view of the parent view controller
+    ///   - bottomView: The view to which the bottom contrainst will be added
+    func viewPopup(type: PopupType, delegate: PopupViewDelegate?, parentView: UIView, bottomView: UIView, vc: UIViewController) {
+        if self.addItemPopupView == nil {
+            self.addItemPopupView = PopupView.initFromNib(owner: vc) as? PopupView
+        }
+        guard let popup = self.addItemPopupView else { return }
+        popup.delegate = delegate
+        popup.type = type
+        popup.alpha = 0.0
+        parentView.addSubview(popup)
+        popup.animateSlideIn()
+        if type == .workspace {
+            popup.setTitle("New Workspace")
+            popup.setNamePlaceholder("My personal workspace")
+            popup.setDescriptionPlaceholder("API tests for my personal projects")
+        } else if type == .project {
+            popup.setTitle("New Project")
+            popup.setNamePlaceholder("App server")
+            popup.setDescriptionPlaceholder("APIs for my app server")
+        }
+        popup.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            popup.leadingAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.leadingAnchor, constant: 0),
+            popup.trailingAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.trailingAnchor, constant: 0),
+            popup.heightAnchor.constraint(equalToConstant: 207)
+        ])
+        self.addItemPopupView = popup
+        self.updatePopupConstraints(bottomView)
     }
     
     // MARK: - Theme

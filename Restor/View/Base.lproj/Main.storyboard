@@ -111,7 +111,19 @@
                                 <view key="tableFooterView" contentMode="scaleToFill" id="Zzz-Iy-HdG" userLabel="Footer View">
                                     <rect key="frame" x="0.0" y="99.5" width="414" height="44"/>
                                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                    <subviews>
+                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="add custom method" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="r59-Rk-Ujb">
+                                            <rect key="frame" x="20" y="13" width="137.5" height="18"/>
+                                            <fontDescription key="fontDescription" type="system" pointSize="15"/>
+                                            <color key="textColor" systemColor="systemBlueColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+                                            <nil key="highlightedColor"/>
+                                        </label>
+                                    </subviews>
                                     <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                    <constraints>
+                                        <constraint firstItem="r59-Rk-Ujb" firstAttribute="centerY" secondItem="Zzz-Iy-HdG" secondAttribute="centerY" id="2HK-zj-6tN"/>
+                                        <constraint firstItem="r59-Rk-Ujb" firstAttribute="leading" secondItem="Zzz-Iy-HdG" secondAttribute="leading" constant="20" symbolic="YES" id="TRd-Ut-cjj"/>
+                                    </constraints>
                                 </view>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="optionsCell" id="lev-XQ-NjP" customClass="OptionsTableViewCell" customModule="Restor" customModuleProvider="target">
@@ -198,6 +210,8 @@
                     </navigationItem>
                     <connections>
                         <outlet property="cancelBtn" destination="tDu-ft-g6W" id="DUE-hT-G4B"/>
+                        <outlet property="footerLabel" destination="r59-Rk-Ujb" id="dg3-PH-5Cu"/>
+                        <outlet property="footerView" destination="Zzz-Iy-HdG" id="UDb-TC-roD"/>
                         <outlet property="tableView" destination="3WB-7K-ozA" id="YXn-7C-OjY"/>
                         <outlet property="titleLabel" destination="vvd-7w-niM" id="UHV-Ao-Hvq"/>
                     </connections>
