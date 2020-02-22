@@ -92,7 +92,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     
     @objc func footerDidTap() {
         Log.debug("footer did tap")
-        self.app.viewPopup(type: .workspace, delegate: self, parentView: self.view, bottomView: self.view, vc: self)
+        self.app.viewPopup(type: .requestMethod, delegate: self, parentView: self.view, bottomView: self.view, vc: self)
     }
     
     @IBAction func cancelButtonDidTap() {
@@ -172,24 +172,24 @@ extension OptionsPickerViewController: PopupViewDelegate {
     func validateText(_ text: String?) -> Bool {
         guard let text = text else {
             self.app.addItemPopupView?.viewValidationError("Please enter a name")
-            self.app.updatePopupConstraints(self.view, isErrorMode: true)
+            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
             return false
         }
         if text.isEmpty {
             self.app.addItemPopupView?.viewValidationError("Please enter a name")
-            self.app.updatePopupConstraints(self.view, isErrorMode: true)
+            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
             return false
         }
         if text.trimmingCharacters(in: .whitespaces) == "" {
             self.app.addItemPopupView?.viewValidationError("Please enter a valid name")
-            self.app.updatePopupConstraints(self.view, isErrorMode: true)
+            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
             return false
         }
-        self.app.updatePopupConstraints(self.view, isErrorMode: false)
+        self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: false)
         return true
     }
     
     func popupStateDidChange(isErrorMode: Bool) {
-        self.app.updatePopupConstraints(self.view, isErrorMode: isErrorMode)
+        self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: isErrorMode)
     }
 }

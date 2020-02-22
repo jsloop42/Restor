@@ -89,30 +89,6 @@ class App {
     
     // MARK: - Popup
     
-    func updatePopupConstraints(_ bottomView: UIView, isErrorMode: Bool? = false) {
-        let bottom: CGFloat = {
-            if isErrorMode != nil && isErrorMode! {
-                return -20
-            }
-            return 0
-        }()
-        if let popup = self.addItemPopupView {
-            self.popupBottomContraints?.isActive = false
-            if AppState.isKeyboardActive {
-                self.popupBottomContraints = popup.bottomAnchor.constraint(equalTo: bottomView.bottomAnchor,
-                                                                           constant: -AppState.keyboardHeight+bottom)
-            } else {
-                self.popupBottomContraints = popup.bottomAnchor.constraint(equalTo: bottomView.bottomAnchor, constant: bottom)
-            }
-            self.popupBottomContraints?.isActive = true
-            if isErrorMode != nil, isErrorMode! {
-                UIView.animate(withDuration: 0.3) {
-                    bottomView.layoutIfNeeded()
-                }
-            }
-        }
-    }
-    
     /// Display popup view over the current view controller
     /// - Parameters:
     ///   - type: The popup type
@@ -129,23 +105,8 @@ class App {
         popup.alpha = 0.0
         parentView.addSubview(popup)
         popup.animateSlideIn()
-        if type == .workspace {
-            popup.setTitle("New Workspace")
-            popup.setNamePlaceholder("My personal workspace")
-            popup.setDescriptionPlaceholder("API tests for my personal projects")
-        } else if type == .project {
-            popup.setTitle("New Project")
-            popup.setNamePlaceholder("App server")
-            popup.setDescriptionPlaceholder("APIs for my app server")
-        }
-        popup.translatesAutoresizingMaskIntoConstraints = false
-        NSLayoutConstraint.activate([
-            popup.leadingAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.leadingAnchor, constant: 0),
-            popup.trailingAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.trailingAnchor, constant: 0),
-            popup.heightAnchor.constraint(equalToConstant: 207)
-        ])
+        popup.initConstraints(parentView: parentView, bottomView: bottomView)
         self.addItemPopupView = popup
-        self.updatePopupConstraints(bottomView)
     }
     
     // MARK: - Theme

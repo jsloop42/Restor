@@ -124,7 +124,9 @@
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
             <viewLayoutGuide key="safeArea" id="vUN-kp-3ea"/>
             <connections>
+                <outlet property="descLabel" destination="fqL-Du-jnK" id="1JB-JC-41f"/>
                 <outlet property="descTextField" destination="a8q-bH-BAT" id="hd7-QJ-hEc"/>
+                <outlet property="iCloudSyncLabel" destination="mqa-0c-Woy" id="rJh-kh-QsY"/>
                 <outlet property="iCloudSyncSwitch" destination="bfH-8e-wpp" id="Wp9-fC-ccL"/>
                 <outlet property="nameFieldValidationLabel" destination="kN5-m2-s8Y" id="Apq-x0-v3t"/>
                 <outlet property="nameTextField" destination="SoW-sz-MPb" id="pHj-kv-ALB"/>

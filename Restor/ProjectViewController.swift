@@ -103,47 +103,6 @@ class ProjectViewController: UIViewController {
         return nil
     }
     
-    func updateConstraints() {
-        let bottom: CGFloat = 0
-        if let popup = self.addItemPopupView {
-            self.popupBottomContraints?.isActive = false
-            if self.isKeyboardActive {
-                self.popupBottomContraints = popup.bottomAnchor.constraint(equalTo: self.toolbar.topAnchor,
-                                                                           constant: -self.keyboardHeight+bottom)
-            } else {
-                self.popupBottomContraints = popup.bottomAnchor.constraint(equalTo: self.toolbar.topAnchor, constant: bottom)
-            }
-            self.popupBottomContraints?.isActive = true
-        }
-    }
-    
-    func viewPopup(type: PopupType) {
-        if self.addItemPopupView == nil, let popup = PopupView.initFromNib(owner: self) as? PopupView {
-            popup.delegate = self
-            popup.type = type
-            popup.alpha = 0.0
-            self.view.addSubview(popup)
-            popup.animateSlideIn()
-            if type == .workspace {
-                popup.setTitle("New Workspace")
-                popup.setNamePlaceholder("My personal workspace")
-                popup.setDescriptionPlaceholder("API tests for my personal projects")
-            } else if type == .project {
-                popup.setTitle("New Project")
-                popup.setNamePlaceholder("App server")
-                popup.setDescriptionPlaceholder("APIs for my app server")
-            }
-            popup.translatesAutoresizingMaskIntoConstraints = false
-            NSLayoutConstraint.activate([
-                popup.leadingAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.leadingAnchor, constant: 0),
-                popup.trailingAnchor.constraint(equalTo: self.view.safeAreaLayoutGuide.trailingAnchor, constant: 0),
-                popup.heightAnchor.constraint(equalToConstant: 207)
-            ])
-            self.addItemPopupView = popup
-            self.updateConstraints()
-        }
-    }
-    
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add button did tap")
         self.viewAlert(vc: self, storyboard: self.storyboard!)
@@ -166,7 +125,7 @@ class ProjectViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         alert.addAction(UIAlertAction(title: "New Project", style: .default, handler: { action in
             Log.debug("new project did tap")
-            self.viewPopup(type: .project)
+            self.app.viewPopup(type: .project, delegate: self, parentView: self.view, bottomView: self.toolbar, vc: self)
         }))
         alert.modalPresentationStyle = .popover
         if let popoverPresentationController = alert.popoverPresentationController {
@@ -180,25 +139,28 @@ class ProjectViewController: UIViewController {
 
 extension ProjectViewController: PopupViewDelegate {
     func validateText(_ text: String?) -> Bool {
-        guard let popup = self.addItemPopupView else { return false }
         guard let text = text else {
-            popup.viewValidationError("Please enter a name")
+            self.app.addItemPopupView?.viewValidationError("Please enter a name")
+            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
             return false
         }
         if text.isEmpty {
-            popup.viewValidationError("Please enter a name")
+            self.app.addItemPopupView?.viewValidationError("Please enter a name")
+            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
             return false
         }
         if text.trimmingCharacters(in: .whitespaces) == "" {
-            popup.viewValidationError("Please enter a valid name")
+            self.app.addItemPopupView?.viewValidationError("Please enter a valid name")
+            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
             return false
         }
+        self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: false)
         return true
     }
     
     func cancelDidTap(_ sender: Any) {
         Log.debug("cancel did tap")
-        if let popup = self.addItemPopupView {
+        if let popup = self.app.addItemPopupView {
             popup.animateSlideOut {
                 popup.nameTextField.text = ""
                 popup.delegate = nil
@@ -210,7 +172,7 @@ extension ProjectViewController: PopupViewDelegate {
 
     func doneDidTap(_ sender: Any) -> Bool {
         Log.debug("done did tap")
-        if let popup = self.addItemPopupView {
+        if let popup = self.app.addItemPopupView {
             if let name = popup.nameTextField.text {
                 let desc = popup.descTextField.text
                 self.addProject(name: name, desc: desc ?? "")
@@ -229,7 +191,7 @@ extension ProjectViewController: PopupViewDelegate {
     }
     
     func popupStateDidChange(isErrorMode: Bool) {
-        // TODO:
+        self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: isErrorMode)
     }
 }
 

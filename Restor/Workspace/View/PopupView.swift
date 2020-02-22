@@ -22,6 +22,7 @@ protocol PopupViewDelegate: class {
 enum PopupType {
     case workspace
     case project
+    case requestMethod
 }
 
 class PopupView: UIView {
@@ -31,6 +32,8 @@ class PopupView: UIView {
     @IBOutlet weak var navbarView: UIView!
     @IBOutlet weak var nameFieldValidationLabel: UILabel!
     @IBOutlet weak var iCloudSyncSwitch: UISwitch!
+    @IBOutlet weak var descLabel: UILabel!
+    @IBOutlet weak var iCloudSyncLabel: UILabel!
     weak var delegate: PopupViewDelegate?
     var centerY: NSLayoutYAxisAnchor?
     private static weak var popupView: PopupView?
@@ -38,14 +41,22 @@ class PopupView: UIView {
         didSet {
             if type == .workspace {
                 self.nameTextField.placeholder = "My personal workspace"
+                self.setTitle("New Workspace")
             } else if type == .project {
                 self.nameTextField.placeholder = "API Server"
+                self.setTitle("New Project")
+            } else if type == .requestMethod {
+                self.nameTextField.placeholder = "HEAD"
+                self.setTitle("New Request Method")
             }
+            self.bootstrap()
         }
     }
+    var popupBottomContraints: NSLayoutConstraint?
     private var isInit = false
     private var isValidationsSuccess = true
     private var isValidated = false
+    var height: CGFloat = 212
     
     static func initFromNib(owner: Any? = nil) -> UIView? {
         if let aPopupView = self.popupView {
@@ -66,6 +77,7 @@ class PopupView: UIView {
     }
 
     deinit {
+        self.resetUIState()
         Log.debug("popup deinit")
     }
     
@@ -73,6 +85,31 @@ class PopupView: UIView {
         Log.debug("layout subviews")
         self.initUIStyle()
         self.renderTheme()
+    }
+    
+    func displayAllFields() {
+        self.descTextField.isHidden = false
+        self.iCloudSyncSwitch.isHidden = false
+        self.descLabel.isHidden = false
+        self.iCloudSyncLabel.isHidden = false
+    }
+    
+    /// Display only name field
+    func displayNameField() {
+        self.descTextField.isHidden = true
+        self.iCloudSyncSwitch.isHidden = true
+        self.descLabel.isHidden = true
+        self.iCloudSyncLabel.isHidden = true
+    }
+    
+    func bootstrap() {
+        if self.type == .requestMethod {
+            self.height = 131
+            self.displayNameField()
+        } else {
+            self.height = 212
+            self.displayAllFields()
+        }
     }
     
     func initUIStyle() {
@@ -83,6 +120,38 @@ class PopupView: UIView {
             self.nameFieldValidationLabel.textColor = UIColor.red
             self.hideValidationError()
             self.isInit = true
+        }
+    }
+    
+    func initConstraints(parentView: UIView, bottomView: UIView) {
+        self.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            self.leadingAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.leadingAnchor, constant: 0),
+            self.trailingAnchor.constraint(equalTo: parentView.safeAreaLayoutGuide.trailingAnchor, constant: 0),
+            self.heightAnchor.constraint(equalToConstant: self.height)
+        ])
+        self.updatePopupConstraints(bottomView)
+    }
+    
+    func updatePopupConstraints(_ bottomView: UIView, isErrorMode: Bool? = false) {
+        let bottom: CGFloat = {
+            if isErrorMode != nil && isErrorMode! {
+                return -20
+            }
+            return 0
+        }()
+        self.popupBottomContraints?.isActive = false
+        if AppState.isKeyboardActive {
+            self.popupBottomContraints = self.bottomAnchor.constraint(equalTo: bottomView.bottomAnchor,
+                                                                       constant: -AppState.keyboardHeight+bottom)
+        } else {
+            self.popupBottomContraints = self.bottomAnchor.constraint(equalTo: bottomView.bottomAnchor, constant: bottom)
+        }
+        self.popupBottomContraints?.isActive = true
+        if isErrorMode != nil, isErrorMode! {
+            UIView.animate(withDuration: 0.3) {
+                bottomView.layoutIfNeeded()
+            }
         }
     }
     

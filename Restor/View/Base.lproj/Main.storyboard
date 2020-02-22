@@ -89,6 +89,7 @@
                     </view>
                     <navigationItem key="navigationItem" id="5tH-c5-FkJ"/>
                     <connections>
+                        <outlet property="addBtn" destination="QCl-bf-c3l" id="8do-BD-oIQ"/>
                         <outlet property="tableView" destination="Nna-Jj-lzM" id="cIo-La-cJ4"/>
                         <outlet property="toolbar" destination="t1Z-9X-0xA" id="C1l-Yz-mDd"/>
                     </connections>
