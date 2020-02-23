@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 52;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -18,8 +18,6 @@
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
 		9E78D1D3239EC930005FC692 /* RequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */; };
 		9E8759062396C6A700F949D1 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* Utils.swift */; };
-		9E910A23239FF8700076B325 /* InfiniteLayout in Frameworks */ = {isa = PBXBuildFile; productRef = 9E910A22239FF8700076B325 /* InfiniteLayout */; };
-		9E910A26239FF8B80076B325 /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 9E910A25239FF8B80076B325 /* IQKeyboardManagerSwift */; };
 		9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9323945E79002DF561 /* AppDelegate.swift */; };
 		9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9523945E79002DF561 /* SceneDelegate.swift */; };
 		9E926F9823945E79002DF561 /* WorkspaceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9723945E79002DF561 /* WorkspaceViewController.swift */; };
@@ -94,8 +92,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9E910A23239FF8700076B325 /* InfiniteLayout in Frameworks */,
-				9E910A26239FF8B80076B325 /* IQKeyboardManagerSwift in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -251,8 +247,6 @@
 			);
 			name = Restor;
 			packageProductDependencies = (
-				9E910A22239FF8700076B325 /* InfiniteLayout */,
-				9E910A25239FF8B80076B325 /* IQKeyboardManagerSwift */,
 			);
 			productName = Restor;
 			productReference = 9E926F9023945E78002DF561 /* Restor.app */;
@@ -327,8 +321,6 @@
 			);
 			mainGroup = 9E926F8723945E78002DF561;
 			packageReferences = (
-				9E910A21239FF8700076B325 /* XCRemoteSwiftPackageReference "InfiniteLayout" */,
-				9E910A24239FF8B80076B325 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */,
 			);
 			productRefGroup = 9E926F9123945E78002DF561 /* Products */;
 			projectDirPath = "";
@@ -724,38 +716,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		9E910A21239FF8700076B325 /* XCRemoteSwiftPackageReference "InfiniteLayout" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/arnauddorgans/InfiniteLayout";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.4.2;
-			};
-		};
-		9E910A24239FF8B80076B325 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/hackiftekhar/IQKeyboardManager";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 6.5.4;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		9E910A22239FF8700076B325 /* InfiniteLayout */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9E910A21239FF8700076B325 /* XCRemoteSwiftPackageReference "InfiniteLayout" */;
-			productName = InfiniteLayout;
-		};
-		9E910A25239FF8B80076B325 /* IQKeyboardManagerSwift */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 9E910A24239FF8B80076B325 /* XCRemoteSwiftPackageReference "IQKeyboardManager" */;
-			productName = IQKeyboardManagerSwift;
-		};
-/* End XCSwiftPackageProductDependency section */
 
 /* Begin XCVersionGroup section */
 		9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */ = {
