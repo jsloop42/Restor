@@ -17,6 +17,8 @@ struct AppState {
     static var activeScreen: Screen = .projectListing
     static var isKeyboardActive = false
     static var keyboardHeight: CGFloat = 0.0
+    static var currentWorkspace: Workspace?
+    static var currentProject: Project?
     
     static func workspace(forIndex index: Int) -> Workspace? {
         if index < self.workspaces.count {
@@ -45,25 +47,30 @@ struct AppState {
     }
     
     static func currentWorkspaceName() -> String {
-        if let idx = self.selectedWorkspace {
-            return self.workspaces[idx].name
-        }
-        if let ws = self.workspaces.first {
+        if let ws = self.getCurrentWorkspace() {
+            return ws.name
+        } else if let ws = self.workspaces.first {
             return ws.name
         }
         return "Workspace"
     }
     
-    static func currentWorkspace() -> Workspace? {
+    static func getCurrentWorkspace() -> Workspace? {
         if let idx = self.selectedWorkspace {
-            return self.workspaces[idx]
+            let ws = self.workspaces[idx]
+            self.currentWorkspace = ws
+            return ws
         }
+        self.currentWorkspace = nil
         return nil
     }
+    
+    
 }
 
 struct OptionsPickerState {
     static var data: [String] = []
+    static var requestData: [RequestMethodData] = []
     static var selected: Int = 0
     static var title: String = "body"
 }

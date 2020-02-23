@@ -68,6 +68,9 @@
                     </constraints>
                     <fontDescription key="fontDescription" type="system" pointSize="14"/>
                     <textInputTraits key="textInputTraits" returnKeyType="next"/>
+                    <connections>
+                        <action selector="nameTextFieldValueDidChange:" destination="iN0-l3-epB" eventType="valueChanged" id="dHT-yT-ejh"/>
+                    </connections>
                 </textField>
                 <label hidden="YES" opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" minimumFontSize="8" translatesAutoresizingMaskIntoConstraints="NO" id="kN5-m2-s8Y" userLabel="Name validation label">
                     <rect key="frame" x="100" y="101" width="298" height="16"/>

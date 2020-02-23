@@ -41,8 +41,6 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     private let app = App.shared
     static var state: Request = Request()
     var isEndEditing = false
-    private let methods = ["GET", "POST", "PUT", "OPTION", "DELETE"]
-    private var methodIndex = 0
     
     enum CellId: Int {
         case url = 0
@@ -86,7 +84,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.initUI()
         self.initEvents()
     }
-    
+        
     func initUI() {
         self.app.updateViewBackground(self.view)
         self.app.updateNavigationControllerBackground(self.navigationController)
@@ -95,7 +93,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.initBodyTableViewManager()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
-        self.methodLabel.text = self.methods[self.methodIndex]
+        self.methodLabel.text = RequestVC.state.methods[RequestVC.state.selectedMethodIndex].name
         self.urlTextField.delegate = self
         self.nameTextField.delegate = self
         self.descTextView.delegate = self
@@ -157,8 +155,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     @objc func methodViewDidTap() {
         Log.debug("method view did tap")
-        OptionsPickerState.data = self.methods
-        OptionsPickerState.selected = self.methodIndex
+        OptionsPickerState.requestData = RequestVC.state.methods
+        OptionsPickerState.selected = RequestVC.state.selectedMethodIndex
         OptionsPickerState.title = "Request Method"
         self.app.presentOptionPicker(.requestMethod, storyboard: self.storyboard, delegate: nil, navVC: self.navigationController)
     }
@@ -167,8 +165,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         if let info = notif.userInfo as? [String: Any], let name = info[Const.requestMethodNameKey] as? String, let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {
                 self.methodLabel.text = name
-                self.methodIndex = idx
-                RequestVC.state.method = name
+                RequestVC.state.selectedMethodIndex = idx
                 self.tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .none)
             }
         }

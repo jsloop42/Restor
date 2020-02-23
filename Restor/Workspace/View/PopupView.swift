@@ -12,7 +12,7 @@ import UIKit
 protocol PopupViewDelegate: class {
     func cancelDidTap(_ sender: Any)
     /// Return a flag indicating if the keyboard can be dismissed if present
-    func doneDidTap(_ sender: Any) -> Bool
+    func doneDidTap(_ text: String?) -> Bool
     /// Perform input text validation returning true is valid
     func validateText(_ text: String?) -> Bool
     /// Invoked when popup state changes. Eg: display validation error label
@@ -57,6 +57,7 @@ class PopupView: UIView {
     private var isValidationsSuccess = true
     private var isValidated = false
     var height: CGFloat = 212
+    private var nameText = ""
     
     static func initFromNib(owner: Any? = nil) -> UIView? {
         if let aPopupView = self.popupView {
@@ -190,12 +191,16 @@ class PopupView: UIView {
     
     @IBAction func doneDidTap(_ sender: Any) {
         Log.debug("Done did tap")
+        if self.nameTextField.text != self.nameText && self.isValidated && !self.isValidationsSuccess {
+            self.isValidated = false
+        }
         if !self.isValidated {
             self.isValidationsSuccess = self.delegate?.validateText(self.nameTextField.text) ?? false
+            self.nameText = self.nameTextField.text ?? ""
             self.isValidated = true
         }
         if self.isValidationsSuccess {
-            self.delegate?.doneDidTap(sender)
+            self.delegate?.doneDidTap(self.nameTextField.text)
         }
     }
     
@@ -250,11 +255,17 @@ class PopupView: UIView {
             self.layoutIfNeeded()
         }
     }
+    
+    @IBAction func nameTextFieldValueDidChange(_ sender: Any) {
+        Log.debug("name text field value did change")
+        self.isValidated = false
+    }
 }
 
 extension PopupView: UITextFieldDelegate {
     func textFieldDidBeginEditing(_ textField: UITextField) {
         Log.debug("text field did begin editing")
+        self.isValidated = false
     }
 
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {

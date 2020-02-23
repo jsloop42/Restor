@@ -41,7 +41,7 @@ class ProjectViewController: UIViewController {
         self.initUI()
         self.initEvent()
         self.app.initDefaultWorspace()
-        if let ws = AppState.currentWorkspace() {
+        if let ws = AppState.getCurrentWorkspace() {
             self.workspace = ws
             self.updateWorkspaceName()
         }
@@ -170,7 +170,7 @@ extension ProjectViewController: PopupViewDelegate {
         }
     }
 
-    func doneDidTap(_ sender: Any) -> Bool {
+    func doneDidTap(_ text: String?) -> Bool {
         Log.debug("done did tap")
         if let popup = self.app.addItemPopupView {
             if let name = popup.nameTextField.text {

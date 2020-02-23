@@ -101,24 +101,32 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     }
     
     func close() {
+        if self.pickerType == .requestMethod {
+            RequestVC.state.methods = OptionsPickerState.requestData
+        }
         self.optionsDelegate?.reloadOptionsData()
         self.dismiss(animated: true, completion: nil)
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if self.pickerType == .requestMethod { return OptionsPickerState.requestData.count }
         return OptionsPickerState.data.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "optionsCell", for: indexPath) as! OptionsTableViewCell
         let row = indexPath.row
-        if OptionsPickerState.data.count > row {
-            cell.titleLabel.text = OptionsPickerState.data[row]
-            if row == OptionsPickerState.selected {
-                cell.selectCell()
-            } else {
-                cell.deselectCell()
+        let data: String = {
+            if self.pickerType == .requestMethod {
+                return OptionsPickerState.requestData[row].name
             }
+            return OptionsPickerState.data[row]
+        }()
+        cell.titleLabel.text = data
+        if row == OptionsPickerState.selected {
+            cell.selectCell()
+        } else {
+            cell.deselectCell()
         }
         return cell
     }
@@ -134,9 +142,9 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
             OptionsPickerState.selected = row
             self.optionsDelegate?.optionDidSelect(row)
         } else if self.pickerType == .requestMethod {
-            if OptionsPickerState.data.count > row {
+            if OptionsPickerState.requestData.count > row {
                 self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
-                             userInfo: [Const.requestMethodNameKey: OptionsPickerState.data[row], Const.optionSelectedIndexKey: row])
+                             userInfo: [Const.requestMethodNameKey: OptionsPickerState.requestData[row].name, Const.optionSelectedIndexKey: row])
             }
         }
         self.close()
@@ -164,8 +172,14 @@ extension OptionsPickerViewController: PopupViewDelegate {
         self.app.addItemPopupView?.animateSlideOut()
     }
     
-    func doneDidTap(_ sender: Any) -> Bool {
+    func doneDidTap(_ text: String?) -> Bool {
+        if self.pickerType == .requestMethod, let txt = text {
+            OptionsPickerState.requestData.append(RequestMethodData(name: txt, isCustom: true, project: AppState.currentProject))
+        }
         self.app.addItemPopupView?.animateSlideOut()
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
+        }
         return true
     }
     
@@ -184,6 +198,13 @@ extension OptionsPickerViewController: PopupViewDelegate {
             self.app.addItemPopupView?.viewValidationError("Please enter a valid name")
             self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
             return false
+        }
+        if self.pickerType == .requestMethod {
+            if (OptionsPickerState.requestData.first { data -> Bool in data.name == text }) != nil {
+                self.app.addItemPopupView?.viewValidationError("Method already exists")
+                self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
+                return false
+            }
         }
         self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: false)
         return true

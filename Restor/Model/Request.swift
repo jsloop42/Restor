@@ -13,13 +13,20 @@ class Request: Codable {
     var desc: String = ""
     var tags: [String] = []
     var url: String = ""
-    var method: String = RequestMethod.get.rawValue
+    var selectedMethodIndex = 0
+    var methods: [RequestMethodData] = []
     var headers: [RequestData] = []
     var params: [RequestData] = []
     var body: RequestBodyData?
     weak var project: Project?
+    // Method names are case sensitive RFC 7230, 7231
+    private let reqMethods = ["GET", "POST", "PUT", "OPTION", "DELETE"]
     
-    init() {}
+    init() {
+        for i in self.reqMethods {
+            self.methods.append(RequestMethodData(name: i, isCustom: false, project: self.project))
+        }
+    }
 }
 
 protocol RequestDataProtocol {
@@ -68,4 +75,10 @@ enum RequestBodyType: Int, Codable {
     case form
     case multipart
     case binary
+}
+
+struct RequestMethodData: Codable {
+    var name: String
+    var isCustom = false
+    weak var project: Project?
 }

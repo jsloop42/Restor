@@ -156,7 +156,7 @@ extension WorkspaceViewController: PopupViewDelegate {
         }
     }
 
-    func doneDidTap(_ sender: Any) -> Bool {
+    func doneDidTap(_ text: String?) -> Bool {
         Log.debug("done did tap")
         if let popup = self.app.addItemPopupView {
             if let name = popup.nameTextField.text {
