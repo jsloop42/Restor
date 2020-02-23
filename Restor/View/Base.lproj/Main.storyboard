@@ -1182,10 +1182,10 @@
                                                                                                                     <rect key="frame" x="20" y="4" width="211" height="84.5"/>
                                                                                                                     <subviews>
                                                                                                                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="rd9-Zd-R7x" userLabel="Field Type View">
-                                                                                                                            <rect key="frame" x="190" y="8" width="21" height="32"/>
+                                                                                                                            <rect key="frame" x="186" y="8" width="21" height="32"/>
                                                                                                                             <subviews>
                                                                                                                                 <button opaque="NO" userInteractionEnabled="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jnn-kB-WIr" userLabel="Field Type Button">
-                                                                                                                                    <rect key="frame" x="1" y="5" width="19" height="22"/>
+                                                                                                                                    <rect key="frame" x="-1" y="5" width="19" height="22"/>
                                                                                                                                     <constraints>
                                                                                                                                         <constraint firstAttribute="width" constant="19" id="LKo-Bf-DRh"/>
                                                                                                                                     </constraints>
@@ -1200,7 +1200,7 @@
                                                                                                                             <constraints>
                                                                                                                                 <constraint firstItem="jnn-kB-WIr" firstAttribute="centerY" secondItem="rd9-Zd-R7x" secondAttribute="centerY" id="4qa-oW-4qO"/>
                                                                                                                                 <constraint firstAttribute="width" constant="21" id="9TU-77-uQZ"/>
-                                                                                                                                <constraint firstItem="jnn-kB-WIr" firstAttribute="centerX" secondItem="rd9-Zd-R7x" secondAttribute="centerX" id="BaE-wY-BpP"/>
+                                                                                                                                <constraint firstItem="jnn-kB-WIr" firstAttribute="centerX" secondItem="rd9-Zd-R7x" secondAttribute="centerX" constant="-2" id="BaE-wY-BpP"/>
                                                                                                                             </constraints>
                                                                                                                             <userDefinedRuntimeAttributes>
                                                                                                                                 <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
@@ -1209,7 +1209,7 @@
                                                                                                                             </userDefinedRuntimeAttributes>
                                                                                                                         </view>
                                                                                                                         <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" placeholder="form key" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="eIB-BK-yWP" userLabel="Key Text Field" customClass="EATextField" customModule="Restor" customModuleProvider="target">
-                                                                                                                            <rect key="frame" x="6" y="8" width="182" height="34"/>
+                                                                                                                            <rect key="frame" x="6" y="8" width="178" height="34"/>
                                                                                                                             <constraints>
                                                                                                                                 <constraint firstAttribute="height" priority="750" constant="34" id="Zie-Ia-ksg"/>
                                                                                                                             </constraints>
@@ -1243,7 +1243,7 @@
                                                                                                                         <constraint firstItem="eIB-BK-yWP" firstAttribute="top" secondItem="BOR-jC-0ZT" secondAttribute="top" constant="8" id="Flb-Ht-0KP"/>
                                                                                                                         <constraint firstItem="rd9-Zd-R7x" firstAttribute="leading" secondItem="eIB-BK-yWP" secondAttribute="trailing" constant="2" id="Jez-cb-hDc"/>
                                                                                                                         <constraint firstItem="4XS-p3-o10" firstAttribute="top" secondItem="eIB-BK-yWP" secondAttribute="bottom" constant="4" id="MdY-Gp-rDA"/>
-                                                                                                                        <constraint firstAttribute="trailing" secondItem="rd9-Zd-R7x" secondAttribute="trailing" id="P8x-HP-67I"/>
+                                                                                                                        <constraint firstAttribute="trailing" secondItem="rd9-Zd-R7x" secondAttribute="trailing" constant="4" id="P8x-HP-67I"/>
                                                                                                                         <constraint firstItem="eIB-BK-yWP" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" constant="6" id="SNw-61-uXf"/>
                                                                                                                         <constraint firstAttribute="trailing" secondItem="4XS-p3-o10" secondAttribute="trailing" id="hZ7-CO-6O1"/>
                                                                                                                         <constraint firstItem="4XS-p3-o10" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" id="sWY-ue-K9B"/>
