@@ -32,11 +32,14 @@ class Request: Codable {
 protocol RequestDataProtocol {
     func getKey() -> String
     func getValue() -> String
+    func getFieldType() -> RequestBodyFormFieldType
+    func setFieldType(_ type: RequestBodyFormFieldType)
 }
 
 class RequestData: RequestDataProtocol, Codable {
     var key: String
     var value: String
+    var type: RequestBodyFormFieldType = .text
     var isEditing: Bool = false
     
     init() {
@@ -55,6 +58,14 @@ class RequestData: RequestDataProtocol, Codable {
     
     func getValue() -> String {
         return value
+    }
+    
+    func getFieldType() -> RequestBodyFormFieldType {
+        return self.type
+    }
+    
+    func setFieldType(_ type: RequestBodyFormFieldType) {
+        self.type = type
     }
 }
 
@@ -75,6 +86,16 @@ enum RequestBodyType: Int, Codable {
     case form
     case multipart
     case binary
+}
+
+/// Form fields under request body
+enum RequestBodyFormFieldType: Int, Codable {
+    case text
+    case file
+
+    static var allCases: [String] {
+        return ["Text", "File"]
+    }
 }
 
 struct RequestMethodData: Codable {

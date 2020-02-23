@@ -14,9 +14,13 @@ protocol OptionsPickerViewDelegate: class {
     func reloadOptionsData()
 }
 
-enum OptionPickerType {
+enum OptionPickerType: Int {
+    /// Body types: json, xml, raw, etc.
     case requestBodyForm
+    /// GET, POST, etc.
     case requestMethod
+    /// Text, file
+    case requestBodyFormField
 }
 
 class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
@@ -97,13 +101,17 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     
     @IBAction func cancelButtonDidTap() {
         Log.debug("cancel button did tap")
-        self.close()
+        self.close(true)
     }
     
-    func close() {
-        if self.pickerType == .requestMethod {
-            RequestVC.state.methods = OptionsPickerState.requestData
-            RequestVC.state.selectedMethodIndex = OptionsPickerState.selected
+    func close(_ isCancel: Bool) {
+        if !isCancel {
+            if self.pickerType == .requestMethod {
+                RequestVC.state.methods = OptionsPickerState.requestData
+                RequestVC.state.selectedMethodIndex = OptionsPickerState.selected
+            } else if self.pickerType == .requestBodyFormField {
+                self.nc.post(Notification(name: NotificationKey.bodyFormFieldTypeDidChange))
+            }
         }
         self.optionsDelegate?.reloadOptionsData()
         self.dismiss(animated: true, completion: nil)
@@ -151,8 +159,10 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
             if OptionsPickerState.requestData.count > row {
                 self.postRequestMethodChangeNotification(row)
             }
+        } else if self.pickerType == .requestBodyFormField {
+            OptionsPickerState.selected = row
         }
-        self.close()
+        self.close(false)
     }
     
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {

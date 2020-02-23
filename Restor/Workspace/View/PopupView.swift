@@ -22,6 +22,7 @@ protocol PopupViewDelegate: class {
 enum PopupType {
     case workspace
     case project
+    /// GET, POST, etc.
     case requestMethod
 }
 

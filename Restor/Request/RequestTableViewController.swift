@@ -41,6 +41,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     private let app = App.shared
     static var state: Request = Request()
     var isEndEditing = false
+    var isOptionFromNotif = false
     
     enum CellId: Int {
         case url = 0
@@ -123,6 +124,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         let methodTap = UITapGestureRecognizer(target: self, action: #selector(self.methodViewDidTap))
         self.methodView.addGestureRecognizer(methodTap)
         self.nc.addObserver(self, selector: #selector(self.requestMethodDidChange(_:)), name: NotificationKey.requestMethodDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.presentOptionsScreen(_:)), name: NotificationKey.optionScreenShouldPresent, object: nil)
     }
 
     func initHeadersTableViewManager() {
@@ -167,6 +169,14 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
                 self.methodLabel.text = name
                 RequestVC.state.selectedMethodIndex = idx
                 self.tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .none)
+            }
+        }
+    }
+    
+    @objc func presentOptionsScreen(_ notif: Notification) {
+        if let info = notif.userInfo as? [String: Any], let opt = info[Const.optionTypeKey] as? Int, let type = OptionPickerType(rawValue: opt) {
+            DispatchQueue.main.async {
+                self.app.presentOptionPicker(type, storyboard: self.storyboard!, delegate: self, navVC: self.navigationController!)
             }
         }
     }
@@ -320,12 +330,16 @@ extension RequestTableViewController: KVTableViewDelegate {
 
 extension RequestTableViewController: OptionsPickerViewDelegate {
     func reloadOptionsData() {
-        self.bodyKVTableViewManager.reloadData()
-        self.tableView.reloadRows(at: [IndexPath(row: CellId.body.rawValue, section: 0)], with: .none)
+        if !self.isOptionFromNotif {
+            self.bodyKVTableViewManager.reloadData()
+            self.tableView.reloadRows(at: [IndexPath(row: CellId.body.rawValue, section: 0)], with: .none)
+        }
     }
     
     func optionDidSelect(_ row: Int) {
-        RequestVC.state.body!.selected = row
+        if !self.isOptionFromNotif {
+            RequestVC.state.body!.selected = row
+        }
     }
 }
 
@@ -525,7 +539,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     }
     
     func updateState(_ data: RequestBodyData) {
-        let idx: Int = OptionsPickerState.selected
+        let idx: Int = data.selected
         RequestVC.state.body!.selected = idx
         self.typeLabel.text = "(\(self.optionsData[idx]))"
         self.bodyLabelViewWidth.isActive = false
@@ -585,15 +599,20 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     @IBOutlet weak var keyTextField: EATextField!
     @IBOutlet weak var valueTextField: EATextField!
     @IBOutlet weak var containerView: UIView!
+    @IBOutlet weak var fieldTypeView: UIView!
+    @IBOutlet weak var fieldTypeBtn: UIButton!
     weak var delegate: KVBodyFieldTableViewCellDelegate?
     var isValueTextFieldActive = false
     var selectedType: RequestBodyType = .form
     var isKeyTextFieldActive = false
-    private let app = App.shared
+    private let nc = NotificationCenter.default
+    var selectedFieldType: RequestBodyFormFieldType = .text
 
     override func awakeFromNib() {
         super.awakeFromNib()
         self.bootstrap()
+        self.renderTheme()
+        self.initEvents()
     }
     
     func bootstrap() {
@@ -601,6 +620,25 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         self.valueTextField.delegate = self
         self.keyTextField.isColor = false
         self.valueTextField.isColor = false
+    }
+    
+    func renderTheme() {
+        //self.fieldTypeView.backgroundColor = App.Color.requestMethodBg
+    }
+    
+    func initEvents() {
+        let btnTap = UITapGestureRecognizer(target: self, action: #selector(self.fieldTypeViewDidTap(_:)))
+        btnTap.cancelsTouchesInView = false
+        self.fieldTypeView.addGestureRecognizer(btnTap)
+    }
+    
+    @objc func fieldTypeViewDidTap(_ recog: UITapGestureRecognizer) {
+        Log.debug("field type view did tap")
+        OptionsPickerState.modelIndex = self.tag
+        OptionsPickerState.selected = self.selectedFieldType.rawValue
+        OptionsPickerState.data = RequestBodyFormFieldType.allCases
+        self.nc.post(name: NotificationKey.optionScreenShouldPresent, object: self,
+                     userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyFormField.rawValue])
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -623,6 +661,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     var isCellRegistered = false
     private let nc = NotificationCenter.default
     var selectedType: RequestBodyType = .form
+    private let app = App.shared
     
     override init(frame: CGRect, style: UITableView.Style) {
         super.init(frame: frame, style: style)
@@ -634,6 +673,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         super.init(coder: coder)
         Log.debug("kvbodyfieldtableview init coder")
         self.bootstrap()
+        self.initEvents()
     }
     
     func bootstrap() {
@@ -641,6 +681,22 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         self.dataSource = self
         self.estimatedRowHeight = 44
         self.rowHeight = UITableView.automaticDimension
+    }
+    
+    func initEvents() {
+        self.nc.addObserver(self, selector: #selector(self.bodyFormFieldTypeDidChange(_:)), name: NotificationKey.bodyFormFieldTypeDidChange, object: nil)
+    }
+    
+    @objc func bodyFormFieldTypeDidChange(_ notif: Notification) {
+        Log.debug("body form field type did change notif received")
+        if selectedType == .form {
+            let data = RequestVC.state.body!.form[OptionsPickerState.modelIndex]
+            if let t = RequestBodyFormFieldType(rawValue: OptionsPickerState.selected) {
+                data.setFieldType(t)
+                RequestVC.state.body!.form[OptionsPickerState.modelIndex] = data
+            }
+        }
+        self.reloadData()
     }
     
     func addFields() {
@@ -709,6 +765,12 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             let x = data[row]
             cell.keyTextField.text = x.getKey()
             cell.valueTextField.text = x.getValue()
+            cell.selectedFieldType = x.getFieldType()
+            if x.getFieldType() == .text {
+                cell.fieldTypeBtn.setImage(UIImage(named: "text"), for: .normal)
+            } else if x.getFieldType() == .file {
+                cell.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
+            }
         }
         return cell
     }

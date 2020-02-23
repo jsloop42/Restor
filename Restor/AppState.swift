@@ -69,8 +69,13 @@ struct AppState {
 }
 
 struct OptionsPickerState {
+    /// Generic model data
     static var data: [String] = []
+    /// The model data for request method type
     static var requestData: [RequestMethodData] = []
+    /// The selected index in the option picker data model
     static var selected: Int = 0
     static var title: String = "body"
+    /// The index of data in the model
+    static var modelIndex: Int = 0
 }
