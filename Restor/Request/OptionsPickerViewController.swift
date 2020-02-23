@@ -103,9 +103,15 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     func close() {
         if self.pickerType == .requestMethod {
             RequestVC.state.methods = OptionsPickerState.requestData
+            RequestVC.state.selectedMethodIndex = OptionsPickerState.selected
         }
         self.optionsDelegate?.reloadOptionsData()
         self.dismiss(animated: true, completion: nil)
+    }
+    
+    func postRequestMethodChangeNotification(_ row: Int) {
+        self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
+                     userInfo: [Const.requestMethodNameKey: OptionsPickerState.requestData[row].name, Const.optionSelectedIndexKey: row])
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -143,11 +149,36 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
             self.optionsDelegate?.optionDidSelect(row)
         } else if self.pickerType == .requestMethod {
             if OptionsPickerState.requestData.count > row {
-                self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
-                             userInfo: [Const.requestMethodNameKey: OptionsPickerState.requestData[row].name, Const.optionSelectedIndexKey: row])
+                self.postRequestMethodChangeNotification(row)
             }
         }
         self.close()
+    }
+    
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        if self.pickerType == .requestMethod {
+            return OptionsPickerState.requestData[indexPath.row].isCustom
+        }
+        return false
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
+            Log.debug("delete row: \(indexPath)")
+            if self.pickerType == .requestMethod {
+                let row = indexPath.row
+                if OptionsPickerState.selected == row {
+                    OptionsPickerState.selected = 0
+                    self.postRequestMethodChangeNotification(0)
+                }
+                OptionsPickerState.requestData.remove(at: row)
+                self.tableView.reloadData()
+            }
+            completion(true)
+        }
+        let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete])
+        swipeActionConfig.performsFirstActionWithFullSwipe = false
+        return swipeActionConfig
     }
 }
 

@@ -107,9 +107,11 @@ class PopupView: UIView {
         if self.type == .requestMethod {
             self.height = 131
             self.displayNameField()
+            self.nameTextField.autocapitalizationType = .allCharacters
         } else {
             self.height = 212
             self.displayAllFields()
+            self.nameTextField.autocapitalizationType = .none
         }
     }
     
@@ -184,8 +186,15 @@ class PopupView: UIView {
         self.descTextField.placeholder = text
     }
     
+    func clearState() {
+        self.nameTextField.text = ""
+        self.descTextField.text = ""
+        self.iCloudSyncSwitch.setOn(false, animated: false)
+    }
+    
     @IBAction func cancelDidTap(_ sender: Any) {
         Log.debug("Cancel did tap")
+        self.clearState()
         self.delegate?.cancelDidTap(sender)
     }
     
@@ -200,7 +209,9 @@ class PopupView: UIView {
             self.isValidated = true
         }
         if self.isValidationsSuccess {
-            self.delegate?.doneDidTap(self.nameTextField.text)
+            let txt = self.nameTextField.text ?? ""
+            self.clearState()
+            self.delegate?.doneDidTap(txt)
         }
     }
     
