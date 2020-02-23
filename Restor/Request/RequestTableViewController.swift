@@ -311,6 +311,7 @@ extension RequestTableViewController: KVTableViewDelegate {
             vc.optionsDelegate = self
             RequestVC.addRequestBodyToState()
             RequestVC.state.body!.selected = selected
+            OptionsPickerState.selected = selected
             OptionsPickerState.data = data
             self.navigationController?.present(vc, animated: true, completion: nil)
         }
