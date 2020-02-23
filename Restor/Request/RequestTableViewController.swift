@@ -569,6 +569,10 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
 
 // MARK: - Raw textview delegate
 extension KVBodyContentCell: UITextViewDelegate {
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        RequestVC.shared?.clearEditing()
+    }
+    
     func textViewDidChange(_ textView: UITextView) {
         let txt = textView.text ?? ""
         Log.debug("text changed: \(txt)")
