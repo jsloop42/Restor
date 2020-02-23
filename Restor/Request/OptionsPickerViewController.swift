@@ -107,8 +107,8 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     func close(_ isCancel: Bool) {
         if !isCancel {
             if self.pickerType == .requestMethod {
-                RequestVC.state.methods = OptionsPickerState.requestData
-                RequestVC.state.selectedMethodIndex = OptionsPickerState.selected
+                RequestVC.shared?.state.methods = OptionsPickerState.requestData
+                RequestVC.shared?.state.selectedMethodIndex = OptionsPickerState.selected
             } else if self.pickerType == .requestBodyFormField {
                 self.nc.post(Notification(name: NotificationKey.bodyFormFieldTypeDidChange))
             }
