@@ -79,3 +79,7 @@ struct OptionsPickerState {
     /// The index of data in the model
     static var modelIndex: Int = 0
 }
+
+struct DocumentPickerState {
+    static var selectedURLs: [URL] = []
+}

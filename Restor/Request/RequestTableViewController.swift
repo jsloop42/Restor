@@ -42,6 +42,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     var state: Request = Request()
     var isEndEditing = false
     var isOptionFromNotif = false
+    private let docPicker = DocumentPicker.shared
     
     enum CellId: Int {
         case url = 0
@@ -126,6 +127,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.methodView.addGestureRecognizer(methodTap)
         self.nc.addObserver(self, selector: #selector(self.requestMethodDidChange(_:)), name: NotificationKey.requestMethodDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentOptionsScreen(_:)), name: NotificationKey.optionScreenShouldPresent, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: NotificationKey.documentPickerShouldPresent, object: nil)
     }
 
     func initHeadersTableViewManager() {
@@ -180,6 +182,12 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
                 self.app.presentOptionPicker(type, storyboard: self.storyboard!, delegate: self, navVC: self.navigationController!)
             }
         }
+    }
+    
+    @objc func presentDocumentPicker(_ notif: Notification) {
+        let docPicker = DocumentPicker()
+        docPicker.presentDocumentMenu(navVC: self.navigationController!, vc: self)
+        //docPicker.presentDocumentPicker(vc: self)
     }
     
     @objc func endEditing() {
@@ -309,6 +317,20 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
             return CGFloat(count * 92.5) + 57  // 84: field cell, 81: title cell
         }
         return 92.5 + 57  // 84 + 77
+    }
+}
+
+extension RequestTableViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        Log.debug("image picker controller delegate")
+        self.docPicker.imagePickerController(picker, didFinishPickingMediaWithInfo: info)
+        self.navigationController?.dismiss(animated: true, completion: nil)
+    }
+    
+    func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+        Log.debug("image picker did cancel")
+        self.docPicker.imagePickerControllerDidCancel(picker)
+        self.navigationController?.dismiss(animated: true, completion: nil)
     }
 }
 
@@ -655,6 +677,14 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         RequestVC.shared?.clearEditing()
     }
     
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if self.selectedFieldType == .file && textField == self.valueTextField {
+            self.nc.post(Notification(name: NotificationKey.documentPickerShouldPresent))
+            return false
+        }
+        return true
+    }
+    
     func textFieldDidEndEditing(_ textField: UITextField) {
         Log.debug("textfield did end editing")
         if textField == self.keyTextField {
@@ -776,8 +806,10 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             cell.selectedFieldType = x.getFieldType()
             if x.getFieldType() == .text {
                 cell.fieldTypeBtn.setImage(UIImage(named: "text"), for: .normal)
+                cell.valueTextField.placeholder = "form value"
             } else if x.getFieldType() == .file {
                 cell.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
+                cell.valueTextField.placeholder = "select files"
             }
         }
         return cell

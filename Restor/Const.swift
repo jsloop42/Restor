@@ -24,4 +24,5 @@ struct NotificationKey {
     static let requestMethodDidChange = Notification.Name("requestMethodDidChange")
     static let optionScreenShouldPresent = Notification.Name("optionScreenShouldPresent")
     static let bodyFormFieldTypeDidChange = Notification.Name("bodyFormFieldTypeDidChange")
+    static let documentPickerShouldPresent = Notification.Name("documentPickerShouldPresent")
 }

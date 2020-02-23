@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 
 extension Date {
     func day() -> Int {
@@ -46,5 +47,16 @@ extension String {
         let startIndex =  self.index(self.startIndex, offsetBy: r.lowerBound)
         let endIndex = self.index(startIndex, offsetBy: r.upperBound - r.lowerBound)
         return String(self[startIndex...endIndex])
+    }
+}
+
+extension UIImage {
+    /// Offset the image from left
+    func imageWithLeftPadding(_ left: CGFloat) -> UIImage {
+        UIGraphicsBeginImageContextWithOptions(self.size, false, 0.0)
+        self.draw(in: CGRect(x: left, y: 0, width: self.size.width, height: self.size.height))
+        let newImage: UIImage = UIGraphicsGetImageFromCurrentImageContext()!
+        UIGraphicsEndImageContext()
+        return newImage
     }
 }
