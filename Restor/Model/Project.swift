@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Project: Codable {
+class Project {
     var name: String
     var desc: String = ""
     weak var workspace: Workspace?

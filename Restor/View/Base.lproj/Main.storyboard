@@ -1231,6 +1231,19 @@
                                                                                                                             <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                                                                                             <textInputTraits key="textInputTraits"/>
                                                                                                                         </textField>
+                                                                                                                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="wdW-iS-JlY">
+                                                                                                                            <rect key="frame" x="6" y="52.5" width="34" height="34"/>
+                                                                                                                            <constraints>
+                                                                                                                                <constraint firstAttribute="height" constant="34" id="3vV-3O-GOD"/>
+                                                                                                                                <constraint firstAttribute="width" secondItem="wdW-iS-JlY" secondAttribute="height" multiplier="1:1" id="76K-mb-hqg"/>
+                                                                                                                                <constraint firstAttribute="width" constant="34" id="eqS-y0-5Bu"/>
+                                                                                                                            </constraints>
+                                                                                                                            <userDefinedRuntimeAttributes>
+                                                                                                                                <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                                                                                                    <real key="value" value="6"/>
+                                                                                                                                </userDefinedRuntimeAttribute>
+                                                                                                                            </userDefinedRuntimeAttributes>
+                                                                                                                        </imageView>
                                                                                                                     </subviews>
                                                                                                                     <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                                                                                     <constraints>
@@ -1242,9 +1255,11 @@
                                                                                                                         <constraint firstAttribute="trailing" secondItem="k3J-HW-Rrf" secondAttribute="trailing" constant="2" id="D1I-uq-iCD"/>
                                                                                                                         <constraint firstItem="eIB-BK-yWP" firstAttribute="top" secondItem="BOR-jC-0ZT" secondAttribute="top" constant="8" id="Flb-Ht-0KP"/>
                                                                                                                         <constraint firstItem="rd9-Zd-R7x" firstAttribute="leading" secondItem="eIB-BK-yWP" secondAttribute="trailing" constant="2" id="Jez-cb-hDc"/>
+                                                                                                                        <constraint firstItem="wdW-iS-JlY" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" constant="6" id="Md5-00-WDj"/>
                                                                                                                         <constraint firstItem="4XS-p3-o10" firstAttribute="top" secondItem="eIB-BK-yWP" secondAttribute="bottom" constant="4" id="MdY-Gp-rDA"/>
                                                                                                                         <constraint firstAttribute="trailing" secondItem="rd9-Zd-R7x" secondAttribute="trailing" constant="4" id="P8x-HP-67I"/>
                                                                                                                         <constraint firstItem="eIB-BK-yWP" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" constant="6" id="SNw-61-uXf"/>
+                                                                                                                        <constraint firstItem="wdW-iS-JlY" firstAttribute="top" secondItem="4XS-p3-o10" secondAttribute="bottom" constant="6" id="bAM-GQ-tiz"/>
                                                                                                                         <constraint firstAttribute="trailing" secondItem="4XS-p3-o10" secondAttribute="trailing" id="hZ7-CO-6O1"/>
                                                                                                                         <constraint firstItem="4XS-p3-o10" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" id="sWY-ue-K9B"/>
                                                                                                                     </constraints>
@@ -1261,6 +1276,7 @@
                                                                                                             <outlet property="containerView" destination="BOR-jC-0ZT" id="1pq-PW-QIf"/>
                                                                                                             <outlet property="fieldTypeBtn" destination="jnn-kB-WIr" id="g7b-mW-V8D"/>
                                                                                                             <outlet property="fieldTypeView" destination="rd9-Zd-R7x" id="GaH-uk-8aj"/>
+                                                                                                            <outlet property="imageFileView" destination="wdW-iS-JlY" id="r1q-gl-lpb"/>
                                                                                                             <outlet property="keyTextField" destination="eIB-BK-yWP" id="BK2-nt-Jfq"/>
                                                                                                             <outlet property="valueTextField" destination="k3J-HW-Rrf" id="bGD-Bi-6jf"/>
                                                                                                         </connections>

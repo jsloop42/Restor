@@ -632,6 +632,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     @IBOutlet weak var containerView: UIView!
     @IBOutlet weak var fieldTypeView: UIView!
     @IBOutlet weak var fieldTypeBtn: UIButton!
+    @IBOutlet weak var imageFileView: UIImageView!
     weak var delegate: KVBodyFieldTableViewCellDelegate?
     var isValueTextFieldActive = false
     var selectedType: RequestBodyType = .form
@@ -651,6 +652,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         self.valueTextField.delegate = self
         self.keyTextField.isColor = false
         self.valueTextField.isColor = false
+        self.imageFileView.isHidden = true
     }
     
     func renderTheme() {
@@ -679,6 +681,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if self.selectedFieldType == .file && textField == self.valueTextField {
+            DocumentPickerState.modelIndex = self.tag
             self.nc.post(Notification(name: NotificationKey.documentPickerShouldPresent))
             return false
         }
@@ -724,6 +727,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     func initEvents() {
         self.nc.addObserver(self, selector: #selector(self.bodyFormFieldTypeDidChange(_:)), name: NotificationKey.bodyFormFieldTypeDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.imageAttachmentDidReceive(_:)), name: NotificationKey.documentPickerImageIsAvailable, object: nil)
     }
     
     @objc func bodyFormFieldTypeDidChange(_ notif: Notification) {
@@ -735,6 +739,17 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             }
         }
         self.reloadData()
+    }
+    
+    @objc func imageAttachmentDidReceive(_ notif: Notification) {
+        if RequestVC.shared == nil { return }
+        if self.selectedType == .form {
+            let row = DocumentPickerState.modelIndex
+            if RequestVC.shared!.state.body!.form.count > row {
+                RequestVC.shared!.state.body!.form[row].image = DocumentPickerState.image
+                self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
+            }
+        }
     }
     
     func addFields() {
@@ -809,7 +824,15 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 cell.valueTextField.placeholder = "form value"
             } else if x.getFieldType() == .file {
                 cell.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
-                cell.valueTextField.placeholder = "select files"
+                if let image = x.getImage() {
+                    cell.imageFileView.image = image
+                    cell.imageFileView.isHidden = false
+                    cell.valueTextField.isHidden = true
+                } else {
+                    cell.valueTextField.placeholder = "select files"
+                    cell.imageFileView.image = nil
+                    cell.imageFileView.isHidden = true
+                }
             }
         }
         return cell

@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Workspace: Codable {
+class Workspace {
     var name: String
     var desc: String
     var projects: [Project] = []

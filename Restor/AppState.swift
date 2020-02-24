@@ -81,5 +81,10 @@ struct OptionsPickerState {
 }
 
 struct DocumentPickerState {
-    static var selectedURLs: [URL] = []
+    /// List of URLs for document attachment type
+    static var docs: [URL] = []
+    /// Photo or camera attachment
+    static var image: UIImage?
+    /// The index of data in the model
+    static var modelIndex: Int = 0
 }

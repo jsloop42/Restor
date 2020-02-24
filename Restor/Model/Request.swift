@@ -7,8 +7,9 @@
 //
 
 import Foundation
+import UIKit
 
-class Request: Codable {
+class Request {
     var name: String = ""
     var desc: String = ""
     var tags: [String] = []
@@ -34,13 +35,15 @@ protocol RequestDataProtocol {
     func getValue() -> String
     func getFieldType() -> RequestBodyFormFieldType
     func setFieldType(_ type: RequestBodyFormFieldType)
+    func getImage() -> UIImage?
 }
 
-class RequestData: RequestDataProtocol, Codable {
+class RequestData: RequestDataProtocol {
     var key: String
     var value: String
     var type: RequestBodyFormFieldType = .text
     var isEditing: Bool = false
+    var image: UIImage?
     
     init() {
         key = ""
@@ -67,9 +70,13 @@ class RequestData: RequestDataProtocol, Codable {
     func setFieldType(_ type: RequestBodyFormFieldType) {
         self.type = type
     }
+    
+    func getImage() -> UIImage? {
+        return self.image
+    }
 }
 
-class RequestBodyData: Codable {
+class RequestBodyData {
     var json: String?
     var xml: String?
     var raw: String?
@@ -79,7 +86,7 @@ class RequestBodyData: Codable {
     var selected: Int = RequestBodyType.json.rawValue
 }
 
-enum RequestBodyType: Int, Codable {
+enum RequestBodyType: Int {
     case json
     case xml
     case raw
@@ -89,7 +96,7 @@ enum RequestBodyType: Int, Codable {
 }
 
 /// Form fields under request body
-enum RequestBodyFormFieldType: Int, Codable {
+enum RequestBodyFormFieldType: Int {
     case text
     case file
 
@@ -98,7 +105,7 @@ enum RequestBodyFormFieldType: Int, Codable {
     }
 }
 
-struct RequestMethodData: Codable {
+struct RequestMethodData {
     var name: String
     var isCustom = false
     weak var project: Project?

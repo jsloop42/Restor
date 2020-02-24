@@ -27,6 +27,7 @@ class DocumentPicker: NSObject, UIDocumentPickerDelegate, UIImagePickerControlle
     }()
     private let photoAccessMessage = "Restor does not have access to your photos or videos. To enable access, tap Settings and turn on Photos."
     private let cameraAccessMessage = "Restor does not have access to your camera. To enable access, tap Settings and turn on Camera."
+    private let nc = NotificationCenter.default
     
     func requestCameraAuthorization(completion: ((Bool) -> Void)? = nil) {
         AVCaptureDevice.requestAccess(for: AVMediaType.video) { response in
@@ -99,13 +100,15 @@ class DocumentPicker: NSObject, UIDocumentPickerDelegate, UIImagePickerControlle
         let photoAction = UIAlertAction(title: "Photo", style: .default) { action in
             let authStatus = PHPhotoLibrary.authorizationStatus()
             if authStatus == .notDetermined {
-                self.requestPhotoLibraryAuthorization { status in
+                self.requestPhotoLibraryAuthorization(completion: { status in
                     if status {
                         Log.debug("photo access granted")
+                        self.presentPhotoPicker(vc: vc)
+                        return
                     } else {
                         Log.debug("photo access denied")
                     }
-                }
+                })
             }
             if authStatus == .denied {
                 self.presentAccessRequiredAlert(title: self.photoAccessMessage, message: nil)
@@ -127,11 +130,12 @@ class DocumentPicker: NSObject, UIDocumentPickerDelegate, UIImagePickerControlle
     
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         Log.debug("urls: \(urls)")
-        DocumentPickerState.selectedURLs = urls
+        DocumentPickerState.docs = urls
     }
     
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         Log.debug("document picker cancelled")
+        DocumentPickerState.docs = []
     }
     
     // MARK: - Photo Picker Delegate
@@ -139,11 +143,14 @@ class DocumentPicker: NSObject, UIDocumentPickerDelegate, UIImagePickerControlle
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         Log.debug("image picker did finish - info: \(info)")
         if let image = info[.originalImage] as? UIImage {
+            DocumentPickerState.image = image
             Log.debug("image obtained")
+            self.nc.post(Notification(name: NotificationKey.documentPickerImageIsAvailable))
         }
     }
     
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         Log.debug("image picker did cancel")
+        DocumentPickerState.image = nil
     }
 }
