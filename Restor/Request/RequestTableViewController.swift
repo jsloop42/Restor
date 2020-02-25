@@ -190,7 +190,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     @objc func presentDocumentPicker(_ notif: Notification) {
         let docPicker = DocumentPicker()
-        docPicker.presentDocumentMenu(navVC: self.navigationController!, vc: self)
+        docPicker.presentDocumentMenu(navVC: self.navigationController!, imagePickerDelegate: self, documentPickerDelegate: self)
         //docPicker.presentDocumentPicker(vc: self)
     }
     
@@ -334,6 +334,18 @@ extension RequestTableViewController: UIImagePickerControllerDelegate, UINavigat
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
         Log.debug("image picker did cancel")
         self.docPicker.imagePickerControllerDidCancel(picker)
+        self.navigationController?.dismiss(animated: true, completion: nil)
+    }
+}
+
+extension RequestTableViewController: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        self.docPicker.documentPicker(controller, didPickDocumentsAt: urls)
+        self.navigationController?.dismiss(animated: true, completion: nil)
+    }
+    
+    func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+        self.documentPickerWasCancelled(controller)
         self.navigationController?.dismiss(animated: true, completion: nil)
     }
 }
@@ -669,6 +681,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
     
     @objc func fieldTypeViewDidTap(_ recog: UITapGestureRecognizer) {
         Log.debug("field type view did tap")
+        RequestVC.shared?.endEditing()
         OptionsPickerState.modelIndex = self.tag
         OptionsPickerState.selected = self.selectedFieldType.rawValue
         OptionsPickerState.data = RequestBodyFormFieldType.allCases
@@ -818,6 +831,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         cell.valueTextField.text = ""
         cell.imageFileView.image = nil
         self.hideImageAttachment(cell: cell)
+        cell.valueTextField.placeholder = "form value"
         if data.count > row {
             let x = data[row]
             cell.keyTextField.text = x.getKey()
@@ -834,6 +848,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                     self.displayImageAttachment(cell: cell)
                 } else {
                     self.hideImageAttachment(cell: cell)
+                    cell.valueTextField.placeholder = "select files"
                 }
             }
         }
@@ -849,7 +864,6 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         cell.imageFileView.image = nil
         cell.imageFileView.isHidden = true
         cell.valueTextField.isHidden = false
-        cell.valueTextField.placeholder = "select files"
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
