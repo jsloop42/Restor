@@ -19,6 +19,8 @@ struct AppState {
     static var keyboardHeight: CGFloat = 0.0
     static var currentWorkspace: Workspace?
     static var currentProject: Project?
+    /// The request which is currently being added or edited.
+    static var editRequest: Request?
     
     static func workspace(forIndex index: Int) -> Workspace? {
         if index < self.workspaces.count {

@@ -39,7 +39,6 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     var isActive = false
     private let nc = NotificationCenter.default
     private let app = App.shared
-    var state: Request = Request()
     var isEndEditing = false
     var isOptionFromNotif = false
     private let docPicker = DocumentPicker.shared
@@ -59,7 +58,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     deinit {
         Log.debug("request tableview deinit")
-        self.state = Request()
+        AppState.editRequest = nil
         RequestTableViewController.shared = nil
         self.nc.removeObserver(self)
     }
@@ -70,7 +69,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
             self.headerKVTableViewManager.destroy()
             self.paramsKVTableViewManager.destroy()
             self.bodyKVTableViewManager.destroy()
-            RequestVC.shared = nil
+            //RequestVC.shared = nil
         }
     }
     
@@ -84,6 +83,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         super.viewDidLoad()
         RequestTableViewController.shared = self
         Log.debug("request table vc view did load")
+        self.initState()
         self.initUI()
         self.initEvents()
     }
@@ -96,7 +96,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.initBodyTableViewManager()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
-        self.methodLabel.text = self.state.methods[self.state.selectedMethodIndex].name
+        self.methodLabel.text = AppState.editRequest!.methods[AppState.editRequest!.selectedMethodIndex].name
         self.urlTextField.delegate = self
         self.nameTextField.delegate = self
         self.descTextView.delegate = self
@@ -130,6 +130,10 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: NotificationKey.documentPickerShouldPresent, object: nil)
     }
 
+    func initState() {
+        AppState.editRequest = Request()
+    }
+    
     func initHeadersTableViewManager() {
         self.headerKVTableViewManager.kvTableView = self.headersTableView
         self.headerKVTableViewManager.delegate = self
@@ -160,8 +164,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     @objc func methodViewDidTap() {
         Log.debug("method view did tap")
-        OptionsPickerState.requestData = self.state.methods
-        OptionsPickerState.selected = self.state.selectedMethodIndex
+        OptionsPickerState.requestData = AppState.editRequest!.methods
+        OptionsPickerState.selected = AppState.editRequest!.selectedMethodIndex
         OptionsPickerState.title = "Request Method"
         self.app.presentOptionPicker(.requestMethod, storyboard: self.storyboard, delegate: nil, navVC: self.navigationController)
     }
@@ -170,7 +174,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         if let info = notif.userInfo as? [String: Any], let name = info[Const.requestMethodNameKey] as? String, let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {
                 self.methodLabel.text = name
-                RequestVC.shared?.state.selectedMethodIndex = idx
+                AppState.editRequest!.selectedMethodIndex = idx
                 self.tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .none)
             }
         }
@@ -257,7 +261,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         } else if indexPath.row == CellId.spacerAfterParams.rawValue {
             height = 12
         } else if indexPath.row == CellId.body.rawValue && indexPath.section == 0 {
-            if let body = RequestVC.shared?.state.body, body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue {
+            if let body = AppState.editRequest!.body, body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue {
                 return RequestVC.bodyFormCellHeight()
             }
             height = self.bodyKVTableViewManager.getHeight()
@@ -289,9 +293,9 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField == self.urlTextField {
-            RequestVC.shared?.state.url = textField.text ?? ""
+            AppState.editRequest!.url = textField.text ?? ""
         } else if textField == self.nameTextField {
-            RequestVC.shared?.state.name = textField.text ?? ""
+            AppState.editRequest!.name = textField.text ?? ""
         }
     }
     
@@ -301,18 +305,18 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView == self.descTextView {
-            RequestVC.shared?.state.desc = textView.text ?? ""
+            AppState.editRequest!.desc = textView.text ?? ""
         }
     }
     
     static func addRequestBodyToState() {
-        if RequestVC.shared != nil, RequestVC.shared!.state.body == nil {
-            RequestVC.shared!.state.body = RequestBodyData()
+        if AppState.editRequest!.body == nil {
+            AppState.editRequest!.body = RequestBodyData()
         }
     }
     
     static func bodyFormCellHeight() -> CGFloat {
-        if let body = RequestVC.shared?.state.body {
+        if let body = AppState.editRequest!.body {
             let count: Double = body.form.count == 0 ? 1 : Double(body.form.count)
             return CGFloat(count * 92.5) + 57  // 84: field cell, 81: title cell
         }
@@ -343,7 +347,7 @@ extension RequestTableViewController: KVTableViewDelegate {
         if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.optionsPickerVC.rawValue) as? OptionsPickerViewController {
             vc.optionsDelegate = self
             RequestVC.addRequestBodyToState()
-            RequestVC.shared?.state.body!.selected = selected
+            AppState.editRequest!.body!.selected = selected
             OptionsPickerState.selected = selected
             OptionsPickerState.data = data
             self.navigationController?.present(vc, animated: true, completion: nil)
@@ -361,7 +365,7 @@ extension RequestTableViewController: OptionsPickerViewDelegate {
     
     func optionDidSelect(_ row: Int) {
         if !self.isOptionFromNotif {
-            RequestVC.shared?.state.body!.selected = row
+            AppState.editRequest!.body!.selected = row
         }
     }
 }
@@ -495,7 +499,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.initEvents()
         RequestVC.addRequestBodyToState()
         if RequestVC.shared != nil {
-            self.updateState(RequestVC.shared!.state.body!)
+            self.updateState(AppState.editRequest!.body!)
         }
     }
     
@@ -536,7 +540,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBAction func typeBtnDidTap(_ sender: Any) {
         Log.debug("type name did tap")
         var selected: Int! = 0
-        if let body = RequestVC.shared?.state.body {
+        if let body = AppState.editRequest!.body {
             selected = body.selected
         }
         self.delegate?.presentOptionsVC(self.optionsData, selected: selected)
@@ -554,9 +558,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.bodyFieldTableView.isHidden = false
         self.rawTextViewContainer.isHidden = true
         RequestVC.addRequestBodyToState()
-        if RequestVC.shared != nil {
-            self.bodyFieldTableView.selectedType = RequestBodyType(rawValue: RequestVC.shared!.state.body!.selected)!
-        }
+        self.bodyFieldTableView.selectedType = RequestBodyType(rawValue: AppState.editRequest!.body!.selected)!
         self.bodyFieldTableView.reloadData()
     }
     
@@ -567,7 +569,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     func updateState(_ data: RequestBodyData) {
         let idx: Int = data.selected
-        RequestVC.shared?.state.body!.selected = idx
+        AppState.editRequest!.body!.selected = idx
         self.typeLabel.text = "(\(self.optionsData[idx]))"
         self.bodyLabelViewWidth.isActive = false
         switch idx {
@@ -603,7 +605,7 @@ extension KVBodyContentCell: UITextViewDelegate {
     func textViewDidChange(_ textView: UITextView) {
         let txt = textView.text ?? ""
         Log.debug("text changed: \(txt)")
-        guard let body = RequestVC.shared?.state.body else { return }
+        guard let body = AppState.editRequest!.body else { return }
         let selected = body.selected
         switch selected {
         case 0:
@@ -615,7 +617,7 @@ extension KVBodyContentCell: UITextViewDelegate {
         default:
             break
         }
-        RequestVC.shared?.state.body = body
+        AppState.editRequest!.body = body
         self.delegate?.refreshCell(indexPath: IndexPath(row: self.tag, section: 0), cell: self)
     }
 }
@@ -733,20 +735,20 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     @objc func bodyFormFieldTypeDidChange(_ notif: Notification) {
         Log.debug("body form field type did change notif received")
         if selectedType == .form {
-            if let data = RequestVC.shared?.state.body!.form[OptionsPickerState.modelIndex], let t = RequestBodyFormFieldType(rawValue: OptionsPickerState.selected) {
+            let data = AppState.editRequest!.body!.form[OptionsPickerState.modelIndex]
+            if let t = RequestBodyFormFieldType(rawValue: OptionsPickerState.selected) {
                 data.setFieldType(t)
-                RequestVC.shared?.state.body!.form[OptionsPickerState.modelIndex] = data
+                AppState.editRequest!.body!.form[OptionsPickerState.modelIndex] = data
             }
         }
         self.reloadData()
     }
     
     @objc func imageAttachmentDidReceive(_ notif: Notification) {
-        if RequestVC.shared == nil { return }
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
-            if RequestVC.shared!.state.body!.form.count > row {
-                RequestVC.shared!.state.body!.form[row].image = DocumentPickerState.image
+            if AppState.editRequest!.body!.form.count > row {
+                AppState.editRequest!.body!.form[row].image = DocumentPickerState.image
                 self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
             }
         }
@@ -754,11 +756,11 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     func addFields() {
         let data = RequestData(key: "", value: "")
-        if RequestVC.shared?.state.body != nil {
-            if RequestVC.shared?.state.body!.selected == RequestBodyType.form.rawValue {
-                RequestVC.shared?.state.body!.form.append(data)
-            } else if RequestVC.shared?.state.body!.selected == RequestBodyType.multipart.rawValue {
-                RequestVC.shared?.state.body!.multipart.append(data)
+        if AppState.editRequest!.body != nil {
+            if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
+                AppState.editRequest!.body!.form.append(data)
+            } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
+                AppState.editRequest!.body!.multipart.append(data)
             }
         }
         self.reloadData()
@@ -774,21 +776,21 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
         
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let state = RequestVC.shared?.state, let body = state.body else { return 0 }
+        guard let body = AppState.editRequest!.body else { return 0 }
         if section == 1 {  // title
             return 1
         }
         let data: [RequestData] = {
             if self.selectedType == .form {
                 if body.form.count == 0 {
-                    RequestVC.shared!.state.body!.form.append(RequestData(key: "", value: ""))
-                    return RequestVC.shared!.state.body!.form
+                    AppState.editRequest!.body!.form.append(RequestData(key: "", value: ""))
+                    return AppState.editRequest!.body!.form
                 }
                 return body.form
             }
             if body.multipart.count == 0 {
-                RequestVC.shared!.state.body!.multipart.append(RequestData(key: "", value: ""))
-                return RequestVC.shared!.state.body!.multipart
+                AppState.editRequest!.body!.multipart.append(RequestData(key: "", value: ""))
+                return AppState.editRequest!.body!.multipart
             }
             return body.multipart
         }()
@@ -805,7 +807,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         cell.tag = row
         cell.delegate = self
         var data: [RequestDataProtocol] = []
-        if let body = RequestVC.shared?.state.body {
+        if let body = AppState.editRequest!.body {
             if self.selectedType == .form {
                 data = body.form
             } else if self.selectedType == .multipart {
@@ -814,6 +816,8 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         }
         cell.keyTextField.text = ""
         cell.valueTextField.text = ""
+        cell.imageFileView.image = nil
+        self.hideImageAttachment(cell: cell)
         if data.count > row {
             let x = data[row]
             cell.keyTextField.text = x.getKey()
@@ -822,22 +826,31 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             if x.getFieldType() == .text {
                 cell.fieldTypeBtn.setImage(UIImage(named: "text"), for: .normal)
                 cell.valueTextField.placeholder = "form value"
+                self.hideImageAttachment(cell: cell)
             } else if x.getFieldType() == .file {
                 cell.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
                 if let image = x.getImage() {
                     cell.imageFileView.image = image
-                    cell.imageFileView.isHidden = false
-                    cell.valueTextField.isHidden = true
+                    self.displayImageAttachment(cell: cell)
                 } else {
-                    cell.valueTextField.placeholder = "select files"
-                    cell.imageFileView.image = nil
-                    cell.imageFileView.isHidden = true
+                    self.hideImageAttachment(cell: cell)
                 }
             }
         }
         return cell
     }
     
+    func displayImageAttachment(cell: KVBodyFieldTableViewCell) {
+        cell.imageFileView.isHidden = false
+        cell.valueTextField.isHidden = true
+    }
+    
+    func hideImageAttachment(cell: KVBodyFieldTableViewCell) {
+        cell.imageFileView.image = nil
+        cell.imageFileView.isHidden = true
+        cell.valueTextField.isHidden = false
+        cell.valueTextField.placeholder = "select files"
+    }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if indexPath.section == 1 { return 44 }
@@ -855,16 +868,16 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             Log.debug("delete row: \(indexPath)")
-            guard let body = RequestVC.shared?.state.body else { completion(false); return }
+            guard let body = AppState.editRequest!.body else { completion(false); return }
             var shouldReload = false
             if self.selectedType == .form {
                 if body.form.count > indexPath.row {
-                    RequestVC.shared?.state.body!.form.remove(at: indexPath.row)
+                    AppState.editRequest!.body!.form.remove(at: indexPath.row)
                     shouldReload = true
                 }
             } else if self.selectedType == .multipart {
                 if body.multipart.count > indexPath.row {
-                    RequestVC.shared?.state.body!.multipart.remove(at: indexPath.row)
+                    AppState.editRequest!.body!.multipart.remove(at: indexPath.row)
                     shouldReload = true
                 }
             }
@@ -880,7 +893,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         if indexPath.section == 0 {
-            if let body = RequestVC.shared?.state.body {
+            if let body = AppState.editRequest!.body {
                 if (self.selectedType == .form && body.form.count <= 1) || (self.selectedType == .multipart && body.multipart.count <= 1) {
                     return false
                 }
@@ -900,7 +913,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     func updateState(_ data: RequestData, row: Int) {
         RequestVC.addRequestBodyToState()
-        guard let body = RequestVC.shared?.state.body else { return }
+        guard let body = AppState.editRequest!.body else { return }
         body.selected = self.selectedType.rawValue
         if self.selectedType == .form {
             if body.form.count == 0 {
@@ -915,7 +928,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 body.multipart[row] = data
             }
         }
-        RequestVC.shared?.state.body = body
+        AppState.editRequest!.body = body
     }
 }
 
@@ -951,39 +964,38 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         switch self.tableViewType {
         case .header:
             if let aData = data as? RequestData {
-                RequestVC.shared?.state.headers.append(aData)
+                AppState.editRequest!.headers.append(aData)
             }
         case .params:
             if let aData = data as? RequestData {
-                RequestVC.shared?.state.params.append(aData)
+                AppState.editRequest!.params.append(aData)
             }
         case .body:
-            if RequestVC.shared?.state.body == nil {
+            if AppState.editRequest!.body == nil {
                 RequestVC.addRequestBodyToState()
             }
             if let aData = data as? RequestData {
-                if RequestVC.shared?.state.body!.selected == RequestBodyType.form.rawValue {
-                    RequestVC.shared?.state.body!.form.append(aData)
-                } else if RequestVC.shared?.state.body!.selected == RequestBodyType.multipart.rawValue {
-                    RequestVC.shared?.state.body!.multipart.append(aData)
+                if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
+                    AppState.editRequest!.body!.form.append(aData)
+                } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
+                    AppState.editRequest!.body!.multipart.append(aData)
                 }
             }
         }
     }
     
     func removeRequestDataFromModel(_ index: Int) {
-        if RequestVC.shared == nil { return }
         switch self.tableViewType {
         case .header:
-            if RequestVC.shared!.state.headers.count > index {
-                RequestVC.shared!.state.headers.remove(at: index)
+            if AppState.editRequest!.headers.count > index {
+                AppState.editRequest!.headers.remove(at: index)
             }
         case .params:
-            if RequestVC.shared!.state.params.count > index {
-                RequestVC.shared!.state.params.remove(at: index)
+            if AppState.editRequest!.params.count > index {
+                AppState.editRequest!.params.remove(at: index)
             }
         case .body:
-            RequestVC.shared!.state.body = nil
+            AppState.editRequest!.body = nil
             OptionsPickerState.selected = 0
         }
     }
@@ -1002,23 +1014,22 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func getHeight() -> CGFloat {
-        if RequestVC.shared == nil { return 0.0 }
         var height: CGFloat = 44
         switch self.tableViewType {
         case .header:
-            if RequestVC.shared!.state.headers.count == 0 {
+            if AppState.editRequest!.headers.count == 0 {
                 height = 48
             } else {
-                height = CGFloat(Double(RequestVC.shared!.state.headers.count) * 92.5 + 50)
+                height = CGFloat(Double(AppState.editRequest!.headers.count) * 92.5 + 50)
             }
         case .params:
-            if RequestVC.shared?.state.params.count == 0 {
+            if AppState.editRequest!.params.count == 0 {
                 height = 48
             } else {
-                height = CGFloat(Double(RequestVC.shared!.state.params.count) * 92.5 + 50)
+                height = CGFloat(Double(AppState.editRequest!.params.count) * 92.5 + 50)
             }
         case .body:
-            if let body = RequestVC.shared?.state.body {
+            if let body = AppState.editRequest!.body {
                 if body.selected == RequestBodyType.json.rawValue ||
                    body.selected == RequestBodyType.xml.rawValue ||
                    body.selected == RequestBodyType.raw.rawValue {
@@ -1056,7 +1067,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let state = RequestVC.shared?.state else { return 0 }
+        guard let state = AppState.editRequest else { return 0 }
         if section == 0 {
             switch self.tableViewType {
             case .header:
@@ -1069,7 +1080,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             }
         }
         // section 1 (header)
-        if self.tableViewType == .body && RequestVC.shared?.state.body != nil {
+        if self.tableViewType == .body && AppState.editRequest!.body != nil {
             return 0
         }
         return 1
@@ -1084,20 +1095,20 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 cell.delegate = self
                 self.hideDeleteRowView(cell: cell)
                 let selectedIdx: Int = {
-                    if let body = RequestVC.shared?.state.body {
+                    if let body = AppState.editRequest!.body {
                         return body.selected
                     }
                     return 0
                 }()
                 switch selectedIdx {
                 case RequestBodyType.json.rawValue:
-                    cell.rawTextView.text = RequestVC.shared?.state.body?.json ?? ""
+                    cell.rawTextView.text = AppState.editRequest!.body?.json ?? ""
                     cell.hideFormFields()
                 case RequestBodyType.xml.rawValue:
-                    cell.rawTextView.text = RequestVC.shared?.state.body?.xml ?? ""
+                    cell.rawTextView.text = AppState.editRequest!.body?.xml ?? ""
                     cell.hideFormFields()
                 case RequestBodyType.raw.rawValue:
-                    cell.rawTextView.text = RequestVC.shared?.state.body?.raw ?? ""
+                    cell.rawTextView.text = AppState.editRequest!.body?.raw ?? ""
                     cell.hideFormFields()
                 case RequestBodyType.form.rawValue:
                     cell.displayFormFields()
@@ -1108,8 +1119,8 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 default:
                     break
                 }
-                if RequestVC.shared != nil, RequestVC.shared!.state.body != nil {
-                    cell.updateState(RequestVC.shared!.state.body!)
+                if AppState.editRequest!.body != nil {
+                    cell.updateState(AppState.editRequest!.body!)
                 }
                 return cell
             } else {
@@ -1120,14 +1131,14 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 self.hideDeleteRowView(cell: cell)
                 switch self.tableViewType {
                 case .header:
-                    if RequestVC.shared != nil, RequestVC.shared!.state.headers.count > row {
-                        let data = RequestVC.shared!.state.headers[row]
+                    if AppState.editRequest!.headers.count > row {
+                        let data = AppState.editRequest!.headers[row]
                         cell.keyTextField.text = data.getKey()
                         cell.valueTextField.text = data.getValue()
                     }
                 case .params:
-                    if RequestVC.shared != nil, RequestVC.shared!.state.params.count > row {
-                        let data = RequestVC.shared!.state.params[row]
+                    if AppState.editRequest!.params.count > row {
+                        let data = AppState.editRequest!.params[row]
                         cell.keyTextField.text = data.getKey()
                         cell.valueTextField.text = data.getValue()
                     }
@@ -1158,7 +1169,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if self.tableViewType == .body {
-            if let body = RequestVC.shared?.state.body {
+            if let body = AppState.editRequest!.body {
                 if indexPath.section == 1 { return 0 }
                 if body.selected == RequestBodyType.form.rawValue {
                     return RequestVC.bodyFormCellHeight()
@@ -1240,18 +1251,17 @@ extension KVTableViewManager: KVContentCellDelegate {
     }
     
     func dataDidChange(_ data: RequestData, row: Int) {
-        if RequestVC.shared == nil { return }
         if self.tableViewType == .header {
-            if RequestVC.shared!.state.headers.count > row {
-                RequestVC.shared!.state.headers[row] = data
+            if AppState.editRequest!.headers.count > row {
+                AppState.editRequest!.headers[row] = data
             } else {
-                RequestVC.shared!.state.headers.append(data)
+                AppState.editRequest!.headers.append(data)
             }
         } else if self.tableViewType == .params {
-            if RequestVC.shared!.state.params.count > row {
-                RequestVC.shared!.state.params[row] = data
+            if AppState.editRequest!.params.count > row {
+                AppState.editRequest!.params[row] = data
             } else {
-                RequestVC.shared!.state.params.append(data)
+                AppState.editRequest!.params.append(data)
             }
         }
     }

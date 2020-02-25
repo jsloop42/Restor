@@ -56,11 +56,11 @@ class DocumentPicker: NSObject, UIDocumentPickerDelegate, UIImagePickerControlle
         aVC.present(picker, animated: true, completion: completion)
     }
     
-    func presentPhotoPicker(navVC: UINavigationController? = nil, vc: (UIImagePickerControllerDelegate & UINavigationControllerDelegate)? = nil, completion: (() -> Void)? = nil) {
+    func presentPhotoPicker(navVC: UINavigationController? = nil, isCamera: Bool, vc: (UIImagePickerControllerDelegate & UINavigationControllerDelegate)? = nil, completion: (() -> Void)? = nil) {
         DispatchQueue.main.async {
             if navVC != nil { self.navVC = navVC }
             guard let navVC = self.navVC else { return }
-            self.photoPicker.sourceType = .photoLibrary
+            self.photoPicker.sourceType =  isCamera ? .camera : .photoLibrary
             self.photoPicker.delegate = vc
             navVC.present(self.photoPicker, animated: true, completion: nil)
         }
@@ -90,12 +90,15 @@ class DocumentPicker: NSObject, UIDocumentPickerDelegate, UIImagePickerControlle
                 self.requestCameraAuthorization { status in
                     if status {
                         Log.debug("camera access granted")
+                        self.presentPhotoPicker(isCamera: true, vc: vc)
                     } else {
                         Log.debug("camera access denied")
                     }
                 }
             }
-            
+            if AVCaptureDevice.authorizationStatus(for: .video) == .authorized {
+                self.presentPhotoPicker(isCamera: true, vc: vc)
+            }
         }
         let photoAction = UIAlertAction(title: "Photo", style: .default) { action in
             let authStatus = PHPhotoLibrary.authorizationStatus()
@@ -103,7 +106,7 @@ class DocumentPicker: NSObject, UIDocumentPickerDelegate, UIImagePickerControlle
                 self.requestPhotoLibraryAuthorization(completion: { status in
                     if status {
                         Log.debug("photo access granted")
-                        self.presentPhotoPicker(vc: vc)
+                        self.presentPhotoPicker(isCamera: false, vc: vc)
                         return
                     } else {
                         Log.debug("photo access denied")
@@ -113,7 +116,7 @@ class DocumentPicker: NSObject, UIDocumentPickerDelegate, UIImagePickerControlle
             if authStatus == .denied {
                 self.presentAccessRequiredAlert(title: self.photoAccessMessage, message: nil)
             } else if authStatus == .authorized {
-                self.presentPhotoPicker(vc: vc)
+                self.presentPhotoPicker(isCamera: false, vc: vc)
             }
         }
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel) { action in
