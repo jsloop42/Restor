@@ -636,17 +636,31 @@ extension KVBodyContentCell: UITextViewDelegate {
 
 // MARK: - Body field table view
 
+class FileCollectionViewCell: UICollectionViewCell {
+    @IBOutlet weak var nameLabel: UILabel!
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+}
+
 protocol KVBodyFieldTableViewCellDelegate: class {
     func updateState(_ data: RequestData, row: Int)
 }
 
-class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
+class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollectionViewDelegate, UICollectionViewDataSource {
     @IBOutlet weak var keyTextField: EATextField!
     @IBOutlet weak var valueTextField: EATextField!
     @IBOutlet weak var containerView: UIView!
     @IBOutlet weak var fieldTypeView: UIView!
     @IBOutlet weak var fieldTypeBtn: UIButton!
     @IBOutlet weak var imageFileView: UIImageView!
+    @IBOutlet weak var fileCollectionView: UICollectionView!
+    
     weak var delegate: KVBodyFieldTableViewCellDelegate?
     var isValueTextFieldActive = false
     var selectedType: RequestBodyType = .form
@@ -659,6 +673,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         self.bootstrap()
         self.renderTheme()
         self.initEvents()
+        self.fileCollectionView.reloadData()
     }
     
     func bootstrap() {
@@ -667,6 +682,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         self.keyTextField.isColor = false
         self.valueTextField.isColor = false
         self.imageFileView.isHidden = true
+        self.fileCollectionView.delegate = self
+        self.fileCollectionView.dataSource = self
     }
     
     func renderTheme() {
@@ -703,6 +720,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         return true
     }
     
+    // MARK: - Delegate text field
+    
     func textFieldDidEndEditing(_ textField: UITextField) {
         Log.debug("textfield did end editing")
         if textField == self.keyTextField {
@@ -710,6 +729,27 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate {
         } else if textField == self.valueTextField {
             self.delegate?.updateState(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""), row: self.tag)
         }
+    }
+    
+    // MARK: - Delegate collection view
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if self.selectedFieldType == .file {
+            if let data = AppState.editRequest?.body?.form[self.tag].files {
+                return data.count
+            }
+        }
+        return 0
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        Log.debug("file collection view cell")
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "fileCell", for: indexPath) as! FileCollectionViewCell
+        var name = ""
+        if let data = AppState.editRequest?.body?.form[self.tag] {
+            name = data.files[indexPath.row]
+        }
+        cell.nameLabel.text = name
+        return cell
     }
 }
 
@@ -848,6 +888,13 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                     self.displayImageAttachment(cell: cell)
                 } else {
                     self.hideImageAttachment(cell: cell)
+                    let xs = x.getFiles()
+                    if xs.count > 0 {
+                        cell.fileCollectionView.reloadData()
+                        self.displayFileAttachment(cell: cell)
+                    } else {
+                        self.hideFileAttachment(cell: cell)
+                    }
                     cell.valueTextField.placeholder = "select files"
                 }
             }
@@ -857,6 +904,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     func displayImageAttachment(cell: KVBodyFieldTableViewCell) {
         cell.imageFileView.isHidden = false
+        cell.fileCollectionView.isHidden = true
         cell.valueTextField.isHidden = true
     }
     
@@ -864,6 +912,19 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         cell.imageFileView.image = nil
         cell.imageFileView.isHidden = true
         cell.valueTextField.isHidden = false
+        cell.valueTextField.placeholder = "select files"
+    }
+    
+    func displayFileAttachment(cell: KVBodyFieldTableViewCell) {
+        cell.fileCollectionView.isHidden = false
+        cell.imageFileView.isHidden = true
+        cell.valueTextField.isHidden = true
+    }
+    
+    func hideFileAttachment(cell: KVBodyFieldTableViewCell) {
+        cell.fileCollectionView.isHidden = true
+        cell.valueTextField.isHidden = false
+        cell.valueTextField.placeholder = "select files"
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
