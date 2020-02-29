@@ -10,16 +10,20 @@ import Foundation
 import UIKit
 
 class Request {
+    var created: Int64
     var name: String = ""
     var desc: String = ""
     var tags: [String] = []
     var url: String = ""
     var selectedMethodIndex = 0
+    /// The request methods which can also contain custom data. With Core Data, only custom methods are saved.
     var methods: [RequestMethodData] = []
+    var modified: Int64
     var headers: [RequestData] = []
     var params: [RequestData] = []
     var body: RequestBodyData?
     weak var project: Project?
+    var version: Int64
     // Method names are case sensitive RFC 7230, 7231
     private let reqMethods = ["GET", "POST", "PUT", "OPTION", "DELETE"]
     
@@ -27,6 +31,9 @@ class Request {
         for i in self.reqMethods {
             self.methods.append(RequestMethodData(name: i, isCustom: false, project: self.project))
         }
+        self.created = Date().currentTimeMillis()
+        self.modified = self.created
+        self.version = 0
     }
 }
 
@@ -40,6 +47,8 @@ protocol RequestDataProtocol {
 }
 
 class RequestData: RequestDataProtocol {
+    var created: Int64
+    var modified: Int64
     var key: String
     var value: String
     var type: RequestBodyFormFieldType = .text
@@ -48,15 +57,18 @@ class RequestData: RequestDataProtocol {
     /// If the image was taken from the camera directly for from the photo library
     var isCameraMode: Bool = false
     var files: [URL] = []
+    var version: Int64
     
-    init() {
-        key = ""
-        value = ""
+    convenience init() {
+        self.init(key: "", value: "")
     }
     
     init(key: String, value: String) {
         self.key = key
         self.value = value
+        self.created = Date().currentTimeMillis()
+        self.modified = self.created
+        self.version = 0
     }
     
     func getKey() -> String {
@@ -90,7 +102,7 @@ class RequestBodyData {
     var raw: String?
     var form: [RequestData] = []
     var multipart: [RequestData] = []
-    var binary: String?
+    var binary: Data?
     var selected: Int = RequestBodyType.json.rawValue
 }
 
@@ -114,7 +126,23 @@ enum RequestBodyFormFieldType: Int {
 }
 
 struct RequestMethodData {
+    var created: Int64
+    var modified: Int64
     var name: String
     var isCustom = false
     weak var project: Project?
+    var version: Int64
+    
+    init(name: String, isCustom: Bool, project: Project?) {
+        self.name = name
+        self.isCustom = isCustom
+        self.project = project
+        self.created = Date().currentTimeMillis()
+        self.modified = self.created
+        self.version = 0
+    }
+    
+    init(name: String, project: Project?) {
+        self.init(name: name, isCustom: false, project: project)
+    }
 }
