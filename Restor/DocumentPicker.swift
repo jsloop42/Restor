@@ -96,6 +96,7 @@ class DocumentPicker: NSObject {
             self.presentDocumentPicker(navVC: navVC, vc: documentPickerDelegate, completion: nil)
         }
         let cameraAction = UIAlertAction(title: "Camera", style: .default) { action in
+            DocumentPickerState.isCameraMode = true
             if AVCaptureDevice.authorizationStatus(for: .video) == .notDetermined {
                 self.requestCameraAuthorization { status in
                     if status {
@@ -111,6 +112,7 @@ class DocumentPicker: NSObject {
             }
         }
         let photoAction = UIAlertAction(title: "Photo", style: .default) { action in
+            DocumentPickerState.isCameraMode = false
             let authStatus = PHPhotoLibrary.authorizationStatus()
             if authStatus == .notDetermined {
                 self.requestPhotoLibraryAuthorization(completion: { status in

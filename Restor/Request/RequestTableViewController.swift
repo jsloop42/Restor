@@ -127,7 +127,9 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.methodView.addGestureRecognizer(methodTap)
         self.nc.addObserver(self, selector: #selector(self.requestMethodDidChange(_:)), name: NotificationKey.requestMethodDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentOptionsScreen(_:)), name: NotificationKey.optionScreenShouldPresent, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.presentDocumentMenuPicker(_:)), name: NotificationKey.documentPickerMenuShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: NotificationKey.documentPickerShouldPresent, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.presentImagePicker(_:)), name: NotificationKey.imagePickerShouldPresent, object: nil)
     }
 
     func initState() {
@@ -188,10 +190,16 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         }
     }
     
+    @objc func presentDocumentMenuPicker(_ notif: Notification) {
+        self.docPicker.presentDocumentMenu(navVC: self.navigationController!, imagePickerDelegate: self, documentPickerDelegate: self)
+    }
+    
     @objc func presentDocumentPicker(_ notif: Notification) {
-        let docPicker = DocumentPicker()
-        docPicker.presentDocumentMenu(navVC: self.navigationController!, imagePickerDelegate: self, documentPickerDelegate: self)
-        //docPicker.presentDocumentPicker(vc: self)
+        self.docPicker.presentDocumentPicker(navVC: self.navigationController!, vc: self, completion: nil)
+    }
+    
+    @objc func presentImagePicker(_ notif: Notification) {
+        self.docPicker.presentPhotoPicker(navVC: self.navigationController!, isCamera: DocumentPickerState.isCameraMode, vc: self, completion: nil)
     }
     
     @objc func endEditing() {
@@ -719,7 +727,19 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     
     @objc func presentDocPicker() {
         DocumentPickerState.modelIndex = self.tag
-        self.nc.post(Notification(name: NotificationKey.documentPickerShouldPresent))
+        if let body = AppState.editRequest?.body {
+            let data = body.form[self.tag]
+            if data.image != nil {
+                DocumentPickerState.isCameraMode = data.isCameraMode
+                self.nc.post(Notification(name: NotificationKey.imagePickerShouldPresent))
+                return
+            }
+            if data.files.count > 0 {
+                self.nc.post(Notification(name: NotificationKey.documentPickerShouldPresent))
+                return
+            }
+        }
+        self.nc.post(Notification(name: NotificationKey.documentPickerMenuShouldPresent))
     }
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
@@ -835,6 +855,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             if AppState.editRequest!.body!.form.count > row {
                 AppState.editRequest!.body!.form[row].type = .file
                 AppState.editRequest!.body!.form[row].image = DocumentPickerState.image
+                AppState.editRequest!.body!.form[row].isCameraMode = DocumentPickerState.isCameraMode
                 self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
             }
         }

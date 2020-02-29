@@ -45,6 +45,8 @@ class RequestData: RequestDataProtocol {
     var type: RequestBodyFormFieldType = .text
     var isEditing: Bool = false
     var image: UIImage?
+    /// If the image was taken from the camera directly for from the photo library
+    var isCameraMode: Bool = false
     var files: [URL] = []
     
     init() {
