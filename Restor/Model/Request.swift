@@ -36,7 +36,7 @@ protocol RequestDataProtocol {
     func getFieldType() -> RequestBodyFormFieldType
     func setFieldType(_ type: RequestBodyFormFieldType)
     func getImage() -> UIImage?
-    func getFiles() -> [String]
+    func getFiles() -> [URL]
 }
 
 class RequestData: RequestDataProtocol {
@@ -45,7 +45,7 @@ class RequestData: RequestDataProtocol {
     var type: RequestBodyFormFieldType = .text
     var isEditing: Bool = false
     var image: UIImage?
-    var files: [String] = ["test a", "test b", "test c", "test d", "test e", "test f", "test g"]
+    var files: [URL] = []
     
     init() {
         key = ""
@@ -77,7 +77,7 @@ class RequestData: RequestDataProtocol {
         return self.image
     }
     
-    func getFiles() -> [String] {
+    func getFiles() -> [URL] {
         return self.files
     }
 }

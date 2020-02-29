@@ -4,6 +4,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15706"/>
+        <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="collection view cell content view" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -1232,7 +1233,7 @@
                                                                                                                             <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                                                                                             <textInputTraits key="textInputTraits"/>
                                                                                                                         </textField>
-                                                                                                                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="wdW-iS-JlY">
+                                                                                                                        <imageView clipsSubviews="YES" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="wdW-iS-JlY">
                                                                                                                             <rect key="frame" x="6" y="52.5" width="34" height="34"/>
                                                                                                                             <constraints>
                                                                                                                                 <constraint firstAttribute="height" constant="34" id="3vV-3O-GOD"/>
@@ -1246,7 +1247,7 @@
                                                                                                                             </userDefinedRuntimeAttributes>
                                                                                                                         </imageView>
                                                                                                                         <collectionView hidden="YES" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="TIF-t0-Ajl">
-                                                                                                                            <rect key="frame" x="2" y="46.5" width="203" height="38"/>
+                                                                                                                            <rect key="frame" x="6" y="46.5" width="203" height="38"/>
                                                                                                                             <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                                                                                             <collectionViewFlowLayout key="collectionViewLayout" scrollDirection="horizontal" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="yjb-uY-aLh">
                                                                                                                                 <size key="itemSize" width="50" height="50"/>
@@ -1262,16 +1263,34 @@
                                                                                                                                         <rect key="frame" x="0.0" y="0.0" width="50" height="50"/>
                                                                                                                                         <autoresizingMask key="autoresizingMask"/>
                                                                                                                                         <subviews>
-                                                                                                                                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NFY-4E-SyG">
+                                                                                                                                            <view userInteractionEnabled="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="uFA-on-BWK">
                                                                                                                                                 <rect key="frame" x="5.5" y="15.5" width="39.5" height="19.5"/>
-                                                                                                                                                <fontDescription key="fontDescription" type="system" pointSize="16"/>
-                                                                                                                                                <nil key="textColor"/>
-                                                                                                                                                <nil key="highlightedColor"/>
-                                                                                                                                            </label>
+                                                                                                                                                <subviews>
+                                                                                                                                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="NFY-4E-SyG">
+                                                                                                                                                        <rect key="frame" x="0.0" y="0.0" width="39.5" height="19.5"/>
+                                                                                                                                                        <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                                                                                                                                        <color key="textColor" name="file-attachment-fg"/>
+                                                                                                                                                        <nil key="highlightedColor"/>
+                                                                                                                                                    </label>
+                                                                                                                                                </subviews>
+                                                                                                                                                <color key="backgroundColor" name="file-attachment-bg"/>
+                                                                                                                                                <constraints>
+                                                                                                                                                    <constraint firstItem="NFY-4E-SyG" firstAttribute="centerY" secondItem="uFA-on-BWK" secondAttribute="centerY" id="5As-2P-ME3"/>
+                                                                                                                                                    <constraint firstAttribute="trailing" secondItem="NFY-4E-SyG" secondAttribute="trailing" constant="6" id="Kak-Ud-GOS"/>
+                                                                                                                                                    <constraint firstItem="NFY-4E-SyG" firstAttribute="leading" secondItem="uFA-on-BWK" secondAttribute="leading" constant="6" id="O2q-6W-wrG"/>
+                                                                                                                                                </constraints>
+                                                                                                                                                <userDefinedRuntimeAttributes>
+                                                                                                                                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                                                                                                                        <real key="value" value="4"/>
+                                                                                                                                                    </userDefinedRuntimeAttribute>
+                                                                                                                                                </userDefinedRuntimeAttributes>
+                                                                                                                                            </view>
                                                                                                                                         </subviews>
                                                                                                                                         <constraints>
-                                                                                                                                            <constraint firstItem="NFY-4E-SyG" firstAttribute="centerX" secondItem="Jne-hK-IRb" secondAttribute="centerX" id="8kc-0c-rJb"/>
-                                                                                                                                            <constraint firstItem="NFY-4E-SyG" firstAttribute="centerY" secondItem="Jne-hK-IRb" secondAttribute="centerY" constant="-6" id="UBh-mS-k5W"/>
+                                                                                                                                            <constraint firstItem="uFA-on-BWK" firstAttribute="top" secondItem="Jne-hK-IRb" secondAttribute="top" id="KCk-Aa-iBG"/>
+                                                                                                                                            <constraint firstAttribute="bottom" secondItem="uFA-on-BWK" secondAttribute="bottom" id="aKR-KU-kOX"/>
+                                                                                                                                            <constraint firstItem="uFA-on-BWK" firstAttribute="leading" secondItem="Jne-hK-IRb" secondAttribute="leading" id="mMh-bf-BX2"/>
+                                                                                                                                            <constraint firstAttribute="trailing" secondItem="uFA-on-BWK" secondAttribute="trailing" id="wVg-pC-qtp"/>
                                                                                                                                         </constraints>
                                                                                                                                     </collectionViewCellContentView>
                                                                                                                                     <connections>
@@ -1291,7 +1310,7 @@
                                                                                                                         <constraint firstAttribute="trailing" secondItem="k3J-HW-Rrf" secondAttribute="trailing" constant="2" id="D1I-uq-iCD"/>
                                                                                                                         <constraint firstItem="eIB-BK-yWP" firstAttribute="top" secondItem="BOR-jC-0ZT" secondAttribute="top" constant="8" id="Flb-Ht-0KP"/>
                                                                                                                         <constraint firstItem="rd9-Zd-R7x" firstAttribute="leading" secondItem="eIB-BK-yWP" secondAttribute="trailing" constant="2" id="Jez-cb-hDc"/>
-                                                                                                                        <constraint firstAttribute="trailing" secondItem="TIF-t0-Ajl" secondAttribute="trailing" constant="6" id="Jwj-Ft-KNh"/>
+                                                                                                                        <constraint firstAttribute="trailing" secondItem="TIF-t0-Ajl" secondAttribute="trailing" constant="2" id="Jwj-Ft-KNh"/>
                                                                                                                         <constraint firstAttribute="bottom" secondItem="TIF-t0-Ajl" secondAttribute="bottom" id="KIM-sj-dPY"/>
                                                                                                                         <constraint firstItem="wdW-iS-JlY" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" constant="6" id="Md5-00-WDj"/>
                                                                                                                         <constraint firstItem="4XS-p3-o10" firstAttribute="top" secondItem="eIB-BK-yWP" secondAttribute="bottom" constant="4" id="MdY-Gp-rDA"/>
@@ -1299,7 +1318,7 @@
                                                                                                                         <constraint firstItem="eIB-BK-yWP" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" constant="6" id="SNw-61-uXf"/>
                                                                                                                         <constraint firstItem="wdW-iS-JlY" firstAttribute="top" secondItem="4XS-p3-o10" secondAttribute="bottom" constant="6" id="bAM-GQ-tiz"/>
                                                                                                                         <constraint firstAttribute="trailing" secondItem="4XS-p3-o10" secondAttribute="trailing" id="hZ7-CO-6O1"/>
-                                                                                                                        <constraint firstItem="TIF-t0-Ajl" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" constant="2" id="iL0-jA-XIt"/>
+                                                                                                                        <constraint firstItem="TIF-t0-Ajl" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" constant="6" id="iL0-jA-XIt"/>
                                                                                                                         <constraint firstItem="TIF-t0-Ajl" firstAttribute="top" secondItem="4XS-p3-o10" secondAttribute="bottom" id="nhg-Zo-KPk"/>
                                                                                                                         <constraint firstItem="4XS-p3-o10" firstAttribute="leading" secondItem="BOR-jC-0ZT" secondAttribute="leading" id="sWY-ue-K9B"/>
                                                                                                                     </constraints>
@@ -1552,5 +1571,11 @@
         <image name="plus.circle.fill" catalog="system" width="64" height="60"/>
         <image name="square.grid.2x2" catalog="system" width="64" height="56"/>
         <image name="text" width="19" height="19"/>
+        <namedColor name="file-attachment-bg">
+            <color red="1" green="0.83234566450000003" blue="0.47320586440000001" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </namedColor>
+        <namedColor name="file-attachment-fg">
+            <color white="0.33333333329999998" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </namedColor>
     </resources>
 </document>

@@ -26,4 +26,5 @@ struct NotificationKey {
     static let bodyFormFieldTypeDidChange = Notification.Name("bodyFormFieldTypeDidChange")
     static let documentPickerShouldPresent = Notification.Name("documentPickerShouldPresent")
     static let documentPickerImageIsAvailable = Notification.Name("documentPickerImageIsAvailable")
+    static let documentPickerFileIsAvailable = Notification.Name("documentPickerFileIsAvailable")
 }

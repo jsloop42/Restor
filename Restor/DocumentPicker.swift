@@ -144,6 +144,7 @@ class DocumentPicker: NSObject {
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         Log.debug("urls: \(urls)")
         DocumentPickerState.docs = urls
+        self.nc.post(Notification(name: NotificationKey.documentPickerFileIsAvailable))
     }
     
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {

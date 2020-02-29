@@ -345,7 +345,7 @@ extension RequestTableViewController: UIDocumentPickerDelegate {
     }
     
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
-        self.documentPickerWasCancelled(controller)
+        self.docPicker.documentPickerWasCancelled(controller)
         self.navigationController?.dismiss(animated: true, completion: nil)
     }
 }
@@ -652,7 +652,7 @@ protocol KVBodyFieldTableViewCellDelegate: class {
     func updateState(_ data: RequestData, row: Int)
 }
 
-class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollectionViewDelegate, UICollectionViewDataSource {
+class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     @IBOutlet weak var keyTextField: EATextField!
     @IBOutlet weak var valueTextField: EATextField!
     @IBOutlet weak var containerView: UIView!
@@ -694,6 +694,17 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         let btnTap = UITapGestureRecognizer(target: self, action: #selector(self.fieldTypeViewDidTap(_:)))
         btnTap.cancelsTouchesInView = false
         self.fieldTypeView.addGestureRecognizer(btnTap)
+        let cvTap = UITapGestureRecognizer(target: self, action: #selector(self.presentDocPicker))
+        cvTap.cancelsTouchesInView = false
+        self.imageFileView.addGestureRecognizer(cvTap)
+        self.initCollectionViewEvents()
+    }
+    
+    func initCollectionViewEvents() {
+        let cvTap = UITapGestureRecognizer(target: self, action: #selector(self.presentDocPicker))
+        cvTap.cancelsTouchesInView = false
+        self.fileCollectionView.removeGestureRecognizer(cvTap)
+        self.fileCollectionView.addGestureRecognizer(cvTap)
     }
     
     @objc func fieldTypeViewDidTap(_ recog: UITapGestureRecognizer) {
@@ -706,6 +717,11 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
                      userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyFormField.rawValue])
     }
     
+    @objc func presentDocPicker() {
+        DocumentPickerState.modelIndex = self.tag
+        self.nc.post(Notification(name: NotificationKey.documentPickerShouldPresent))
+    }
+    
     func textFieldDidBeginEditing(_ textField: UITextField) {
         Log.debug("text field did begin editing")
         RequestVC.shared?.clearEditing()
@@ -713,8 +729,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if self.selectedFieldType == .file && textField == self.valueTextField {
-            DocumentPickerState.modelIndex = self.tag
-            self.nc.post(Notification(name: NotificationKey.documentPickerShouldPresent))
+            self.presentDocPicker()
             return false
         }
         return true
@@ -746,10 +761,26 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "fileCell", for: indexPath) as! FileCollectionViewCell
         var name = ""
         if let data = AppState.editRequest?.body?.form[self.tag] {
-            name = data.files[indexPath.row]
+            name = data.files[indexPath.row].lastPathComponent
         }
         cell.nameLabel.text = name
         return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        var width: CGFloat = 50
+        if let cell = collectionView.cellForItem(at: indexPath) as? FileCollectionViewCell {
+            width = cell.nameLabel.textWidth()
+        } else {
+            if let name = AppState.editRequest?.body?.form[self.tag].files[indexPath.row].lastPathComponent {
+                let lbl = UILabel(frame: CGRect(x: 0, y: 0, width: .greatestFiniteMagnitude, height: 19.5))
+                lbl.text = name
+                lbl.layoutIfNeeded()
+                width = lbl.textWidth()
+            }
+        }
+        Log.debug("width: \(width)")
+        return CGSize(width: width, height: 23.5)
     }
 }
 
@@ -783,6 +814,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     func initEvents() {
         self.nc.addObserver(self, selector: #selector(self.bodyFormFieldTypeDidChange(_:)), name: NotificationKey.bodyFormFieldTypeDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.imageAttachmentDidReceive(_:)), name: NotificationKey.documentPickerImageIsAvailable, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.documentAttachmentDidReceive(_:)), name: NotificationKey.documentPickerFileIsAvailable, object: nil)
     }
     
     @objc func bodyFormFieldTypeDidChange(_ notif: Notification) {
@@ -801,7 +833,19 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
             if AppState.editRequest!.body!.form.count > row {
+                AppState.editRequest!.body!.form[row].type = .file
                 AppState.editRequest!.body!.form[row].image = DocumentPickerState.image
+                self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
+            }
+        }
+    }
+    
+    @objc func documentAttachmentDidReceive(_ notif: Notification) {
+        if self.selectedType == .form {
+            let row = DocumentPickerState.modelIndex
+            if AppState.editRequest!.body!.form.count > row {
+                AppState.editRequest!.body!.form[row].type = .file
+                AppState.editRequest!.body!.form[row].files = DocumentPickerState.docs
                 self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
             }
         }
@@ -871,7 +915,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         cell.valueTextField.text = ""
         cell.imageFileView.image = nil
         self.hideImageAttachment(cell: cell)
-        cell.valueTextField.placeholder = "form value"
+        self.hideFileAttachment(cell: cell)
         if data.count > row {
             let x = data[row]
             cell.keyTextField.text = x.getKey()
@@ -879,8 +923,8 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             cell.selectedFieldType = x.getFieldType()
             if x.getFieldType() == .text {
                 cell.fieldTypeBtn.setImage(UIImage(named: "text"), for: .normal)
-                cell.valueTextField.placeholder = "form value"
                 self.hideImageAttachment(cell: cell)
+                self.hideFileAttachment(cell: cell)
             } else if x.getFieldType() == .file {
                 cell.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
                 if let image = x.getImage() {
@@ -890,41 +934,54 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                     self.hideImageAttachment(cell: cell)
                     let xs = x.getFiles()
                     if xs.count > 0 {
+                        cell.initCollectionViewEvents()
+                        cell.fileCollectionView.layoutIfNeeded()
                         cell.fileCollectionView.reloadData()
                         self.displayFileAttachment(cell: cell)
                     } else {
                         self.hideFileAttachment(cell: cell)
                     }
-                    cell.valueTextField.placeholder = "select files"
                 }
             }
         }
+        self.updateCellPlaceholder(cell)
         return cell
+    }
+    
+    func updateCellPlaceholder(_ cell: KVBodyFieldTableViewCell) {
+        if cell.selectedFieldType == .file {
+            cell.valueTextField.placeholder = "select files"
+            cell.valueTextField.text = ""
+        } else {
+            cell.valueTextField.placeholder = "form value"
+        }
     }
     
     func displayImageAttachment(cell: KVBodyFieldTableViewCell) {
         cell.imageFileView.isHidden = false
         cell.fileCollectionView.isHidden = true
         cell.valueTextField.isHidden = true
+        self.updateCellPlaceholder(cell)
     }
     
     func hideImageAttachment(cell: KVBodyFieldTableViewCell) {
         cell.imageFileView.image = nil
         cell.imageFileView.isHidden = true
         cell.valueTextField.isHidden = false
-        cell.valueTextField.placeholder = "select files"
+        self.updateCellPlaceholder(cell)
     }
     
     func displayFileAttachment(cell: KVBodyFieldTableViewCell) {
         cell.fileCollectionView.isHidden = false
         cell.imageFileView.isHidden = true
         cell.valueTextField.isHidden = true
+        self.updateCellPlaceholder(cell)
     }
     
     func hideFileAttachment(cell: KVBodyFieldTableViewCell) {
         cell.fileCollectionView.isHidden = true
         cell.valueTextField.isHidden = false
-        cell.valueTextField.placeholder = "select files"
+        self.updateCellPlaceholder(cell)
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
@@ -994,13 +1051,15 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             if body.form.count == 0 {
                 body.form.append(data)
             } else if body.form.count > row {
-                body.form[row] = data
+                body.form[row].key = data.key
+                body.form[row].value = data.value
             }
         } else if self.selectedType == .multipart {
             if body.multipart.count == 0 {
                 body.multipart.append(data)
             } else if body.multipart.count > row {
-                body.multipart[row] = data
+                body.form[row].key = data.key
+                body.form[row].value = data.value
             }
         }
         AppState.editRequest!.body = body
