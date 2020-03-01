@@ -37,7 +37,6 @@ class WorkspaceViewController: UIViewController {
         super.viewWillAppear(animated)
         WorkspaceViewController.shared = self
         AppState.activeScreen = .workspaceListing
-        AppState.selectedWorkspace = nil
         self.navigationItem.title = "Workspaces"
         self.navigationItem.leftBarButtonItem = self.app.addSettingsBarButton()
     }
@@ -53,7 +52,7 @@ class WorkspaceViewController: UIViewController {
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
         // TODO: test
-        self.createNewWorkspace(name: "Test workspace", desc: "Test workspace desc")
+        //self.createNewWorkspace(name: "Test workspace", desc: "Test workspace desc")
         // end test
     }
     
@@ -156,12 +155,11 @@ extension WorkspaceViewController: PopupViewDelegate {
         }
     }
 
-    func doneDidTap(_ text: String?) -> Bool {
+    func doneDidTap(name: String, desc: String) -> Bool {
         Log.debug("done did tap")
         if let popup = self.app.addItemPopupView {
-            if let name = popup.nameTextField.text {
-                let desc = popup.descTextField.text
-                self.createNewWorkspace(name: name, desc: desc ?? "")
+            if !name.isEmpty {
+                self.createNewWorkspace(name: name, desc: desc)
                 popup.animateSlideOut {
                     popup.nameTextField.text = ""
                     popup.removeFromSuperview()

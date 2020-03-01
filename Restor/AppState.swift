@@ -11,7 +11,7 @@ import UIKit
 
 struct AppState {
     static var workspaces: [Workspace] = []
-    static var selectedWorkspace: Int? = nil
+    static var selectedWorkspace: Int = 0
     static var selectedProject: Int? = nil
     static var optionsPickerData: OptionsPickerState?
     static var activeScreen: Screen = .projectListing
@@ -31,7 +31,7 @@ struct AppState {
     
     static func project(forIndex index: Int) -> Project? {
         self.selectedProject = index
-        if let wIdx = self.selectedWorkspace, let ws = self.workspace(forIndex: wIdx) {
+        if let ws = self.workspace(forIndex: self.selectedWorkspace) {
             if index < ws.projects.count {
                 return ws.projects[index]
             }
@@ -49,25 +49,14 @@ struct AppState {
     }
     
     static func currentWorkspaceName() -> String {
-        if let ws = self.getCurrentWorkspace() {
-            return ws.name
-        } else if let ws = self.workspaces.first {
-            return ws.name
-        }
-        return "Workspace"
+        return self.getCurrentWorkspace().name
     }
     
-    static func getCurrentWorkspace() -> Workspace? {
-        if let idx = self.selectedWorkspace {
-            let ws = self.workspaces[idx]
-            self.currentWorkspace = ws
-            return ws
-        }
-        self.currentWorkspace = nil
-        return nil
+    static func getCurrentWorkspace() -> Workspace {
+        let ws = self.workspaces[self.selectedWorkspace]
+        self.currentWorkspace = ws
+        return ws
     }
-    
-    
 }
 
 struct OptionsPickerState {

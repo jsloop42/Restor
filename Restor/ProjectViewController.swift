@@ -41,12 +41,11 @@ class ProjectViewController: UIViewController {
         self.initUI()
         self.initEvent()
         self.app.initDefaultWorspace()
-        if let ws = AppState.getCurrentWorkspace() {
-            self.workspace = ws
-            self.updateWorkspaceName()
-        }
+        self.workspace = AppState.getCurrentWorkspace()
+        self.updateWorkspaceName()
+        self.tableView.reloadData()
         // test
-        self.addProject(name: "Test Project", desc: "My awesome project")
+        //self.addProject(name: "Test Project", desc: "My awesome project")
         // end test
     }
     
@@ -54,10 +53,9 @@ class ProjectViewController: UIViewController {
         Log.debug("init UI")
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
-        self.tableView.reloadData()
         self.app.updateNavigationControllerBackground(self.navigationController)
         // TODO: test
-        self.addProject(name: "Test project", desc: "My awesome project")
+        //self.addProject(name: "Test project", desc: "My awesome project")
         // end test
     }
     
@@ -170,12 +168,11 @@ extension ProjectViewController: PopupViewDelegate {
         }
     }
 
-    func doneDidTap(_ text: String?) -> Bool {
+    func doneDidTap(name: String, desc: String) -> Bool {
         Log.debug("done did tap")
         if let popup = self.app.addItemPopupView {
-            if let name = popup.nameTextField.text {
-                let desc = popup.descTextField.text
-                self.addProject(name: name, desc: desc ?? "")
+            if !name.isEmpty {
+                self.addProject(name: name, desc: desc)
                 self.tableView.reloadData()
                 popup.animateSlideOut {
                     popup.nameTextField.text = ""
@@ -203,7 +200,7 @@ class ProjectCell: UITableViewCell {
 
 extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if let selectedIndex = AppState.selectedWorkspace, let aWorkspace = AppState.workspace(forIndex: selectedIndex) {
+        if let aWorkspace = AppState.workspace(forIndex: AppState.selectedWorkspace) {
             self.workspace = aWorkspace
             return aWorkspace.projects.count
         }
@@ -231,5 +228,6 @@ extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
 extension ProjectViewController: WorkspaceVCDelegate {
     func updateWorkspaceName() {
         self.workspaceBtn.setTitle(AppState.currentWorkspaceName(), for: .normal)
+        self.tableView.reloadData()
     }
 }

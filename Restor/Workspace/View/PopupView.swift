@@ -12,7 +12,7 @@ import UIKit
 protocol PopupViewDelegate: class {
     func cancelDidTap(_ sender: Any)
     /// Return a flag indicating if the keyboard can be dismissed if present
-    func doneDidTap(_ text: String?) -> Bool
+    func doneDidTap(name: String, desc: String) -> Bool
     /// Perform input text validation returning true is valid
     func validateText(_ text: String?) -> Bool
     /// Invoked when popup state changes. Eg: display validation error label
@@ -58,7 +58,8 @@ class PopupView: UIView {
     private var isValidationsSuccess = true
     private var isValidated = false
     var height: CGFloat = 212
-    private var nameText = ""
+    var nameText = ""
+    var descText = ""
     
     static func initFromNib(owner: Any? = nil) -> UIView? {
         if let aPopupView = self.popupView {
@@ -207,12 +208,12 @@ class PopupView: UIView {
         if !self.isValidated {
             self.isValidationsSuccess = self.delegate?.validateText(self.nameTextField.text) ?? false
             self.nameText = self.nameTextField.text ?? ""
+            self.descText = self.descTextField.text ?? ""
             self.isValidated = true
         }
         if self.isValidationsSuccess {
-            let txt = self.nameTextField.text ?? ""
             self.clearState()
-            self.delegate?.doneDidTap(txt)
+            self.delegate?.doneDidTap(name: self.nameText, desc: self.descText)
         }
     }
     

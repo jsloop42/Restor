@@ -213,9 +213,9 @@ extension OptionsPickerViewController: PopupViewDelegate {
         self.app.addItemPopupView?.animateSlideOut()
     }
     
-    func doneDidTap(_ text: String?) -> Bool {
-        if self.pickerType == .requestMethod, let txt = text {
-            OptionsPickerState.requestData.append(RequestMethodData(name: txt, isCustom: true, project: AppState.currentProject))
+    func doneDidTap(name: String, desc: String) -> Bool {
+        if self.pickerType == .requestMethod {
+            OptionsPickerState.requestData.append(RequestMethodData(name: name, isCustom: true, project: AppState.currentProject))
         }
         self.app.addItemPopupView?.animateSlideOut()
         DispatchQueue.main.async {

@@ -27,7 +27,8 @@ class App {
     
     func initDefaultWorspace() {
         let ws = Workspace(name: "Default Workspace", desc: "Default workspace")
-        let _ = Project(name: "Default Project", desc: "Default project", workspace: ws)
+        let proj = Project(name: "Default Project", desc: "Default project", workspace: ws)
+        ws.projects.append(proj)
         AppState.workspaces.append(ws)
         AppState.selectedWorkspace = 0
         AppState.selectedProject = 0
@@ -38,9 +39,7 @@ class App {
     }
     
     func addProject(_ project: Project) {
-        if let wsIdx = AppState.selectedWorkspace {
-            AppState.workspaces[wsIdx].projects.append(project)
-        }
+        AppState.workspaces[AppState.selectedWorkspace].projects.append(project)
     }
     
     /// Presents an option picker view as a modal
