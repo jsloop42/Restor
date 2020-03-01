@@ -9,10 +9,11 @@
 import Foundation
 import UIKit
 
-class Request {
+class Request: CustomDebugStringConvertible {
     var created: Int64
     var name: String = ""
     var desc: String = ""
+    var id: String
     var tags: [String] = []
     var url: String = ""
     var selectedMethodIndex = 0
@@ -32,8 +33,21 @@ class Request {
             self.methods.append(RequestMethodData(name: i, isCustom: false, project: self.project))
         }
         self.created = Date().currentTimeMillis()
+        self.id = Utils.shared.genRandomString()
         self.modified = self.created
         self.version = 0
+    }
+    
+    var debugDescription: String {
+        return
+            """
+            \(type(of: self)) \(Unmanaged.passUnretained(self).toOpaque())
+            name: \(self.name)
+            desc: \(self.desc)
+            id: \(self.id)
+            url: \(self.url)
+            selected method idx: \(self.selectedMethodIndex)
+            """
     }
 }
 
@@ -49,6 +63,7 @@ protocol RequestDataProtocol {
 class RequestData: RequestDataProtocol {
     var created: Int64
     var modified: Int64
+    var id: String
     var key: String
     var value: String
     var type: RequestBodyFormFieldType = .text
@@ -67,6 +82,7 @@ class RequestData: RequestDataProtocol {
         self.key = key
         self.value = value
         self.created = Date().currentTimeMillis()
+        self.id = Utils.shared.genRandomString()
         self.modified = self.created
         self.version = 0
     }
@@ -97,6 +113,10 @@ class RequestData: RequestDataProtocol {
 }
 
 class RequestBodyData {
+    var created: Int64
+    var modified: Int64
+    var version: Int64
+    var id: String
     var json: String?
     var xml: String?
     var raw: String?
@@ -104,6 +124,13 @@ class RequestBodyData {
     var multipart: [RequestData] = []
     var binary: Data?
     var selected: Int = RequestBodyType.json.rawValue
+    
+    init() {
+        self.created = Date().currentTimeMillis()
+        self.modified = self.created
+        self.id = Utils.shared.genRandomString()
+        self.version = 0
+    }
 }
 
 enum RequestBodyType: Int {

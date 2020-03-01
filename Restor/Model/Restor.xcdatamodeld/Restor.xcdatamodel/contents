@@ -30,7 +30,7 @@
         <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <relationship name="requestMethods" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="RRRequestMethodData" inverseName="project" inverseEntity="RRRequestMethodData"/>
+        <relationship name="requestMethods" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequestMethodData" inverseName="project" inverseEntity="RRRequestMethodData"/>
         <relationship name="requests" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequest" inverseName="project" inverseEntity="RRRequest"/>
         <relationship name="workspace" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRWorkspace" inverseName="projects" inverseEntity="RRWorkspace"/>
         <uniquenessConstraints>
@@ -49,9 +49,9 @@
         <attribute name="url" optional="YES" attributeType="String"/>
         <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="body" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="RRRequestBodyData" inverseName="request" inverseEntity="RRRequestBodyData"/>
-        <relationship name="headers" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="header" inverseEntity="RRRequestData"/>
-        <relationship name="methods" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRRequestMethodData" inverseName="request" inverseEntity="RRRequestMethodData"/>
-        <relationship name="params" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="param" inverseEntity="RRRequestData"/>
+        <relationship name="headers" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="header" inverseEntity="RRRequestData"/>
+        <relationship name="methods" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="RRRequestMethodData" inverseName="request" inverseEntity="RRRequestMethodData"/>
+        <relationship name="params" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="param" inverseEntity="RRRequestData"/>
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRProject" inverseName="requests" inverseEntity="RRProject"/>
         <relationship name="tags" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRTag" inverseName="request" inverseEntity="RRTag"/>
         <uniquenessConstraints>
@@ -63,10 +63,13 @@
     </entity>
     <entity name="RRRequestBodyData" representedClassName="RRRequestBodyData" syncable="YES" codeGenerationType="class">
         <attribute name="binary" optional="YES" attributeType="Binary"/>
+        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="json" optional="YES" attributeType="String"/>
+        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="raw" optional="YES" attributeType="String"/>
         <attribute name="selected" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="xml" optional="YES" attributeType="String"/>
         <relationship name="form" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="form" inverseEntity="RRRequestData"/>
         <relationship name="multipart" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="multipart" inverseEntity="RRRequestData"/>
@@ -141,14 +144,14 @@
         </uniquenessConstraints>
     </entity>
     <elements>
-        <element name="RRWorkspace" positionX="-63" positionY="-18" width="128" height="148"/>
-        <element name="RRProject" positionX="-54" positionY="-9" width="128" height="178"/>
-        <element name="RRRequest" positionX="-36" positionY="9" width="128" height="253"/>
-        <element name="RRRequestMethodData" positionX="-18" positionY="27" width="128" height="163"/>
-        <element name="RRRequestBodyData" positionX="0" positionY="45" width="128" height="178"/>
-        <element name="RRRequestData" positionX="18" positionY="63" width="128" height="238"/>
         <element name="RRFile" positionX="36" positionY="126" width="128" height="103"/>
         <element name="RRImage" positionX="-9" positionY="90" width="128" height="103"/>
+        <element name="RRProject" positionX="-54" positionY="-9" width="128" height="178"/>
+        <element name="RRRequest" positionX="-36" positionY="9" width="128" height="253"/>
+        <element name="RRRequestBodyData" positionX="0" positionY="45" width="128" height="223"/>
+        <element name="RRRequestData" positionX="18" positionY="63" width="128" height="238"/>
+        <element name="RRRequestMethodData" positionX="-18" positionY="27" width="128" height="163"/>
         <element name="RRTag" positionX="0" positionY="99" width="128" height="133"/>
+        <element name="RRWorkspace" positionX="-63" positionY="-18" width="128" height="148"/>
     </elements>
 </model>

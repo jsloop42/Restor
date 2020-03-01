@@ -8,7 +8,7 @@
 
 import Foundation
 
-class Workspace {
+class Workspace: CustomDebugStringConvertible {
     var created: Int64
     var desc: String
     var id: String
@@ -28,5 +28,16 @@ class Workspace {
     
     convenience init(name: String) {
         self.init(name: name, desc: "")
+    }
+    
+    var debugDescription: String {
+        return
+            """
+            \(type(of: self)) \(Unmanaged.passUnretained(self).toOpaque())
+              name: \(name)
+              desc: \(desc)
+              id: \(id)
+              projects count: \(projects.count)
+            """
     }
 }
