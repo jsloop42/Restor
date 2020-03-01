@@ -49,11 +49,11 @@
         <attribute name="url" optional="YES" attributeType="String"/>
         <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="body" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="RRRequestBodyData" inverseName="request" inverseEntity="RRRequestBodyData"/>
-        <relationship name="headers" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="header" inverseEntity="RRRequestData"/>
+        <relationship name="headers" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="headers" inverseEntity="RRRequestData"/>
         <relationship name="methods" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="RRRequestMethodData" inverseName="request" inverseEntity="RRRequestMethodData"/>
-        <relationship name="params" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="param" inverseEntity="RRRequestData"/>
+        <relationship name="params" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRRequestData" inverseName="params" inverseEntity="RRRequestData"/>
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRProject" inverseName="requests" inverseEntity="RRProject"/>
-        <relationship name="tags" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRTag" inverseName="request" inverseEntity="RRTag"/>
+        <relationship name="tags" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="RRTag" inverseName="request" inverseEntity="RRTag"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="id"/>
@@ -90,10 +90,10 @@
         <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="files" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRFile" inverseName="requestData" inverseEntity="RRFile"/>
         <relationship name="form" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRRequestBodyData" inverseName="form" inverseEntity="RRRequestBodyData"/>
-        <relationship name="header" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRRequest" inverseName="headers" inverseEntity="RRRequest"/>
+        <relationship name="headers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="RRRequest" inverseName="headers" inverseEntity="RRRequest"/>
         <relationship name="image" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="RRImage" inverseName="requestData" inverseEntity="RRImage"/>
-        <relationship name="multipart" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRRequestBodyData" inverseName="multipart" inverseEntity="RRRequestBodyData"/>
-        <relationship name="param" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="RRRequest" inverseName="params" inverseEntity="RRRequest"/>
+        <relationship name="multipart" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="RRRequestBodyData" inverseName="multipart" inverseEntity="RRRequestBodyData"/>
+        <relationship name="params" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="RRRequest" inverseName="params" inverseEntity="RRRequest"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="id"/>
@@ -136,7 +136,7 @@
         <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <relationship name="projects" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="RRProject" inverseName="workspace" inverseEntity="RRProject"/>
+        <relationship name="projects" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="RRProject" inverseName="workspace" inverseEntity="RRProject"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="name"/>

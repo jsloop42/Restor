@@ -108,16 +108,128 @@ struct CoreDataService {
     
     // MARK: - Create
     
-    func createRRWorkspace(_ ws: Workspace?) -> RRWorkspace? {
+    mutating func createRRWorkspace(_ ws: Workspace?) -> RRWorkspace? {
+        guard let ws = ws else { return nil }
+        let rrws = RRWorkspace(context: self.bgMOC)
+        rrws.name = ws.name
+        rrws.desc = ws.desc
+        rrws.created = ws.created
+        rrws.modified = ws.modified
+        rrws.id = ws.id
+        rrws.version = ws.version
+        rrws.projects = NSSet()
+        let projs = ws.projects.compactMap({ proj -> RRProject? in
+            return self.createRRProject(proj)
+        })
+        if projs.count > 0 {
+            rrws.projects!.addingObjects(from: projs)
+        }
+        do {
+            try rrws.managedObjectContext?.save()
+        } catch let error {
+            Log.error("Error saving new workspace: \(error)")
+            return nil
+        }
+        return rrws
+    }
+    
+    mutating func createRRProject(_ proj: Project?) -> RRProject? {
+        guard let proj = proj else { return nil }
+        let rrproj = RRProject(context: self.bgMOC)
+        rrproj.created = proj.created
+        rrproj.modified = proj.modified
+        rrproj.id = proj.id
+        rrproj.version = proj.version
+        rrproj.name = proj.name
+        rrproj.desc = proj.desc
+        rrproj.requestMethods = NSSet()
+        rrproj.requestMethods!.addingObjects(from: self.createRRRequestMethodDataList(proj.requestMethods))
+        rrproj.requests = NSSet()
+        let reqxs = proj.requests.compactMap { req -> RRRequest? in
+            return self.createRRRequest(req)
+        }
+        rrproj.requests!.addingObjects(from: reqxs)
         return nil
     }
     
-    func createRRProject(_ proj: Project?) -> RRProject? {
+    mutating func createRRRequestMethodData(_ reqMethod: RequestMethodData) -> RRRequestMethodData {
+        let rm = RRRequestMethodData(context: self.bgMOC)
+        rm.created = reqMethod.created
+        rm.modified = reqMethod.modified
+        rm.id = reqMethod.id
+        rm.version = reqMethod.version
+        rm.name = reqMethod.name
+        rm.isCustom = reqMethod.isCustom
+        return rm
+    }
+    
+    mutating func createRRRequestMethodDataList(_ xs: [RequestMethodData]) -> [RRRequestMethodData] {
+        return xs.map { data -> RRRequestMethodData in
+            return self.createRRRequestMethodData(data)
+        }
+    }
+    
+    mutating func createRRRequest(_ req: Request?) -> RRRequest? {
+        guard let req = req else { return nil }
+        let rrreq = RRRequest(context: self.bgMOC)
+        rrreq.created = req.created
+        rrreq.modified = req.modified
+        rrreq.id = req.id
+        rrreq.version = req.version
+        rrreq.name = req.name
+        rrreq.desc = req.desc
+        rrreq.headers = NSSet()
+        let headers = self.createRRRequestDataList(req.headers)
+        rrreq.headers!.addingObjects(from: headers)
+        rrreq.params = NSSet()
+        let params = self.createRRRequestDataList(req.params)
+        rrreq.params!.addingObjects(from: params)
+        rrreq.body = self.createRRRequestBodyData(req.body)
+        rrreq.methods = NSSet()
+        rrreq.methods!.addingObjects(from: self.createRRRequestMethodDataList(req.methods))
+        rrreq.project = self.createRRProject(req.project)
+        rrreq.selectedMethodIndex = Int32(req.selectedMethodIndex)
+        rrreq.tags = NSSet()
+        rrreq.url = req.url
         return nil
     }
     
-    func createRRRequest(_ req: Request?) -> RRRequest? {
-        return nil
+    mutating func createRRRequestData(_ data: RequestData) -> RRRequestData {
+        let reqData = RRRequestData(context: self.bgMOC)
+        reqData.created = data.created
+        reqData.modified = data.modified
+        reqData.id = data.id
+        reqData.version = data.version
+        reqData.key = data.key
+        reqData.value = data.value
+        reqData.type = Int32(data.type.rawValue)
+        return reqData
+    }
+    
+    mutating func createRRRequestDataList(_ xs: [RequestData]) -> [RRRequestData] {
+        return xs.map { data -> RRRequestData in
+            return self.createRRRequestData(data)
+        }
+    }
+    
+    mutating func createRRRequestBodyData(_ data: RequestBodyData?) -> RRRequestBodyData? {
+        guard let data = data else { return nil }
+        let reqData = RRRequestBodyData(context: self.bgMOC)
+        reqData.created = data.created
+        reqData.modified = data.modified
+        reqData.id = data.id
+        reqData.version = data.version
+        reqData.binary = data.binary
+        reqData.form = NSSet()
+        reqData.form!.addingObjects(from: self.createRRRequestDataList(data.form))
+        reqData.json = data.json
+        reqData.xml = data.xml
+        reqData.raw = data.raw
+        reqData.multipart = NSSet()
+        reqData.multipart!.addingObjects(from: self.createRRRequestDataList(data.multipart))
+        reqData.selected = Int32(data.selected)
+        reqData.request = self.createRRRequest(data.request)
+        return reqData
     }
     
     // MARK: - Update

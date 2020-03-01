@@ -320,6 +320,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     static func addRequestBodyToState() {
         if AppState.editRequest!.body == nil {
             AppState.editRequest!.body = RequestBodyData()
+            AppState.editRequest!.body?.request = AppState.editRequest
         }
     }
     

@@ -24,6 +24,10 @@ class RestorTests: XCTestCase {
         let x = self.utils.genRandomString()
         XCTAssertEqual(x.count, 20)
     }
+    
+    func testCreateRRWorkspace() {
+        // TODO:
+    }
 
     func notestPerformanceExample() {
         // This is an example of a performance test case.

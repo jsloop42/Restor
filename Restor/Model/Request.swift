@@ -124,12 +124,14 @@ class RequestBodyData {
     var multipart: [RequestData] = []
     var binary: Data?
     var selected: Int = RequestBodyType.json.rawValue
+    weak var request: Request?
     
-    init() {
+    init(request: Request? = nil) {
         self.created = Date().currentTimeMillis()
         self.modified = self.created
         self.id = Utils.shared.genRandomString()
         self.version = 0
+        self.request = request
     }
 }
 
@@ -156,6 +158,7 @@ struct RequestMethodData {
     var created: Int64
     var modified: Int64
     var name: String
+    var id: String
     var isCustom = false
     weak var project: Project?
     var version: Int64
@@ -166,6 +169,7 @@ struct RequestMethodData {
         self.project = project
         self.created = Date().currentTimeMillis()
         self.modified = self.created
+        self.id = Utils.shared.genRandomString()
         self.version = 0
     }
     
