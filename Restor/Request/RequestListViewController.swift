@@ -15,7 +15,7 @@ class RequestListViewController: UIViewController {
     @IBOutlet weak var filterBtn: UIBarButtonItem!
     @IBOutlet weak var windowBtn: UIBarButtonItem!
     @IBOutlet weak var addBtn: UIBarButtonItem!
-    private var requests: [Request] = []
+    private var requests: [ERequest] = []
     private let utils: Utils = Utils.shared
     private let app: App = App.shared
     
@@ -35,7 +35,7 @@ class RequestListViewController: UIViewController {
         self.app.updateNavigationControllerBackground(self.navigationController)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
         if let idx = AppState.selectedProject, let projects = AppState.project(forIndex: idx) {
-            self.requests = projects.requests
+            self.requests = projects.requests?.allObjects as? [ERequest] ?? []
         }
         self.tableView.reloadData()
     }

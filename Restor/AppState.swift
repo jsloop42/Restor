@@ -10,49 +10,49 @@ import Foundation
 import UIKit
 
 struct AppState {
-    static var workspaces: [Workspace] = []
+    static var workspaces: [EWorkspace] = []
     static var selectedWorkspace: Int = 0
     static var selectedProject: Int? = nil
     static var optionsPickerData: OptionsPickerState?
     static var activeScreen: Screen = .projectListing
     static var isKeyboardActive = false
     static var keyboardHeight: CGFloat = 0.0
-    static var currentWorkspace: Workspace?
-    static var currentProject: Project?
+    static var currentWorkspace: EWorkspace?
+    static var currentProject: EProject?
     /// The request which is currently being added or edited.
-    static var editRequest: Request?
+    static var editRequest: ERequest?
     
-    static func workspace(forIndex index: Int) -> Workspace? {
+    static func workspace(forIndex index: Int) -> EWorkspace? {
         if index < self.workspaces.count {
             return self.workspaces[index]
         }
         return nil
     }
     
-    static func project(forIndex index: Int) -> Project? {
+    static func project(forIndex index: Int) -> EProject? {
         self.selectedProject = index
-        if let ws = self.workspace(forIndex: self.selectedWorkspace) {
-            if index < ws.projects.count {
-                return ws.projects[index]
+        if let ws = self.workspace(forIndex: self.selectedWorkspace), let projects = ws.projects {
+            if index < projects.count {
+                return projects.allObjects[index] as? EProject
             }
         }
         return nil
     }
         
-    static func request(forIndex index: Int) -> Request? {
-        if let pIdx = self.selectedProject, let project = self.project(forIndex: pIdx) {
-            if index < project.requests.count {
-                return project.requests[index]
+    static func request(forIndex index: Int) -> ERequest? {
+        if let pIdx = self.selectedProject, let project = self.project(forIndex: pIdx), let requests = project.requests {
+            if index < requests.count {
+                return requests.allObjects[index] as? ERequest
             }
         }
         return nil
     }
     
     static func currentWorkspaceName() -> String {
-        return self.getCurrentWorkspace().name
+        return self.getCurrentWorkspace().name ?? ""
     }
     
-    static func getCurrentWorkspace() -> Workspace {
+    static func getCurrentWorkspace() -> EWorkspace {
         let ws = self.workspaces[self.selectedWorkspace]
         self.currentWorkspace = ws
         return ws
@@ -63,7 +63,7 @@ struct OptionsPickerState {
     /// Generic model data
     static var data: [String] = []
     /// The model data for request method type
-    static var requestData: [RequestMethodData] = []
+    static var requestData: [ERequestMethodData] = []
     /// The selected index in the option picker data model
     static var selected: Int = 0
     static var title: String = "body"

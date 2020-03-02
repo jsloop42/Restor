@@ -161,6 +161,7 @@ struct RequestMethodData {
     var id: String
     var isCustom = false
     weak var project: Project?
+    weak var request: Request?
     var version: Int64
     
     init(name: String, isCustom: Bool, project: Project?) {

@@ -117,8 +117,9 @@ class WorkspaceViewController: UIViewController {
     }
     
     func createNewWorkspace(name: String, desc: String) {
-        let ws = Workspace(name: name, desc: desc)
-        AppState.workspaces.append(ws)
+        // TODO:
+//        let ws = EWorkspace(name: name, desc: desc)
+//        AppState.workspaces.append(ws)
         self.tableView.reloadData()
     }
 }

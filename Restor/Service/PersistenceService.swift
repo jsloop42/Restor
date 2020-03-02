@@ -10,5 +10,9 @@ import Foundation
 
 struct PersistenceService {
     static let shared = PersistenceService()
+    private var db = CoreDataService.shared
     
+    mutating func initDefaultWorkspace() throws -> EWorkspace {
+        return try self.db.getDefaultWorkspace()
+    }
 }

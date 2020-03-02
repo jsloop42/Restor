@@ -60,3 +60,33 @@ extension UIImage {
         return newImage
     }
 }
+
+extension Int32 {
+    func toInt() -> Int {
+        return Int(self)
+    }
+    
+    func toInt64() -> Int64 {
+        return Int64(self)
+    }
+}
+
+extension Int {
+    func toInt32() -> Int32 {
+        return Int32(self)
+    }
+    
+    func toInt64() -> Int64 {
+        return Int64(self)
+    }
+}
+
+extension Int64 {
+    func toInt() -> Int {
+        return Int(self)
+    }
+    
+    func toInt32() -> Int32 {
+        return Int32(self)
+    }
+}

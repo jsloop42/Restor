@@ -7,12 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9E23E68D240D98A400C4686A /* ERequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E23E68C240D98A400C4686A /* ERequest.swift */; };
 		9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */; };
 		9E538DAC239951790025C14C /* UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAB239951790025C14C /* UI.swift */; };
 		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
-		9E538DB1239953760025C14C /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DB0239953760025C14C /* Workspace.swift */; };
-		9E538DB32399538C0025C14C /* Project.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DB22399538C0025C14C /* Project.swift */; };
-		9E538DB5239954280025C14C /* Request.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DB4239954280025C14C /* Request.swift */; };
 		9E538DB9239958FF0025C14C /* PopupView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E538DB8239958FF0025C14C /* PopupView.xib */; };
 		9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DBA23995B3E0025C14C /* PopupView.swift */; };
 		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
@@ -56,13 +54,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9E23E68C240D98A400C4686A /* ERequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ERequest.swift; sourceTree = "<group>"; };
 		9E49EC002402FDE900DAA260 /* Restor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Restor.entitlements; sourceTree = "<group>"; };
 		9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
 		9E538DAB239951790025C14C /* UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI.swift; sourceTree = "<group>"; };
 		9E538DAD239953460025C14C /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		9E538DB0239953760025C14C /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
-		9E538DB22399538C0025C14C /* Project.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Project.swift; sourceTree = "<group>"; };
-		9E538DB4239954280025C14C /* Request.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Request.swift; sourceTree = "<group>"; };
 		9E538DB8239958FF0025C14C /* PopupView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PopupView.xib; sourceTree = "<group>"; };
 		9E538DBA23995B3E0025C14C /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
 		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
@@ -122,10 +118,8 @@
 		9E538DAF2399536B0025C14C /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				9E23E68C240D98A400C4686A /* ERequest.swift */,
 				9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */,
-				9E538DB22399538C0025C14C /* Project.swift */,
-				9E538DB4239954280025C14C /* Request.swift */,
-				9E538DB0239953760025C14C /* Workspace.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -390,20 +384,18 @@
 				9E8759062396C6A700F949D1 /* Utils.swift in Sources */,
 				9E78D1D3239EC930005FC692 /* RequestTableViewController.swift in Sources */,
 				9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */,
-				9E538DB1239953760025C14C /* Workspace.swift in Sources */,
 				9E926F9823945E79002DF561 /* WorkspaceViewController.swift in Sources */,
 				9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */,
 				9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */,
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
 				9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */,
+				9E23E68D240D98A400C4686A /* ERequest.swift in Sources */,
 				9EE34CA323D9F67C00CA08F2 /* App.swift in Sources */,
 				9E538DAE239953460025C14C /* AppState.swift in Sources */,
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */,
 				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
-				9E538DB5239954280025C14C /* Request.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
-				9E538DB32399538C0025C14C /* Project.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
 				9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */,
 				9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */,

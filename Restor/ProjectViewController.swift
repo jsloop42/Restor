@@ -13,7 +13,7 @@ class ProjectViewController: UIViewController {
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var workspaceBtn: UIButton!
-    private var workspace: Workspace?
+    private var workspace: EWorkspace?
     private weak var addItemPopupView: PopupView?
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
@@ -38,9 +38,9 @@ class ProjectViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("project view did load")
+        self.app.bootstrap()
         self.initUI()
         self.initEvent()
-        self.app.initDefaultWorspace()
         self.workspace = AppState.getCurrentWorkspace()
         self.updateWorkspaceName()
         self.tableView.reloadData()
@@ -88,16 +88,18 @@ class ProjectViewController: UIViewController {
     
     func addProject(name: String, desc: String) {
         if let aWorkspace = self.workspace {
-            let proj = Project(name: name, desc: desc, workspace: aWorkspace)
-            aWorkspace.projects.append(proj)
+            // TODO:
+            //let proj = Project(name: name, desc: desc, workspace: aWorkspace)
+            //aWorkspace.projects.append(proj)
             self.tableView.reloadData()
         }
     }
     
-    func project(_ index: Int) -> Project? {
-        if let aWorkspace = self.workspace, index < aWorkspace.projects.count {
-            return aWorkspace.projects[index]
-        }
+    func project(_ index: Int) -> EProject? {
+        // TODO:
+//        if let aWorkspace = self.workspace, index < aWorkspace.projects.count {
+//            return aWorkspace.projects[index]
+//        }
         return nil
     }
     
@@ -202,7 +204,7 @@ extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if let aWorkspace = AppState.workspace(forIndex: AppState.selectedWorkspace) {
             self.workspace = aWorkspace
-            return aWorkspace.projects.count
+            return aWorkspace.projects?.allObjects.count ?? 0
         }
         return 0
     }

@@ -107,8 +107,9 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     func close(_ isCancel: Bool) {
         if !isCancel {
             if self.pickerType == .requestMethod {
-                AppState.editRequest!.methods = OptionsPickerState.requestData
-                AppState.editRequest!.selectedMethodIndex = OptionsPickerState.selected
+                // TODO:
+                //AppState.editRequest!.methods = OptionsPickerState.requestData
+                //AppState.editRequest!.selectedMethodIndex = OptionsPickerState.selected
             } else if self.pickerType == .requestBodyFormField {
                 self.nc.post(Notification(name: NotificationKey.bodyFormFieldTypeDidChange))
             }
@@ -132,7 +133,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
         let row = indexPath.row
         let data: String = {
             if self.pickerType == .requestMethod {
-                return OptionsPickerState.requestData[row].name
+                return OptionsPickerState.requestData[row].name ?? ""
             }
             return OptionsPickerState.data[row]
         }()
@@ -215,7 +216,8 @@ extension OptionsPickerViewController: PopupViewDelegate {
     
     func doneDidTap(name: String, desc: String) -> Bool {
         if self.pickerType == .requestMethod {
-            OptionsPickerState.requestData.append(RequestMethodData(name: name, isCustom: true, project: AppState.currentProject))
+            // TODO:
+            //OptionsPickerState.requestData.append(ERequestMethodData(name: name, isCustom: true, project: AppState.currentProject))
         }
         self.app.addItemPopupView?.animateSlideOut()
         DispatchQueue.main.async {

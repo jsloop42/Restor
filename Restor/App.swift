@@ -13,6 +13,7 @@ class App {
     static let shared: App = App()
     var addItemPopupView: PopupView?
     var popupBottomContraints: NSLayoutConstraint?
+    private var dbService = PersistenceService.shared
     
     func addSettingsBarButton() -> UIBarButtonItem {
         if #available(iOS 13.0, *) {
@@ -25,21 +26,33 @@ class App {
         Log.debug("settings btn did tap")
     }
     
-    func initDefaultWorspace() {
-        let ws = Workspace(name: "Default Workspace", desc: "Default workspace")
-        let proj = Project(name: "Default Project", desc: "Default project", workspace: ws)
-        ws.projects.append(proj)
-        AppState.workspaces.append(ws)
-        AppState.selectedWorkspace = 0
-        AppState.selectedProject = 0
+    func bootstrap() {
+        self.initDB()
+        self.initState()
+    }
+    
+    func initDB() {
+        
+    }
+    
+    func initState() {
+        do {
+            let ws = try self.dbService.initDefaultWorkspace()
+            AppState.workspaces.append(ws)
+            AppState.selectedWorkspace = 0
+            AppState.selectedProject = 0
+        } catch let error {
+            Log.error("Error initializing state: \(error)")
+        }
     }
 
-    func addWorkspace(_ ws: Workspace) {
+    func addWorkspace(_ ws: EWorkspace) {
         AppState.workspaces.append(ws)
     }
     
-    func addProject(_ project: Project) {
-        AppState.workspaces[AppState.selectedWorkspace].projects.append(project)
+    func addProject(_ project: EProject) {
+        // TODO
+        //AppState.workspaces[AppState.selectedWorkspace].projects.append(project)
     }
     
     /// Presents an option picker view as a modal
@@ -175,4 +188,29 @@ enum RequestMethod: String, Codable {
     
     case trace = "TRACE"
     case option = "OPTIONS"
+}
+
+enum RequestBodyType: Int {
+    case json
+    case xml
+    case raw
+    case form
+    case multipart
+    case binary
+}
+
+/// Form fields under request body
+enum RequestBodyFormFieldType: Int {
+    case text
+    case file
+
+    static var allCases: [String] {
+        return ["Text", "File"]
+    }
+}
+
+enum AppError: Error {
+    case entityGet
+    case entityUpdate
+    case entityDelete
 }
