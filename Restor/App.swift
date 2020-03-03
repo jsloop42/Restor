@@ -37,10 +37,11 @@ class App {
     
     func initState() {
         do {
-            let ws = try self.dbService.initDefaultWorkspace()
-            AppState.workspaces.append(ws)
-            AppState.selectedWorkspace = 0
-            AppState.selectedProject = 0
+            if let ws = try self.dbService.initDefaultWorkspace() {
+                AppState.workspaces.append(ws)
+                AppState.selectedWorkspace = 0
+                AppState.selectedProject = 0
+            }
         } catch let error {
             Log.error("Error initializing state: \(error)")
         }

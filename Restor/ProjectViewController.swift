@@ -38,15 +38,17 @@ class ProjectViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("project view did load")
-        self.app.bootstrap()
-        self.initUI()
-        self.initEvent()
-        self.workspace = AppState.getCurrentWorkspace()
-        self.updateWorkspaceName()
-        self.tableView.reloadData()
-        // test
-        //self.addProject(name: "Test Project", desc: "My awesome project")
-        // end test
+        if !isRunningTests {
+            self.app.bootstrap()
+            self.initUI()
+            self.initEvent()
+            self.workspace = AppState.getCurrentWorkspace()
+            self.updateWorkspaceName()
+            self.tableView.reloadData()
+            // test
+            //self.addProject(name: "Test Project", desc: "My awesome project")
+            // end test
+        }
     }
     
     func initUI() {

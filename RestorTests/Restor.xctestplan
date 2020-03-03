@@ -1,0 +1,45 @@
+{
+  "configurations" : [
+    {
+      "id" : "0927EBC4-4AB7-4C02-B7F6-1638109B938E",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "codeCoverage" : false,
+    "commandLineArgumentEntries" : [
+      {
+        "argument" : "-com.apple.CoreData.Logging.stderr 1"
+      },
+      {
+        "argument" : "-com.apple.CoreData.SQLDebug 1"
+      }
+    ],
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Restor.xcodeproj",
+      "identifier" : "9E926F8F23945E78002DF561",
+      "name" : "Restor"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:Restor.xcodeproj",
+        "identifier" : "9E926FA823945E7D002DF561",
+        "name" : "RestorTests"
+      }
+    },
+    {
+      "enabled" : false,
+      "target" : {
+        "containerPath" : "container:Restor.xcodeproj",
+        "identifier" : "9E926FB323945E7D002DF561",
+        "name" : "RestorUITests"
+      }
+    }
+  ],
+  "version" : 1
+}

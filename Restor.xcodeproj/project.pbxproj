@@ -16,6 +16,11 @@
 		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
 		9E78D1D3239EC930005FC692 /* RequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */; };
+		9E85FE48240E9CDB002821F2 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE47240E9CDB002821F2 /* main.swift */; };
+		9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
+		9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
+		9E85FE4C240EAEE1002821F2 /* Restor.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */; };
+		9E85FE4D240EAEFC002821F2 /* ERequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E23E68C240D98A400C4686A /* ERequest.swift */; };
 		9E8759062396C6A700F949D1 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* Utils.swift */; };
 		9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9323945E79002DF561 /* AppDelegate.swift */; };
 		9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9523945E79002DF561 /* SceneDelegate.swift */; };
@@ -64,6 +69,9 @@
 		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
 		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
 		9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTableViewController.swift; sourceTree = "<group>"; };
+		9E85FE47240E9CDB002821F2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
+		9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegateMock.swift; sourceTree = "<group>"; };
+		9E85FE4E240EDB0A002821F2 /* Restor.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; name = Restor.xctestplan; path = RestorTests/Restor.xctestplan; sourceTree = SOURCE_ROOT; };
 		9E8759052396C6A700F949D1 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		9E926F9023945E78002DF561 /* Restor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Restor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926F9323945E79002DF561 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -190,6 +198,7 @@
 				9EEA7A91239EA4AA00A1CA68 /* Const.swift */,
 				9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */,
 				9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */,
+				9E85FE47240E9CDB002821F2 /* main.swift */,
 				9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */,
 				9E926F9523945E79002DF561 /* SceneDelegate.swift */,
 				9E8759052396C6A700F949D1 /* Utils.swift */,
@@ -202,6 +211,8 @@
 		9E926FAC23945E7D002DF561 /* RestorTests */ = {
 			isa = PBXGroup;
 			children = (
+				9E85FE4E240EDB0A002821F2 /* Restor.xctestplan */,
+				9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */,
 				9E926FAD23945E7D002DF561 /* RestorTests.swift */,
 				9E926FAF23945E7D002DF561 /* Info.plist */,
 			);
@@ -397,7 +408,9 @@
 				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
+				9E85FE48240E9CDB002821F2 /* main.swift in Sources */,
 				9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */,
+				9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */,
 				9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */,
 				9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */,
 			);
@@ -407,7 +420,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9E85FE4C240EAEE1002821F2 /* Restor.xcdatamodeld in Sources */,
+				9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */,
 				9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */,
+				9E85FE4D240EAEFC002821F2 /* ERequest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -139,7 +139,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
 
     func initState() {
         // using child context
-        AppState.editRequest = ERequest.create(id: self.utils.genRandomString(), in: self.localdb.childMOC)
+        // TODO:
+        //AppState.editRequest = ERequest.create(id: self.utils.genRandomString(), in: self.localdb.childMOC)
     }
     
     func initHeadersTableViewManager() {
@@ -328,7 +329,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     static func addRequestBodyToState() {
         if let req = AppState.editRequest, let moc = req.managedObjectContext {
             if req.body == nil {
-                req.body = ERequestBodyData.create(id: Utils.shared.genRandomString(), in: moc)
+                // TODO:
+                //req.body = ERequestBodyData.create(id: Utils.shared.genRandomString(), in: moc)
                 AppState.editRequest!.body?.request = AppState.editRequest
             }
         }

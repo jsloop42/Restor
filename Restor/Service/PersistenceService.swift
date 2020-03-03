@@ -12,7 +12,10 @@ struct PersistenceService {
     static let shared = PersistenceService()
     private var db = CoreDataService.shared
     
-    mutating func initDefaultWorkspace() throws -> EWorkspace {
-        return try self.db.getDefaultWorkspace()
+    mutating func initDefaultWorkspace() throws -> EWorkspace? {
+        if !isRunningTests {
+            return try self.db.getDefaultWorkspace()
+        }
+        return nil
     }
 }
