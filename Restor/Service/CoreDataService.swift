@@ -107,7 +107,7 @@ struct CoreDataService {
             return self.bgMOC
         }()
         moc.performAndWait {
-            let fr = NSFetchRequest<EProject>(entityName: "EWorkspace")
+            let fr = NSFetchRequest<EProject>(entityName: "EProject")
             fr.predicate = NSPredicate(format: "id == %@", id)
             do {
                 let xs = try moc.fetch(fr)
@@ -118,6 +118,26 @@ struct CoreDataService {
             }
         }
         return x
+    }
+    
+    mutating func getProjects(in ws: EWorkspace, context: NSManagedObjectContext? = nil) -> [EProject] {
+        var xs: [EProject] = []
+        let moc: NSManagedObjectContext = {
+            if context != nil { return context! }
+            return self.bgMOC
+        }()
+        guard let id = ws.id else { return xs }
+        moc.performAndWait {
+            let fr = NSFetchRequest<EProject>(entityName: "EProject")
+            fr.predicate = NSPredicate(format: "workspace.id == %@", id)
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error getting entities - \(error)")
+            }
+        }
+        return xs
     }
     
     /// Default entities will have the id "default"
@@ -151,13 +171,14 @@ struct CoreDataService {
     
     mutating func createWorkspace(id: String, name: String) -> EWorkspace? {
         var x: EWorkspace?
+        let ts = Date().currentTimeMillis()
         self.bgMOC.performAndWait {
             if let ws = self.getWorkspace(id: id) { x = ws; return }
             let ws = NSEntityDescription.insertNewObject(forEntityName: "EWorkspace", into: self.bgMOC) as! EWorkspace
             ws.id = id
             ws.name = name
-            ws.created = Date().currentTimeMillis()
-            ws.modified = ws.created
+            ws.created = ts
+            ws.modified = ts
             ws.version = 0
             x = ws
         }
@@ -166,13 +187,14 @@ struct CoreDataService {
     
     mutating func createProject(id: String, name: String, ws: EWorkspace? = nil) -> EProject? {
         var x: EProject?
+        let ts = Date().currentTimeMillis()
         self.bgMOC.performAndWait {
             if let proj = self.getProject(id: id) { x = proj; return }
             let proj = NSEntityDescription.insertNewObject(forEntityName: "EProject", into: self.bgMOC) as! EProject
             proj.id = id
             proj.name = name
-            proj.created = Date().currentTimeMillis()
-            proj.modified = proj.created
+            proj.created = ts
+            proj.modified = ts
             proj.version = 0
             ws?.addToProjects(proj)
             x = proj

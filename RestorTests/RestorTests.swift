@@ -153,41 +153,49 @@ class RestorTests: XCTestCase {
         waitForExpectations(timeout: 1.0, handler: nil)
     }
     
-    func notestEntitySorting() {
-        do {
-            let wsname = "test-ws"
-            let rws = try self.localdb.createWorkspace(id: wsname, name: wsname)
-            XCTAssertNotNil(rws)
-            guard let ws = rws else { return }
-            //defer { self.localdb.deleteEntity(ws) }
-            ws.name = "test-workspace"
-            ws.desc = "test description"
-            let wproj1 = try self.localdb.createProject(id: "test-project-22", name: "test-project-22")
-            XCTAssertNotNil(wproj1)
-            guard let proj1 = wproj1 else { return }
-            //defer { self.localdb.deleteEntity(proj1) }
-            let wproj2 = try self.localdb.createProject(id: "test-project-11", name: "test-project-11")
-            XCTAssertNotNil(wproj2)
-            guard let proj2 = wproj2 else { return }
-            //defer { self.localdb.deleteEntity(proj2) }
-            let wproj3 = try self.localdb.createProject(id: "test-project-33", name: "test-project-33")
-            XCTAssertNotNil(wproj3)
-            guard let proj3 = wproj3 else { return }
-            //defer { self.localdb.deleteEntity(proj3) }
-            ws.projects = NSSet(array: [proj1, proj2, proj3])
-            try self.localdb.saveContext(ws)
-            let lws = try self.localdb.getWorkspace(id: wsname)
-            XCTAssertNotNil(lws)
-            guard let aws = lws else { return }
-            let xs = aws.projects?.allObjects  // [22, 11, 33]
-            XCTAssertNotNil(xs?.first)
-            XCTAssertEqual((xs?.first as! Restor.EProject).name, "test-project-22")
-            XCTAssertEqual((xs?.last as! Restor.EProject).name, "test-project-33")
-        } catch let error {
-            Log.debug("Error: \(error)")
-            XCTFail()
+    func testEntitySorting() {
+        let exp = expectation(description: "test core data sorting")
+        self.localdb.setup(storeType: NSSQLiteStoreType) {
+            self.serialQueue.async {
+                let wsname = "test-ws"
+                let rws = self.localdb.createWorkspace(id: wsname, name: wsname)
+                XCTAssertNotNil(rws)
+                guard let ws = rws else { return }
+                //defer { self.localdb.deleteEntity(ws) }
+                ws.name = wsname
+                ws.desc = "test description"
+                let wproj1 = self.localdb.createProject(id: "test-project-22", name: "test-project-22")
+                XCTAssertNotNil(wproj1)
+                guard let proj1 = wproj1 else { return }
+                //defer { self.localdb.deleteEntity(proj1) }
+                let wproj2 = self.localdb.createProject(id: "test-project-11", name: "test-project-11")
+                XCTAssertNotNil(wproj2)
+                guard let proj2 = wproj2 else { return }
+                //defer { self.localdb.deleteEntity(proj2) }
+                let wproj3 = self.localdb.createProject(id: "test-project-33", name: "test-project-33")
+                XCTAssertNotNil(wproj3)
+                guard let proj3 = wproj3 else { return }
+                //defer { self.localdb.deleteEntity(proj3) }
+                ws.projects = NSSet(array: [proj1, proj2, proj3])
+                self.localdb.saveContext(ws)
+                let lws = self.localdb.getWorkspace(id: wsname)
+                XCTAssertNotNil(lws)
+                let projxs = self.localdb.getProjects(in: ws)
+                XCTAssert(projxs.count == 3)
+                Log.debug("projxs: \(projxs)")
+                XCTAssertEqual(projxs[0].name, "test-project-22")  // TODO: test ordering
+                XCTAssertEqual(projxs[1].name, "test-project-11")
+                XCTAssertEqual(projxs[2].name, "test-project-33")
+                // cleanup
+                projxs.forEach { p in self.localdb.deleteEntity(p) }
+                self.localdb.deleteEntity(ws)
+                exp.fulfill()
+            }
         }
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
+    
+    // TODO: have multiple ws, test get projects of a workspace
 
     func notestPerformanceExample() {
         // This is an example of a performance test case.
