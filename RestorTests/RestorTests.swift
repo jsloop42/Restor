@@ -161,23 +161,39 @@ class RestorTests: XCTestCase {
                 let rws = self.localdb.createWorkspace(id: wsname, name: wsname)
                 XCTAssertNotNil(rws)
                 guard let ws = rws else { return }
-                //defer { self.localdb.deleteEntity(ws) }
                 ws.name = wsname
                 ws.desc = "test description"
                 let wproj1 = self.localdb.createProject(id: "test-project-22", name: "test-project-22")
                 XCTAssertNotNil(wproj1)
                 guard let proj1 = wproj1 else { return }
-                //defer { self.localdb.deleteEntity(proj1) }
                 let wproj2 = self.localdb.createProject(id: "test-project-11", name: "test-project-11")
                 XCTAssertNotNil(wproj2)
                 guard let proj2 = wproj2 else { return }
-                //defer { self.localdb.deleteEntity(proj2) }
                 let wproj3 = self.localdb.createProject(id: "test-project-33", name: "test-project-33")
                 XCTAssertNotNil(wproj3)
                 guard let proj3 = wproj3 else { return }
-                //defer { self.localdb.deleteEntity(proj3) }
                 ws.projects = NSSet(array: [proj1, proj2, proj3])
                 self.localdb.saveContext(ws)
+                
+                // ws2
+                let wsname2 = "test-ws-2"
+                let rws2 = self.localdb.createWorkspace(id: wsname2, name: wsname2)
+                XCTAssertNotNil(rws2)
+                guard let ws2 = rws2 else { return }
+                ws2.name = wsname2
+                ws2.desc = "test description 2"
+                let wproj21 = self.localdb.createProject(id: "ws2-test-project-22", name: "ws2-test-project-22")
+                XCTAssertNotNil(wproj21)
+                guard let proj21 = wproj21 else { return }
+                let wproj22 = self.localdb.createProject(id: "ws2-test-project-11", name: "ws2-test-project-11")
+                XCTAssertNotNil(wproj22)
+                guard let proj22 = wproj22 else { return }
+                let wproj23 = self.localdb.createProject(id: "ws2-test-project-33", name: "ws2-test-project-33")
+                XCTAssertNotNil(wproj23)
+                guard let proj23 = wproj23 else { return }
+                ws2.projects = NSSet(array: [proj21, proj22, proj23])
+                self.localdb.saveContext(ws2)
+                
                 let lws = self.localdb.getWorkspace(id: wsname)
                 XCTAssertNotNil(lws)
                 let projxs = self.localdb.getProjects(in: ws)
@@ -186,16 +202,26 @@ class RestorTests: XCTestCase {
                 XCTAssertEqual(projxs[0].name, "test-project-22")  // TODO: test ordering
                 XCTAssertEqual(projxs[1].name, "test-project-11")
                 XCTAssertEqual(projxs[2].name, "test-project-33")
+                
+                let lws2 = self.localdb.getWorkspace(id: wsname2)
+                XCTAssertNotNil(lws2)
+                let projxs2 = self.localdb.getProjects(in: ws2)
+                XCTAssert(projxs2.count == 3)
+                Log.debug("projxs: \(projxs2)")
+                XCTAssertEqual(projxs2[0].name, "ws2-test-project-22")
+                XCTAssertEqual(projxs2[1].name, "ws2-test-project-11")
+                XCTAssertEqual(projxs2[2].name, "ws2-test-project-33")
+                
                 // cleanup
                 projxs.forEach { p in self.localdb.deleteEntity(p) }
+                projxs2.forEach { p in self.localdb.deleteEntity(p) }
+                self.localdb.deleteEntity(ws)
                 self.localdb.deleteEntity(ws)
                 exp.fulfill()
             }
         }
         waitForExpectations(timeout: 1.0, handler: nil)
     }
-    
-    // TODO: have multiple ws, test get projects of a workspace
 
     func notestPerformanceExample() {
         // This is an example of a performance test case.

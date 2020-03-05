@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9E23E68D240D98A400C4686A /* ERequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E23E68C240D98A400C4686A /* ERequest.swift */; };
+		9E23E68D240D98A400C4686A /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E23E68C240D98A400C4686A /* Models.swift */; };
 		9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */; };
 		9E538DAC239951790025C14C /* UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAB239951790025C14C /* UI.swift */; };
 		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
@@ -20,7 +20,7 @@
 		9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
 		9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
 		9E85FE4C240EAEE1002821F2 /* Restor.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */; };
-		9E85FE4D240EAEFC002821F2 /* ERequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E23E68C240D98A400C4686A /* ERequest.swift */; };
+		9E85FE4D240EAEFC002821F2 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E23E68C240D98A400C4686A /* Models.swift */; };
 		9E8759062396C6A700F949D1 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* Utils.swift */; };
 		9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9323945E79002DF561 /* AppDelegate.swift */; };
 		9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9523945E79002DF561 /* SceneDelegate.swift */; };
@@ -59,7 +59,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		9E23E68C240D98A400C4686A /* ERequest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ERequest.swift; sourceTree = "<group>"; };
+		9E23E68C240D98A400C4686A /* Models.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		9E49EC002402FDE900DAA260 /* Restor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Restor.entitlements; sourceTree = "<group>"; };
 		9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
 		9E538DAB239951790025C14C /* UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI.swift; sourceTree = "<group>"; };
@@ -71,7 +71,7 @@
 		9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTableViewController.swift; sourceTree = "<group>"; };
 		9E85FE47240E9CDB002821F2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegateMock.swift; sourceTree = "<group>"; };
-		9E85FE4E240EDB0A002821F2 /* Restor.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = file; name = Restor.xctestplan; path = RestorTests/Restor.xctestplan; sourceTree = SOURCE_ROOT; };
+		9E85FE4E240EDB0A002821F2 /* Restor.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = Restor.xctestplan; path = RestorTests/Restor.xctestplan; sourceTree = SOURCE_ROOT; };
 		9E8759052396C6A700F949D1 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		9E926F9023945E78002DF561 /* Restor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Restor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926F9323945E79002DF561 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -126,7 +126,7 @@
 		9E538DAF2399536B0025C14C /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				9E23E68C240D98A400C4686A /* ERequest.swift */,
+				9E23E68C240D98A400C4686A /* Models.swift */,
 				9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */,
 			);
 			path = Model;
@@ -400,7 +400,7 @@
 				9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */,
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
 				9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */,
-				9E23E68D240D98A400C4686A /* ERequest.swift in Sources */,
+				9E23E68D240D98A400C4686A /* Models.swift in Sources */,
 				9EE34CA323D9F67C00CA08F2 /* App.swift in Sources */,
 				9E538DAE239953460025C14C /* AppState.swift in Sources */,
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
@@ -423,7 +423,7 @@
 				9E85FE4C240EAEE1002821F2 /* Restor.xcdatamodeld in Sources */,
 				9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */,
 				9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */,
-				9E85FE4D240EAEFC002821F2 /* ERequest.swift in Sources */,
+				9E85FE4D240EAEFC002821F2 /* Models.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

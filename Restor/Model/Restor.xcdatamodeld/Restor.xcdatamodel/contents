@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="15702" systemVersion="19C57" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
     <entity name="EFile" representedClassName=".EFile" syncable="YES" codeGenerationType="category">
+        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="data" optional="YES" attributeType="Binary"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
+        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
         <attribute name="path" optional="YES" attributeType="URI"/>
+        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="requestData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestData" inverseName="files" inverseEntity="ERequestData"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -12,9 +16,13 @@
         </uniquenessConstraints>
     </entity>
     <entity name="EImage" representedClassName=".EImage" syncable="YES" codeGenerationType="category">
+        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="image" optional="YES" attributeType="Binary"/>
         <attribute name="isCameraMode" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="requestData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestData" inverseName="image" inverseEntity="ERequestData"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -144,8 +152,8 @@
         </uniquenessConstraints>
     </entity>
     <elements>
-        <element name="EFile" positionX="36" positionY="126" width="128" height="103"/>
-        <element name="EImage" positionX="-9" positionY="90" width="128" height="103"/>
+        <element name="EFile" positionX="36" positionY="126" width="128" height="163"/>
+        <element name="EImage" positionX="-9" positionY="90" width="128" height="163"/>
         <element name="EProject" positionX="-54" positionY="-9" width="128" height="178"/>
         <element name="ERequest" positionX="-36" positionY="9" width="128" height="253"/>
         <element name="ERequestBodyData" positionX="0" positionY="45" width="128" height="223"/>

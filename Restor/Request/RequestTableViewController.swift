@@ -139,8 +139,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
 
     func initState() {
         // using child context
-        // TODO:
-        //AppState.editRequest = ERequest.create(id: self.utils.genRandomString(), in: self.localdb.childMOC)
+        AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), name: "", ctx: self.localdb.childMOC)
     }
     
     func initHeadersTableViewManager() {
@@ -329,8 +328,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     static func addRequestBodyToState() {
         if let req = AppState.editRequest, let moc = req.managedObjectContext {
             if req.body == nil {
-                // TODO:
-                //req.body = ERequestBodyData.create(id: Utils.shared.genRandomString(), in: moc)
+                req.body = CoreDataService.shared.createRequestBodyData(id: Utils.shared.genRandomString(), ctx: moc)
                 AppState.editRequest!.body?.request = AppState.editRequest
             }
         }
@@ -596,8 +594,9 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.bodyFieldTableView.isHidden = false
         self.rawTextViewContainer.isHidden = true
         RequestVC.addRequestBodyToState()
-        // TODO:
-        //self.bodyFieldTableView.selectedType = ERequestBodyType(rawValue: AppState.editRequest!.body!.selected)!
+        if let req = AppState.editRequest, let body = req.body, let type = RequestBodyType(rawValue: body.selected.toInt()) {
+            self.bodyFieldTableView.selectedType = type
+        }
         self.bodyFieldTableView.reloadData()
     }
     
@@ -694,6 +693,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     var isKeyTextFieldActive = false
     private let nc = NotificationCenter.default
     var selectedFieldType: RequestBodyFormFieldType = .text
+    private let localdb = CoreDataService.shared
 
     override func awakeFromNib() {
         super.awakeFromNib()
