@@ -11,6 +11,7 @@ import CoreData
 
 protocol Entity {
     func getId() -> String?
+    func getIndex() -> Int
     func getName() -> String?
     func getCreated() -> Int64
     func getModified() -> Int64
@@ -22,6 +23,10 @@ class EFile: NSManagedObject, Entity {
         return self.id
     }
     
+    func getIndex() -> Int {
+        return self.index.toInt()
+    }
+    
     func getName() -> String? {
         return self.name
     }
@@ -37,7 +42,6 @@ class EFile: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
-    
 }
 
 class EImage: NSManagedObject, Entity {
@@ -45,6 +49,10 @@ class EImage: NSManagedObject, Entity {
         return self.id
     }
     
+    func getIndex() -> Int {
+        return self.index.toInt()
+    }
+    
     func getName() -> String? {
         return self.name
     }
@@ -60,7 +68,6 @@ class EImage: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
-    
 }
 
 class EProject: NSManagedObject, Entity {
@@ -68,6 +75,10 @@ class EProject: NSManagedObject, Entity {
         return self.id
     }
     
+    func getIndex() -> Int {
+        return self.index.toInt()
+    }
+    
     func getName() -> String? {
         return self.name
     }
@@ -83,7 +94,6 @@ class EProject: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
-    
 }
 
 class ERequest: NSManagedObject, Entity {
@@ -91,6 +101,10 @@ class ERequest: NSManagedObject, Entity {
         return self.id
     }
     
+    func getIndex() -> Int {
+        return self.index.toInt()
+    }
+    
     func getName() -> String? {
         return self.name
     }
@@ -106,12 +120,15 @@ class ERequest: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
-    
 }
 
 class ERequestBodyData: NSManagedObject, Entity {
     func getId() -> String? {
         return self.id
+    }
+    
+    func getIndex() -> Int {
+        return self.index.toInt()
     }
     
     func getName() -> String? {
@@ -129,7 +146,6 @@ class ERequestBodyData: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
-    
 }
 
 class ERequestData: NSManagedObject, Entity {
@@ -137,6 +153,10 @@ class ERequestData: NSManagedObject, Entity {
         return self.id
     }
     
+    func getIndex() -> Int {
+        return self.index.toInt()
+    }
+    
     func getName() -> String? {
         return self.id
     }
@@ -152,7 +172,6 @@ class ERequestData: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
-    
 }
 
 class ERequestMethodData: NSManagedObject, Entity {
@@ -160,6 +179,10 @@ class ERequestMethodData: NSManagedObject, Entity {
         return self.id
     }
     
+    func getIndex() -> Int {
+        return self.index.toInt()
+    }
+    
     func getName() -> String? {
         return self.name
     }
@@ -175,7 +198,6 @@ class ERequestMethodData: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
-    
 }
 
 class ETag: NSManagedObject, Entity {
@@ -183,6 +205,10 @@ class ETag: NSManagedObject, Entity {
         return self.id
     }
     
+    func getIndex() -> Int {
+        return self.index.toInt()
+    }
+    
     func getName() -> String? {
         return self.name
     }
@@ -198,7 +224,6 @@ class ETag: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
-    
 }
 
 class EWorkspace: NSManagedObject, Entity {
@@ -206,6 +231,10 @@ class EWorkspace: NSManagedObject, Entity {
         return self.id
     }
     
+    func getIndex() -> Int {
+        return self.index.toInt()
+    }
+    
     func getName() -> String? {
         return self.name
     }
@@ -221,5 +250,4 @@ class EWorkspace: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
-    
 }

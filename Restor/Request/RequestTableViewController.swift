@@ -139,7 +139,11 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
 
     func initState() {
         // using child context
-        AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), name: "", ctx: self.localdb.childMOC)
+        if let proj = AppState.currentProject, let projId = proj.id {
+            let n = self.localdb.getRequestsCount(projectId: projId)
+            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: n, name: "", ctx: self.localdb.childMOC)
+        }
+        // TODO: save child context on request save
     }
     
     func initHeadersTableViewManager() {
@@ -328,7 +332,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     static func addRequestBodyToState() {
         if let req = AppState.editRequest, let moc = req.managedObjectContext {
             if req.body == nil {
-                req.body = CoreDataService.shared.createRequestBodyData(id: Utils.shared.genRandomString(), ctx: moc)
+                req.body = CoreDataService.shared.createRequestBodyData(id: Utils.shared.genRandomString(), index: 0, ctx: moc)
                 AppState.editRequest!.body?.request = AppState.editRequest
             }
         }
@@ -787,12 +791,16 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     
     // MARK: - Delegate collection view
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        // TODO:
-//        if self.selectedFieldType == .file {
-//            if let data = AppState.editRequest?.body?.form[self.tag].files {
-//                return data.count
-//            }
-//        }
+        // TODO:  get files
+        if self.selectedFieldType == .file {
+            if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id {
+                let form = self.localdb.getFormRequestData(bodyId, ctx: ctx)
+                let x: ERequestBodyData = form[self.tag]
+                if let xId = x.id {
+                    return self.localdb.getFilesCount(xId, ctx: ctx)
+                }
+            }
+        }
         return 0
     }
     
