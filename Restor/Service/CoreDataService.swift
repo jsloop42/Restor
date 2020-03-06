@@ -152,7 +152,7 @@ class CoreDataService {
     /// - Parameters:
     ///   - wsId: The workspace id.
     ///   - ctx: The managed object context.
-    func getProjects(with wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EProject] {
+    func getProjects(wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EProject] {
         var xs: [EProject] = []
         let moc: NSManagedObjectContext = {
             if ctx != nil { return ctx! }
@@ -232,7 +232,7 @@ class CoreDataService {
     ///   - index: The order index.
     ///   - projectId: The project id.
     ///   - ctx: The managed object context.
-    func getRequest(at index: Int, with projectId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
+    func getRequest(at index: Int, projectId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
         var x: ERequest?
         let moc: NSManagedObjectContext = {
             if ctx != nil { return ctx! }
@@ -351,6 +351,29 @@ class CoreDataService {
         return xs
     }
     
+    /// Retrieves the form at the given index.
+    /// - Parameters:
+    ///   - index: The index of the form.
+    ///   - bodyDataId: The request body data id.
+    ///   - ctx: The managed object context.
+    func getFormRequestData(at index: Int, bodyDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
+        var x: ERequestBodyData?
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestBodyData>(entityName: "ERequestBodyData")
+            fr.predicate = NSPredicate(format: "form.id == %@ AND index == %ld", bodyDataId, index.toInt64())
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error fetching request: \(error)")
+            }
+        }
+        return x
+    }
+    
     func getMultipartRequestData(_ bodyDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestBodyData] {
         var xs: [ERequestBodyData] = []
         let moc: NSManagedObjectContext = {
@@ -456,6 +479,29 @@ class CoreDataService {
             }
         }
         return xs
+    }
+    
+    /// Retrieves the file at the given index.
+    /// - Parameters:
+    ///   - index: The index of the file in the request data list.
+    ///   - reqDataId: The request data id.
+    ///   - ctx: The managed object context.
+    func getFile(at index: Int, reqDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
+        var x: EFile?
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<EFile>(entityName: "EFile")
+            fr.predicate = NSPredicate(format: "requestData.id == %@ AND index == %ld", reqDataId, index.toInt64())
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error fetching request: \(error)")
+            }
+        }
+        return x
     }
     
     // MARK: - Create

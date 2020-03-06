@@ -791,7 +791,6 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     
     // MARK: - Delegate collection view
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        // TODO:  get files
         if self.selectedFieldType == .file {
             if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id {
                 let form = self.localdb.getFormRequestData(bodyId, ctx: ctx)
@@ -808,10 +807,12 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         Log.debug("file collection view cell")
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "fileCell", for: indexPath) as! FileCollectionViewCell
         var name = ""
-        // TODO:
-//        if let data = AppState.editRequest?.body?.form[self.tag] {
-//            name = data.files[indexPath.row].lastPathComponent
-//        }
+        if let data = AppState.editRequest, let body = data.body, let bodyId = body.id {
+            if let form = self.localdb.getFormRequestData(at: self.tag, bodyDataId: bodyId), let formId = form.id,
+                let file = self.localdb.getFile(at: indexPath.row, reqDataId: formId) {
+                name = file.name ?? ""
+            }
+        }
         cell.nameLabel.text = name
         return cell
     }
