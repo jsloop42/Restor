@@ -457,7 +457,7 @@ class CoreDataService {
         return x
     }
     
-    func getHeadersRequestData(_ bodyDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
+    func getHeadersRequestData(_ reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc: NSManagedObjectContext = {
             if ctx != nil { return ctx! }
@@ -465,7 +465,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "headers.id == %@", bodyDataId)
+            fr.predicate = NSPredicate(format: "headers.id == %@", reqId)
             fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -477,7 +477,7 @@ class CoreDataService {
         return xs
     }
     
-    func getParamsRequestData(_ bodyDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
+    func getParamsRequestData(_ reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc: NSManagedObjectContext = {
             if ctx != nil { return ctx! }
@@ -485,7 +485,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "params.id == %@", bodyDataId)
+            fr.predicate = NSPredicate(format: "params.id == %@", reqId)
             fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -929,20 +929,34 @@ class CoreDataService {
             if ctx != nil { return ctx! }
             return self.bgMOC
         }()
-        if let x = self.getRequestData(at: index, reqId: reqId, type: type, ctx: ctx) {
-            moc.performAndWait {
-                switch type {
-                case .header:
-                    req.removeFromHeaders(x)
-                case .param:
-                    req.removeFromParams(x)
-                case .form:
-                    req.body?.removeFromForm(x)
-                case .multipart:
-                    req.body?.removeFromMultipart(x)
+        moc.performAndWait {
+            var x: ERequestData?
+            // Since deleting in-between elems can change the table count, we cannot fetch by index. Instead we fetch the whole list and get the element at the
+            // given index and removes it
+            switch type {
+            case .header:
+                let xs = self.getHeadersRequestData(reqId, ctx: ctx)
+                if xs.count > index { x = xs[index] }
+                if x != nil { req.removeFromHeaders(x!) }
+            case .param:
+                let xs = self.getParamsRequestData(reqId, ctx: ctx)
+                if xs.count > index { x = xs[index] }
+                if x != nil { req.removeFromParams(x!) }
+            case .form:
+                if let bodyId = req.body?.id {
+                    let xs = self.getFormRequestData(bodyId, type: .form, ctx: ctx)
+                    if xs.count > index { x = xs[index] }
+                    if x != nil { req.body?.removeFromForm(x!) }
                 }
-                moc.delete(x)
+            case .multipart:
+                if let bodyId = req.body?.id {
+                    let xs = self.getFormRequestData(bodyId, type: .multipart, ctx: ctx)
+                    if xs.count > index { x = xs[index] }
+                    if x != nil { req.body?.removeFromMultipart(x!) }
+                }
+                break
             }
+            if x != nil { moc.delete(x!) }
         }
     }
 }
