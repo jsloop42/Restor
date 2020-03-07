@@ -159,7 +159,11 @@ class DocumentPicker: NSObject {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         Log.debug("image picker did finish - info: \(info)")
         if let image = info[.originalImage] as? UIImage {
+            Log.debug("media type: \(info[.mediaType])")
             DocumentPickerState.image = image
+            if let type = info[.mediaType] as? String {
+                DocumentPickerState.imageType = type
+            }
             Log.debug("image obtained")
             self.nc.post(Notification(name: NotificationKey.documentPickerImageIsAvailable))
         }

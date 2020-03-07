@@ -122,6 +122,14 @@ class App {
         self.addItemPopupView = popup
     }
     
+    func getDataForURL(_ url: URL) -> Data? {
+        return nil
+    }
+    
+    func getFileName(_ url: URL) -> String {
+        return url.lastPathComponent
+    }
+    
     // MARK: - Theme
     public struct Color {
         //public static let lightGreen = UIColor(red: 196/255, green: 223/255, blue: 168/255, alpha: 1.0)
@@ -200,14 +208,28 @@ enum RequestBodyType: Int {
     case binary
 }
 
+/// Indicates to which model the `ERequestData` belongs to
+enum RequestDataType: Int {
+    case header
+    case param
+    case form
+    case multipart
+}
+
 /// Form fields under request body
-enum RequestBodyFormFieldType: Int {
+enum RequestBodyFormFieldFormatType: Int {
     case text
     case file
 
     static var allCases: [String] {
         return ["Text", "File"]
     }
+}
+
+enum ImageType: String {
+    case png
+    case jpeg
+    case jpg
 }
 
 enum AppError: Error {

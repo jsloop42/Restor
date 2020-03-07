@@ -117,16 +117,33 @@ class Utils {
     }
     
     /// Generates the MD5 hash corresponding to the given text.
-    func md5(_ txt: String) -> String {
+    func md5(txt: String) -> String {
         let context = UnsafeMutablePointer<CC_MD5_CTX>.allocate(capacity: 1)
         var digest = Array<UInt8>(repeating:0, count:Int(CC_MD5_DIGEST_LENGTH))
         CC_MD5_Init(context)
         CC_MD5_Update(context, txt, CC_LONG(txt.lengthOfBytes(using: String.Encoding.utf8)))
         CC_MD5_Final(&digest, context)
         context.deallocate()
+        return self.toHex(digest)
+    }
+    
+    /// Generates the MD5 hash corresponding to the given data.
+    func md5(data: Data) -> String {
+        var digest = Array<UInt8>(repeating: 0, count: Int(CC_MD5_DIGEST_LENGTH))
         var hex = ""
-        for byte in digest {
-            hex += String(format:"%02x", byte)
+        _ = data.withUnsafeBytes { bytes in
+            let buff: UnsafePointer<UInt8> = bytes.baseAddress!.assumingMemoryBound(to: UInt8.self)
+            CC_MD5(buff, CC_LONG(data.count), &digest)
+            hex = self.toHex(digest)
+        }
+        return hex
+    }
+    
+    /// Get hex string from the given array.
+    func toHex(_ xs: [UInt8]) -> String {
+        var hex = ""
+        for byte in xs {
+            hex += String(format: "%02x", byte)
         }
         return hex
     }

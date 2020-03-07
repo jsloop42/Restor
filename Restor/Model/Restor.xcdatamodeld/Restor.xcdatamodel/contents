@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="15702" systemVersion="19C57" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
     <entity name="EFile" representedClassName=".EFile" syncable="YES" codeGenerationType="category">
-        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="data" optional="YES" attributeType="Binary"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
         <attribute name="path" optional="YES" attributeType="URI"/>
-        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="requestData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestData" inverseName="files" inverseEntity="ERequestData"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -17,14 +17,15 @@
         </uniquenessConstraints>
     </entity>
     <entity name="EImage" representedClassName=".EImage" syncable="YES" codeGenerationType="category">
-        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="image" optional="YES" attributeType="Binary"/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="isCameraMode" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
-        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="type" attributeType="String" defaultValueString="png"/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="requestData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestData" inverseName="image" inverseEntity="ERequestData"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -34,13 +35,13 @@
         </uniquenessConstraints>
     </entity>
     <entity name="EProject" representedClassName=".EProject" syncable="YES" codeGenerationType="category">
-        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="desc" optional="YES" attributeType="String"/>
-        <attribute name="id" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="desc" attributeType="String" defaultValueString=""/>
+        <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="requestMethods" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequestMethodData" inverseName="project" inverseEntity="ERequestMethodData"/>
         <relationship name="requests" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequest" inverseName="project" inverseEntity="ERequest"/>
         <relationship name="workspace" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="EWorkspace" inverseName="projects" inverseEntity="EWorkspace"/>
@@ -51,15 +52,15 @@
         </uniquenessConstraints>
     </entity>
     <entity name="ERequest" representedClassName=".ERequest" syncable="YES" codeGenerationType="category">
-        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="desc" optional="YES" attributeType="String"/>
-        <attribute name="id" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="desc" attributeType="String" defaultValueString=""/>
+        <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="selectedMethodIndex" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="url" optional="YES" attributeType="String"/>
-        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="selectedMethodIndex" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="url" attributeType="String" defaultValueString=""/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="body" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="ERequestBodyData" inverseName="request" inverseEntity="ERequestBodyData"/>
         <relationship name="headers" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequestData" inverseName="headers" inverseEntity="ERequestData"/>
         <relationship name="methods" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ERequestMethodData" inverseName="request" inverseEntity="ERequestMethodData"/>
@@ -75,14 +76,14 @@
     </entity>
     <entity name="ERequestBodyData" representedClassName=".ERequestBodyData" syncable="YES" codeGenerationType="category">
         <attribute name="binary" optional="YES" attributeType="Binary"/>
-        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="json" optional="YES" attributeType="String"/>
-        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="raw" optional="YES" attributeType="String"/>
         <attribute name="selected" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="xml" optional="YES" attributeType="String"/>
         <relationship name="form" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequestData" inverseName="form" inverseEntity="ERequestData"/>
         <relationship name="multipart" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequestData" inverseName="multipart" inverseEntity="ERequestData"/>
@@ -94,19 +95,20 @@
         </uniquenessConstraints>
     </entity>
     <entity name="ERequestData" representedClassName=".ERequestData" syncable="YES" codeGenerationType="category">
-        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="id" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="fieldFormat" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="key" optional="YES" attributeType="String"/>
-        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="key" attributeType="String" defaultValueString=""/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="type" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="value" optional="YES" attributeType="String"/>
-        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="value" attributeType="String" defaultValueString=""/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="files" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="EFile" inverseName="requestData" inverseEntity="EFile"/>
         <relationship name="form" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestBodyData" inverseName="form" inverseEntity="ERequestBodyData"/>
         <relationship name="headers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ERequest" inverseName="headers" inverseEntity="ERequest"/>
         <relationship name="image" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="EImage" inverseName="requestData" inverseEntity="EImage"/>
-        <relationship name="multipart" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ERequestBodyData" inverseName="multipart" inverseEntity="ERequestBodyData"/>
+        <relationship name="multipart" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestBodyData" inverseName="multipart" inverseEntity="ERequestBodyData"/>
         <relationship name="params" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ERequest" inverseName="params" inverseEntity="ERequest"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -115,13 +117,13 @@
         </uniquenessConstraints>
     </entity>
     <entity name="ERequestMethodData" representedClassName=".ERequestMethodData" syncable="YES" codeGenerationType="category">
-        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="id" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="isCustom" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
-        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="isCustom" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="EProject" inverseName="requestMethods" inverseEntity="EProject"/>
         <relationship name="request" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequest" inverseName="methods" inverseEntity="ERequest"/>
         <uniquenessConstraints>
@@ -132,12 +134,12 @@
         </uniquenessConstraints>
     </entity>
     <entity name="ETag" representedClassName=".ETag" syncable="YES" codeGenerationType="category">
-        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="id" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0.0" usesScalarValueType="YES"/>
-        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="request" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequest" inverseName="tags" inverseEntity="ERequest"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -146,13 +148,13 @@
         </uniquenessConstraints>
     </entity>
     <entity name="EWorkspace" representedClassName=".EWorkspace" syncable="YES" codeGenerationType="category">
-        <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="desc" optional="YES" attributeType="String"/>
-        <attribute name="id" optional="YES" attributeType="String" defaultValueString=""/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="desc" attributeType="String" defaultValueString=""/>
+        <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="name" optional="YES" attributeType="String"/>
-        <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0.0" usesScalarValueType="YES"/>
         <relationship name="projects" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="EProject" inverseName="workspace" inverseEntity="EProject"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -162,11 +164,11 @@
     </entity>
     <elements>
         <element name="EFile" positionX="36" positionY="126" width="128" height="178"/>
-        <element name="EImage" positionX="-9" positionY="90" width="128" height="178"/>
+        <element name="EImage" positionX="-9" positionY="90" width="128" height="193"/>
         <element name="EProject" positionX="-54" positionY="-9" width="128" height="193"/>
         <element name="ERequest" positionX="-36" positionY="9" width="128" height="268"/>
         <element name="ERequestBodyData" positionX="0" positionY="45" width="128" height="238"/>
-        <element name="ERequestData" positionX="18" positionY="63" width="128" height="253"/>
+        <element name="ERequestData" positionX="18" positionY="63" width="128" height="28"/>
         <element name="ERequestMethodData" positionX="-18" positionY="27" width="128" height="178"/>
         <element name="ETag" positionX="0" positionY="99" width="128" height="148"/>
         <element name="EWorkspace" positionX="-63" positionY="-18" width="128" height="163"/>

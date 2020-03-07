@@ -76,6 +76,8 @@ struct DocumentPickerState {
     static var docs: [URL] = []
     /// Photo or camera attachment
     static var image: UIImage?
+    /// kUTTypeImage
+    static var imageType: String = "png"
     /// If camera is chosen
     static var isCameraMode: Bool = false
     /// The index of data in the model

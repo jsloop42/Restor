@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-extension Date {
+public extension Date {
     func day() -> Int {
         return Calendar.current.component(.day, from: self)
     }
@@ -34,7 +34,7 @@ extension Date {
     }
 }
 
-extension String {
+public extension String {
     subscript(_ i: Int) -> String {
         let idx1 = index(startIndex, offsetBy: i)
         let idx2 = index(idx1, offsetBy: 1)
@@ -54,7 +54,7 @@ extension String {
     }
 }
 
-extension UIImage {
+public extension UIImage {
     /// Offset the image from left
     func imageWithLeftPadding(_ left: CGFloat) -> UIImage {
         UIGraphicsBeginImageContextWithOptions(self.size, false, 0.0)
@@ -65,7 +65,7 @@ extension UIImage {
     }
 }
 
-extension Int32 {
+public extension Int32 {
     func toInt() -> Int {
         return Int(self)
     }
@@ -75,7 +75,7 @@ extension Int32 {
     }
 }
 
-extension Int {
+public extension Int {
     func toInt32() -> Int32 {
         return Int32(self)
     }
@@ -85,7 +85,7 @@ extension Int {
     }
 }
 
-extension Int64 {
+public extension Int64 {
     func toInt() -> Int {
         return Int(self)
     }

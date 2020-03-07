@@ -140,7 +140,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     func initState() {
         // using child context
         if let proj = AppState.currentProject, let projId = proj.id {
-            let n = self.localdb.getRequestsCount(projectId: projId)
+            let n = self.localdb.getRequestsCount(projectId: projId, ctx: proj.managedObjectContext)
             AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: n, name: "", ctx: self.localdb.childMOC)
         }
         // TODO: save child context on request save
@@ -696,7 +696,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     var selectedType: RequestBodyType = .form
     var isKeyTextFieldActive = false
     private let nc = NotificationCenter.default
-    var selectedFieldType: RequestBodyFormFieldType = .text
+    var selectedFieldFormat: RequestBodyFormFieldFormatType = .text
     private let localdb = CoreDataService.shared
 
     override func awakeFromNib() {
@@ -742,8 +742,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         Log.debug("field type view did tap")
         RequestVC.shared?.endEditing()
         OptionsPickerState.modelIndex = self.tag
-        OptionsPickerState.selected = self.selectedFieldType.rawValue
-        OptionsPickerState.data = RequestBodyFormFieldType.allCases
+        OptionsPickerState.selected = self.selectedFieldFormat.rawValue
+        OptionsPickerState.data = RequestBodyFormFieldFormatType.allCases
         self.nc.post(name: NotificationKey.optionScreenShouldPresent, object: self,
                      userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyFormField.rawValue])
     }
@@ -770,7 +770,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     }
     
     func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        if self.selectedFieldType == .file && textField == self.valueTextField {
+        if self.selectedFieldFormat == .file && textField == self.valueTextField {
             self.presentDocPicker()
             return false
         }
@@ -791,13 +791,9 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     
     // MARK: - Delegate collection view
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        if self.selectedFieldType == .file {
+        if self.selectedFieldFormat == .file {
             if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id {
-                let form = self.localdb.getFormRequestData(bodyId, ctx: ctx)
-                let x: ERequestBodyData = form[self.tag]
-                if let xId = x.id {
-                    return self.localdb.getFilesCount(xId, ctx: ctx)
-                }
+                return self.localdb.getFilesCount(bodyId, type: selectedType == .form ? .form : .multipart, ctx: ctx)
             }
         }
         return 0
@@ -807,11 +803,10 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         Log.debug("file collection view cell")
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "fileCell", for: indexPath) as! FileCollectionViewCell
         var name = ""
-        if let data = AppState.editRequest, let body = data.body, let bodyId = body.id {
-            if let form = self.localdb.getFormRequestData(at: self.tag, bodyDataId: bodyId), let formId = form.id,
-                let file = self.localdb.getFile(at: indexPath.row, reqDataId: formId) {
-                name = file.name ?? ""
-            }
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id,
+            let form = self.localdb.getFormRequestData(at: self.tag, bodyDataId: bodyId, type:  self.selectedType == .form ? .form : .multipart, ctx: ctx),
+            let formId = form.id, let file = self.localdb.getFile(at: indexPath.row, reqDataId: formId, ctx: data.managedObjectContext) {
+            name = file.name ?? ""
         }
         cell.nameLabel.text = name
         return cell
@@ -822,13 +817,16 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         if let cell = collectionView.cellForItem(at: indexPath) as? FileCollectionViewCell {
             width = cell.nameLabel.textWidth()
         } else {
-            // TODO:
-//            if let name = AppState.editRequest?.body?.form[self.tag].files[indexPath.row].lastPathComponent {
-//                let lbl = UILabel(frame: CGRect(x: 0, y: 0, width: .greatestFiniteMagnitude, height: 19.5))
-//                lbl.text = name
-//                lbl.layoutIfNeeded()
-//                width = lbl.textWidth()
-//            }
+            var name = ""
+            if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id,
+                let form = self.localdb.getFormRequestData(at: self.tag, bodyDataId: bodyId, type:  self.selectedType == .form ? .form : .multipart, ctx: ctx),
+                let formId = form.id, let file = self.localdb.getFile(at: indexPath.row, reqDataId: formId, ctx: data.managedObjectContext) {
+                name = file.name ?? ""
+                let lbl = UILabel(frame: CGRect(x: 0, y: 0, width: .greatestFiniteMagnitude, height: 19.5))
+                lbl.text = name
+                lbl.layoutIfNeeded()
+                width = lbl.textWidth()
+            }
         }
         Log.debug("width: \(width)")
         return CGSize(width: width, height: 23.5)
@@ -841,6 +839,8 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     private let nc = NotificationCenter.default
     var selectedType: RequestBodyType = .form
     private let app = App.shared
+    private let localdb = CoreDataService.shared
+    private let utils = Utils.shared
     
     override init(frame: CGRect, style: UITableView.Style) {
         super.init(frame: frame, style: style)
@@ -870,25 +870,27 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     @objc func bodyFormFieldTypeDidChange(_ notif: Notification) {
         Log.debug("body form field type did change notif received")
-        // TODO:
-//        if selectedType == .form {
-//            let data = AppState.editRequest!.body!.form[OptionsPickerState.modelIndex]
-//            if let t = RequestBodyFormFieldType(rawValue: OptionsPickerState.selected) {
-//                data.setFieldType(t)
-//                AppState.editRequest!.body!.form[OptionsPickerState.modelIndex] = data
-//            }
-//        }
+        if selectedType == .form {
+            if let data = AppState.editRequest, data.body != nil {
+                AppState.editRequest!.body!.selected = OptionsPickerState.selected.toInt32()
+            }
+        }
         self.reloadData()
     }
     
     @objc func imageAttachmentDidReceive(_ notif: Notification) {
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
-            if let req = AppState.editRequest, let moc = req.managedObjectContext, let body = req.body, let form = body.form, form.count > row, let data = form.allObjects[row] as? ERequestData {
-                data.type = Int32(RequestBodyFormFieldType.file.rawValue)
-                // TODO: create image
-//                form[row].image = DocumentPickerState.image
-//                form[row].isCameraMode = DocumentPickerState.isCameraMode
+            if let req = AppState.editRequest, let ctx = req.managedObjectContext, let body = req.body, let bodyId = body.id,
+                let form = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .form, ctx: ctx) {
+                //form.type = RequestBodyFormFieldType.file.rawValue.toInt32()
+                if let image = DocumentPickerState.image {
+                    if let imageData = DocumentPickerState.imageType == ImageType.png.rawValue ? image.pngData() : image.jpegData(compressionQuality: 0.9) {
+                        let eimage = self.localdb.createImage(data: imageData, index: row, type: DocumentPickerState.imageType, ctx: ctx)
+                        eimage?.requestData = form
+                        eimage?.isCameraMode = DocumentPickerState.isCameraMode
+                    }
+                }
                 self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
             }
         }
@@ -897,28 +899,36 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     @objc func documentAttachmentDidReceive(_ notif: Notification) {
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
-            // TODO:
-//            if AppState.editRequest!.body!.form.count > row {
-//                AppState.editRequest!.body!.form[row].type = .file
-//                AppState.editRequest!.body!.form[row].files = DocumentPickerState.docs
-//                self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
-//            }
+            if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id,
+                let form = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .form, ctx: ctx) {
+                // form.type = RequestBodyFormFieldType.file.rawValue.toInt32()
+                DocumentPickerState.docs.forEach { url in
+                    if let data = self.app.getDataForURL(url) {
+                        let name = self.app.getFileName(url)
+                        let file = self.localdb.createFile(data: data, index: row, name: name, path: url, ctx: ctx)
+                        file?.requestData = form
+                    }
+                }
+                self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
+            }
         }
     }
     
     func addFields() {
-        // TODO:
-//        let data = RequestData(key: "", value: "")
-//        if AppState.editRequest!.body != nil {
-//            if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
-//                AppState.editRequest!.body!.form.append(data)
-//            } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
-//                AppState.editRequest!.body!.multipart.append(data)
-//            }
-//        }
-//        self.reloadData()
-//        RequestVC.shared?.bodyKVTableViewManager.reloadData()
-//        RequestVC.shared?.reloadData()
+        if let data = AppState.editRequest, let body = data.body {
+            if body.selected == RequestBodyType.form.rawValue {
+                let count = body.form?.allObjects.count ?? 0
+                let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .form, fieldFormat: .text)
+                body.form?.adding(data as Any)
+            } else if body.selected == RequestBodyType.multipart.rawValue {
+                let count = body.multipart?.allObjects.count ?? 0
+                let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .multipart, fieldFormat: .text)
+                body.multipart?.adding(data as Any)
+            }
+        }
+        self.reloadData()
+        RequestVC.shared?.bodyKVTableViewManager.reloadData()
+        RequestVC.shared?.reloadData()
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {
@@ -929,27 +939,21 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
         
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let body = AppState.editRequest!.body else { return 0 }
+        guard let data = AppState.editRequest, let body = data.body, let bodyId = body.id else { return 0 }
         if section == 1 {  // title
             return 1
         }
-        // TODO:
-//        let data: [ERequestData] = {
-//            if self.selectedType == .form {
-//                if body.form.count == 0 {
-//                    AppState.editRequest!.body!.form.append(RequestData(key: "", value: ""))
-//                    return AppState.editRequest!.body!.form
-//                }
-//                return body.form
-//            }
-//            if body.multipart.count == 0 {
-//                AppState.editRequest!.body!.multipart.append(RequestData(key: "", value: ""))
-//                return AppState.editRequest!.body!.multipart
-//            }
-//            return body.multipart
-//        }()
-//        return data.count
-        return 0
+        var num = 0
+        var isInc = false
+        if self.selectedType == .form {
+            isInc = true
+            num = self.localdb.getFilesCount(bodyId, type: .form, ctx: data.managedObjectContext)
+        }
+        if self.selectedType == .multipart {
+            isInc = true
+            num = self.localdb.getFilesCount(bodyId, type: .multipart, ctx: data.managedObjectContext)
+        }
+        return num == 0 && isInc ? 1 : num
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -961,6 +965,51 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         let row = indexPath.row
         cell.tag = row
         cell.delegate = self
+        cell.keyTextField.text = ""
+        cell.valueTextField.text = ""
+        cell.imageFileView.image = nil
+        self.hideImageAttachment(cell: cell)
+        self.hideFileAttachment(cell: cell)
+
+        var elem: ERequestData?
+        var reqBodyData: ERequestBodyData?
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id {
+            if self.selectedType == .form {
+                elem = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .form, ctx: ctx)
+                reqBodyData = elem?.form
+            } else if self.selectedType == .multipart {
+                elem = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .multipart, ctx: ctx)
+                reqBodyData = elem?.multipart
+            }
+        }
+        if let x = elem, let body = reqBodyData {
+            cell.keyTextField.text = x.key
+            cell.valueTextField.text = x.value
+            cell.selectedType = RequestBodyType(rawValue: body.selected.toInt()) ?? RequestBodyType.json
+            cell.selectedFieldFormat = RequestBodyFormFieldFormatType(rawValue: x.fieldFormat.toInt()) ?? RequestBodyFormFieldFormatType.text
+            if cell.selectedFieldFormat == .text {
+                cell.fieldTypeBtn.setImage(UIImage(named: "text"), for: .normal)
+                self.hideImageAttachment(cell: cell)
+                self.hideFileAttachment(cell: cell)
+            } else if cell.selectedFieldFormat == .file {
+                cell.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
+                if let image = x.image, let imgData = image.image {
+                    cell.imageFileView.image = UIImage(data: imgData)
+                    self.displayImageAttachment(cell: cell)
+                } else {
+                    self.hideImageAttachment(cell: cell)
+                    if let xs = x.files, xs.count > 0 {
+                        cell.initCollectionViewEvents()
+                        cell.fileCollectionView.layoutIfNeeded()
+                        cell.fileCollectionView.reloadData()
+                        self.displayFileAttachment(cell: cell)
+                    } else {
+                        self.hideFileAttachment(cell: cell)
+                    }
+                }
+            }
+        }
+        
         // TODO:
 //        var data: [RequestDataProtocol] = []
 //        if let body = AppState.editRequest!.body {
@@ -1008,7 +1057,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
     
     func updateCellPlaceholder(_ cell: KVBodyFieldTableViewCell) {
-        if cell.selectedFieldType == .file {
+        if cell.selectedFieldFormat == .file {
             cell.valueTextField.placeholder = "select files"
             cell.valueTextField.text = ""
         } else {
@@ -1059,18 +1108,16 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             Log.debug("delete row: \(indexPath)")
-            guard let body = AppState.editRequest!.body else { completion(false); return }
+            guard let body = AppState.editRequest!.body, let bodyId = body.id else { completion(false); return }
             var shouldReload = false
             if self.selectedType == .form {
-                if let form = body.form, form.allObjects.count > indexPath.row {
-                    // TODO:
-                    // AppState.editRequest!.body!.form.remove(at: indexPath.row)
+                if let form = body.form, form.count > indexPath.row {
+                    self.localdb.deleteRequestData(at: indexPath.row, reqBodyId: bodyId, type: .form, ctx: body.managedObjectContext)
                     shouldReload = true
                 }
             } else if self.selectedType == .multipart {
                 if let multipart = body.multipart, multipart.allObjects.count > indexPath.row {
-                    // TODO:
-                    // AppState.editRequest!.body!.multipart.remove(at: indexPath.row)
+                    self.localdb.deleteRequestData(at: indexPath.row, reqBodyId: bodyId, type: .multipart, ctx: body.managedObjectContext)
                     shouldReload = true
                 }
             }
@@ -1088,11 +1135,11 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         if indexPath.section == 0 {
             if let body = AppState.editRequest!.body {
                 if self.selectedType == .form {
-                    if let form = body.form, form.allObjects.count <= 1 {
+                    if let form = body.form, form.count <= 1 {
                         return false
                     }
                 } else if self.selectedType == .multipart {
-                    if let multipart = body.multipart, multipart.allObjects.count <= 1 {
+                    if let multipart = body.multipart, multipart.count <= 1 {
                         return false
                     }
                 }
@@ -1113,24 +1160,14 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     func updateState(_ data: ERequestData, row: Int) {
         RequestVC.addRequestBodyToState()
         guard let body = AppState.editRequest!.body else { return }
-        // TODO:
-//        body.selected = self.selectedType.rawValue
-//        if self.selectedType == .form {
-//            if body.form.count == 0 {
-//                body.form.append(data)
-//            } else if body.form.count > row {
-//                body.form[row].key = data.key
-//                body.form[row].value = data.value
-//            }
-//        } else if self.selectedType == .multipart {
-//            if body.multipart.count == 0 {
-//                body.multipart.append(data)
-//            } else if body.multipart.count > row {
-//                body.form[row].key = data.key
-//                body.form[row].value = data.value
-//            }
-//        }
-        AppState.editRequest!.body = body
+        AppState.editRequest!.body!.selected = self.selectedType.rawValue.toInt32()
+        if self.selectedType == .form {
+            if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
+            AppState.editRequest!.body!.form!.adding(data)
+        } else if self.selectedType == .multipart {
+            if AppState.editRequest!.body!.multipart == nil { AppState.editRequest!.body!.multipart = NSSet() }
+            AppState.editRequest!.body!.multipart!.adding(data)
+        }
     }
 }
 
@@ -1142,6 +1179,8 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     var height: CGFloat = 44
     var editingIndexPath: IndexPath?
     var tableViewType: KVTableViewType = .header
+    private let localdb = CoreDataService.shared
+    private let utils = Utils.shared
     
     deinit {
         Log.debug("kvTableViewManager deinit")
@@ -1162,46 +1201,51 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         self.kvTableView?.allowsMultipleSelectionDuringEditing = false
     }
     
-    func addRequestDataToModel(_ data: ERequestData) {
-        // TODO:
-//        switch self.tableViewType {
-//        case .header:
-//            if let aData = data {
-//                AppState.editRequest!.headers.append(aData)
-//            }
-//        case .params:
-//            if let aData = data as? ERequestData {
-//                AppState.editRequest!.params.append(aData)
-//            }
-//        case .body:
-//            if AppState.editRequest!.body == nil {
-//                RequestVC.addRequestBodyToState()
-//            }
-//            if let aData = data as? ERequestData {
-//                if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
-//                    AppState.editRequest!.body!.form.append(aData)
-//                } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
-//                    AppState.editRequest!.body!.multipart.append(aData)
-//                }
-//            }
-//        }
+    func addRequestDataToModel() {
+        guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
+        var index = 0
+        var x: ERequestData?
+        switch self.tableViewType {
+        case .header:
+            if data.headers == nil { AppState.editRequest!.headers = NSSet() }
+            index = data.headers!.count
+            x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .header, fieldFormat: .text, ctx: ctx)
+            AppState.editRequest!.headers!.adding(x as Any)
+        case .params:
+            if AppState.editRequest!.params == nil { AppState.editRequest!.params = NSSet() }
+            index = data.params!.count
+            x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .param, fieldFormat: .text, ctx: ctx)
+            AppState.editRequest!.params!.adding(x as Any)
+        case .body:
+            if AppState.editRequest!.body == nil { AppState.editRequest?.body = self.localdb.createRequestBodyData(id: self.utils.genRandomString(), index: 0) }
+            if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
+                if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
+                index = AppState.editRequest!.body!.form!.count
+                x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .form, fieldFormat: .text, ctx: ctx)
+                AppState.editRequest!.body!.form?.adding(x as Any)
+            } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
+                if AppState.editRequest!.body!.multipart == nil { AppState.editRequest!.body!.multipart = NSSet() }
+                index = AppState.editRequest!.body!.multipart!.count
+                x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .multipart, fieldFormat: .text, ctx: ctx)
+                AppState.editRequest!.body!.multipart!.adding(x as Any)
+            }
+        }
     }
     
     func removeRequestDataFromModel(_ index: Int) {
-        // TODO:
-//        switch self.tableViewType {
-//        case .header:
-//            if AppState.editRequest!.headers.count > index {
-//                AppState.editRequest!.headers.remove(at: index)
-//            }
-//        case .params:
-//            if AppState.editRequest!.params.count > index {
-//                AppState.editRequest!.params.remove(at: index)
-//            }
-//        case .body:
-//            AppState.editRequest!.body = nil
-//            OptionsPickerState.selected = 0
-//        }
+        guard let data = AppState.editRequest, let body = data.body, let bodyId = body.id else { return }
+        switch self.tableViewType {
+        case .header:
+            self.localdb.deleteRequestData(at: index, reqBodyId: bodyId, type: .header, ctx: data.managedObjectContext)
+        case .params:
+            self.localdb.deleteRequestData(at: index, reqBodyId: bodyId, type: .param, ctx: data.managedObjectContext)
+        case .body:
+            if AppState.editRequest!.body != nil {
+                self.localdb.deleteEntity(AppState.editRequest!.body!)
+                AppState.editRequest?.body = nil
+                OptionsPickerState.selected = 0
+            }
+        }
     }
     
     func reloadData() {
@@ -1366,8 +1410,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             return
         }
         if indexPath.section == 1 {  // header
-            // TODO:
-            //self.addRequestDataToModel(RequestData())
+            self.addRequestDataToModel()
             self.disableEditing(indexPath: indexPath)
             self.reloadData()
             self.delegate?.reloadData()
