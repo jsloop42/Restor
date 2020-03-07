@@ -107,10 +107,10 @@
         <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <relationship name="files" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="EFile" inverseName="requestData" inverseEntity="EFile"/>
         <relationship name="form" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestBodyData" inverseName="form" inverseEntity="ERequestBodyData"/>
-        <relationship name="headers" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ERequest" inverseName="headers" inverseEntity="ERequest"/>
+        <relationship name="headers" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequest" inverseName="headers" inverseEntity="ERequest"/>
         <relationship name="image" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="EImage" inverseName="requestData" inverseEntity="EImage"/>
         <relationship name="multipart" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestBodyData" inverseName="multipart" inverseEntity="ERequestBodyData"/>
-        <relationship name="params" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ERequest" inverseName="params" inverseEntity="ERequest"/>
+        <relationship name="params" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequest" inverseName="params" inverseEntity="ERequest"/>
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="id"/>
@@ -169,7 +169,7 @@
         <element name="EProject" positionX="-54" positionY="-9" width="128" height="193"/>
         <element name="ERequest" positionX="-36" positionY="9" width="128" height="268"/>
         <element name="ERequestBodyData" positionX="0" positionY="45" width="128" height="238"/>
-        <element name="ERequestData" positionX="18" positionY="63" width="128" height="28"/>
+        <element name="ERequestData" positionX="18" positionY="63" width="128" height="268"/>
         <element name="ERequestMethodData" positionX="-18" positionY="27" width="128" height="178"/>
         <element name="ETag" positionX="0" positionY="99" width="128" height="148"/>
         <element name="EWorkspace" positionX="-63" positionY="-18" width="128" height="163"/>

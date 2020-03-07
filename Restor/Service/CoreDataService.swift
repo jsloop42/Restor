@@ -313,6 +313,36 @@ class CoreDataService {
         return x
     }
     
+    func getRequestData(at index: Int, reqId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
+        var x: ERequestData?
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let typeKey: String = {
+                switch type {
+                case .header:
+                    return "headers.id"
+                case .param:
+                    return "params.id"
+                case .form:
+                    return "form.request.id"
+                case .multipart:
+                    return "multipart.request.id"
+                }
+            }()
+            let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
+            fr.predicate = NSPredicate(format: "%K == %@ AND index = %d", typeKey, reqId, index)
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error getting entity: \(error)")
+            }
+        }
+        return x
+    }
+    
     func getRequestMethodData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let moc: NSManagedObjectContext = {
@@ -880,14 +910,37 @@ class CoreDataService {
         }
     }
     
-    func deleteRequestData(at index: Int, reqBodyId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
-        Log.debug("delete request data: \(index) reqBodyId \(reqBodyId)")
+    func deleteRequestData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc: NSManagedObjectContext = {
             if ctx != nil { return ctx! }
             return self.bgMOC
         }()
-        if let x = self.getFormRequestData(at: index, bodyDataId: reqBodyId, type: type, ctx: ctx) {
+        if let x = self.getRequestData(id: id, ctx: moc) {
             moc.performAndWait {
+                moc.delete(x)
+            }
+        }
+    }
+    
+    func deleteRequestData(at index: Int, req: ERequest, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        guard let reqId = req.id else { return }
+        Log.debug("delete request data: \(index) reqBodyId \(reqId)")
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        if let x = self.getRequestData(at: index, reqId: reqId, type: type, ctx: ctx) {
+            moc.performAndWait {
+                switch type {
+                case .header:
+                    req.removeFromHeaders(x)
+                case .param:
+                    req.removeFromParams(x)
+                case .form:
+                    req.body?.removeFromForm(x)
+                case .multipart:
+                    req.body?.removeFromMultipart(x)
+                }
                 moc.delete(x)
             }
         }

@@ -920,11 +920,11 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             if body.selected == RequestBodyType.form.rawValue {
                 let count = body.form?.allObjects.count ?? 0
                 let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .form, fieldFormat: .text)
-                body.form?.adding(data as Any)
+                if let x = data { body.addToForm(x) }
             } else if body.selected == RequestBodyType.multipart.rawValue {
                 let count = body.multipart?.allObjects.count ?? 0
                 let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .multipart, fieldFormat: .text)
-                body.multipart?.adding(data as Any)
+                if let x = data { body.addToMultipart(x) }
             }
         }
         self.reloadData()
@@ -1109,16 +1109,16 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             Log.debug("delete row: \(indexPath)")
-            guard let body = AppState.editRequest!.body, let bodyId = body.id else { completion(false); return }
+            guard let data = AppState.editRequest, let body = data.body, let reqId = data.id else { completion(false); return }
             var shouldReload = false
             if self.selectedType == .form {
                 if let form = body.form, form.count > indexPath.row {
-                    self.localdb.deleteRequestData(at: indexPath.row, reqBodyId: bodyId, type: .form, ctx: body.managedObjectContext)
+                    self.localdb.deleteRequestData(at: indexPath.row, req: data, type: .form, ctx: body.managedObjectContext)
                     shouldReload = true
                 }
             } else if self.selectedType == .multipart {
                 if let multipart = body.multipart, multipart.allObjects.count > indexPath.row {
-                    self.localdb.deleteRequestData(at: indexPath.row, reqBodyId: bodyId, type: .multipart, ctx: body.managedObjectContext)
+                    self.localdb.deleteRequestData(at: indexPath.row, req: data, type: .multipart, ctx: body.managedObjectContext)
                     shouldReload = true
                 }
             }
@@ -1160,14 +1160,13 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     func updateState(_ data: ERequestData, row: Int) {
         RequestVC.addRequestBodyToState()
-        guard let body = AppState.editRequest!.body else { return }
         AppState.editRequest!.body!.selected = self.selectedType.rawValue.toInt32()
         if self.selectedType == .form {
             if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
-            AppState.editRequest!.body!.form!.adding(data)
+            AppState.editRequest!.body!.addToForm(data)
         } else if self.selectedType == .multipart {
             if AppState.editRequest!.body!.multipart == nil { AppState.editRequest!.body!.multipart = NSSet() }
-            AppState.editRequest!.body!.multipart!.adding(data)
+            AppState.editRequest!.body!.addToMultipart(data)
         }
     }
 }
@@ -1211,35 +1210,35 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             if data.headers == nil { AppState.editRequest!.headers = NSSet() }
             index = data.headers!.count
             x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .header, fieldFormat: .text, ctx: ctx)
-            AppState.editRequest!.headers!.adding(x as Any)
+            if let y = x { AppState.editRequest!.addToHeaders(y) }
         case .params:
             if AppState.editRequest!.params == nil { AppState.editRequest!.params = NSSet() }
             index = data.params!.count
             x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .param, fieldFormat: .text, ctx: ctx)
-            AppState.editRequest!.params!.adding(x as Any)
+            if let y = x { AppState.editRequest!.addToParams(y) }
         case .body:
             if AppState.editRequest!.body == nil { AppState.editRequest?.body = self.localdb.createRequestBodyData(id: self.utils.genRandomString(), index: 0) }
             if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
                 if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
                 index = AppState.editRequest!.body!.form!.count
                 x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .form, fieldFormat: .text, ctx: ctx)
-                AppState.editRequest!.body!.form?.adding(x as Any)
+                if let y = x { AppState.editRequest!.body!.addToForm(y) }
             } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
                 if AppState.editRequest!.body!.multipart == nil { AppState.editRequest!.body!.multipart = NSSet() }
                 index = AppState.editRequest!.body!.multipart!.count
                 x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .multipart, fieldFormat: .text, ctx: ctx)
-                AppState.editRequest!.body!.multipart!.adding(x as Any)
+                if let y = x { AppState.editRequest!.body!.addToMultipart(y) }
             }
         }
     }
     
     func removeRequestDataFromModel(_ index: Int) {
-        guard let data = AppState.editRequest, let body = data.body, let bodyId = body.id else { return }
+        guard let data = AppState.editRequest, let reqId = data.id else { return }
         switch self.tableViewType {
         case .header:
-            self.localdb.deleteRequestData(at: index, reqBodyId: bodyId, type: .header, ctx: data.managedObjectContext)
+            self.localdb.deleteRequestData(at: index, req: data, type: .header, ctx: data.managedObjectContext)
         case .params:
-            self.localdb.deleteRequestData(at: index, reqBodyId: bodyId, type: .param, ctx: data.managedObjectContext)
+            self.localdb.deleteRequestData(at: index, req: data, type: .param, ctx: data.managedObjectContext)
         case .body:
             if AppState.editRequest!.body != nil {
                 self.localdb.deleteEntity(AppState.editRequest!.body!)
