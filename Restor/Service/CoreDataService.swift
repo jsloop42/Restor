@@ -117,8 +117,7 @@ class CoreDataService {
         var x: EWorkspace!
         self.bgMOC.performAndWait {
             if let ws = self.getWorkspace(id: "default") { x = ws; return }
-            let ws: EWorkspace! = self.createWorkspace(id: "default", index: 0, name: "Default workspace")
-            ws.desc = "The default workspace"
+            let ws: EWorkspace! = self.createWorkspace(id: "default", index: 0, name: "Default workspace", desc: "The default workspace")
             if let isProj = project, isProj {
                 ws.projects = NSSet()
                 ws.projects!.adding(self.getDefaultProject() as Any)
@@ -144,6 +143,29 @@ class CoreDataService {
                 x = xs.first
             } catch let error {
                 Log.error("Error getting entity with id: \(id) - \(error)")
+            }
+        }
+        return x
+    }
+    
+    /// Retrieve the project at the given index in the workspace.
+    /// - Parameters:
+    ///   - index: The project index.
+    ///   - wsId: The workspace id.
+    ///   - ctx: The managed object context.
+    func getProject(at index: Int, wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
+        var x: EProject?
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<EProject>(entityName: "EProject")
+            fr.predicate = NSPredicate(format: "workspace.id == %@ AND index == %d", wsId, index)
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error getting entities - \(error)")
             }
         }
         return x
@@ -177,9 +199,7 @@ class CoreDataService {
         var x: EProject!
         self.bgMOC.performAndWait {
             if let proj = self.getProject(id: "default") { x = proj; return }
-            let proj: EProject! = self.createProject(id: "default", index: 0, name: "default")
-            proj.desc = "The default project"
-            x = proj
+            x = self.createProject(id: "default", index: 0, name: "default", desc: "The default project")
         }
         return x
     }
@@ -566,8 +586,9 @@ class CoreDataService {
     ///   - id: The workspace id.
     ///   - index: The order of the workspace.
     ///   - name: The workspace name.
+    ///   - name: The workspace description.
     ///   - checkExists: Check whether the workspace exists before creating.
-    func createWorkspace(id: String, index: Int, name: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
+    func createWorkspace(id: String, index: Int, name: String, desc: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
         -> EWorkspace? {
         var x: EWorkspace?
         let ts = Date().currentTimeNanos()
@@ -581,6 +602,7 @@ class CoreDataService {
             ws.id = id
             ws.index = index.toInt64()
             ws.name = name
+            ws.desc = desc
             ws.created = x == nil ? ts : x!.created
             ws.modified = ts
             ws.version = x == nil ? 0 : x!.version + 1
@@ -594,9 +616,10 @@ class CoreDataService {
     ///   - id: The project id.
     ///   - index: The order of the project.
     ///   - name: The project name.
+    ///   - desc: The project description.
     ///   - ws: The workspace to which the project belongs.
     ///   - checkExists: Check if the given project exists before creating.
-    func createProject(id: String, index: Int, name: String, ws: EWorkspace? = nil, checkExists: Bool? = true,
+    func createProject(id: String, index: Int, name: String, desc: String, ws: EWorkspace? = nil, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
         var x: EProject?
         let ts = Date().currentTimeNanos()
@@ -610,6 +633,7 @@ class CoreDataService {
             proj.id = id
             proj.index = index.toInt64()
             proj.name = name
+            proj.desc = desc
             proj.created = x == nil ? ts : x!.created
             proj.modified = ts
             proj.version = x == nil ? 0 : x!.version + 1

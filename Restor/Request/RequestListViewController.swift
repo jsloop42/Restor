@@ -18,6 +18,7 @@ class RequestListViewController: UIViewController {
     private var requests: [ERequest] = []
     private let utils: Utils = Utils.shared
     private let app: App = App.shared
+    private let localdb = CoreDataService.shared
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -42,6 +43,10 @@ class RequestListViewController: UIViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
+        if AppState.editRequest == nil, let proj = AppState.currentProject {
+            let index = proj.requests?.count ?? 0
+            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: index, name: "Request \(index)")
+        }
         UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestVC.rawValue)
     }
 }

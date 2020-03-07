@@ -281,7 +281,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         } else if indexPath.row == CellId.spacerAfterParams.rawValue {
             height = 12
         } else if indexPath.row == CellId.body.rawValue && indexPath.section == 0 {
-            if let body = AppState.editRequest!.body, body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue {
+            if let body = AppState.editRequest?.body, body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue {
                 return RequestVC.bodyFormCellHeight()
             }
             height = self.bodyKVTableViewManager.getHeight()
@@ -1265,7 +1265,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         var height: CGFloat = 44
         switch self.tableViewType {
         case .header:
-            if let headers = AppState.editRequest!.headers {
+            if let headers = AppState.editRequest?.headers {
                 if headers.allObjects.count == 0 {
                     height = 48
                 } else {
@@ -1273,7 +1273,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 }
             }
         case .params:
-            if let params = AppState.editRequest!.params {
+            if let params = AppState.editRequest?.params {
                 if params.count == 0 {
                     height = 48
                 } else {
@@ -1281,7 +1281,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 }
             }
         case .body:
-            if let body = AppState.editRequest!.body {
+            if let body = AppState.editRequest?.body {
                 if body.selected == RequestBodyType.json.rawValue ||
                    body.selected == RequestBodyType.xml.rawValue ||
                    body.selected == RequestBodyType.raw.rawValue {

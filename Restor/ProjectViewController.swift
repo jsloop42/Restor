@@ -21,6 +21,7 @@ class ProjectViewController: UIViewController {
     private let utils: Utils = Utils.shared
     private let app: App = App.shared
     private let nc = NotificationCenter.default
+    private let localdb = CoreDataService.shared
     
     deinit {
         self.nc.removeObserver(self)
@@ -89,19 +90,18 @@ class ProjectViewController: UIViewController {
     }
     
     func addProject(name: String, desc: String) {
-        if let aWorkspace = self.workspace {
-            // TODO:
-            //let proj = Project(name: name, desc: desc, workspace: aWorkspace)
-            //aWorkspace.projects.append(proj)
+        if let ws = self.workspace, let ctx = ws.managedObjectContext {
+            let projCount = ws.projects?.count ?? 0
+            let proj = self.localdb.createProject(id: self.utils.genRandomString(), index: projCount, name: name, desc: desc, ws: ws, ctx: ctx)
+            proj?.workspace = ws
             self.tableView.reloadData()
         }
     }
     
-    func project(_ index: Int) -> EProject? {
-        // TODO:
-//        if let aWorkspace = self.workspace, index < aWorkspace.projects.count {
-//            return aWorkspace.projects[index]
-//        }
+    func getProject(at index: Int) -> EProject? {
+        if let ws = self.workspace, let wsId = ws.id, let ctx = ws.managedObjectContext {
+            return self.localdb.getProject(at: index, wsId: wsId, ctx: ctx)
+        }
         return nil
     }
     
@@ -216,7 +216,7 @@ extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
         cell.nameLbl.text = ""
         cell.descLbl.text = ""
         let row = indexPath.row
-        if let project = self.project(row) {
+        if let project = self.getProject(at: row) {
             cell.nameLbl.text = project.name
             cell.descLbl.text = project.desc
         }
