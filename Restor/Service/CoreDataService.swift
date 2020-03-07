@@ -238,6 +238,7 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
             fr.predicate = NSPredicate(format: "project.id == %@", projectId)
+            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
                 xs = try moc.fetch(fr)
@@ -330,6 +331,29 @@ class CoreDataService {
         return x
     }
     
+    /// Retrieve the request method data.
+    /// - Parameters:
+    ///   - index: The index of the method.
+    ///   - reqId: The request id.
+    ///   - ctx: The managed object context.
+    func getRequestMethodData(at index: Int, reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
+        var x: ERequestMethodData?
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
+            fr.predicate = NSPredicate(format: "request.id == %@ AND index == %d", reqId, index)
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error getting request method data: \(error)")
+            }
+        }
+        return x
+    }
+    
     func getRequestBodyData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
         var x: ERequestBodyData?
         let moc: NSManagedObjectContext = {
@@ -402,26 +426,6 @@ class CoreDataService {
         }
         return x
     }
-    
-//    func getMultipartRequestData(_ bodyDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
-//        var xs: [ERequestData] = []
-//        let moc: NSManagedObjectContext = {
-//            if ctx != nil { return ctx! }
-//            return self.bgMOC
-//        }()
-//        moc.performAndWait {
-//            let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-//            fr.predicate = NSPredicate(format: "multipart.id == %@", bodyDataId)
-//            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
-//            fr.fetchBatchSize = self.fetchBatchSize
-//            do {
-//                xs = try moc.fetch(fr)
-//            } catch let error {
-//                Log.error("Error fetching form request data: \(error)")
-//            }
-//        }
-//        return xs
-//    }
     
     func getHeadersRequestData(_ bodyDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
@@ -669,9 +673,24 @@ class CoreDataService {
             req.modified = ts
             req.version = x == nil ? 0 : x!.version + 1
             req.project = project
+            if req.methods == nil { req.methods = NSSet() }
+            if req.methods!.count == 0 {
+                req.methods?.addingObjects(from: self.genDefaultRequestMethods(req, ctx: moc))
+            }
             x = req
         }
         return x
+    }
+    
+    func genDefaultRequestMethods(_ req: ERequest, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+        let names = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        guard let reqId = req.id else { return [] }
+        return names.enumerated().compactMap { arg -> ERequestMethodData? in
+            let (offset, element) = arg
+            let x = self.createRequestMethodData(id: self.genRequestMethodDataId(reqId, methodName: element), index: offset, name: element, ctx: ctx)
+            x?.request =  req
+            return x
+        }
     }
         
     /// Create request data.
@@ -760,18 +779,6 @@ class CoreDataService {
         return x
     }
     
-    /// Generates the image id for the given image data.
-    /// - Parameter data: The image data
-    func genImageId(_ data: Data) -> String {
-        return self.utils.md5(data: data)
-    }
-    
-    /// Generates the file id for the given file data.
-    /// - Parameter data: The file data
-    func genFileId(_ data: Data) -> String {
-        return self.utils.md5(data: data)
-    }
-    
     /// Create an image object with the given image data.
     /// - Parameters:
     ///   - data: The image data
@@ -827,7 +834,25 @@ class CoreDataService {
     }
     
     func createFiles(url: [URL], data: [Data]) {
-        
+        // TODO
+    }
+    
+    // MARK: - Generate Id
+    
+    func genRequestMethodDataId(_ reqId: String, methodName: String) -> String {
+        return "\(reqId)-\(methodName)"
+    }
+    
+    /// Generates the image id for the given image data.
+    /// - Parameter data: The image data
+    func genImageId(_ data: Data) -> String {
+        return self.utils.md5(data: data)
+    }
+    
+    /// Generates the file id for the given file data.
+    /// - Parameter data: The file data
+    func genFileId(_ data: Data) -> String {
+        return self.utils.md5(data: data)
     }
     
     // MARK: - Save

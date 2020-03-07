@@ -99,8 +99,9 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.initBodyTableViewManager()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
-        if let req = AppState.editRequest, let methods = req.methods, let data = methods.allObjects[Int(req.selectedMethodIndex)] as? ERequestMethodData {
-            self.methodLabel.text = data.name
+        if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext,
+            let x = self.localdb.getRequestMethodData(at: 0, reqId: reqId, ctx: ctx) {
+            self.methodLabel.text = x.name
         }
         self.urlTextField.delegate = self
         self.nameTextField.delegate = self
@@ -1323,9 +1324,9 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         if section == 0 {
             switch self.tableViewType {
             case .header:
-                return state.headers?.allObjects.count ?? 0
+                return state.headers?.count ?? 0
             case .params:
-                return state.params?.allObjects.count ?? 0
+                return state.params?.count ?? 0
             case .body:
                 if state.body == nil { return 0 }
                 return 1

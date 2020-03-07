@@ -92,8 +92,10 @@ class ProjectViewController: UIViewController {
     func addProject(name: String, desc: String) {
         if let ws = self.workspace, let ctx = ws.managedObjectContext {
             let projCount = ws.projects?.count ?? 0
-            let proj = self.localdb.createProject(id: self.utils.genRandomString(), index: projCount, name: name, desc: desc, ws: ws, ctx: ctx)
-            proj?.workspace = ws
+            if let proj = self.localdb.createProject(id: self.utils.genRandomString(), index: projCount, name: name, desc: desc, ws: ws, ctx: ctx) {
+                proj.workspace = ws
+                self.localdb.saveContext(proj)
+            }
             self.tableView.reloadData()
         }
     }
@@ -225,6 +227,9 @@ extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("project cell did select \(indexPath.row)")
+        if let ws = AppState.currentWorkspace, let wsId = ws.id, let ctx = ws.managedObjectContext {
+            AppState.currentProject = self.localdb.getProject(at: indexPath.row, wsId: wsId, ctx: ctx)
+        }
         UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestListVC.rawValue)
     }
 }
