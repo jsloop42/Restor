@@ -132,6 +132,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         let methodTap = UITapGestureRecognizer(target: self, action: #selector(self.methodViewDidTap))
         self.methodView.addGestureRecognizer(methodTap)
         self.nc.addObserver(self, selector: #selector(self.requestMethodDidChange(_:)), name: NotificationKey.requestMethodDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.requestBodyDidChange(_:)), name: NotificationKey.requestBodyTypeDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentOptionsScreen(_:)), name: NotificationKey.optionScreenShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentDocumentMenuPicker(_:)), name: NotificationKey.documentPickerMenuShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: NotificationKey.documentPickerShouldPresent, object: nil)
@@ -177,16 +178,16 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     @objc func methodViewDidTap() {
         Log.debug("method view did tap")
-        if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext {
-            OptionsPickerState.requestData = self.localdb.getRequestMethodData(reqId: reqId, ctx: ctx)
-            OptionsPickerState.selected = data.selectedMethodIndex.toInt()
-        }
-        OptionsPickerState.title = "Request Method"
-        self.app.presentOptionPicker(.requestMethod, storyboard: self.storyboard, delegate: nil, navVC: self.navigationController)
+        guard let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext else { return }
+        let xs = self.localdb.getRequestMethodData(reqId: reqId, ctx: ctx)
+        let model: [String] = xs.compactMap { reqData -> String? in reqData.name }
+        self.app.presentOptionPicker(type: .requestMethod, title: "Request Method", modelIndex: 0, selectedIndex: data.selectedMethodIndex.toInt(), data: model,
+                                     modelxs: xs, storyboard: self.storyboard!, navVC: self.navigationController!)
     }
     
     @objc func requestMethodDidChange(_ notif: Notification) {
-        if let info = notif.userInfo as? [String: Any], let name = info[Const.requestMethodNameKey] as? String, let idx = info[Const.optionSelectedIndexKey] as? Int {
+        if let info = notif.userInfo as? [String: Any], let name = info[Const.requestMethodNameKey] as? String,
+            let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {
                 self.methodLabel.text = name
                 AppState.editRequest?.selectedMethodIndex = idx.toInt32()
@@ -195,10 +196,28 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         }
     }
     
-    @objc func presentOptionsScreen(_ notif: Notification) {
-        if let info = notif.userInfo as? [String: Any], let opt = info[Const.optionTypeKey] as? Int, let type = OptionPickerType(rawValue: opt) {
+    @objc func requestBodyDidChange(_ notif: Notification) {
+        if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {
-                self.app.presentOptionPicker(type, storyboard: self.storyboard!, delegate: self, navVC: self.navigationController!)
+                AppState.editRequest?.body?.selected = idx.toInt32()
+                self.tableView.reloadRows(at: [IndexPath(row: RequestCellType.body.rawValue, section: 0)], with: .none)
+                self.bodyKVTableViewManager.reloadData()
+            }
+        }
+    }
+    
+    @objc func presentOptionsScreen(_ notif: Notification) {
+        if let info = notif.userInfo as? [String: Any] {
+            let opt = info[Const.optionTypeKey] as? Int ?? 0
+            guard let type = OptionPickerType(rawValue: opt) else { return }
+            let modelIndex = info[Const.modelIndexKey] as? Int ?? 0
+            let selectedIndex = info[Const.optionSelectedIndexKey] as? Int ?? 0
+            let data = info[Const.optionDataKey] as? [String] ?? []
+            let title = info[Const.optionTitleKey] as? String ?? ""
+            let model = info[Const.optionModelKey]
+            DispatchQueue.main.async {
+                self.app.presentOptionPicker(type: type, title: title, modelIndex: modelIndex, selectedIndex: selectedIndex, data: data, model: model,
+                                             storyboard: self.storyboard!, navVC: self.navigationController!)
             }
         }
     }
@@ -379,32 +398,31 @@ extension RequestTableViewController: KVTableViewDelegate {
         self.tableView.reloadData()
     }
     
-    func presentOptionsVC(_ data: [String], selected: Int) {
-        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.optionsPickerVC.rawValue) as? OptionsPickerViewController {
-            vc.optionsDelegate = self
-            RequestVC.addRequestBodyToState()
-            AppState.editRequest?.body?.selected = selected.toInt32()
-            OptionsPickerState.selected = selected
-            OptionsPickerState.data = data
-            self.navigationController?.present(vc, animated: true, completion: nil)
-        }
-    }
+//    func presentOptionsVC(_ data: [String], selected: Int) {
+//        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.optionsPickerVC.rawValue) as? OptionsPickerViewController {
+//            RequestVC.addRequestBodyToState()
+//            AppState.editRequest?.body?.selected = selected.toInt32()
+//            OptionsPickerState.selected = selected
+//            OptionsPickerState.data = data
+//            self.navigationController?.present(vc, animated: true, completion: nil)
+//        }
+//    }
 }
 
-extension RequestTableViewController: OptionsPickerViewDelegate {
-    func reloadOptionsData() {
-        if !self.isOptionFromNotif {
-            self.bodyKVTableViewManager.reloadData()
-            self.tableView.reloadRows(at: [IndexPath(row: CellId.body.rawValue, section: 0)], with: .none)
-        }
-    }
-    
-    func optionDidSelect(_ row: Int) {
-        if !self.isOptionFromNotif {
-            AppState.editRequest!.body!.selected = Int32(row)
-        }
-    }
-}
+//extension RequestTableViewController: OptionsPickerViewDelegate {
+//    func reloadOptionsData() {
+//        if !self.isOptionFromNotif {
+//            self.bodyKVTableViewManager.reloadData()
+//            self.tableView.reloadRows(at: [IndexPath(row: CellId.body.rawValue, section: 0)], with: .none)
+//        }
+//    }
+//
+//    func optionDidSelect(_ row: Int) {
+//        if !self.isOptionFromNotif {
+//            AppState.editRequest!.body!.selected = Int32(row)
+//        }
+//    }
+//}
 
 enum KVTableViewType {
     case header
@@ -414,7 +432,7 @@ enum KVTableViewType {
 
 protocol KVTableViewDelegate: class {
     func reloadData()
-    func presentOptionsVC(_ data: [String], selected: Int)
+    //func presentOptionsVC(_ data: [String], selected: Int)
 }
 
 class KVHeaderCell: UITableViewCell {
@@ -427,7 +445,7 @@ protocol KVContentCellDelegate: class {
     func clearEditing(completion: ((Bool) -> Void)?)
     //func deleteRow(indexPath: IndexPath)
     func deleteRow(_ reqDataId: String, type: RequestCellType)
-    func presentOptionsVC(_ data: [String], selected: Int)
+    //func presentOptionsVC(_ data: [String], selected: Int)
     func dataDidChange(key: String, value: String, reqDataId: String, row: Int)
     func refreshCell(indexPath: IndexPath, cell: KVContentCellType)
 }
@@ -531,7 +549,9 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
     var isEditingActive: Bool = false
     var editingIndexPath: IndexPath?
-    var bodyDataId = "''"
+    var bodyDataId = ""
+    private let nc = NotificationCenter.default
+    private let localdb = CoreDataService.shared
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -575,7 +595,6 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     @objc func deleteViewDidTap() {
         Log.debug("delete view did tap")
-        //self.delegate?.deleteRow(indexPath: IndexPath(row: self.tag, section: 0))
         self.delegate?.deleteRow(self.bodyDataId, type: .body)
         self.bodyFieldTableView.reloadData()
     }
@@ -583,10 +602,14 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBAction func typeBtnDidTap(_ sender: Any) {
         Log.debug("type name did tap")
         var selected: Int! = 0
-        if let body = AppState.editRequest!.body {
-            selected = Int(body.selected)
-        }
-        self.delegate?.presentOptionsVC(self.optionsData, selected: selected)
+        guard let ctx = AppState.editRequest?.managedObjectContext else { return }
+        if let body = AppState.editRequest!.body { selected = Int(body.selected) }
+        self.nc.post(name: NotificationKey.optionScreenShouldPresent, object: self,
+                     userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyForm.rawValue,
+                                Const.modelIndexKey: self.tag,
+                                Const.optionSelectedIndexKey: selected as Any,
+                                Const.optionDataKey: RequestBodyType.allCases as [Any],
+                                Const.optionModelKey: self.localdb.getRequestBodyData(id: self.bodyDataId, ctx: ctx) as Any])
     }
     
     func getDeleteView() -> UIView {
@@ -620,12 +643,15 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         switch idx {
         case 0:  // json
             self.rawTextView.text = data.json
+            self.rawTextView.placeholder = "{}"
             self.bodyLabelViewWidth.constant = 60
         case 1:  // xml
             self.rawTextView.text = data.xml
+            self.rawTextView.placeholder = "<element/>"
             self.bodyLabelViewWidth.constant = 60
         case 2:  // raw
             self.rawTextView.text = data.raw
+            self.rawTextView.placeholder = "{}"
             self.bodyLabelViewWidth.constant = 60
         case 3:  // form
             self.displayFormFields()
@@ -744,11 +770,11 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     @objc func fieldTypeViewDidTap(_ recog: UITapGestureRecognizer) {
         Log.debug("field type view did tap")
         RequestVC.shared?.endEditing()
-        OptionsPickerState.modelIndex = self.tag
-        OptionsPickerState.selected = self.selectedFieldFormat.rawValue
-        OptionsPickerState.data = RequestBodyFormFieldFormatType.allCases
         self.nc.post(name: NotificationKey.optionScreenShouldPresent, object: self,
-                     userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyFormField.rawValue])
+                     userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyFormField.rawValue,
+                                Const.modelIndexKey: self.tag,
+                                Const.optionSelectedIndexKey: self.selectedFieldFormat.rawValue,
+                                Const.optionDataKey: RequestBodyFormFieldFormatType.allCases])
     }
     
     @objc func presentDocPicker() {
@@ -866,21 +892,21 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
     
     func initEvents() {
-        self.nc.addObserver(self, selector: #selector(self.bodyFormFieldTypeDidChange(_:)), name: NotificationKey.bodyFormFieldTypeDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.requestBodyFieldDidChange(_:)), name: NotificationKey.requestBodyFormFieldTypeDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.imageAttachmentDidReceive(_:)), name: NotificationKey.documentPickerImageIsAvailable, object: nil)
         self.nc.addObserver(self, selector: #selector(self.documentAttachmentDidReceive(_:)), name: NotificationKey.documentPickerFileIsAvailable, object: nil)
     }
     
-    @objc func bodyFormFieldTypeDidChange(_ notif: Notification) {
-        Log.debug("body form field type did change notif received")
-        if selectedType == .form {
-            if let data = AppState.editRequest, data.body != nil {
-                AppState.editRequest!.body!.selected = OptionsPickerState.selected.toInt32()
+    @objc func requestBodyFieldDidChange(_ notif: Notification) {
+        if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int,
+            let reqData = info[Const.modelIndexKey] as? ERequestData {
+            DispatchQueue.main.async {
+                reqData.fieldFormat = idx.toInt32()
+                self.reloadData()
             }
         }
-        self.reloadData()
     }
-    
+        
     @objc func imageAttachmentDidReceive(_ notif: Notification) {
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
@@ -1069,7 +1095,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             Log.debug("delete row: \(indexPath)")
             // TODO: update
-            guard let data = AppState.editRequest, let body = data.body, let reqId = data.id else { completion(false); return }
+            guard let data = AppState.editRequest, let body = data.body else { completion(false); return }
             var shouldReload = false
             if self.selectedType == .form {
                 if let form = body.form, form.count > indexPath.row {
@@ -1459,10 +1485,6 @@ extension KVTableViewManager: KVContentCellDelegate {
         self.removeRequestDataFromModel(reqDataId, type: type)
         self.reloadData()
         self.delegate?.reloadData()
-    }
-    
-    func presentOptionsVC(_ data: [String], selected: Int) {
-        self.delegate?.presentOptionsVC(data, selected: selected)
     }
     
     func dataDidChange(key: String, value: String, reqDataId: String, row: Int) {

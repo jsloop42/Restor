@@ -13,7 +13,6 @@ struct AppState {
     static var workspaces: [EWorkspace] = []
     static var selectedWorkspace: Int = 0
     static var selectedProject: Int? = nil
-    static var optionsPickerData: OptionsPickerState?
     static var activeScreen: Screen = .projectListing
     static var isKeyboardActive = false
     static var keyboardHeight: CGFloat = 0.0
@@ -57,18 +56,6 @@ struct AppState {
         self.currentWorkspace = ws
         return ws
     }
-}
-
-struct OptionsPickerState {
-    /// Generic model data
-    static var data: [String] = []
-    /// The model data for request method type
-    static var requestData: [ERequestMethodData] = []
-    /// The selected index in the option picker data model
-    static var selected: Int = 0
-    static var title: String = "body"
-    /// The index of data in the model
-    static var modelIndex: Int = 0
 }
 
 struct DocumentPickerState {

@@ -9,11 +9,6 @@
 import Foundation
 import UIKit
 
-protocol OptionsPickerViewDelegate: class {
-    func optionDidSelect(_ row: Int)
-    func reloadOptionsData()
-}
-
 enum OptionPickerType: Int {
     /// Body types: json, xml, raw, etc.
     case requestBodyForm
@@ -27,12 +22,18 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var cancelBtn: UIButton!
     @IBOutlet weak var titleLabel: UILabel!
-    weak var optionsDelegate: OptionsPickerViewDelegate?
     private let app = App.shared
     var pickerType: OptionPickerType = .requestBodyForm
     private let nc = NotificationCenter.default
     @IBOutlet weak var footerView: UIView!
     @IBOutlet weak var footerLabel: UILabel!
+    var selectedIndex: Int = 0
+    var modelIndex: Int = 0
+    var data: [String] = []
+    var reqMethodData: [ERequestMethodData] = []
+    var name = ""
+    var model: Any?  // Any model data, eg: RequestData associated with a body form field
+    var modelxs: [Any] = []
     
     deinit {
         Log.debug("option picker vc deinit")
@@ -56,13 +57,12 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     }
     
     func destroy() {
-        self.optionsDelegate = nil
         self.nc.removeObserver(self)
     }
     
     func initUI() {
         self.app.updateViewBackground(self.view)
-        self.titleLabel.text = OptionsPickerState.title
+        self.titleLabel.text = self.name
         if self.pickerType == .requestMethod {
             self.footerLabel.text = "add custom method"
             self.footerLabel.isHidden = false
@@ -107,38 +107,49 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     func close(_ isCancel: Bool) {
         if !isCancel {
             if self.pickerType == .requestMethod {
-                // TODO:
-                //AppState.editRequest!.methods = OptionsPickerState.requestData
-                //AppState.editRequest!.selectedMethodIndex = OptionsPickerState.selected
+                self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
+                             userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
+                                        Const.requestMethodNameKey: self.data[self.selectedIndex]])
             } else if self.pickerType == .requestBodyFormField {
-                self.nc.post(Notification(name: NotificationKey.bodyFormFieldTypeDidChange))
+                self.nc.post(name: NotificationKey.requestBodyFormFieldTypeDidChange, object: self,
+                             userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
+                                        Const.optionModelKey: self.model as Any])
+            } else if self.pickerType == .requestBodyForm {
+                self.nc.post(name: NotificationKey.requestBodyTypeDidChange, object: self,
+                             userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex])
             }
         }
-        self.optionsDelegate?.reloadOptionsData()
+        // self.optionsDelegate?.reloadOptionsData()
         self.dismiss(animated: true, completion: nil)
     }
     
     func postRequestMethodChangeNotification(_ row: Int) {
         self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
-                     userInfo: [Const.requestMethodNameKey: OptionsPickerState.requestData[row].name, Const.optionSelectedIndexKey: row])
+                     userInfo: [Const.requestMethodNameKey: self.data[row], Const.modelIndexKey: row])
+    }
+    
+    func postRequestBodyChangeNotification(_ row: Int) {
+        self.nc.post(name: NotificationKey.requestBodyTypeDidChange, object: self,
+                     userInfo: [Const.optionSelectedIndexKey: row,
+                                Const.modelIndexKey: self.modelIndex])
+    }
+    
+    func postRequestBodyFieldChangeNotification(_ row: Int) {
+        self.nc.post(name: NotificationKey.requestBodyFormFieldTypeDidChange, object: self,
+                     userInfo: [Const.optionSelectedIndexKey: row,
+                                Const.modelIndexKey: self.modelIndex])
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if self.pickerType == .requestMethod { return OptionsPickerState.requestData.count }
-        return OptionsPickerState.data.count
+        return self.data.count
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "optionsCell", for: indexPath) as! OptionsTableViewCell
         let row = indexPath.row
-        let data: String = {
-            if self.pickerType == .requestMethod {
-                return OptionsPickerState.requestData[row].name ?? ""
-            }
-            return OptionsPickerState.data[row]
-        }()
-        cell.titleLabel.text = data
-        if row == OptionsPickerState.selected {
+        let elem = self.data[row]
+        cell.titleLabel.text = elem
+        if row == self.selectedIndex {
             cell.selectCell()
         } else {
             cell.deselectCell()
@@ -153,22 +164,23 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("option vc did select \(indexPath)")
         let row = indexPath.row
+        self.selectedIndex = row
         if self.pickerType == .requestBodyForm {
-            OptionsPickerState.selected = row
-            self.optionsDelegate?.optionDidSelect(row)
+            self.postRequestBodyChangeNotification(row)
         } else if self.pickerType == .requestMethod {
-            if OptionsPickerState.requestData.count > row {
-                self.postRequestMethodChangeNotification(row)
-            }
+            self.postRequestMethodChangeNotification(row)
         } else if self.pickerType == .requestBodyFormField {
-            OptionsPickerState.selected = row
+            self.postRequestBodyFieldChangeNotification(row)
         }
         self.close(false)
     }
     
     func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        let row = indexPath.row
         if self.pickerType == .requestMethod {
-            return OptionsPickerState.requestData[indexPath.row].isCustom
+            if self.modelxs.count > row {
+                return (self.modelxs[row] as? ERequestMethodData)?.isCustom ?? false
+            }
         }
         return false
     }
@@ -178,11 +190,12 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
             Log.debug("delete row: \(indexPath)")
             if self.pickerType == .requestMethod {
                 let row = indexPath.row
-                if OptionsPickerState.selected == row {
-                    OptionsPickerState.selected = 0
+                if self.selectedIndex == row {  // The selected index is being deleted. So assign selected to the first item.
+                    self.selectedIndex = 0
                     self.postRequestMethodChangeNotification(0)
+                    // TODO: remove req method data
+                    // OptionsPickerState.requestData.remove(at: row)
                 }
-                OptionsPickerState.requestData.remove(at: row)
                 self.tableView.reloadData()
             }
             completion(true)
@@ -243,7 +256,7 @@ extension OptionsPickerViewController: PopupViewDelegate {
             return false
         }
         if self.pickerType == .requestMethod {
-            if (OptionsPickerState.requestData.first { data -> Bool in data.name == text }) != nil {
+            if (self.data.first { x -> Bool in x == text }) != nil {
                 self.app.addItemPopupView?.viewValidationError("Method already exists")
                 self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
                 return false

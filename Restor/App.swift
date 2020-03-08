@@ -56,11 +56,17 @@ class App {
         //AppState.workspaces[AppState.selectedWorkspace].projects.append(project)
     }
     
-    /// Presents an option picker view as a modal
-    func presentOptionPicker(_ pickerType: OptionPickerType, storyboard: UIStoryboard?, delegate: OptionsPickerViewDelegate?, navVC: UINavigationController?) {
+    /// Present the option picker view as a modal with the given data
+    func presentOptionPicker(type: OptionPickerType, title: String, modelIndex: Int, selectedIndex: Int, data: [String], model: Any? = nil,
+                             modelxs: [Any]? = [], storyboard: UIStoryboard?, navVC: UINavigationController?) {
         if let vc = storyboard?.instantiateViewController(withIdentifier: StoryboardId.optionsPickerVC.rawValue) as? OptionsPickerViewController {
-            vc.optionsDelegate = delegate
-            vc.pickerType = pickerType
+            vc.pickerType = type
+            vc.modelIndex = modelIndex
+            vc.selectedIndex = selectedIndex
+            vc.data = data
+            vc.name = title
+            vc.model = model
+            vc.modelxs = modelxs ?? []
             navVC?.present(vc, animated: true, completion: nil)
         }
     }
@@ -206,6 +212,10 @@ enum RequestBodyType: Int {
     case form
     case multipart
     case binary
+    
+    static var allCases: [String] {
+        return ["json", "xml", "raw", "form", "multipart", "binary"]
+    }
 }
 
 /// Indicates to which model the `ERequestData` belongs to

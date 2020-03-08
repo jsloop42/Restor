@@ -13,7 +13,7 @@ protocol PopupViewDelegate: class {
     func cancelDidTap(_ sender: Any)
     /// Return a flag indicating if the keyboard can be dismissed if present
     func doneDidTap(name: String, desc: String) -> Bool
-    /// Perform input text validation returning true is valid
+    /// Perform input text validation returning true is valid.
     func validateText(_ text: String?) -> Bool
     /// Invoked when popup state changes. Eg: display validation error label
     func popupStateDidChange(isErrorMode: Bool)
