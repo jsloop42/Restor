@@ -167,13 +167,13 @@ enum StoryboardId: String {
 }
 
 /// The request option elements
-enum RequestHeaderInfo: Int {
-    case description = 0
-    case headers
-    case urlParams
+enum RequestCellType: Int {
+    case description
+    case header
+    case param
     case body
     case auth
-    case options
+    case option
 }
 
 enum Screen {

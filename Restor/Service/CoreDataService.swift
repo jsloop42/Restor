@@ -72,7 +72,7 @@ class CoreDataService {
     
     // MARK: - Get
     
-    // MARK: Workspace
+    // MARK: EWorkspace
     
     func getWorkspace(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EWorkspace? {
         var x: EWorkspace?
@@ -127,7 +127,7 @@ class CoreDataService {
         return x
     }
     
-    // MARK: Project
+    // MARK: EProject
     
     func getProject(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
         var x: EProject?
@@ -161,9 +161,11 @@ class CoreDataService {
         }()
         moc.performAndWait {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
-            fr.predicate = NSPredicate(format: "workspace.id == %@ AND index == %d", wsId, index)
+            fr.predicate = NSPredicate(format: "workspace.id == %@", wsId)
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
-                x = try moc.fetch(fr).first
+                let xs = try moc.fetch(fr)
+                if xs.count > index { x = xs[index] }
             } catch let error {
                 Log.error("Error getting entities - \(error)")
             }
@@ -204,7 +206,7 @@ class CoreDataService {
         return x
     }
     
-    // MARK: Request
+    // MARK: ERequest
     
     func getRequest(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
         var x: ERequest?
@@ -265,7 +267,8 @@ class CoreDataService {
             fr.predicate = NSPredicate(format: "project.id == %@", projectId)
             fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
             do {
-                x = try moc.fetch(fr).first
+                let xs = try moc.fetch(fr)
+                if xs.count > index { x = xs[index] }
             } catch let error {
                 Log.error("Error fetching request: \(error)")
             }
@@ -294,6 +297,8 @@ class CoreDataService {
         }
         return x
     }
+    
+    // MARK: ERequestData
     
     func getRequestData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
@@ -333,9 +338,11 @@ class CoreDataService {
                 }
             }()
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "%K == %@ AND index = %d", typeKey, reqId, index)
+            fr.predicate = NSPredicate(format: "%K == %@", typeKey, reqId)
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
-                x = try moc.fetch(fr).first
+                let xs = try moc.fetch(fr)
+                if xs.count > index { x = xs[index] }
             } catch let error {
                 Log.error("Error getting entity: \(error)")
             }
@@ -343,60 +350,20 @@ class CoreDataService {
         return x
     }
     
-    func getRequestMethodData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
-        var x: ERequestMethodData?
+    func getLastRequestData(type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
+        var x: ERequestData?
         let moc: NSManagedObjectContext = {
             if ctx != nil { return ctx! }
             return self.bgMOC
         }()
         moc.performAndWait {
-            let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
-            fr.predicate = NSPredicate(format: "id == %@", id)
+            let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
+            fr.predicate = NSPredicate(format: "type == %d", type.rawValue.toInt32())
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: false)]
             do {
                 x = try moc.fetch(fr).first
             } catch let error {
-                Log.error("Error getting entity with id: \(id) - \(error)")
-            }
-        }
-        return x
-    }
-    
-    /// Retrieve the request method data.
-    /// - Parameters:
-    ///   - index: The index of the method.
-    ///   - reqId: The request id.
-    ///   - ctx: The managed object context.
-    func getRequestMethodData(at index: Int, reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
-        var x: ERequestMethodData?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
-        moc.performAndWait {
-            let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
-            fr.predicate = NSPredicate(format: "request.id == %@ AND index == %d", reqId, index)
-            do {
-                x = try moc.fetch(fr).first
-            } catch let error {
-                Log.error("Error getting request method data: \(error)")
-            }
-        }
-        return x
-    }
-    
-    func getRequestBodyData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
-        var x: ERequestBodyData?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
-        moc.performAndWait {
-            let fr = NSFetchRequest<ERequestBodyData>(entityName: "ERequestBodyData")
-            fr.predicate = NSPredicate(format: "id == %@", id)
-            do {
-                x = try moc.fetch(fr).first
-            } catch let error {
-                Log.error("Error getting entity with id: \(id) - \(error)")
+                Log.error("Error getting entity: \(error)")
             }
         }
         return x
@@ -447,9 +414,11 @@ class CoreDataService {
                 return "multipart.id"
             }()
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "%K == %@ AND index == %ld AND type == %d", typeKey, bodyDataId, index.toInt64(), type.rawValue.toInt32())
+            fr.predicate = NSPredicate(format: "%K == %@ AND type == %d", typeKey, bodyDataId, type.rawValue.toInt32())
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
-                x = try moc.fetch(fr).first
+                let xs = try moc.fetch(fr)
+                if xs.count > index { x = xs[index] }
             } catch let error {
                 Log.error("Error fetching request: \(error)")
             }
@@ -496,6 +465,73 @@ class CoreDataService {
         }
         return xs
     }
+    
+    // MARK: ERequestMethodData
+    
+    func getRequestMethodData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
+        var x: ERequestMethodData?
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
+            fr.predicate = NSPredicate(format: "id == %@", id)
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error getting entity with id: \(id) - \(error)")
+            }
+        }
+        return x
+    }
+    
+    /// Retrieve the request method data.
+    /// - Parameters:
+    ///   - index: The index of the method.
+    ///   - reqId: The request id.
+    ///   - ctx: The managed object context.
+    func getRequestMethodData(at index: Int, reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
+        var x: ERequestMethodData?
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
+            fr.predicate = NSPredicate(format: "request.id == %@", reqId)
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            do {
+                let xs = try moc.fetch(fr)
+                if xs.count > index { x = xs[index] }
+            } catch let error {
+                Log.error("Error getting request method data: \(error)")
+            }
+        }
+        return x
+    }
+    
+    // MARK: ERequestBodyData
+    
+    func getRequestBodyData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
+        var x: ERequestBodyData?
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestBodyData>(entityName: "ERequestBodyData")
+            fr.predicate = NSPredicate(format: "id == %@", id)
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error getting entity with id: \(id) - \(error)")
+            }
+        }
+        return x
+    }
+    
+    // MARK: EFile
     
     /// Get the total number of files in the given request data.
     /// - Parameters:
@@ -559,9 +595,11 @@ class CoreDataService {
         }()
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
-            fr.predicate = NSPredicate(format: "requestData.id == %@ AND index == %ld", reqDataId, index.toInt64())
+            fr.predicate = NSPredicate(format: "requestData.id == %@", reqDataId)
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
-                x = try moc.fetch(fr).first
+                let xs = try moc.fetch(fr)
+                if xs.count > index { x = xs[index] }
             } catch let error {
                 Log.error("Error fetching request: \(error)")
             }
@@ -590,6 +628,8 @@ class CoreDataService {
         }
         return x
     }
+    
+    // MARK: EImage
     
     /// Retrieve image object for the given image id.
     /// - Parameters:
@@ -749,6 +789,7 @@ class CoreDataService {
             data.fieldFormat = fieldFormat.rawValue.toInt32()
             data.type = type.rawValue.toInt32()
             x = data
+            Log.debug("RequestData \(x == nil ? "created" : "updated"): \(x!)")
         }
         return x
     }
@@ -958,5 +999,37 @@ class CoreDataService {
             }
             if x != nil { moc.delete(x!) }
         }
+    }
+    
+    /// Delete the entity with the given id.
+    /// - Parameters:
+    ///   - dataId: The entity id. If the entity could be `RequestData` or `RequestBodyData`.
+    ///   - req: The request to which the entity belongs.
+    ///   - type: The entity type.
+    ///   - ctx: The managed object context.
+    func deleteRequestData(dataId: String, req: ERequest, type: RequestCellType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest {
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            var x: Entity?
+            switch type {
+            case .header:
+                x = self.getRequestData(id: dataId, ctx: moc)
+                if let y = x as? ERequestData { req.removeFromHeaders(y) }
+            case .param:
+                x = self.getRequestData(id: dataId, ctx: ctx)
+                if let y = x as? ERequestData { req.removeFromParams(y) }
+            case .body:
+                x = self.getRequestBodyData(id: dataId, ctx: moc)
+                if x != nil { req.body = nil }
+            default:
+                break
+            }
+            if let y = x as? NSManagedObject { moc.delete(y) }
+            Log.debug("Deleted data id: \(dataId)")
+        }
+        return req
     }
 }

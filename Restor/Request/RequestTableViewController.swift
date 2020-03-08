@@ -425,9 +425,10 @@ protocol KVContentCellDelegate: class {
     func enableEditing(indexPath: IndexPath)
     func disableEditing(indexPath: IndexPath)
     func clearEditing(completion: ((Bool) -> Void)?)
-    func deleteRow(indexPath: IndexPath)
+    //func deleteRow(indexPath: IndexPath)
+    func deleteRow(_ reqDataId: String, type: RequestCellType)
     func presentOptionsVC(_ data: [String], selected: Int)
-    func dataDidChange(_ data: ERequestData, row: Int)
+    func dataDidChange(key: String, value: String, reqDataId: String, row: Int)
     func refreshCell(indexPath: IndexPath, cell: KVContentCellType)
 }
 
@@ -450,8 +451,8 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
     private let app = App.shared
     var editingIndexPath: IndexPath?
     var isEditingActive = false
-    var data: ERequestData?
-    var type: RequestHeaderInfo = .headers
+    var reqDataId: String = ""
+    var type: RequestCellType = .header
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -490,7 +491,7 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
     
     @objc func deleteViewDidTap() {
         Log.debug("delete view did tap")
-        self.delegate?.deleteRow(indexPath: IndexPath(row: self.tag, section: 0))
+        self.delegate?.deleteRow(reqDataId, type: self.type)
     }
     
     func getDeleteView() -> UIView {
@@ -508,10 +509,9 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        self.data?.key = self.keyTextField.text
-        self.data?.value = self.valueTextField.text
-        guard let data = self.data else { return }
-        self.delegate?.dataDidChange(data, row: self.tag)
+        let key = self.keyTextField.text ?? ""
+        let value = self.valueTextField.text ?? ""
+        self.delegate?.dataDidChange(key: key, value: value, reqDataId: reqDataId, row: self.tag)
     }
 }
 
@@ -531,6 +531,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
     var isEditingActive: Bool = false
     var editingIndexPath: IndexPath?
+    var bodyDataId = "''"
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -574,7 +575,8 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     @objc func deleteViewDidTap() {
         Log.debug("delete view did tap")
-        self.delegate?.deleteRow(indexPath: IndexPath(row: self.tag, section: 0))
+        //self.delegate?.deleteRow(indexPath: IndexPath(row: self.tag, section: 0))
+        self.delegate?.deleteRow(self.bodyDataId, type: .body)
         self.bodyFieldTableView.reloadData()
     }
     
@@ -1010,49 +1012,6 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 }
             }
         }
-        
-        // TODO:
-//        var data: [RequestDataProtocol] = []
-//        if let body = AppState.editRequest!.body {
-//            if self.selectedType == .form {
-//                data = body.form
-//            } else if self.selectedType == .multipart {
-//                data = body.multipart
-//            }
-//        }
-//        cell.keyTextField.text = ""
-//        cell.valueTextField.text = ""
-//        cell.imageFileView.image = nil
-//        self.hideImageAttachment(cell: cell)
-//        self.hideFileAttachment(cell: cell)
-//        if data.count > row {
-//            let x = data[row]
-//            cell.keyTextField.text = x.getKey()
-//            cell.valueTextField.text = x.getValue()
-//            cell.selectedFieldType = x.getFieldType()
-//            if x.getFieldType() == .text {
-//                cell.fieldTypeBtn.setImage(UIImage(named: "text"), for: .normal)
-//                self.hideImageAttachment(cell: cell)
-//                self.hideFileAttachment(cell: cell)
-//            } else if x.getFieldType() == .file {
-//                cell.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
-//                if let image = x.getImage() {
-//                    cell.imageFileView.image = image
-//                    self.displayImageAttachment(cell: cell)
-//                } else {
-//                    self.hideImageAttachment(cell: cell)
-//                    let xs = x.getFiles()
-//                    if xs.count > 0 {
-//                        cell.initCollectionViewEvents()
-//                        cell.fileCollectionView.layoutIfNeeded()
-//                        cell.fileCollectionView.reloadData()
-//                        self.displayFileAttachment(cell: cell)
-//                    } else {
-//                        self.hideFileAttachment(cell: cell)
-//                    }
-//                }
-//            }
-//        }
         self.updateCellPlaceholder(cell)
         return cell
     }
@@ -1109,6 +1068,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             Log.debug("delete row: \(indexPath)")
+            // TODO: update
             guard let data = AppState.editRequest, let body = data.body, let reqId = data.id else { completion(false); return }
             var shouldReload = false
             if self.selectedType == .form {
@@ -1208,44 +1168,34 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         switch self.tableViewType {
         case .header:
             if data.headers == nil { AppState.editRequest!.headers = NSSet() }
-            index = data.headers!.count
+            if let last = self.localdb.getLastRequestData(type: .header, ctx: ctx) { index = (last.index + 1).toInt() }
             x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .header, fieldFormat: .text, ctx: ctx)
             if let y = x { AppState.editRequest!.addToHeaders(y) }
         case .params:
             if AppState.editRequest!.params == nil { AppState.editRequest!.params = NSSet() }
-            index = data.params!.count
+            if let last = self.localdb.getLastRequestData(type: .param, ctx: ctx) { index = (last.index + 1).toInt() }
             x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .param, fieldFormat: .text, ctx: ctx)
             if let y = x { AppState.editRequest!.addToParams(y) }
         case .body:
             if AppState.editRequest!.body == nil { AppState.editRequest?.body = self.localdb.createRequestBodyData(id: self.utils.genRandomString(), index: 0) }
             if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
                 if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
-                index = AppState.editRequest!.body!.form!.count
+                if let last = self.localdb.getLastRequestData(type: .form, ctx: ctx) { index = (last.index + 1).toInt() }
                 x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .form, fieldFormat: .text, ctx: ctx)
                 if let y = x { AppState.editRequest!.body!.addToForm(y) }
             } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
                 if AppState.editRequest!.body!.multipart == nil { AppState.editRequest!.body!.multipart = NSSet() }
-                index = AppState.editRequest!.body!.multipart!.count
+                if let last = self.localdb.getLastRequestData(type: .multipart, ctx: ctx) { index = (last.index + 1).toInt() }
                 x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .multipart, fieldFormat: .text, ctx: ctx)
                 if let y = x { AppState.editRequest!.body!.addToMultipart(y) }
             }
         }
     }
     
-    func removeRequestDataFromModel(_ index: Int) {
-        guard let data = AppState.editRequest, let reqId = data.id else { return }
-        switch self.tableViewType {
-        case .header:
-            self.localdb.deleteRequestData(at: index, req: data, type: .header, ctx: data.managedObjectContext)
-        case .params:
-            self.localdb.deleteRequestData(at: index, req: data, type: .param, ctx: data.managedObjectContext)
-        case .body:
-            if AppState.editRequest!.body != nil {
-                self.localdb.deleteEntity(AppState.editRequest!.body!)
-                AppState.editRequest?.body = nil
-                OptionsPickerState.selected = 0
-            }
-        }
+    func removeRequestDataFromModel(_ id: String, type: RequestCellType) {
+        guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
+        let req = self.localdb.deleteRequestData(dataId: id, req: AppState.editRequest!, type: type, ctx: ctx)
+        Log.debug("req after delete: \(req)")
     }
     
     func reloadData() {
@@ -1381,16 +1331,31 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 cell.tag = row
                 cell.delegate = self
                 self.hideDeleteRowView(cell: cell)
+                cell.keyTextField.text = ""
+                cell.valueTextField.text = ""
+                cell.reqDataId = ""
                 switch self.tableViewType {
                 case .header:
-                    if let headers = AppState.editRequest?.headers, headers.allObjects.count > row, var data = headers.allObjects[row] as? ERequestData {
-                        cell.keyTextField.text = data.key
-                        cell.valueTextField.text = data.value
+                    if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext {
+                        let xs = self.localdb.getHeadersRequestData(reqId, ctx: ctx)
+                        if xs.count > row {
+                            let x = xs[row]
+                            cell.keyTextField.text = x.key
+                            cell.valueTextField.text = x.value
+                            cell.reqDataId = x.id ?? ""
+                            cell.type = .header
+                        }
                     }
                 case .params:
-                    if let params = AppState.editRequest?.params, params.allObjects.count > row, let data = params.allObjects[row] as? ERequestData {
-                        cell.keyTextField.text = data.key
-                        cell.valueTextField.text = data.value
+                    if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext {
+                        let xs = self.localdb.getParamsRequestData(reqId, ctx: ctx)
+                        if xs.count > row {
+                            let x = xs[row]
+                            cell.keyTextField.text = x.key
+                            cell.valueTextField.text = x.value
+                            cell.reqDataId = x.id ?? ""
+                            cell.type = .param
+                        }
                     }
                 default:
                     break
@@ -1490,22 +1455,30 @@ extension KVTableViewManager: KVContentCellDelegate {
         }
     }
     
-    func deleteRow(indexPath: IndexPath) {
-        self.removeRequestDataFromModel(indexPath.row)
-        self.reloadData()
-        self.delegate?.reloadData()
+    func deleteRow(_ reqDataId: String, type: RequestCellType) {
+        self.removeRequestDataFromModel(reqDataId, type: type)
+//        self.reloadData()
+//        self.delegate?.reloadData()
+        RequestVC.shared?.reloadAllTableViews()
     }
     
     func presentOptionsVC(_ data: [String], selected: Int) {
         self.delegate?.presentOptionsVC(data, selected: selected)
     }
     
-    func dataDidChange(_ data: ERequestData, row: Int) {
-        if let req = AppState.editRequest {
+    func dataDidChange(key: String, value: String, reqDataId: String, row: Int) {
+        if let req = AppState.editRequest, let ctx = req.managedObjectContext {
             if self.tableViewType == .header {
-                req.addToHeaders(data)
+                if let x = self.localdb.getRequestData(id: reqDataId, ctx: ctx) {
+                    x.key = key
+                    x.value = value
+                    Log.debug("header updated: \(x)")
+                }
             } else if self.tableViewType == .params {
-                req.addToParams(data)
+                if let x = self.localdb.getRequestData(id: reqDataId, ctx: ctx) {
+                    x.key = key
+                    x.value = value
+                }
             }
         }
     }
