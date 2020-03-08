@@ -1007,7 +1007,7 @@ class CoreDataService {
     ///   - req: The request to which the entity belongs.
     ///   - type: The entity type.
     ///   - ctx: The managed object context.
-    func deleteRequestData(dataId: String, req: ERequest, type: RequestCellType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest {
+    func deleteRequestData(dataId: String, req: ERequest, type: RequestCellType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc: NSManagedObjectContext = {
             if ctx != nil { return ctx! }
             return self.bgMOC
@@ -1030,6 +1030,5 @@ class CoreDataService {
             if let y = x as? NSManagedObject { moc.delete(y) }
             Log.debug("Deleted data id: \(dataId)")
         }
-        return req
     }
 }

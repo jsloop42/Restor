@@ -1194,8 +1194,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func removeRequestDataFromModel(_ id: String, type: RequestCellType) {
         guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
-        let req = self.localdb.deleteRequestData(dataId: id, req: AppState.editRequest!, type: type, ctx: ctx)
-        Log.debug("req after delete: \(req)")
+        self.localdb.deleteRequestData(dataId: id, req: AppState.editRequest!, type: type, ctx: ctx)
     }
     
     func reloadData() {
@@ -1322,6 +1321,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                     break
                 }
                 if AppState.editRequest!.body != nil {
+                    cell.bodyDataId = AppState.editRequest!.body!.id ?? ""
                     cell.updateState(AppState.editRequest!.body!)
                 }
                 return cell
@@ -1457,9 +1457,8 @@ extension KVTableViewManager: KVContentCellDelegate {
     
     func deleteRow(_ reqDataId: String, type: RequestCellType) {
         self.removeRequestDataFromModel(reqDataId, type: type)
-//        self.reloadData()
-//        self.delegate?.reloadData()
-        RequestVC.shared?.reloadAllTableViews()
+        self.reloadData()
+        self.delegate?.reloadData()
     }
     
     func presentOptionsVC(_ data: [String], selected: Int) {
