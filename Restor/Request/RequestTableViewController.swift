@@ -177,9 +177,9 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     @objc func methodViewDidTap() {
         Log.debug("method view did tap")
-        if let req = AppState.editRequest, let methods = req.methods {
-            OptionsPickerState.requestData = methods.allObjects as? [ERequestMethodData] ?? []
-            OptionsPickerState.selected = req.selectedMethodIndex.toInt()
+        if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext {
+            OptionsPickerState.requestData = self.localdb.getRequestMethodData(reqId: reqId, ctx: ctx)
+            OptionsPickerState.selected = data.selectedMethodIndex.toInt()
         }
         OptionsPickerState.title = "Request Method"
         self.app.presentOptionPicker(.requestMethod, storyboard: self.storyboard, delegate: nil, navVC: self.navigationController)

@@ -461,6 +461,10 @@ class CoreDataService {
         return x
     }
     
+    /// Retrieves the headers belonging to the given request.
+    /// - Parameters:
+    ///   - reqId: The request id.
+    ///   - ctx: The managed object context.
     func getHeadersRequestData(_ reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc: NSManagedObjectContext = {
@@ -481,6 +485,10 @@ class CoreDataService {
         return xs
     }
     
+    /// Retrieves the params belonging to the given request.
+    /// - Parameters:
+    ///   - reqId: The request id.
+    ///   - ctx: The managed object context.
     func getParamsRequestData(_ reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc: NSManagedObjectContext = {
@@ -503,6 +511,10 @@ class CoreDataService {
     
     // MARK: ERequestMethodData
     
+    /// Retrieve the request method data for the given id.
+    /// - Parameters:
+    ///   - id: The request method data id.
+    ///   - ctx: The managed object context.
     func getRequestMethodData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let moc: NSManagedObjectContext = {
@@ -519,6 +531,30 @@ class CoreDataService {
             }
         }
         return x
+    }
+    
+    /// Retrieves request method data belonging to the given request.
+    /// - Parameters:
+    ///   - reqId: The request id.
+    ///   - ctx: The managed object context.
+    func getRequestMethodData(reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+        var xs: [ERequestMethodData] = []
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
+            fr.predicate = NSPredicate(format: "request.id == %@", reqId)
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            fr.fetchBatchSize = self.fetchBatchSize
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error getting entity: \(error)")
+            }
+        }
+        return xs
     }
     
     /// Retrieve the request method data.
