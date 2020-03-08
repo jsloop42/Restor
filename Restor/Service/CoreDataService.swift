@@ -369,6 +369,41 @@ class CoreDataService {
         return x
     }
     
+    /// Get the total request data count of the given type belonging to the given request.
+    /// - Parameters:
+    ///   - reqId: The request id.
+    ///   - type: The request data type.
+    ///   - ctx: The managed object context.
+    func getRequestDataCount(reqId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
+        var x: Int = 0
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let typeKey: String = {
+                switch type {
+                case .header:
+                    return "headers.id"
+                case .param:
+                    return "params.id"
+                case .form:
+                    return "form.request.id"
+                case .multipart:
+                    return "multipart.request.id"
+                }
+            }()
+            let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
+            fr.predicate = NSPredicate(format: "%K == %@", typeKey, reqId)
+            do {
+                x = try moc.count(for: fr)
+            } catch let error {
+                Log.error("Error getting entity: \(error)")
+            }
+        }
+        return x
+    }
+    
     /// Retrieve form data for the given request body.
     /// - Parameters:
     ///   - bodyDataId: The request body data id.

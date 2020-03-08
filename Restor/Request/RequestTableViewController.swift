@@ -942,7 +942,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
         
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let data = AppState.editRequest, let body = data.body, let bodyId = body.id else { return 0 }
+        guard let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext else { return 0 }
         if section == 1 {  // title
             return 1
         }
@@ -950,11 +950,11 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         var isInc = false
         if self.selectedType == .form {
             isInc = true
-            num = self.localdb.getFilesCount(bodyId, type: .form, ctx: data.managedObjectContext)
+            num = self.localdb.getRequestDataCount(reqId: reqId, type: .form, ctx: ctx)
         }
         if self.selectedType == .multipart {
             isInc = true
-            num = self.localdb.getFilesCount(bodyId, type: .multipart, ctx: data.managedObjectContext)
+            num = self.localdb.getRequestDataCount(reqId: reqId, type: .multipart, ctx: ctx)
         }
         return num == 0 && isInc ? 1 : num
     }
