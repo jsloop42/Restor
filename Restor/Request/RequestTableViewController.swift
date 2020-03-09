@@ -772,6 +772,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         Log.debug("field type view did tap")
         RequestVC.shared?.endEditing()
         guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
+        RequestVC.addRequestBodyToState()
         var reqData: ERequestData?
         if self.reqDataId.isEmpty {
             let type: RequestDataType = self.selectedType == .form ? .form : .multipart
@@ -825,12 +826,14 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         Log.debug("textfield did end editing")
-        // TODO:
-//        if textField == self.keyTextField {
-//            self.delegate?.updateState(RequestData(key: textField.text ?? "", value: self.valueTextField.text ?? ""), row: self.tag)
-//        } else if textField == self.valueTextField {
-//            self.delegate?.updateState(RequestData(key: self.keyTextField.text ?? "", value: textField.text ?? ""), row: self.tag)
-//        }
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let req = self.localdb.getRequestData(id: self.reqDataId, ctx: ctx) {
+            if textField == self.keyTextField {
+                req.key = textField.text
+            } else if textField == self.valueTextField {
+                req.value = textField.text
+            }
+            self.delegate?.updateState(req, row: self.tag)
+        }
     }
     
     // MARK: - Delegate collection view
