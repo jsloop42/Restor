@@ -719,7 +719,6 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     @IBOutlet weak var fieldTypeBtn: UIButton!
     @IBOutlet weak var imageFileView: UIImageView!
     @IBOutlet weak var fileCollectionView: UICollectionView!
-    
     weak var delegate: KVBodyFieldTableViewCellDelegate?
     var isValueTextFieldActive = false
     var selectedType: RequestBodyType = .form
@@ -727,6 +726,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     private let nc = NotificationCenter.default
     var selectedFieldFormat: RequestBodyFormFieldFormatType = .text
     private let localdb = CoreDataService.shared
+    private let utils = Utils.shared
+    var reqDataId = ""  // Will be empty if there are no fields added
 
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -770,11 +771,25 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     @objc func fieldTypeViewDidTap(_ recog: UITapGestureRecognizer) {
         Log.debug("field type view did tap")
         RequestVC.shared?.endEditing()
+        guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
+        var reqData: ERequestData?
+        if self.reqDataId.isEmpty {
+            let type: RequestDataType = self.selectedType == .form ? .form : .multipart
+            if let req = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: type, fieldFormat: self.selectedFieldFormat,
+                                                        ctx: ctx) {
+                data.body?.addToForm(req)
+                self.reqDataId = req.id ?? ""
+                reqData = req
+            }
+        } else {
+            reqData = self.localdb.getRequestData(id: self.reqDataId, ctx: ctx)
+        }
         self.nc.post(name: NotificationKey.optionScreenShouldPresent, object: self,
                      userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyFormField.rawValue,
                                 Const.modelIndexKey: self.tag,
                                 Const.optionSelectedIndexKey: self.selectedFieldFormat.rawValue,
-                                Const.optionDataKey: RequestBodyFormFieldFormatType.allCases])
+                                Const.optionDataKey: RequestBodyFormFieldFormatType.allCases,
+                                Const.optionModelKey: reqData as Any])
     }
     
     @objc func presentDocPicker() {
@@ -899,7 +914,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     @objc func requestBodyFieldDidChange(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int,
-            let reqData = info[Const.modelIndexKey] as? ERequestData {
+            let reqData = info[Const.optionModelKey] as? ERequestData {
             DispatchQueue.main.async {
                 reqData.fieldFormat = idx.toInt32()
                 self.reloadData()
@@ -1012,6 +1027,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             }
         }
         if let x = elem, let body = reqBodyData {
+            cell.reqDataId = x.id ?? ""
             cell.keyTextField.text = x.key
             cell.valueTextField.text = x.value
             cell.selectedType = RequestBodyType(rawValue: body.selected.toInt()) ?? RequestBodyType.json
