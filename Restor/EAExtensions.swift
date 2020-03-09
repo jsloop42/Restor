@@ -66,6 +66,18 @@ public extension UIImage {
 }
 
 public extension Int32 {
+    func toUInt8() -> UInt8 {
+        return UInt8(self)
+    }
+    
+    func toUInt32() -> UInt32 {
+        return UInt32(self)
+    }
+    
+    func toUInt() -> UInt {
+        return UInt(self)
+    }
+    
     func toInt() -> Int {
         return Int(self)
     }
@@ -76,6 +88,18 @@ public extension Int32 {
 }
 
 public extension Int {
+    func toUInt8() -> UInt8 {
+        return UInt8(self)
+    }
+    
+    func toUInt32() -> UInt32 {
+        return UInt32(self)
+    }
+    
+    func toUInt() -> UInt {
+        return UInt(self)
+    }
+    
     func toInt32() -> Int32 {
         return Int32(self)
     }
@@ -86,6 +110,18 @@ public extension Int {
 }
 
 public extension Int64 {
+    func toUInt8() -> UInt8 {
+        return UInt8(self)
+    }
+    
+    func toUInt32() -> UInt32 {
+        return UInt32(self)
+    }
+    
+    func toUInt() -> UInt {
+        return UInt(self)
+    }
+    
     func toInt() -> Int {
         return Int(self)
     }
@@ -94,3 +130,5 @@ public extension Int64 {
         return Int32(self)
     }
 }
+
+

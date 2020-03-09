@@ -852,9 +852,9 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         Log.debug("file collection view cell")
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "fileCell", for: indexPath) as! FileCollectionViewCell
         var name = ""
-        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id,
-            let form = self.localdb.getFormRequestData(at: self.tag, bodyDataId: bodyId, type:  self.selectedType == .form ? .form : .multipart, ctx: ctx),
-            let formId = form.id, let file = self.localdb.getFile(at: indexPath.row, reqDataId: formId, ctx: data.managedObjectContext) {
+        if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext,
+            let form = self.localdb.getRequestData(at: self.tag, reqId: reqId, type: self.selectedType == .form ? .form : .multipart, ctx: ctx),
+            let formId = form.id, let file = self.localdb.getFile(at: indexPath.row, reqDataId: formId, ctx: ctx) {
             name = file.name ?? ""
         }
         cell.nameLabel.text = name
@@ -867,9 +867,9 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
             width = cell.nameLabel.textWidth()
         } else {
             var name = ""
-            if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id,
-                let form = self.localdb.getFormRequestData(at: self.tag, bodyDataId: bodyId, type:  self.selectedType == .form ? .form : .multipart, ctx: ctx),
-                let formId = form.id, let file = self.localdb.getFile(at: indexPath.row, reqDataId: formId, ctx: data.managedObjectContext) {
+            if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext,
+                let form = self.localdb.getRequestData(at: self.tag, reqId: reqId, type: self.selectedType == .form ? .form : .multipart, ctx: ctx),
+                let formId = form.id, let file = self.localdb.getFile(at: indexPath.row, reqDataId: formId, ctx: ctx) {
                 name = file.name ?? ""
                 let lbl = UILabel(frame: CGRect(x: 0, y: 0, width: .greatestFiniteMagnitude, height: 19.5))
                 lbl.text = name
@@ -930,7 +930,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     @objc func imageAttachmentDidReceive(_ notif: Notification) {
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
-            if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body,
+            if let data = AppState.editRequest, let ctx = data.managedObjectContext,
                 let form = self.localdb.getRequestData(id: DocumentPickerState.reqDataId, ctx: ctx) {
                 form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt32()
                 if let image = DocumentPickerState.image {
@@ -949,13 +949,14 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     @objc func documentAttachmentDidReceive(_ notif: Notification) {
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
-            if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id,
-                let form = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .form, ctx: ctx) {
-                // form.type = RequestBodyFormFieldType.file.rawValue.toInt32()
-                DocumentPickerState.docs.forEach { url in
-                    if let data = self.app.getDataForURL(url) {
-                        let name = self.app.getFileName(url)
-                        let file = self.localdb.createFile(data: data, index: row, name: name, path: url, ctx: ctx)
+            if let data = AppState.editRequest, let ctx = data.managedObjectContext,
+                let form = self.localdb.getRequestData(id: DocumentPickerState.reqDataId, ctx: ctx) {
+                form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt32()
+                DocumentPickerState.docs.enumerated().forEach { args in
+                    let (offset, element) = args
+                    if let data = self.app.getDataForURL(element) {
+                        let name = self.app.getFileName(element)
+                        let file = self.localdb.createFile(data: data, index: offset, name: name, path: element, ctx: ctx)
                         file?.requestData = form
                     }
                 }
