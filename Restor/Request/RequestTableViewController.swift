@@ -1119,17 +1119,11 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             Log.debug("delete row: \(indexPath)")
-            // TODO: update
-            guard let data = AppState.editRequest, let body = data.body else { completion(false); return }
+            guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { completion(false); return }
             var shouldReload = false
-            if self.selectedType == .form {
-                if let form = body.form, form.count > indexPath.row {
-                    self.localdb.deleteRequestData(at: indexPath.row, req: data, type: .form, ctx: body.managedObjectContext)
-                    shouldReload = true
-                }
-            } else if self.selectedType == .multipart {
-                if let multipart = body.multipart, multipart.allObjects.count > indexPath.row {
-                    self.localdb.deleteRequestData(at: indexPath.row, req: data, type: .multipart, ctx: body.managedObjectContext)
+            if let cell = tableView.cellForRow(at: indexPath) as? KVBodyFieldTableViewCell  {
+                if !cell.reqDataId.isEmpty {
+                    self.localdb.deleteRequestData(id: cell.reqDataId, ctx: ctx)
                     shouldReload = true
                 }
             }
