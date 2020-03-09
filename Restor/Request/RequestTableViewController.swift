@@ -795,13 +795,15 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     
     @objc func presentDocPicker() {
         DocumentPickerState.modelIndex = self.tag
-        if let body = AppState.editRequest?.body, let form = body.form, let data = form.allObjects[self.tag] as? ERequestData {
-            if data.image != nil {
-                DocumentPickerState.isCameraMode = data.image!.isCameraMode
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let reqId = data.id,
+            let elem = self.localdb.getRequestData(at: self.tag, reqId: reqId, type: .form, ctx: ctx) {
+            DocumentPickerState.reqDataId = elem.id ?? ""
+            if let image = elem.image {
+                DocumentPickerState.isCameraMode = image.isCameraMode
                 self.nc.post(Notification(name: NotificationKey.imagePickerShouldPresent))
                 return
             }
-            if let files = data.files, files.allObjects.count > 0 {
+            if let files = elem.files, files.count > 0 {
                 self.nc.post(Notification(name: NotificationKey.documentPickerShouldPresent))
                 return
             }
@@ -928,17 +930,18 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     @objc func imageAttachmentDidReceive(_ notif: Notification) {
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
-            if let req = AppState.editRequest, let ctx = req.managedObjectContext, let body = req.body, let bodyId = body.id,
-                let form = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .form, ctx: ctx) {
-                //form.type = RequestBodyFormFieldType.file.rawValue.toInt32()
+            if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body,
+                let form = self.localdb.getRequestData(id: DocumentPickerState.reqDataId, ctx: ctx) {
+                form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt32()
                 if let image = DocumentPickerState.image {
-                    if let imageData = DocumentPickerState.imageType == ImageType.png.rawValue ? image.pngData() : image.jpegData(compressionQuality: 0.9) {
-                        let eimage = self.localdb.createImage(data: imageData, index: row, type: DocumentPickerState.imageType, ctx: ctx)
+                    if let imageData = DocumentPickerState.imageType == ImageType.png.rawValue ? image.pngData() : image.jpegData(compressionQuality: 1.0) {
+                        let eimage = self.localdb.createImage(data: imageData, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
                         eimage?.requestData = form
                         eimage?.isCameraMode = DocumentPickerState.isCameraMode
                     }
                 }
                 self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
+                DocumentPickerState.clear()
             }
         }
     }
@@ -957,6 +960,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                     }
                 }
                 self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
+                DocumentPickerState.clear()
             }
         }
     }
@@ -1020,16 +1024,18 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
 
         var elem: ERequestData?
         var reqBodyData: ERequestBodyData?
-        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id {
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let reqId = data.id, let body = data.body, let bodyId = body.id {
             if self.selectedType == .form {
-                elem = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .form, ctx: ctx)
+                elem = self.localdb.getRequestData(at: row, reqId: reqId, type: .form, ctx: ctx)
                 reqBodyData = elem?.form
             } else if self.selectedType == .multipart {
-                elem = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .multipart, ctx: ctx)
-                reqBodyData = elem?.multipart
+                // TODO:
+//                elem = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .multipart, ctx: ctx)
+//                reqBodyData = elem?.multipart
             }
         }
         if let x = elem, let body = reqBodyData {
+            x.index = row.toInt64()  // update the index
             cell.reqDataId = x.id ?? ""
             cell.keyTextField.text = x.key
             cell.valueTextField.text = x.value

@@ -69,4 +69,15 @@ struct DocumentPickerState {
     static var isCameraMode: Bool = false
     /// The index of data in the model
     static var modelIndex: Int = 0
+    /// The body form field model `RequestData` id.
+    static var reqDataId = ""
+    
+    static func clear() {
+        DocumentPickerState.docs = []
+        DocumentPickerState.image = nil
+        DocumentPickerState.imageType = "png"
+        DocumentPickerState.isCameraMode = false
+        DocumentPickerState.modelIndex = 0
+        DocumentPickerState.reqDataId = ""
+    }
 }

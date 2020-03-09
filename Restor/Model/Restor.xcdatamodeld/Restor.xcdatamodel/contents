@@ -2,7 +2,7 @@
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="15702" systemVersion="19C57" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
     <entity name="EFile" representedClassName=".EFile" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="data" optional="YES" attributeType="Binary"/>
+        <attribute name="data" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -20,7 +20,7 @@
     <entity name="EImage" representedClassName=".EImage" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
-        <attribute name="image" optional="YES" attributeType="Binary"/>
+        <attribute name="image" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="isCameraMode" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>

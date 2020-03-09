@@ -147,6 +147,14 @@ class Utils {
         }
         return hex
     }
+    
+    func getImageType(_ url: URL) -> ImageType? {
+        let name = url.lastPathComponent
+        if let ext = name.components(separatedBy: ".").last {
+            return ImageType(rawValue: ext)
+        }
+        return .jpeg  // default photo extension
+    }
 }
 
 class Log {

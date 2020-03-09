@@ -240,6 +240,11 @@ enum ImageType: String {
     case png
     case jpeg
     case jpg
+    case heic
+    case gif
+    case tiff
+    case webp
+    case svg
 }
 
 enum AppError: Error {
