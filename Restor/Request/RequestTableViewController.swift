@@ -132,6 +132,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         let methodTap = UITapGestureRecognizer(target: self, action: #selector(self.methodViewDidTap))
         self.methodView.addGestureRecognizer(methodTap)
         self.nc.addObserver(self, selector: #selector(self.requestMethodDidChange(_:)), name: NotificationKey.requestMethodDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.customRequestMethodDidAdd(_:)), name: NotificationKey.customRequestMethodDidAdd, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.customRequestMethodShouldDelete(_:)), name: NotificationKey.customRequestMethodShouldDelete, object: nil)
         self.nc.addObserver(self, selector: #selector(self.requestBodyDidChange(_:)), name: NotificationKey.requestBodyTypeDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentOptionsScreen(_:)), name: NotificationKey.optionScreenShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentDocumentMenuPicker(_:)), name: NotificationKey.documentPickerMenuShouldPresent, object: nil)
@@ -196,6 +198,30 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         }
     }
     
+    @objc func customRequestMethodDidAdd(_ notif: Notification) {
+        if let info = notif.userInfo as? [String: Any], let name = info[Const.requestMethodNameKey] as? String,
+            let idx = info[Const.modelIndexKey] as? Int, let data = AppState.editRequest, let ctx = data.managedObjectContext {
+            if let method = self.localdb.createRequestMethodData(id: self.utils.genRandomString(), index: idx, name: name, checkExists: true, ctx: ctx) {
+                method.request = data
+                method.project = data.project
+                self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
+                             userInfo: [Const.optionModelKey: method, Const.optionDataActionKey: OptionDataAction.add])
+            }
+        }
+    }
+    
+    @objc func customRequestMethodShouldDelete(_ notif: Notification) {
+        if let info = notif.userInfo as? [String: Any], let data = info[Const.optionModelKey] as? ERequestMethodData {
+            if let id = data.id {
+                data.project = nil
+                data.request = nil
+                self.localdb.deleteEntity(data)
+                self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
+                             userInfo: [Const.optionDataActionKey: OptionDataAction.delete, Const.dataKey: id])
+            }
+        }
+    }
+ 
     @objc func requestBodyDidChange(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {

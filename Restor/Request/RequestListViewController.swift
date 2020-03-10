@@ -35,17 +35,17 @@ class RequestListViewController: UIViewController {
         self.app.updateViewBackground(self.view)
         self.app.updateNavigationControllerBackground(self.navigationController)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
-        if let idx = AppState.selectedProject, let projects = AppState.project(forIndex: idx) {
-            self.requests = projects.requests?.allObjects as? [ERequest] ?? []
+        if let ws = AppState.currentWorkspace, let ctx = ws.managedObjectContext, let proj = AppState.currentProject, let projId = proj.id {
+            self.requests = self.localdb.getRequests(projectId: projId, ctx: ctx)
         }
         self.tableView.reloadData()
     }
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
-        if AppState.editRequest == nil, let proj = AppState.currentProject {
+        if AppState.editRequest == nil, let proj = AppState.currentProject, let ctx = proj.managedObjectContext {
             let index = proj.requests?.count ?? 0
-            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: index, name: "Request \(index)")
+            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: index, name: "Request \(index)", project: proj, ctx: ctx)
         }
         UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestVC.rawValue)
     }

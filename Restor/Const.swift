@@ -10,18 +10,24 @@ import Foundation
 
 struct Const {
     static let requestMethodNameKey = "requestMethodName"
-    /// The data model index
+    /// The data model index.
     static let modelIndexKey = "modelIndexKey"
-    /// The option selected item index
+    /// A generic index key.
+    static let indexKey = "indexKey"
+    /// Generic data key.
+    static let dataKey = "dataKey"
+    /// The option selected item index.
     static let optionSelectedIndexKey = "optionSelectedIndexKey"
-    /// The option vc type
+    /// The option vc type.
     static let optionTypeKey = "optionTypeKey"
-    /// The option picker data [String]
+    /// The option picker data [String].
     static let optionDataKey = "optionDataKey"
-    /// The option picker title key
+    /// The option picker title key.
     static let optionTitleKey = "optionTitleKey"
-    /// The model data (eg: `ERequestBodyData`)
+    /// The model data (eg: `ERequestBodyData`).
     static let optionModelKey = "optionModelKey"
+    /// The action for the data (add, delete, etc.).
+    static let optionDataActionKey = "optionDataActionKey"
 }
 
 struct NotificationKey {
@@ -30,7 +36,10 @@ struct NotificationKey {
     static let requestMethodDidChange = Notification.Name("requestMethodDidChange")
     static let requestBodyFormFieldTypeDidChange = Notification.Name("requestBodyFormFieldTypeDidChange")
     static let requestBodyTypeDidChange = Notification.Name("requestBodyTypeDidChange")
+    static let customRequestMethodDidAdd = Notification.Name("customRequestMethodDidAdd")
+    static let customRequestMethodShouldDelete = Notification.Name("customRequestMethodShouldDelete")
     static let optionScreenShouldPresent = Notification.Name("optionScreenShouldPresent")
+    static let optionPickerShouldReload = Notification.Name("optionPickerShouldReload")
     static let documentPickerMenuShouldPresent = Notification.Name("documentPickerMenuShouldPresent")
     static let documentPickerShouldPresent = Notification.Name("documentPickerShouldPresent")
     static let imagePickerShouldPresent = Notification.Name("imagePickerShouldPresent")

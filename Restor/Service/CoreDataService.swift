@@ -813,7 +813,7 @@ class CoreDataService {
             req.created = x == nil ? ts : x!.created
             req.modified = ts
             req.version = x == nil ? 0 : x!.version + 1
-            req.project = project
+            project?.addToRequests(req)
             if req.methods == nil { req.methods = NSSet() }
             if req.methods!.count == 0 {
                 req.methods?.addingObjects(from: self.genDefaultRequestMethods(req, ctx: moc))
@@ -828,7 +828,8 @@ class CoreDataService {
         guard let reqId = req.id else { return [] }
         return names.enumerated().compactMap { arg -> ERequestMethodData? in
             let (offset, element) = arg
-            let x = self.createRequestMethodData(id: self.genRequestMethodDataId(reqId, methodName: element), index: offset, name: element, ctx: ctx)
+            let x = self.createRequestMethodData(id: self.genRequestMethodDataId(reqId, methodName: element), index: offset, name: element, isCustom: false,
+                                                 ctx: ctx)
             x?.request =  req
             return x
         }
@@ -872,7 +873,8 @@ class CoreDataService {
     ///   - name: The name of the request method data.
     ///   - checkExists: Check if the request method data exists
     ///   - ctx: The managed object context
-    func createRequestMethodData(id: String, index: Int, name: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
+    func createRequestMethodData(id: String, index: Int, name: String, isCustom: Bool? = true, checkExists: Bool? = true,
+                                 ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
         -> ERequestMethodData? {
         var x: ERequestMethodData?
         let ts = Date().currentTimeNanos()
@@ -884,6 +886,7 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getRequestMethodData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestMethodData", into: self.bgMOC) as! ERequestMethodData
             data.id = id
+            data.isCustom = isCustom ?? true
             data.index = index.toInt64()
             data.name = name
             data.created = x == nil ? ts : x!.created

@@ -18,6 +18,11 @@ enum OptionPickerType: Int {
     case requestBodyFormField
 }
 
+enum OptionDataAction: Int {
+    case add
+    case delete
+}
+
 class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var cancelBtn: UIButton!
@@ -78,6 +83,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
             self.nc.addObserver(self, selector: #selector(self.keyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
             self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
         }
+        self.nc.addObserver(self, selector: #selector(self.optionPickerShouldReload(_:)), name: NotificationKey.optionPickerShouldReload, object: nil)
     }
     
     @objc func keyboardWillShow(notif: Notification) {
@@ -92,6 +98,26 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     
     @objc func keyboardWillHide(notif: Notification) {
         self.view.frame.origin.y = 0
+    }
+    
+    @objc func optionPickerShouldReload(_ notif: Notification) {
+        if let info = notif.userInfo as? [String: Any], let action = info[Const.optionDataActionKey] as? OptionDataAction {
+            if action == .add, let data = info[Const.optionModelKey] as? ERequestMethodData, let name = data.name {
+                if !self.data.contains(name) {
+                    self.data.append(name)
+                    self.modelxs.append(data)
+                }
+            } else if action == .delete, let id = info[Const.dataKey] as? String {
+                if let idx = (self.modelxs.firstIndex(where: { x -> Bool in
+                    if let y = x as? ERequestMethodData { return y.id == id }
+                    return false
+                })) {
+                    self.modelxs.remove(at: idx)
+                    self.data.remove(at: idx)
+                }
+            }
+        }
+        self.tableView.reloadData()
     }
     
     @objc func footerDidTap() {
@@ -193,10 +219,9 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
                 if self.selectedIndex == row {  // The selected index is being deleted. So assign selected to the first item.
                     self.selectedIndex = 0
                     self.postRequestMethodChangeNotification(0)
-                    // TODO: remove req method data
-                    // OptionsPickerState.requestData.remove(at: row)
                 }
-                self.tableView.reloadData()
+                self.nc.post(name: NotificationKey.customRequestMethodShouldDelete, object: self,
+                             userInfo: [Const.optionModelKey: self.modelxs[row], Const.indexKey: row])
             }
             completion(true)
         }
@@ -231,6 +256,10 @@ extension OptionsPickerViewController: PopupViewDelegate {
         if self.pickerType == .requestMethod {
             // TODO:
             //OptionsPickerState.requestData.append(ERequestMethodData(name: name, isCustom: true, project: AppState.currentProject))
+            if self.validateText(name) {
+                self.nc.post(name: NotificationKey.customRequestMethodDidAdd, object: self,
+                             userInfo: [Const.requestMethodNameKey: name, Const.modelIndexKey: self.data.count])
+            }
         }
         self.app.addItemPopupView?.animateSlideOut()
         DispatchQueue.main.async {
