@@ -70,6 +70,14 @@ class CoreDataService {
         }
     }
     
+    func requestToDictionary(_ x: ERequest) -> [String: Any] {
+        let attrs = ERequest.entity().attributesByName.map { arg -> String in arg.key }
+        var dict = x.dictionaryWithValues(forKeys: attrs)
+        var relations = ERequest.entity().relationshipsByName.map { arg -> String in arg.key }
+        // TODO: manually walk the relations - keep the keypath of the changes - if no changes, remove keypath from array
+        return dict
+    }
+    
     // MARK: - Get
     
     // MARK: EWorkspace

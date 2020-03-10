@@ -146,6 +146,8 @@ class App {
         //public static let lightGreen = UIColor(red: 196/255, green: 223/255, blue: 168/255, alpha: 1.0)
         public static let lightGreen = UIColor(red: 120/255, green: 184/255, blue: 86/255, alpha: 1.0)
         public static let darkGreen = UIColor(red: 91/255, green: 171/255, blue: 60/255, alpha: 1.0)
+        public static let darkGrey = UIColor(red: 75/255, green: 74/255, blue: 75/255, alpha: 1.0)
+        public static let lightGrey = UIColor(red: 209/255, green: 209/255, blue: 208/255, alpha: 1.0)
         public static var requestMethodBg: UIColor = {
             if #available(iOS 13, *) {
                 return UIColor { (UITraitCollection: UITraitCollection) -> UIColor in
@@ -157,6 +159,19 @@ class App {
                 }
             } else {
                 return Color.lightGreen
+            }
+        }()
+        public static var requestEditDoneBtnDisabled: UIColor = {
+            if #available(iOS 13, *) {
+                return UIColor { (UITraitCollection: UITraitCollection) -> UIColor in
+                    if UITraitCollection.userInterfaceStyle == .dark {
+                        return UIColor.darkGray
+                    } else {
+                        return Color.lightGrey
+                    }
+                }
+            } else {
+                return Color.lightGrey
             }
         }()
     }

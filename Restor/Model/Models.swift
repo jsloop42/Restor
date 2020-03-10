@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 
-protocol Entity {
+protocol Entity: NSManagedObject {
     func getId() -> String?
     func getIndex() -> Int
     func getName() -> String?

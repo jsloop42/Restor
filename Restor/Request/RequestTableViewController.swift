@@ -16,7 +16,6 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     @IBOutlet weak var methodView: UIView!
     @IBOutlet weak var methodLabel: UILabel!
     @IBOutlet weak var urlTextField: EATextField!
-    @IBOutlet weak var goBtn: UIButton!
     @IBOutlet weak var nameTextField: EATextField!
     @IBOutlet weak var descTextView: EATextView!
     @IBOutlet var headerKVTableViewManager: KVTableViewManager!
@@ -45,6 +44,17 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     private let utils = Utils.shared
     private let db = PersistenceService.shared
     private var localdb = CoreDataService.shared
+    private lazy var doneBtn: UIButton = {
+        let btn = UIButton(type: .custom)
+        btn.setTitle("Done", for: .normal)
+        btn.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+        btn.setTitleColor(btn.tintColor, for: .normal)
+        btn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
+        return btn
+    }()
+    /// Indicates if the request is valid for saving (any changes made).
+    private var isValid = false
+    private var entityDict: [String: Any] = [:]
     
     enum CellId: Int {
         case url = 0
@@ -89,6 +99,9 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.initState()
         self.initUI()
         self.initEvents()
+        if let data = AppState.editRequest {
+            //var dict = x.dictionaryWithValues(forKeys: attrs)self.entityDict = self.localdb.requestToDictionary(data)
+        }
     }
         
     func initUI() {
@@ -108,6 +121,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.descTextView.delegate = self
         // Set bottom border
         //self.app.updateTextFieldWithBottomBorder(self.urlTextField)
+        self.addDoneButton()
+        // Color
         self.urlTextField.isColor = false
         //self.nameTextField.borderOffsetY = 2
         self.nameTextField.isColor = false
@@ -176,6 +191,25 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     func renderTheme() {
         self.methodView.backgroundColor = App.Color.requestMethodBg
+    }
+    
+    func addDoneButton() {
+        self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: self.doneBtn)
+        self.disableDoneButton()
+    }
+    
+    func enableDoneButton() {
+        self.doneBtn.setTitleColor(self.doneBtn.tintColor, for: .normal)
+        self.doneBtn.isEnabled = true
+    }
+    
+    func disableDoneButton() {
+        self.doneBtn.setTitleColor(App.Color.requestEditDoneBtnDisabled, for: .normal)
+        self.doneBtn.isEnabled = false
+    }
+    
+    @objc func doneDidTap(_ sender: Any) {
+        Log.debug("Done did tap")
     }
     
     @objc func methodViewDidTap() {
@@ -260,6 +294,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     }
     
     @objc func endEditing() {
+        Log.debug("entity dict: \(self.entityDict)")
+        Log.debug("edit request: \(AppState.editRequest)")
         Log.debug("end editing")
         self.isEndEditing = true
         UI.endEditing()
@@ -422,32 +458,7 @@ extension RequestTableViewController: KVTableViewDelegate {
     func reloadData() {
         self.tableView.reloadData()
     }
-    
-//    func presentOptionsVC(_ data: [String], selected: Int) {
-//        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.optionsPickerVC.rawValue) as? OptionsPickerViewController {
-//            RequestVC.addRequestBodyToState()
-//            AppState.editRequest?.body?.selected = selected.toInt32()
-//            OptionsPickerState.selected = selected
-//            OptionsPickerState.data = data
-//            self.navigationController?.present(vc, animated: true, completion: nil)
-//        }
-//    }
 }
-
-//extension RequestTableViewController: OptionsPickerViewDelegate {
-//    func reloadOptionsData() {
-//        if !self.isOptionFromNotif {
-//            self.bodyKVTableViewManager.reloadData()
-//            self.tableView.reloadRows(at: [IndexPath(row: CellId.body.rawValue, section: 0)], with: .none)
-//        }
-//    }
-//
-//    func optionDidSelect(_ row: Int) {
-//        if !self.isOptionFromNotif {
-//            AppState.editRequest!.body!.selected = Int32(row)
-//        }
-//    }
-//}
 
 enum KVTableViewType {
     case header
