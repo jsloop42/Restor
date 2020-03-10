@@ -17,24 +17,20 @@ public enum FileIOMode {
 
 public class EAFileManager: NSObject {
     private let url: URL!
-    private var inpStream: InputStream?
-    private var outStream: OutputStream?
-    public typealias EAFileManagerCallback = ((Result<Data, Error>) -> Void)
-    private var callback: EAFileManagerCallback?
-    private var buffSize: Int = 1024
-    private var data: Data!
+    private var callback: EADataResultCallback?
+    private var data: Data?
     private let fm = FileManager.default
     private static let fm = FileManager.default
     private var fileHandle: FileHandle?
-    private let nc = NotificationCenter.default
+    private let queue = DispatchQueue(label: "com.estoapps.ios.restor8", qos: .userInitiated, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+    var isFileOpened = false
 
     deinit {
-        self.nc.removeObserver(self)
+        Log.debug("EAFileManager deinit")
     }
     
     init(url: URL) {
         self.url = url
-        self.data = Data()
         super.init()
     }
     
@@ -87,18 +83,19 @@ public class EAFileManager: NSObject {
         case .append:
             self.fileHandle = FileHandle(forUpdatingAtPath: self.url.path)
         }
+        self.isFileOpened = true
     }
     
-    public func read(completion: EAFileManagerCallback? = nil) {
-        self.nc.addObserver(self, selector: #selector(self.readToEOFDidComplete(_:)), name: .NSFileHandleReadToEndOfFileCompletion, object: nil)
-        self.fileHandle?.readToEndOfFileInBackgroundAndNotify()
-    }
-
-    @objc private func readToEOFDidComplete(_ notif: Notification) {
-        Log.debug("read to EOF did complete")
-        if let info = notif.userInfo as? [String: Any], let data = info[NSFileHandleNotificationDataItem] as? Data {
-            self.data = data
-            // TODO: test
+    /// Reads the entire file and return the data object
+    public func readToEOF(completion: EADataResultCallback? = nil) {
+        self.queue.async {
+            do {
+                self.data = try Data(contentsOf: self.url)
+                if let x = self.data, let cb = completion { cb(.success(x)) }
+            } catch let error {
+                Log.error("Error reading file: \(error)")
+                if let cb = completion { cb(.failure(AppError.fileRead)) }
+            }
         }
     }
 }

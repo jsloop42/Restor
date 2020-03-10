@@ -128,8 +128,13 @@ class App {
         self.addItemPopupView = popup
     }
     
-    func getDataForURL(_ url: URL) -> Data? {
-        return nil
+    func getDataForURL(_ url: URL, completion: EADataResultCallback? = nil) {
+        if EAFileManager.isFileExists(at: url) {
+            let fm = EAFileManager(url: url)
+            fm.readToEOF(completion: completion)
+        } else {
+            if let cb = completion { cb(.failure(AppError.fileNotFound)) }
+        }
     }
     
     func getFileName(_ url: URL) -> String {
@@ -251,4 +256,9 @@ enum AppError: Error {
     case entityGet
     case entityUpdate
     case entityDelete
+    case error
+    case fileOpen
+    case fileRead
+    case fileWrite
+    case fileNotFound
 }

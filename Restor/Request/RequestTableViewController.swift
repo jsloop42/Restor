@@ -841,8 +841,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     // MARK: - Delegate collection view
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if self.selectedFieldFormat == .file {
-            if let data = AppState.editRequest, let ctx = data.managedObjectContext, let body = data.body, let bodyId = body.id {
-                return self.localdb.getFilesCount(bodyId, type: selectedType == .form ? .form : .multipart, ctx: ctx)
+            if let data = AppState.editRequest, let ctx = data.managedObjectContext {
+                return self.localdb.getFilesCount(self.reqDataId, type: selectedType == .form ? .form : .multipart, ctx: ctx)
             }
         }
         return 0
@@ -954,14 +954,24 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt32()
                 DocumentPickerState.docs.enumerated().forEach { args in
                     let (offset, element) = args
-                    if let data = self.app.getDataForURL(element) {
-                        let name = self.app.getFileName(element)
-                        let file = self.localdb.createFile(data: data, index: offset, name: name, path: element, ctx: ctx)
-                        file?.requestData = form
+                    self.app.getDataForURL(element) { [weak self] result in  // if user exits before loading, it's the user action. So we don't retain self.
+                        if self == nil { return}
+                        switch result {
+                        case .success(let x):
+                            let name = self!.app.getFileName(element)
+                            if let file = self!.localdb.createFile(data: x, index: offset, name: name, path: element,
+                                                                   type: self!.selectedType == .form ? .form : .multipart, checkExists: true, ctx: ctx) {
+                                file.requestData = form
+                                DispatchQueue.main.async {
+                                    self?.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
+                                }
+                            }
+                        case .failure(let error):
+                            Log.debug("Error: \(error)")  // TODO: display alert
+                        }
+                        if self != nil { DocumentPickerState.clear() }
                     }
                 }
-                self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
-                DocumentPickerState.clear()
             }
         }
     }

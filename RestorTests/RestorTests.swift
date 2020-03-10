@@ -312,7 +312,7 @@ class RestorTests: XCTestCase {
         if let path = Bundle.init(for: type(of: self)).path(forResource: "IMG_6109", ofType: "jpeg") {
             Log.debug("path: \(path)")
             let fm = EAFileManager(url: URL(fileURLWithPath: path))
-            fm.read { result in
+            fm.readToEOF { result in
                 switch result {
                 case .success(let data):
                     Log.debug("data: \(data)")
@@ -331,10 +331,12 @@ class RestorTests: XCTestCase {
         let exp = self.expectation(description: "test background worker")
         let w = BackgroundWorker()
         w.start {
+            var acc: [Bool] = []
             for _ in 0...4 {
-                print("hello world")
+                acc.append(true)
             }
             w.stop()
+            XCTAssertEqual(acc.count, 4)
             exp.fulfill()
         }
         self.waitForExpectations(timeout: 3, handler: nil)

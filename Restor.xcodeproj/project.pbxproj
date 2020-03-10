@@ -24,6 +24,7 @@
 		9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
 		9E85FE4C240EAEE1002821F2 /* Restor.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */; };
 		9E85FE4D240EAEFC002821F2 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E23E68C240D98A400C4686A /* Models.swift */; };
+		9E8711E52417E76E0002B9E1 /* EATypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8711E42417E76E0002B9E1 /* EATypes.swift */; };
 		9E8759062396C6A700F949D1 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* Utils.swift */; };
 		9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9323945E79002DF561 /* AppDelegate.swift */; };
 		9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9523945E79002DF561 /* SceneDelegate.swift */; };
@@ -78,6 +79,7 @@
 		9E85FE47240E9CDB002821F2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegateMock.swift; sourceTree = "<group>"; };
 		9E85FE4E240EDB0A002821F2 /* Restor.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = Restor.xctestplan; path = RestorTests/Restor.xctestplan; sourceTree = SOURCE_ROOT; };
+		9E8711E42417E76E0002B9E1 /* EATypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATypes.swift; sourceTree = "<group>"; };
 		9E8759052396C6A700F949D1 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
 		9E926F9023945E78002DF561 /* Restor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Restor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926F9323945E79002DF561 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -212,6 +214,7 @@
 				9E8759052396C6A700F949D1 /* Utils.swift */,
 				9E926F9F23945E7D002DF561 /* Assets.xcassets */,
 				9E926FA423945E7D002DF561 /* Info.plist */,
+				9E8711E42417E76E0002B9E1 /* EATypes.swift */,
 			);
 			path = Restor;
 			sourceTree = "<group>";
@@ -423,6 +426,7 @@
 				9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */,
 				9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */,
 				9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */,
+				9E8711E52417E76E0002B9E1 /* EATypes.swift in Sources */,
 				9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */,
 				9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */,
 			);

@@ -952,6 +952,11 @@ class CoreDataService {
     }
     
     func createFile(data: Data, index: Int, name: String, path: URL, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
+        return self.createFile(data: data, index: index, name: name, path: path, type: .form, checkExists: checkExists, ctx: ctx)
+    }
+    
+    func createFile(data: Data, index: Int, name: String, path: URL, type: RequestDataType, checkExists: Bool? = true,
+                    ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
         var x: EFile?
         let ts = Date().currentTimeNanos()
         let moc: NSManagedObjectContext = {
@@ -969,14 +974,11 @@ class CoreDataService {
             file.index = index.toInt64()
             file.name = name
             file.path = path
+            file.type = type.rawValue.toInt32()
             file.version = x == nil ? 0 : x!.version + 1
             x = file
         }
         return x
-    }
-    
-    func createFiles(url: [URL], data: [Data]) {
-        // TODO
     }
     
     // MARK: - Generate Id
