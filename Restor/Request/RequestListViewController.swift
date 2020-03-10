@@ -45,7 +45,7 @@ class RequestListViewController: UIViewController {
         Log.debug("add btn did tap")
         if AppState.editRequest == nil, let proj = AppState.currentProject, let ctx = proj.managedObjectContext {
             let index = proj.requests?.count ?? 0
-            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: index, name: "Request \(index)", project: proj, ctx: ctx)
+            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: index, name: "Request \(index)", ctx: ctx)
         }
         UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestVC.rawValue)
     }

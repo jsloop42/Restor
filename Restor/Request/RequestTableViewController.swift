@@ -203,7 +203,6 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
             let idx = info[Const.modelIndexKey] as? Int, let data = AppState.editRequest, let ctx = data.managedObjectContext {
             if let method = self.localdb.createRequestMethodData(id: self.utils.genRandomString(), index: idx, name: name, checkExists: true, ctx: ctx) {
                 method.request = data
-                method.project = data.project
                 self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
                              userInfo: [Const.optionModelKey: method, Const.optionDataActionKey: OptionDataAction.add])
             }
