@@ -70,11 +70,21 @@ class CoreDataService {
         }
     }
     
+    /// Can be used to get the initial value of the request before modification during edit
     func requestToDictionary(_ x: ERequest) -> [String: Any] {
         let attrs = ERequest.entity().attributesByName.map { arg -> String in arg.key }
         var dict = x.dictionaryWithValues(forKeys: attrs)
-        var relations = ERequest.entity().relationshipsByName.map { arg -> String in arg.key }
-        // TODO: manually walk the relations - keep the keypath of the changes - if no changes, remove keypath from array
+        if let headers = x.headers, let xs = headers.allObjects as? [ERequestData] {
+            dict["headers"] = xs.map { reqData -> [String: Any] in
+                self.requestDataToDictionary(reqData)
+            }
+        }
+        return dict
+    }
+    
+    func requestDataToDictionary(_ x: ERequestData) -> [String: Any] {
+        let attrs = ERequestData.entity().attributesByName.map { arg -> String in arg.key }
+        var dict = x.dictionaryWithValues(forKeys: attrs)
         return dict
     }
     
