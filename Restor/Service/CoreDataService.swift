@@ -70,21 +70,70 @@ class CoreDataService {
         }
     }
     
+    // MARK: - To dictionary
+    
     /// Can be used to get the initial value of the request before modification during edit
     func requestToDictionary(_ x: ERequest) -> [String: Any] {
         let attrs = ERequest.entity().attributesByName.map { arg -> String in arg.key }
         var dict = x.dictionaryWithValues(forKeys: attrs)
-        if let headers = x.headers, let xs = headers.allObjects as? [ERequestData] {
-            dict["headers"] = xs.map { reqData -> [String: Any] in
-                self.requestDataToDictionary(reqData)
-            }
+        if let set = x.headers, let xs = set.allObjects as? [ERequestData] {
+            dict["headers"] = xs.map { y -> [String: Any] in self.requestDataToDictionary(y) }
+        }
+        if let set = x.params, let xs = set.allObjects as? [ERequestData] {
+            dict["params"] = xs.map { y -> [String: Any] in self.requestDataToDictionary(y) }
+        }
+        if let set = x.methods, let xs = set.allObjects as? [ERequestMethodData] {
+            dict["methods"] =  xs.map { y -> [String: Any] in self.requestMethodDataToDictionary(y) }
+        }
+        if let body = x.body {
+            dict["body"] = self.requestBodyDataToDictionary(body)
         }
         return dict
+    }
+    
+    func requestMethodDataToDictionary(_ x: ERequestMethodData) -> [String: Any] {
+        let attrs = ERequestMethodData.entity().attributesByName.map { arg -> String in arg.key }
+        return x.dictionaryWithValues(forKeys: attrs)
     }
     
     func requestDataToDictionary(_ x: ERequestData) -> [String: Any] {
         let attrs = ERequestData.entity().attributesByName.map { arg -> String in arg.key }
         var dict = x.dictionaryWithValues(forKeys: attrs)
+        if let set = x.files, let xs = set.allObjects as? [EFile] {
+            dict["files"] = xs.map { y -> [String: Any] in self.fileToDictionary(y) }
+        }
+        if let image = x.image {
+            dict["image"] = self.imageToDictionary(image)
+        }
+        return dict
+    }
+    
+    func requestBodyDataToDictionary(_ x: ERequestBodyData) -> [String: Any] {
+        let attrs = ERequestBodyData.entity().attributesByName.map { arg -> String in arg.key }
+        var dict = x.dictionaryWithValues(forKeys: attrs)
+        if let set = x.form, let xs = set.allObjects as? [ERequestData] {
+            dict["form"] = xs.map { y -> [String: Any] in self.requestDataToDictionary(y) }
+        }
+        if let set = x.multipart, let xs = set.allObjects as? [ERequestData] {
+            dict["multipart"] = xs.map { y -> [String: Any] in self.requestDataToDictionary(y) }
+        }
+        return dict
+    }
+    
+    func fileToDictionary(_ x: EFile) -> [String: Any] {
+        let attrs = EFile.entity().attributesByName.compactMap { arg -> String? in
+            if arg.key != "data" { return arg.key }  // The data is avoided to reduce memory footprint
+            return nil
+        }
+        return x.dictionaryWithValues(forKeys: attrs)
+    }
+    
+    func imageToDictionary(_ x: EImage) -> [String: Any] {
+        let attrs = EImage.entity().attributesByName.compactMap { arg -> String? in
+            if arg.key != "data" { return arg.key }
+            return nil
+        }
+        let dict = x.dictionaryWithValues(forKeys: attrs)
         return dict
     }
     

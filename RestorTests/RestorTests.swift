@@ -341,6 +341,35 @@ class RestorTests: XCTestCase {
         }
         self.waitForExpectations(timeout: 3, handler: nil)
     }
+    
+    func testRequestToDictionary() {
+        let exp = expectation(description: "Test core data CRUD")
+        self.localdb.setup(storeType: NSSQLiteStoreType) {
+            self.serialQueue.async {
+                let ctx = self.localdb.bgMOC
+                let file = self.localdb.createFile(data: Data(), index: 0, name: "test-file", path: URL(fileURLWithPath: "/tmp"), checkExists: false, ctx: ctx)
+                XCTAssertNotNil(file)
+                let req = self.localdb.createRequest(id: self.utils.genRandomString(), index: 0, name: "test-request", project: nil, checkExists: true, ctx: ctx)
+                XCTAssertNotNil(req)
+                let reqData = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .form, fieldFormat: .file, checkExists: false, ctx: ctx)
+                XCTAssertNotNil(reqData)
+                file!.requestData = reqData
+                req!.body = self.localdb.createRequestBodyData(id: self.utils.genRandomString(), index: 0, checkExists: false, ctx: ctx)
+                XCTAssertNotNil(req!.body)
+                req!.body!.addToForm(reqData!)
+                let hm = self.localdb.requestToDictionary(req!)
+                XCTAssertEqual(hm.count, 13)
+                XCTAssertNotNil(hm["body"])
+                XCTAssertEqual((hm["body"] as! [String: Any]).count, 12)
+                XCTAssertEqual(((hm["body"] as! [String: Any])["form"] as! [[String: Any]]).count, 1)
+                XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]).count, 10)
+                XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]]).count, 1)
+                XCTAssertEqual(((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]])[0]).count, 8)
+                exp.fulfill()
+            }
+        }
+        waitForExpectations(timeout: 1.0, handler: nil)
+    }
 
     func notestPerformanceExample() {
         // This is an example of a performance test case.
