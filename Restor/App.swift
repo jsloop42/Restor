@@ -14,6 +14,7 @@ class App {
     var addItemPopupView: PopupView?
     var popupBottomContraints: NSLayoutConstraint?
     private var dbService = PersistenceService.shared
+    private let localdb = CoreDataService.shared
     
     func addSettingsBarButton() -> UIBarButtonItem {
         if #available(iOS 13.0, *) {
@@ -141,6 +142,206 @@ class App {
         return url.lastPathComponent
     }
     
+    // MARK: - Request change
+    
+    /// Checks if the request changed.
+    func didRequestChange(_ x: ERequest, request: [String: Any]) -> Bool {
+        if self.didRequestURLChange(x.url ?? "", request: request) { return true }
+        if self.didRequestMetaChange(name: x.name ?? "", desc: x.desc ?? "", request: request) { return true }
+        if let methods = x.methods?.allObjects as? [ERequestMethodData] {
+            if self.didAnyRequestMethodChange(methods, request: request) { return true }
+        }
+        if self.didRequestBodyChange(x.body, request: request) { return true }
+        if let headers = x.headers?.allObjects as? [ERequestData] {
+            if self.didAnyRequestHeaderChange(headers, request: request) { return true }
+        } else {
+            if let headers = request["headers"] as? [[String: Any]], headers.count > 0 { return true }
+        }
+        if let params = x.params?.allObjects as? [ERequestData] {
+            if self.didAnyRequestParamChange(params, request: request) { return true }
+        } else {
+            if let params = request["params"] as? [[String: Any]], params.count > 0 { return true }
+        }
+        return false
+    }
+    
+    func didRequestMethodChange(_ x: ERequestMethodData, y: [String: Any]) -> Bool {
+        if x.created != y["created"] as? Int64 ||
+            x.index != y["index"] as? Int64 ||
+            x.isCustom != y["isCustom"] as? Bool ||
+            x.name != y["name"] as? String {
+            return true
+        }
+        return false
+    }
+    
+    func didAnyRequestMethodChange(_ xs: [ERequestMethodData], request: [String: Any]) -> Bool {
+        let xsa = xs.filter { x -> Bool in x.isCustom }
+        let xsb = (request["methods"] as? [[String: Any]])?.filter({ hm -> Bool in
+            if let isCustom = hm["isCustom"] as? Bool { return isCustom }
+            return false
+        })
+        let len = xsa.count
+        if xsb == nil && len > 0 { return true }
+        if xsb != nil && xsb!.count != len { return true }
+        if xsb != nil {
+            for i in 0..<len {
+                if self.didRequestMethodChange(xsa[i], y: xsb![i]) { return true }
+            }
+        }
+        return false
+    }
+    
+    
+    /// Checks if the request URL changed.
+    func didRequestURLChange(_ x: String, request: [String: Any]) -> Bool {
+        if let url = request["url"] as? String { return x != url }
+        return !x.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    /// Checks if the request name changed.
+    func didRequestNameChange(_ x: String, request: [String: Any]) -> Bool {
+        if let name = request["name"] as? String { return x != name }
+        return !x.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    /// Checks if the request's description changed.
+    func didRequestDescriptionChange(_ x: String, request: [String: Any]) -> Bool {
+        if let desc = request["desc"] as? String { return x != desc }
+        return !x.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+    
+    /// Checks if any of the request's meta data changed.
+    func didRequestMetaChange(name: String, desc: String, request: [String: Any]) -> Bool {
+        return self.didRequestNameChange(name, request: request) || self.didRequestDescriptionChange(desc, request: request)
+    }
+    
+    /// Check if any of the request headers changed.
+    func didAnyRequestHeaderChange(_ xs: [ERequestData], request: [String: Any]) -> Bool {
+        var xs: [Entity] = xs
+        self.localdb.sortByCreated(&xs)
+        let len = xs.count
+        if len != (request["headers"] as! [[String: Any]]).count { return true }
+        let headers: [[String: Any]] = request["headers"] as! [[String: Any]]
+        for i in 0..<len {
+            if self.didRequestDataChange(x: xs[i] as! ERequestData, y: headers[i], type: .header) { return true }
+        }
+        return false
+    }
+
+    /// Check if any of the request params changed.
+    func didAnyRequestParamChange(_ xs: [ERequestData], request: [String: Any]) -> Bool {
+        var xs: [Entity] = xs
+        self.localdb.sortByCreated(&xs)
+        let len = xs.count
+        if len != (request["params"] as! [[String: Any]]).count { return true }
+        let params: [[String: Any]] = request["params"] as! [[String: Any]]
+        for i in 0..<len {
+            if self.didRequestDataChange(x: xs[i] as! ERequestData, y: params[i], type: .param) { return true }
+        }
+        return false
+    }
+    
+    /// Checks if the request body changed
+    func didRequestBodyChange(_ x: ERequestBodyData?, request: [String: Any]) -> Bool {
+        if (x == nil && request["body"] != nil) || (x != nil && request["body"] == nil) { return true }
+        if let body = request["body"] as? [String: Any] {
+            if x?.binary != body["binary"] as? Data ||
+                x?.index != body["index"] as? Int64 ||
+                x?.json != body["json"] as? String ||
+                x?.raw != body["raw"] as? String ||
+                x?.selected != body["selected"] as? Int32 ||
+                x?.xml != body["xml"] as? String {
+                return true
+            }
+            if x != nil && self.didAnyRequestBodyFormChange(x!, request: request) { return true }
+        }
+        return false
+    }
+    
+    /// Checks if the any of the request body form elements changed.
+    func didAnyRequestBodyFormChange(_ x: ERequestBodyData, request: [String: Any]) -> Bool {
+        if request["body"] == nil { return true }
+        if let body = request["body"] as? [String: Any] {
+            if (x.form != nil && body["form"] == nil) || (x.form == nil && body["form"] != nil) { return true }
+            if (x.multipart != nil && body["multipart"] == nil) || (x.multipart == nil && body["multipart"] != nil) { return true }
+            
+            var formxsa = x.form!.allObjects as! [Entity]
+            let formxsb = body["form"] as! [[String: Any]]
+            self.localdb.sortByCreated(&formxsa)
+            
+            let len = formxsa.count
+            for i in 0..<len {
+                if self.didRequestDataChange(x: formxsa[i] as! ERequestData, y: formxsb[i], type: .form) { return true }
+            }
+        }
+        return false
+    }
+    
+    /// Checks if the given form's attachments changed.
+    func didRequestBodyFormAttachmentChange(_ x: ERequestData, y: [String: Any]) -> Bool {
+        if (x.image != nil && y["image"] == nil) || (x.image == nil && y["image"] != nil) { return true }
+        if let ximage = x.image, let yimage = y["image"] as? [String: Any]  {
+            if self.didRequestImageChange(x: ximage, y: yimage) { return true }
+        }
+        if (x.files != nil && y["files"] == nil) || (x.files == nil && y["file"] != nil) { return true }
+        let yfiles = y["files"] as! [[String: Any]]
+        if x.files!.count != yfiles.count { return true }
+        if let set = x.files, var xs = set.allObjects as? [Entity] {
+            self.localdb.sortByCreated(&xs)
+            let len = xs.count
+            for i in 0..<len {
+                if self.didRequestFileChange(x: xs[i] as! EFile, y: yfiles[i]) { return true }
+            }
+        }
+        return false
+    }
+    
+    func didRequestDataChange(x: ERequestData, y: [String: Any], type: RequestDataType) -> Bool {
+        if x.created != y["created"] as? Int64 ||
+            x.fieldFormat != y["fieldFormat"] as? Int32 ||
+            x.index != y["index"] as? Int64 ||
+            x.key != y["key"] as? String ||
+            x.type != y["type"] as? Int32 ||
+            x.value != y["value"] as? String {
+            return true
+        }
+        if type == .form {
+            if self.didRequestBodyFormAttachmentChange(x, y: y) { return true }
+        } else if type == .multipart {
+            
+        }
+        return false
+    }
+    
+    func didRequestFileChange(x: EFile, y: [String: Any]) -> Bool {
+        if x.created != y["created"] as? Int64 ||
+            x.index != y["index"] as? Int64 ||
+            x.name != y["name"] as? String ||
+            x.path != y["path"] as? URL ||  // TODO: test
+            x.type != y["type"] as? Int32  {
+            return true
+        }
+        if let id = x.id, let xdata = x.data, let file = self.localdb.getFileData(id: id), let ydata = file.data {
+            if xdata != ydata { return true }
+        }
+        return false
+    }
+    
+    func didRequestImageChange(x: EImage, y: [String: Any]) -> Bool {
+        if x.created != y["created"] as? Int64 ||
+            x.index != y["index"] as? Int64 ||
+            x.name != y["name"] as? String ||
+            x.isCameraMode != y["isCameraMode"] as? Bool ||
+            x.type != y["type"] as? String  {
+            return true
+        }
+        if let id = x.id, let xdata = x.image, let image = self.localdb.getImageData(id: id), let ydata = image.image {
+            if xdata != ydata { return true }
+        }
+        return false
+    }
+
     // MARK: - Theme
     public struct Color {
         //public static let lightGreen = UIColor(red: 196/255, green: 223/255, blue: 168/255, alpha: 1.0)

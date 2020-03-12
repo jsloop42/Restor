@@ -100,7 +100,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.initUI()
         self.initEvents()
         if let data = AppState.editRequest {
-            //var dict = x.dictionaryWithValues(forKeys: attrs)self.entityDict = self.localdb.requestToDictionary(data)
+            self.entityDict = self.localdb.requestToDictionary(data)
+            Log.debug("initial entity dic: \(self.entityDict)")
         }
     }
         

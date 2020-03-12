@@ -16,6 +16,7 @@ protocol Entity: NSManagedObject {
     func getCreated() -> Int64
     func getModified() -> Int64
     func getVersion() -> Int64
+    func setIndex(_ i: Int)
 }
 
 class EFile: NSManagedObject, Entity {
@@ -41,6 +42,10 @@ class EFile: NSManagedObject, Entity {
     
     func getVersion() -> Int64 {
         return self.version
+    }
+    
+    func setIndex(_ i: Int) {
+        self.index = i.toInt64()
     }
 }
 
@@ -68,6 +73,10 @@ class EImage: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
+    
+    func setIndex(_ i: Int) {
+        self.index = i.toInt64()
+    }
 }
 
 class EProject: NSManagedObject, Entity {
@@ -93,6 +102,10 @@ class EProject: NSManagedObject, Entity {
     
     func getVersion() -> Int64 {
         return self.version
+    }
+    
+    func setIndex(_ i: Int) {
+        self.index = i.toInt64()
     }
 }
 
@@ -120,6 +133,10 @@ class ERequest: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
+    
+    func setIndex(_ i: Int) {
+        self.index = i.toInt64()
+    }
 }
 
 class ERequestBodyData: NSManagedObject, Entity {
@@ -145,6 +162,10 @@ class ERequestBodyData: NSManagedObject, Entity {
     
     func getVersion() -> Int64 {
         return self.version
+    }
+    
+    func setIndex(_ i: Int) {
+        self.index = i.toInt64()
     }
 }
 
@@ -172,6 +193,10 @@ class ERequestData: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
+    
+    func setIndex(_ i: Int) {
+        self.index = i.toInt64()
+    }
 }
 
 class ERequestMethodData: NSManagedObject, Entity {
@@ -197,6 +222,10 @@ class ERequestMethodData: NSManagedObject, Entity {
     
     func getVersion() -> Int64 {
         return self.version
+    }
+    
+    func setIndex(_ i: Int) {
+        self.index = i.toInt64()
     }
 }
 
@@ -224,6 +253,10 @@ class ETag: NSManagedObject, Entity {
     func getVersion() -> Int64 {
         return self.version
     }
+    
+    func setIndex(_ i: Int) {
+        self.index = i.toInt64()
+    }
 }
 
 class EWorkspace: NSManagedObject, Entity {
@@ -249,5 +282,9 @@ class EWorkspace: NSManagedObject, Entity {
     
     func getVersion() -> Int64 {
         return self.version
+    }
+    
+    func setIndex(_ i: Int) {
+        self.index = i.toInt64()
     }
 }

@@ -19,6 +19,7 @@ class RestorTests: XCTestCase {
     }()
     private var inMemContainer: NSPersistentContainer?
     private let serialQueue = DispatchQueue(label: "serial-queue")
+    private let app = App.shared
 
     override func setUp() {
         super.setUp()
@@ -365,6 +366,45 @@ class RestorTests: XCTestCase {
                 XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]).count, 10)
                 XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]]).count, 1)
                 XCTAssertEqual(((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]])[0]).count, 8)
+                exp.fulfill()
+            }
+        }
+        waitForExpectations(timeout: 1.0, handler: nil)
+    }
+    
+    func testRequestDidChange() {
+        let exp = expectation(description: "Test request did change")
+        self.localdb.setup(storeType: NSSQLiteStoreType) {
+            self.serialQueue.async {
+                let ctx = self.localdb.bgMOC
+                let req = self.localdb.createRequest(id: self.utils.genRandomString(), index: 0, name: "test-request-change", project: nil, checkExists: false, ctx: ctx)
+                XCTAssertNotNil(req)
+                let reqhma = self.localdb.requestToDictionary(req!)
+                XCTAssertNotNil(reqhma)
+                XCTAssert(reqhma.count > 0)
+                let areq = req!
+                var status = self.app.didRequestChange(areq, request: reqhma)
+                XCTAssertFalse(status)
+                areq.url = "https://example.com"
+                status = self.app.didRequestURLChange(areq.url ?? "", request: reqhma)
+                XCTAssertTrue(status)
+                status = self.app.didRequestChange(areq, request: reqhma)
+                XCTAssertTrue(status)
+                let breq = areq
+                let reqhmb = self.localdb.requestToDictionary(breq)
+                XCTAssertNotNil(reqhmb)
+                XCTAssert(reqhmb.count > 0)
+                status = self.app.didRequestChange(areq, request: reqhmb)
+                XCTAssertFalse(status)
+                let reqData = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .header, fieldFormat: .text)
+                XCTAssertNotNil(reqData)
+                breq.addToHeaders(reqData!)
+                XCTAssertNotNil(breq.headers)
+                let reqDataxs = breq.headers!.allObjects as! [Restor.ERequestData]
+                XCTAssertTrue(self.app.didAnyRequestHeaderChange(reqDataxs, request: reqhmb))
+                XCTAssertTrue(self.app.didRequestChange(areq, request: reqhmb))
+                breq.removeFromHeaders(reqData!)
+                XCTAssertFalse(self.app.didRequestChange(areq, request: reqhmb))
                 exp.fulfill()
             }
         }

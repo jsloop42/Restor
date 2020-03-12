@@ -70,6 +70,36 @@ class CoreDataService {
         }
     }
     
+    // MARK: - Sort
+    
+    /// Sort the given list of dictonaries in the order of created and update the index property.
+    func sortByCreated(_ hm: inout [[String: Any]]) {
+        hm.sort { (hma, hmb) -> Bool in
+            if let c1 = hma["created"] as? Int64, let c2 = hmb["created"] as? Int64 { return c1 > c2 }
+            return false
+        }
+        let len = hm.count
+        for i in 0..<len { hm[i]["index"] = i.toInt64 }
+    }
+    
+    /// Sort the given list of entities in the order of created and update the index property.
+    func sortByCreated(_ xs: inout [Entity]) {
+        xs.sort { (a, b) -> Bool in a.getCreated() > b.getCreated() }
+        xs.enumerated().forEach { arg in arg.element.setIndex(arg.offset) }
+    }
+    
+    func sortedByCreated(_ xs: [[String: Any]]) -> [[String: Any]] {
+        var xs = xs
+        self.sortByCreated(&xs)
+        return xs
+    }
+    
+    func sortedByCreated(_ xs: [Entity]) -> [Entity] {
+        var xs = xs
+        self.sortByCreated(&xs)
+        return xs
+    }
+    
     // MARK: - To dictionary
     
     /// Can be used to get the initial value of the request before modification during edit
@@ -77,13 +107,13 @@ class CoreDataService {
         let attrs = ERequest.entity().attributesByName.map { arg -> String in arg.key }
         var dict = x.dictionaryWithValues(forKeys: attrs)
         if let set = x.headers, let xs = set.allObjects as? [ERequestData] {
-            dict["headers"] = xs.map { y -> [String: Any] in self.requestDataToDictionary(y) }
+            dict["headers"] = self.sortedByCreated(xs.map { y -> [String: Any] in self.requestDataToDictionary(y) })
         }
         if let set = x.params, let xs = set.allObjects as? [ERequestData] {
-            dict["params"] = xs.map { y -> [String: Any] in self.requestDataToDictionary(y) }
+            dict["params"] = self.sortedByCreated(xs.map { y -> [String: Any] in self.requestDataToDictionary(y) })
         }
         if let set = x.methods, let xs = set.allObjects as? [ERequestMethodData] {
-            dict["methods"] =  xs.map { y -> [String: Any] in self.requestMethodDataToDictionary(y) }
+            dict["methods"] =  self.sortedByCreated(xs.map { y -> [String: Any] in self.requestMethodDataToDictionary(y) })
         }
         if let body = x.body {
             dict["body"] = self.requestBodyDataToDictionary(body)
@@ -100,7 +130,7 @@ class CoreDataService {
         let attrs = ERequestData.entity().attributesByName.map { arg -> String in arg.key }
         var dict = x.dictionaryWithValues(forKeys: attrs)
         if let set = x.files, let xs = set.allObjects as? [EFile] {
-            dict["files"] = xs.map { y -> [String: Any] in self.fileToDictionary(y) }
+            dict["files"] = self.sortedByCreated(xs.map { y -> [String: Any] in self.fileToDictionary(y) })
         }
         if let image = x.image {
             dict["image"] = self.imageToDictionary(image)
@@ -112,10 +142,10 @@ class CoreDataService {
         let attrs = ERequestBodyData.entity().attributesByName.map { arg -> String in arg.key }
         var dict = x.dictionaryWithValues(forKeys: attrs)
         if let set = x.form, let xs = set.allObjects as? [ERequestData] {
-            dict["form"] = xs.map { y -> [String: Any] in self.requestDataToDictionary(y) }
+            dict["form"] = self.sortedByCreated(xs.map { y -> [String: Any] in self.requestDataToDictionary(y) })
         }
         if let set = x.multipart, let xs = set.allObjects as? [ERequestData] {
-            dict["multipart"] = xs.map { y -> [String: Any] in self.requestDataToDictionary(y) }
+            dict["multipart"] = self.sortedByCreated(xs.map { y -> [String: Any] in self.requestDataToDictionary(y) })
         }
         return dict
     }
