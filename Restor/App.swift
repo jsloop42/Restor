@@ -148,6 +148,7 @@ class App {
     func didRequestChange(_ x: ERequest, request: [String: Any]) -> Bool {
         if self.didRequestURLChange(x.url ?? "", request: request) { return true }
         if self.didRequestMetaChange(name: x.name ?? "", desc: x.desc ?? "", request: request) { return true }
+        if self.didRequestMethodIndexChange(x.selectedMethodIndex, y: request) { return true }
         if let methods = x.methods?.allObjects as? [ERequestMethodData] {
             if self.didAnyRequestMethodChange(methods, request: request) { return true }
         }
@@ -162,6 +163,11 @@ class App {
         } else {
             if let params = request["params"] as? [[String: Any]], params.count > 0 { return true }
         }
+        return false
+    }
+    
+    func didRequestMethodIndexChange(_ x: Int32, y: [String: Any]) -> Bool {
+        if let index = y["selectedMethodIndex"] as? Int32 { return x != index }
         return false
     }
     
@@ -278,6 +284,21 @@ class App {
         return false
     }
     
+    // TODO: add unit test
+    func didRequestBodyFormChange(_ body: ERequestBodyData, reqData: ERequestData, request: [String: Any]) -> Bool {
+        if let reqDataId = reqData.id, let set = body.form, let xs = set.allObjects as? [ERequestData], let _ = xs.first(where: { x -> Bool in
+            x.id == reqDataId
+        }) {
+            // Check if form and request data are the same
+            if let type = RequestDataType(rawValue: reqData.type.toInt()) {
+                if self.didRequestDataChange(x: reqData, y: request, type: type) { return true }
+            }
+        } else {  // No request data found in forms => added
+            return true
+        }
+        return false
+    }
+    
     /// Checks if the given form's attachments changed.
     func didRequestBodyFormAttachmentChange(_ x: ERequestData, y: [String: Any]) -> Bool {
         if (x.image != nil && y["image"] == nil) || (x.image == nil && y["image"] != nil) { return true }
@@ -309,7 +330,7 @@ class App {
         if type == .form {
             if self.didRequestBodyFormAttachmentChange(x, y: y) { return true }
         } else if type == .multipart {
-            
+            // TODO:
         }
         return false
     }

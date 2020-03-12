@@ -37,7 +37,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     private let nc = NotificationCenter.default
-    private let app = App.shared
+    let app = App.shared
     var isEndEditing = false
     var isOptionFromNotif = false
     private let docPicker = DocumentPicker.shared
@@ -54,7 +54,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     }()
     /// Indicates if the request is valid for saving (any changes made).
     private var isValid = false
-    private var entityDict: [String: Any] = [:]
+    var entityDict: [String: Any] = [:]
     
     enum CellId: Int {
         case url = 0
@@ -200,13 +200,21 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     }
     
     func enableDoneButton() {
-        self.doneBtn.setTitleColor(self.doneBtn.tintColor, for: .normal)
-        self.doneBtn.isEnabled = true
+        DispatchQueue.main.async {
+            self.doneBtn.setTitleColor(self.doneBtn.tintColor, for: .normal)
+            self.doneBtn.isEnabled = true
+        }
     }
     
     func disableDoneButton() {
-        self.doneBtn.setTitleColor(App.Color.requestEditDoneBtnDisabled, for: .normal)
-        self.doneBtn.isEnabled = false
+        DispatchQueue.main.async {
+            self.doneBtn.setTitleColor(App.Color.requestEditDoneBtnDisabled, for: .normal)
+            self.doneBtn.isEnabled = false
+        }
+    }
+    
+    func updateDoneButton(_ enabled: Bool) {
+        enabled ? self.enableDoneButton() : self.disableDoneButton()
     }
     
     @objc func doneDidTap(_ sender: Any) {
@@ -227,7 +235,9 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
             let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {
                 self.methodLabel.text = name
-                AppState.editRequest?.selectedMethodIndex = idx.toInt32()
+                let i = idx.toInt32()
+                AppState.editRequest?.selectedMethodIndex = i
+                if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestMethodIndexChange(i, y: vc.entityDict)) }
                 self.tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .none)
             }
         }
@@ -238,6 +248,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
             let idx = info[Const.modelIndexKey] as? Int, let data = AppState.editRequest, let ctx = data.managedObjectContext {
             if let method = self.localdb.createRequestMethodData(id: self.utils.genRandomString(), index: idx, name: name, checkExists: true, ctx: ctx) {
                 method.request = data
+                if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestMethodChange(method, y: vc.entityDict)) }
                 self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
                              userInfo: [Const.optionModelKey: method, Const.optionDataActionKey: OptionDataAction.add])
             }
@@ -250,6 +261,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
                 data.project = nil
                 data.request = nil
                 self.localdb.deleteEntity(data)
+                if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestMethodChange(data, y: vc.entityDict)) }
                 self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
                              userInfo: [Const.optionDataActionKey: OptionDataAction.delete, Const.dataKey: id])
             }
@@ -259,9 +271,12 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     @objc func requestBodyDidChange(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {
-                AppState.editRequest?.body?.selected = idx.toInt32()
-                self.tableView.reloadRows(at: [IndexPath(row: RequestCellType.body.rawValue, section: 0)], with: .none)
-                self.bodyKVTableViewManager.reloadData()
+                if let data = AppState.editRequest, let body = data.body {
+                    AppState.editRequest?.body?.selected = idx.toInt32()
+                    if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestBodyChange(body, request: vc.entityDict)) }
+                    self.tableView.reloadRows(at: [IndexPath(row: RequestCellType.body.rawValue, section: 0)], with: .none)
+                    self.bodyKVTableViewManager.reloadData()
+                }
             }
         }
     }
@@ -391,23 +406,32 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         RequestVC.shared?.clearEditing()
+        if textField == self.urlTextField {
+            self.updateDoneButton(self.app.didRequestURLChange(textField.text ?? "", request: self.entityDict))
+        } else if textField == self.nameTextField {
+            self.updateDoneButton(self.app.didRequestNameChange(textField.text ?? "", request: self.entityDict))
+        }
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField == self.urlTextField {
             AppState.editRequest!.url = textField.text ?? ""
+            self.updateDoneButton(self.app.didRequestURLChange(AppState.editRequest!.url!, request: self.entityDict))
         } else if textField == self.nameTextField {
             AppState.editRequest!.name = textField.text ?? ""
+            self.updateDoneButton(self.app.didRequestNameChange(AppState.editRequest!.name!, request: self.entityDict))
         }
     }
     
     func textViewDidBeginEditing(_ textView: UITextView) {
         RequestVC.shared?.clearEditing()
+        self.updateDoneButton(self.app.didRequestDescriptionChange(textView.text ?? "", request: self.entityDict))
     }
     
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView == self.descTextView {
             AppState.editRequest!.desc = textView.text ?? ""
+            self.updateDoneButton(self.app.didRequestDescriptionChange(AppState.editRequest!.desc!, request: self.entityDict))
         }
     }
     
@@ -418,6 +442,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
                 AppState.editRequest!.body?.request = AppState.editRequest
             }
         }
+        if let vc = RequestVC.shared { vc.updateDoneButton(vc.app.didRequestBodyChange(AppState.editRequest?.body, request: vc.entityDict)) }
     }
     
     static func bodyFormCellHeight() -> CGFloat {
@@ -701,6 +726,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
             break
         }
         self.bodyLabelViewWidth.isActive = true
+        if let vc = RequestVC.shared { vc.updateDoneButton(vc.app.didRequestBodyChange(data, request: vc.entityDict)) }
     }
 }
 
@@ -726,6 +752,7 @@ extension KVBodyContentCell: UITextViewDelegate {
             break
         }
         AppState.editRequest!.body = body
+        if let vc = RequestVC.shared { vc.updateDoneButton(vc.app.didRequestBodyChange(body, request: vc.entityDict)) }
         self.delegate?.refreshCell(indexPath: IndexPath(row: self.tag, section: 0), cell: self)
     }
 }
@@ -815,9 +842,12 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
             let type: RequestDataType = self.selectedType == .form ? .form : .multipart
             if let req = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: type, fieldFormat: self.selectedFieldFormat,
                                                         ctx: ctx) {
-                data.body?.addToForm(req)
+                data.body!.addToForm(req)
                 self.reqDataId = req.id ?? ""
                 reqData = req
+                if let vc = RequestVC.shared {
+                    vc.updateDoneButton(vc.app.didRequestBodyChange(data.body!, request: vc.entityDict))
+                }
             }
         } else {
             reqData = self.localdb.getRequestData(id: self.reqDataId, ctx: ctx)
@@ -957,6 +987,10 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     @objc func requestBodyFieldDidChange(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int,
             let reqData = info[Const.optionModelKey] as? ERequestData {
+            if let vc = RequestVC.shared {
+                vc.updateDoneButton(self.app.didRequestDataChange(x: reqData, y: vc.entityDict,
+                                                                  type: self.selectedType == .form ? RequestDataType.form : RequestDataType.multipart))
+            }
             DispatchQueue.main.async {
                 reqData.fieldFormat = idx.toInt32()
                 self.reloadData()
@@ -975,6 +1009,9 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                         let eimage = self.localdb.createImage(data: imageData, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
                         eimage?.requestData = form
                         eimage?.isCameraMode = DocumentPickerState.isCameraMode
+                        if let vc = RequestVC.shared {
+                            vc.updateDoneButton(self.app.didRequestDataChange(x: form, y: vc.entityDict, type: .form))
+                        }
                     }
                 }
                 self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
@@ -999,6 +1036,9 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                             if let file = self!.localdb.createFile(data: x, index: offset, name: name, path: element,
                                                                    type: self!.selectedType == .form ? .form : .multipart, checkExists: true, ctx: ctx) {
                                 file.requestData = form
+                                if let vc = RequestVC.shared {
+                                    vc.updateDoneButton(self!.app.didRequestDataChange(x: form, y: vc.entityDict, type: .form))
+                                }
                                 DispatchQueue.main.async {
                                     self?.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
                                 }
@@ -1018,11 +1058,21 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             if body.selected == RequestBodyType.form.rawValue {
                 let count = body.form?.allObjects.count ?? 0
                 let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .form, fieldFormat: .text)
-                if let x = data { body.addToForm(x) }
+                if let x = data {
+                    body.addToForm(x)
+                    if let vc = RequestVC.shared {
+                        vc.updateDoneButton(self.app.didRequestBodyFormChange(AppState.editRequest!.body!, reqData: x, request: vc.entityDict))
+                    }
+                }
             } else if body.selected == RequestBodyType.multipart.rawValue {
                 let count = body.multipart?.allObjects.count ?? 0
                 let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .multipart, fieldFormat: .text)
-                if let x = data { body.addToMultipart(x) }
+                if let x = data {
+                    body.addToMultipart(x)
+                    if let vc = RequestVC.shared {
+                        vc.updateDoneButton(self.app.didRequestBodyFormChange(AppState.editRequest!.body!, reqData: x, request: vc.entityDict))
+                    }
+                }
             }
         }
         self.reloadData()
@@ -1217,9 +1267,15 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         if self.selectedType == .form {
             if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
             AppState.editRequest!.body!.addToForm(data)
+            if let vc = RequestVC.shared {
+                vc.updateDoneButton(self.app.didRequestBodyFormChange(AppState.editRequest!.body!, reqData: data, request: vc.entityDict))
+            }
         } else if self.selectedType == .multipart {
             if AppState.editRequest!.body!.multipart == nil { AppState.editRequest!.body!.multipart = NSSet() }
             AppState.editRequest!.body!.addToMultipart(data)
+            if let vc = RequestVC.shared {
+                vc.updateDoneButton(self.app.didRequestBodyFormChange(AppState.editRequest!.body!, reqData: data, request: vc.entityDict))
+            }
         }
     }
 }
@@ -1234,6 +1290,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     var tableViewType: KVTableViewType = .header
     private let localdb = CoreDataService.shared
     private let utils = Utils.shared
+    private let app = App.shared
     
     deinit {
         Log.debug("kvTableViewManager deinit")
@@ -1263,24 +1320,36 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             if data.headers == nil { AppState.editRequest!.headers = NSSet() }
             if let last = self.localdb.getLastRequestData(type: .header, ctx: ctx) { index = (last.index + 1).toInt() }
             x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .header, fieldFormat: .text, ctx: ctx)
-            if let y = x { AppState.editRequest!.addToHeaders(y) }
+            if let y = x {
+                AppState.editRequest!.addToHeaders(y)
+                if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestDataChange(x: y, y: vc.entityDict, type: .header)) }
+            }
         case .params:
             if AppState.editRequest!.params == nil { AppState.editRequest!.params = NSSet() }
             if let last = self.localdb.getLastRequestData(type: .param, ctx: ctx) { index = (last.index + 1).toInt() }
             x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .param, fieldFormat: .text, ctx: ctx)
-            if let y = x { AppState.editRequest!.addToParams(y) }
+            if let y = x {
+                AppState.editRequest!.addToParams(y)
+                if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestDataChange(x: y, y: vc.entityDict, type: .param)) }
+            }
         case .body:
             if AppState.editRequest!.body == nil { AppState.editRequest?.body = self.localdb.createRequestBodyData(id: self.utils.genRandomString(), index: 0) }
             if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
                 if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
                 if let last = self.localdb.getLastRequestData(type: .form, ctx: ctx) { index = (last.index + 1).toInt() }
                 x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .form, fieldFormat: .text, ctx: ctx)
-                if let y = x { AppState.editRequest!.body!.addToForm(y) }
+                if let y = x {
+                    AppState.editRequest!.body!.addToForm(y)
+                    if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestDataChange(x: y, y: vc.entityDict, type: .form)) }
+                }
             } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
                 if AppState.editRequest!.body!.multipart == nil { AppState.editRequest!.body!.multipart = NSSet() }
                 if let last = self.localdb.getLastRequestData(type: .multipart, ctx: ctx) { index = (last.index + 1).toInt() }
                 x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .multipart, fieldFormat: .text, ctx: ctx)
-                if let y = x { AppState.editRequest!.body!.addToMultipart(y) }
+                if let y = x {
+                    AppState.editRequest!.body!.addToMultipart(y)
+                    if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestDataChange(x: y, y: vc.entityDict, type: .multipart)) }
+                }
             }
         }
     }
@@ -1288,6 +1357,13 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     func removeRequestDataFromModel(_ id: String, type: RequestCellType) {
         guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
         self.localdb.deleteRequestData(dataId: id, req: AppState.editRequest!, type: type, ctx: ctx)
+        if let vc = RequestVC.shared {
+            if type == .header, let set = data.headers, let xs = set.allObjects as? [ERequestData] {
+                vc.updateDoneButton(self.app.didAnyRequestHeaderChange(xs, request: vc.entityDict))
+            } else if type == .param, let set = data.params, let xs = set.allObjects as? [ERequestData] {
+                vc.updateDoneButton(self.app.didAnyRequestParamChange(xs, request: vc.entityDict))
+            }
+        }
     }
     
     func reloadData() {
@@ -1561,11 +1637,13 @@ extension KVTableViewManager: KVContentCellDelegate {
                     x.key = key
                     x.value = value
                     Log.debug("header updated: \(x)")
+                    if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestDataChange(x: x, y: vc.entityDict, type: RequestDataType.header)) }
                 }
             } else if self.tableViewType == .params {
                 if let x = self.localdb.getRequestData(id: reqDataId, ctx: ctx) {
                     x.key = key
                     x.value = value
+                    if let vc = RequestVC.shared { vc.updateDoneButton(self.app.didRequestDataChange(x: x, y: vc.entityDict, type: RequestDataType.param)) }
                 }
             }
         }
