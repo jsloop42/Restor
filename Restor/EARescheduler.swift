@@ -8,48 +8,82 @@
 
 import Foundation
 
-/// A class which provides a scheduler which gets rescheduled if invoked before the schedule.
-class EARescheduler: NSObject {
-    var timer: Timer?
-    var interval: TimeInterval = 0.3
-    var repeats: Bool = false
-    var block: (() -> Void)?
-    let queue = DispatchQueue(label: "com.estoapps.ios.rescheduler", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+public enum EAReschedulerType {
+    /// All functions should produce a truthy value. If any function returns false, the evaluation short circuits.
+    case allSatisfies
+    /// At least one function should produce a truthy value.
+    case anySatisfies
+    /// Executes all functions regardless of their return value.
+    case everyFn
+}
 
-    override init() {
-        super.init()
+public protocol EAReschedulable {
+    var interval: TimeInterval { get set }
+    var repeats: Bool { get set }
+    var type: EAReschedulerType! { get set }
+    
+    init(interval: TimeInterval, repeats: Bool, type: EAReschedulerType)
+    mutating func schedule()
+    mutating func schedule(fn: EAReschedulerFn)
+}
+
+public struct EAReschedulerFn: Equatable, Hashable {
+    /// The block identifier
+    var id: String
+    /// The block which needs to be executed
+    var block: () -> Bool
+    /// The callback function after executing the block
+    var callback: (Bool) -> Void
+    
+    init(id: String, block: @escaping () -> Bool, callback: @escaping (Bool) -> Void) {
+        self.id = id
+        self.block = block
+        self.callback = callback
     }
     
-    init(interval: TimeInterval, repeats: Bool, block: @escaping () -> Void) {
+    public static func == (lhs: EAReschedulerFn, rhs: EAReschedulerFn) -> Bool {
+        lhs.id == rhs.id
+    }
+    
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(self.id.hashValue)
+    }
+}
+
+/// A class which provides a scheduler which gets rescheduled if invoked before the schedule.
+public struct EARescheduler: EAReschedulable {
+    private var timer: Timer?
+    public var interval: TimeInterval = 0.3
+    public var repeats: Bool = false
+    public var type: EAReschedulerType!
+    private var blocks: [EAReschedulerFn] = []
+    private let queue = DispatchQueue(label: "com.estoapps.ios.rescheduler", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+
+    public init(interval: TimeInterval, repeats: Bool, type: EAReschedulerType) {
         self.interval = interval
         self.repeats = repeats
-        self.block = block
-        super.init()
+        self.type = type
     }
     
-    /// Schedules the block to run on a private async concurrent queue at the given interval.
-    /// - Parameters:
-    ///   - interval: The schedule interval
-    ///   - repeats: If the scheduler should repeat
-    ///   - block: The callback function
-    func schedule(withInterval interval: TimeInterval, repeats: Bool, block: @escaping () -> Void) {
+    public mutating func schedule() {
         self.timer?.invalidate()
-        self.block = block
-        self.timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: repeats, block: { [weak self] _ in
-            self?.timer?.invalidate()
-            self?.queue.async { self?.block?() }
+        let this = self
+        self.timer = Timer.scheduledTimer(withTimeInterval: self.interval, repeats: self.repeats, block: { _ in
+            this.timer?.invalidate()
+            if this.type == EAReschedulerType.everyFn {  // Invoke the callback function with the result of each block execution
+                this.queue.async {
+                    this.blocks.forEach { fn in fn.callback(fn.block()) }
+                }
+            }
         })
     }
     
-    /// Schedules the execution of the given block. This overwrites any existing block and invalidates current timer.
-    /// - Parameter block: The callback function.
-    func schedule(block: @escaping () -> Void) {
-        self.block = block
-        self.schedule(withInterval: self.interval, repeats: self.repeats, block: block)
+    public mutating func schedule(fn: EAReschedulerFn) {
+        self.addToBlock(fn)
+        self.schedule()
     }
     
-    /// Schedule the execution of the block at the given interval
-    func schedule() {
-        if let block = self.block { self.schedule(withInterval: self.interval, repeats: self.repeats, block: block) }
+    private mutating func addToBlock(_ fn: EAReschedulerFn) {
+        if !self.blocks.contains(fn) { self.blocks.append(fn) }
     }
 }

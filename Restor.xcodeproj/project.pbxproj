@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9E145F92241BD9D200962A19 /* EARescheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E145F91241BD9D200962A19 /* EARescheduler.swift */; };
+		9E145F94241C118800962A19 /* EAReschedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E145F93241C118800962A19 /* EAReschedulerTests.swift */; };
 		9E23E68D240D98A400C4686A /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E23E68C240D98A400C4686A /* Models.swift */; };
 		9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334832416C4AA002452EB /* EAFileManager.swift */; };
 		9E4334862416D1ED002452EB /* IMG_6109.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 9E4334852416D1DE002452EB /* IMG_6109.jpeg */; };
@@ -63,6 +65,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9E145F91241BD9D200962A19 /* EARescheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARescheduler.swift; sourceTree = "<group>"; };
+		9E145F93241C118800962A19 /* EAReschedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAReschedulerTests.swift; sourceTree = "<group>"; };
 		9E23E68C240D98A400C4686A /* Models.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		9E4334832416C4AA002452EB /* EAFileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAFileManager.swift; sourceTree = "<group>"; };
 		9E4334852416D1DE002452EB /* IMG_6109.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = IMG_6109.jpeg; sourceTree = "<group>"; };
@@ -208,6 +212,7 @@
 				9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */,
 				9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */,
 				9E4334832416C4AA002452EB /* EAFileManager.swift */,
+				9E145F91241BD9D200962A19 /* EARescheduler.swift */,
 				9E85FE47240E9CDB002821F2 /* main.swift */,
 				9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */,
 				9E926F9523945E79002DF561 /* SceneDelegate.swift */,
@@ -226,6 +231,7 @@
 				9E85FE4E240EDB0A002821F2 /* Restor.xctestplan */,
 				9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */,
 				9E926FAD23945E7D002DF561 /* RestorTests.swift */,
+				9E145F93241C118800962A19 /* EAReschedulerTests.swift */,
 				9E926FAF23945E7D002DF561 /* Info.plist */,
 			);
 			path = RestorTests;
@@ -416,6 +422,7 @@
 				9E23E68D240D98A400C4686A /* Models.swift in Sources */,
 				9EE34CA323D9F67C00CA08F2 /* App.swift in Sources */,
 				9E538DAE239953460025C14C /* AppState.swift in Sources */,
+				9E145F92241BD9D200962A19 /* EARescheduler.swift in Sources */,
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
 				9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */,
@@ -439,6 +446,7 @@
 				9E85FE4C240EAEE1002821F2 /* Restor.xcdatamodeld in Sources */,
 				9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */,
 				9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */,
+				9E145F94241C118800962A19 /* EAReschedulerTests.swift in Sources */,
 				9E85FE4D240EAEFC002821F2 /* Models.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
