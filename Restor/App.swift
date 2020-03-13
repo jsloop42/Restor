@@ -15,6 +15,25 @@ class App {
     var popupBottomContraints: NSLayoutConstraint?
     private var dbService = PersistenceService.shared
     private let localdb = CoreDataService.shared
+    private var rescheduler = EARescheduler(interval: 0.3, repeats: false, type: .everyFn)
+    /// Diff ids for `EAReschedulerFn`s
+    private let fnIdReq = "request-fn"
+    private let fnIdReqMethodIndex = "request-method-index-fn"
+    private let fnIdReqMethod = "request-method-fn"
+    private let fnIdAnyReqMethod = "any-request-method-fn"
+    private let fnIdReqURL = "request-url-fn"
+    private let fnIdReqName = "request-name-fn"
+    private let fnIdReqDesc = "request-description-fn"
+    private let fnIdReqMeta = "request-meta-fn"
+    private let fnIdReqHeader = "request-header-fn"
+    private let fnIdReqParam = "request-param-fn"
+    private let fnIdReqBody = "request-body-fn"
+    private let fnIdAnyReqBodyForm = "any-request-body-form-fn"
+    private let fnIdReqBodyForm = "request-body-form-fn"
+    private let fnIdReqBodyFormAttachment = "request-body-form-attachment-fn"
+    private let fnIdReqData = "request-data-fn"
+    private let fnIdReqFile =  "request-file-fn"
+    private let fnIdReqImage = "request-image-fn"
     
     func addSettingsBarButton() -> UIBarButtonItem {
         if #available(iOS 13.0, *) {
@@ -146,8 +165,8 @@ class App {
     
     /// Checks if the request changed.
     func didRequestChange(_ x: ERequest, request: [String: Any]) -> Bool {
-        if self.didRequestURLChange(x.url ?? "", request: request) { return true }
-        if self.didRequestMetaChange(name: x.name ?? "", desc: x.desc ?? "", request: request) { return true }
+        //if self.didRequestURLChange(x.url ?? "", request: request) { return true }
+        //if self.didRequestMetaChange(name: x.name ?? "", desc: x.desc ?? "", request: request) { return true }
         if self.didRequestMethodIndexChange(x.selectedMethodIndex, y: request) { return true }
         if let methods = x.methods?.allObjects as? [ERequestMethodData] {
             if self.didAnyRequestMethodChange(methods, request: request) { return true }
@@ -198,28 +217,51 @@ class App {
         return false
     }
     
-    
     /// Checks if the request URL changed.
-    func didRequestURLChange(_ x: String, request: [String: Any]) -> Bool {
+    func didRequestURLChange(_ x: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqURL, block: { (x: Any?) -> Bool in
+            return self.didRequestURLChangeImp(x as! String, request: request)
+        }, callback: { status in
+            callback(status)
+        }, arg: x))
+    }
+    
+    func didRequestURLChangeImp(_ x: String, request: [String: Any]) -> Bool {
         if let url = request["url"] as? String { return x != url }
         return !x.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     /// Checks if the request name changed.
-    func didRequestNameChange(_ x: String, request: [String: Any]) -> Bool {
+    func didRequestNameChange(_ x: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqName, block: { (x: Any?) -> Bool in
+            return self.didRequestNameChangeImp(x as! String, request: request)
+        }, callback: { status in
+            callback(status)
+        }, arg: x))
+    }
+    
+    func didRequestNameChangeImp(_ x: String, request: [String: Any]) -> Bool {
         if let name = request["name"] as? String { return x != name }
         return !x.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     /// Checks if the request's description changed.
-    func didRequestDescriptionChange(_ x: String, request: [String: Any]) -> Bool {
+    func didRequestDescriptionChange(_ x: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        //self.rescheduler.schedule { [weak self] in if self != nil { callback(self!.didRequestDescriptionChangeImp(x, request: request)) } }
+    }
+    
+    func didRequestDescriptionChangeImp(_ x: String, request: [String: Any]) -> Bool {
         if let desc = request["desc"] as? String { return x != desc }
         return !x.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     /// Checks if any of the request's meta data changed.
-    func didRequestMetaChange(name: String, desc: String, request: [String: Any]) -> Bool {
-        return self.didRequestNameChange(name, request: request) || self.didRequestDescriptionChange(desc, request: request)
+    func didRequestMetaChange(name: String, desc: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        //self.rescheduler.schedule { [weak self] in if self != nil { callback(self!.didRequestMetaChangeImp(name: name, desc: desc, request: request)) } }
+    }
+    
+    func didRequestMetaChangeImp(name: String, desc: String, request: [String: Any]) -> Bool {
+        return self.didRequestNameChangeImp(name, request: request) || self.didRequestDescriptionChangeImp(desc, request: request)
     }
     
     /// Check if any of the request headers changed.

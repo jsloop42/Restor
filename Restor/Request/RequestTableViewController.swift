@@ -143,6 +143,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
         tap.cancelsTouchesInView = false
         self.view.addGestureRecognizer(tap)
+        self.urlTextField.addTarget(self, action: #selector(self.updateStateForTextField(_:)), for: .editingChanged)
+        self.nameTextField.addTarget(self, action: #selector(self.updateStateForTextField(_:)), for: .editingChanged)
         self.nc.addObserver(self, selector: #selector(self.reloadTableView), name: NotificationKey.requestTableViewReload, object: nil)
         self.nc.addObserver(self, selector: #selector(self.clearEditing), name: NotificationKey.requestViewClearEditing, object: nil)
         let methodTap = UITapGestureRecognizer(target: self, action: #selector(self.methodViewDidTap))
@@ -214,7 +216,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     }
     
     func updateDoneButton(_ enabled: Bool) {
-        enabled ? self.enableDoneButton() : self.disableDoneButton()
+        DispatchQueue.main.async { enabled ? self.enableDoneButton() : self.disableDoneButton() }
     }
     
     @objc func doneDidTap(_ sender: Any) {
@@ -404,34 +406,45 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         self.tableView.reloadData()
     }
     
+    @objc func updateStateForTextField(_ textField: UITextField) {
+        if textField == self.urlTextField {
+            AppState.editRequest!.url = (textField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+            self.app.didRequestURLChange(AppState.editRequest!.url!, request: self.entityDict, callback: { [weak self] flag in
+                self?.updateDoneButton(flag)
+            })
+        } else if textField == self.nameTextField {
+            AppState.editRequest!.name = textField.text ?? ""
+            if let url = AppState.editRequest?.url, !url.isEmpty {
+//                self.app.didRequestNameChange(AppState.editRequest!.name!, request: self.entityDict, callback: { [weak self] flag in
+//                    self?.updateDoneButton(flag)
+//                })
+                
+                // TODO: we need to check the whole object for change because, if a element change, we set true, if another element did not change, we cannot
+                // set false. So we need would then require to keep track which element changed the status and such.
+            }
+        }
+    }
+    
     func textFieldDidBeginEditing(_ textField: UITextField) {
         RequestVC.shared?.clearEditing()
-        if textField == self.urlTextField {
-            self.updateDoneButton(self.app.didRequestURLChange(textField.text ?? "", request: self.entityDict))
-        } else if textField == self.nameTextField {
-            self.updateDoneButton(self.app.didRequestNameChange(textField.text ?? "", request: self.entityDict))
-        }
+        //self.updateStateForTextField(textField)
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {
-        if textField == self.urlTextField {
-            AppState.editRequest!.url = textField.text ?? ""
-            self.updateDoneButton(self.app.didRequestURLChange(AppState.editRequest!.url!, request: self.entityDict))
-        } else if textField == self.nameTextField {
-            AppState.editRequest!.name = textField.text ?? ""
-            self.updateDoneButton(self.app.didRequestNameChange(AppState.editRequest!.name!, request: self.entityDict))
-        }
+        self.updateStateForTextField(textField)
     }
-    
+        
     func textViewDidBeginEditing(_ textView: UITextView) {
         RequestVC.shared?.clearEditing()
-        self.updateDoneButton(self.app.didRequestDescriptionChange(textView.text ?? "", request: self.entityDict))
+        // TODO
+        // self.updateDoneButton(self.app.didRequestDescriptionChange(textView.text ?? "", request: self.entityDict))
     }
     
     func textViewDidEndEditing(_ textView: UITextView) {
         if textView == self.descTextView {
             AppState.editRequest!.desc = textView.text ?? ""
-            self.updateDoneButton(self.app.didRequestDescriptionChange(AppState.editRequest!.desc!, request: self.entityDict))
+            // TODO:
+            // self.updateDoneButton(self.app.didRequestDescriptionChange(AppState.editRequest!.desc!, request: self.entityDict))
         }
     }
     
