@@ -31,18 +31,20 @@ public struct EAReschedulerFn: Equatable, Hashable {
     /// The block identifier
     var id: String
     /// The block which needs to be executed
-    var block: () -> Bool
+    var block: (Any?) -> Bool
     /// The callback function after executing the block
     var callback: (Bool) -> Void
+    var arg: AnyHashable?
     
-    init(id: String, block: @escaping () -> Bool, callback: @escaping (Bool) -> Void) {
+    init(id: String, block: @escaping (Any?) -> Bool, callback: @escaping (Bool) -> Void, arg: AnyHashable) {
         self.id = id
         self.block = block
         self.callback = callback
+        self.arg = arg
     }
     
     public static func == (lhs: EAReschedulerFn, rhs: EAReschedulerFn) -> Bool {
-        lhs.id == rhs.id
+        lhs.id == rhs.id && lhs.arg == rhs.arg
     }
     
     public func hash(into hasher: inout Hasher) {
@@ -52,6 +54,8 @@ public struct EAReschedulerFn: Equatable, Hashable {
 
 /// A class which provides a scheduler which gets rescheduled if invoked before the schedule.
 public struct EARescheduler: EAReschedulable {
+    public typealias EAEquatable = String
+    
     private var timer: Timer?
     public var interval: TimeInterval = 0.3
     public var repeats: Bool = false
@@ -70,9 +74,10 @@ public struct EARescheduler: EAReschedulable {
         let this = self
         self.timer = Timer.scheduledTimer(withTimeInterval: self.interval, repeats: self.repeats, block: { _ in
             this.timer?.invalidate()
+            Log.debug("scheduler exec block")
             if this.type == EAReschedulerType.everyFn {  // Invoke the callback function with the result of each block execution
                 this.queue.async {
-                    this.blocks.forEach { fn in fn.callback(fn.block()) }
+                    this.blocks.forEach { fn in fn.callback(fn.block(fn.arg)) }
                 }
             }
         })
@@ -84,6 +89,10 @@ public struct EARescheduler: EAReschedulable {
     }
     
     private mutating func addToBlock(_ fn: EAReschedulerFn) {
-        if !self.blocks.contains(fn) { self.blocks.append(fn) }
+        if let idx = (self.blocks.firstIndex { afn -> Bool in afn.id == fn.id }) {
+            self.blocks[idx] = fn
+        } else {
+            self.blocks.append(fn)
+        }
     }
 }

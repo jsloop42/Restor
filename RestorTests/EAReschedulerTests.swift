@@ -34,13 +34,13 @@ class EAReschedulerTests: XCTestCase {
                 lock.unlock()
             }
         }
-        var fn = EAReschedulerFn(id: "fn-a", block: { () -> Bool in
+        var fn = EAReschedulerFn(id: "fn-a", block: { (x: Any) -> Bool in
             acc.append(true)
             return true
         }, callback: { res in
             XCTAssertTrue(res)
             validate()
-        })
+        }, arg: "")
         r.schedule(fn: fn)
         fn.id = "fn-b"
         r.schedule(fn: fn)
