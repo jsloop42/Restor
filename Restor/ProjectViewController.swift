@@ -94,7 +94,7 @@ class ProjectViewController: UIViewController {
             let projCount = ws.projects?.count ?? 0
             if let proj = self.localdb.createProject(id: self.utils.genRandomString(), index: projCount, name: name, desc: desc, ws: ws, ctx: ctx) {
                 proj.workspace = ws
-                self.localdb.saveChildContext(proj)
+                self.localdb.saveBackgroundContext()
             }
             self.tableView.reloadData()
         }

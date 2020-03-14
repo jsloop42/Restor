@@ -96,13 +96,13 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         super.viewDidLoad()
         EditRequestTableViewController.shared = self
         Log.debug("request table vc view did load")
-        self.initState()
         self.initUI()
         self.initEvents()
         if let data = AppState.editRequest {
             self.entityDict = self.localdb.requestToDictionary(data)
             Log.debug("initial entity dic: \(self.entityDict)")
         }
+        self.updateData()
     }
         
     func initUI() {
@@ -159,13 +159,12 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         self.nc.addObserver(self, selector: #selector(self.presentImagePicker(_:)), name: NotificationKey.imagePickerShouldPresent, object: nil)
     }
 
-    func initState() {
-        // using child context
-//        if let proj = AppState.currentProject, let projId = proj.id {
-//            let n = self.localdb.getRequestsCount(projectId: projId, ctx: proj.managedObjectContext)
-//            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: n, name: "", ctx: self.localdb.childMOC)
-//        }
-        // TODO: save child context on request save
+    func updateData() {
+        if let data = AppState.editRequest {
+            self.urlTextField.text = data.url
+            self.nameTextField.text = data.name
+            self.descTextView.text = data.desc
+        }
     }
     
     func initHeadersTableViewManager() {
@@ -222,17 +221,26 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     func close() {
-        self.navigationController?.popViewController(animated: true)
+        DispatchQueue.main.async { self.navigationController?.popViewController(animated: true) }
     }
     
     @objc func doneDidTap(_ sender: Any) {
         Log.debug("Done did tap")
-        if self.isDirty && AppState.editRequest != nil {
-            AppState.editRequest!.project = AppState.currentProject
-            AppState.editRequest?.methods?.allObjects.forEach { method in AppState.editRequest?.project?.addToRequestMethods(method as! ERequestMethodData) }
-            self.localdb.saveChildContext(AppState.editRequest!)
-            self.isDirty = false
-            self.close()
+        self.endEditing()
+        self.app.diffRescheduler.timer?.invalidate()
+        if self.isDirty, let data = AppState.editRequest, let cproj = AppState.currentProject, let ctx = data.managedObjectContext {
+            let projObjId = cproj.objectID
+            if let proj = self.localdb.getProject(moId: projObjId, withContext: ctx) {
+                AppState.editRequest!.project = proj
+                AppState.editRequest?.methods?.allObjects.forEach { method in AppState.editRequest?.project?.addToRequestMethods(method as! ERequestMethodData) }
+                Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { t in
+                    Log.debug("edit req in save timer")
+                    t.invalidate()
+                    self.localdb.saveChildContext(AppState.editRequest!)
+                    self.isDirty = false
+                    self.close()
+                }
+            }
         }
     }
     

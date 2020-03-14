@@ -15,7 +15,8 @@ class App {
     var popupBottomContraints: NSLayoutConstraint?
     private var dbService = PersistenceService.shared
     private let localdb = CoreDataService.shared
-    private var rescheduler = EARescheduler(interval: 0.3, repeats: false, type: .everyFn)
+    /// Entity diff rescheduler.
+    var diffRescheduler = EARescheduler(interval: 0.3, repeats: false, type: .everyFn)
     /// Diff ids for `EAReschedulerFn`s
     private let fnIdReq = "request-fn"
     private let fnIdReqMethodIndex = "request-method-index-fn"
@@ -171,7 +172,7 @@ class App {
     func getNewRequestNameWithIndex() -> (String, Int) {
         if let proj = AppState.currentProject {
             let idx = proj.requests?.count ?? 0
-            return ("Request \(idx)", idx)
+            return (idx == 0 ? "Request" : "Request (\(idx + 1))", idx)
         }
         return ("Request", 0)
     }
@@ -186,7 +187,7 @@ class App {
     func didRequestChange(_ x: ERequest, request: [String: Any], callback: @escaping (Bool) -> Void) {
         // We need to check the whole object for change because, if a element changes, we set true, if another element did not change, we cannot
         // set false. So we would then have to keep track of which element changed the status and such.
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqURL, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqURL, block: { () -> Bool in
             return self.didRequestChangeImp(x, request: request)
         }, callback: { status in
             callback(status)
@@ -225,7 +226,7 @@ class App {
     ///   - request: The initial request dictionary.
     ///   - callback: The callback function.
     func didRequestMethodIndexChange(_ x: Int32, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMethodIndex, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMethodIndex, block: { () -> Bool in
             return self.didRequestMethodIndexChangeImp(x, request: request)
         }, callback: { status in
             callback(status)
@@ -247,7 +248,7 @@ class App {
     ///   - y: The initial request method dictionary.
     ///   - callback: The callback function.
     func didRequestMethodChange(_ x: ERequestMethodData, y: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMethod, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMethod, block: { () -> Bool in
             return self.didRequestMethodChangeImp(x, y: y)
         }, callback: { status in
             callback(status)
@@ -274,7 +275,7 @@ class App {
     ///   - request: The initial request dictionary.
     ///   - callback: The callback function.
     func didAnyRequestMethodChange(_ xs: [ERequestMethodData], request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdAnyReqMethod, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdAnyReqMethod, block: { () -> Bool in
             return self.didAnyRequestMethodChangeImp(xs, request: request)
         }, callback: { status in
             callback(status)
@@ -308,7 +309,7 @@ class App {
     ///   - request: The initial request dictionary.
     ///   - callback: The callback function.
     func didRequestURLChange(_ url: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqURL, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqURL, block: { () -> Bool in
             return self.didRequestURLChangeImp(url, request: request)
         }, callback: { status in
             callback(status)
@@ -330,7 +331,7 @@ class App {
     ///   - request: The initial request dictionary.
     ///   - callback: The callback function.
     func didRequestNameChange(_ name: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqName, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqName, block: { () -> Bool in
             return self.didRequestNameChangeImp(name, request: request)
         }, callback: { status in
             callback(status)
@@ -352,7 +353,7 @@ class App {
     ///   - request: The initial request dictionary.
     ///   - callback: The callback function.
     func didRequestDescriptionChange(_ desc: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqDesc, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqDesc, block: { () -> Bool in
             return self.didRequestDescriptionChangeImp(desc, request: request)
         }, callback: { status in
             callback(status)
@@ -370,7 +371,7 @@ class App {
     
     /// Checks if any of the request's meta data changed.
     func didRequestMetaChange(name: String, desc: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMeta, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMeta, block: { () -> Bool in
             return self.didRequestMetaChangeImp(name: name, desc: desc, request: request)
         }, callback: { status in
             callback(status)
@@ -382,7 +383,7 @@ class App {
     }
     
     func didAnyRequestHeaderChange(_ xs: [ERequestData], request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqHeader, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqHeader, block: { () -> Bool in
             return self.didAnyRequestHeaderChangeImp(xs, request: request)
         }, callback: { status in
             callback(status)
@@ -403,7 +404,7 @@ class App {
     }
 
     func didAnyRequestParamChange(_ xs: [ERequestData], request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqParam, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqParam, block: { () -> Bool in
             return self.didAnyRequestParamChangeImp(xs, request: request)
         }, callback: { status in
             callback(status)
@@ -424,7 +425,7 @@ class App {
     }
     
     func didRequestBodyChange(_ x: ERequestBodyData?, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqBody, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqBody, block: { () -> Bool in
             return self.didRequestBodyChangeImp(x, request: request)
         }, callback: { status in
             callback(status)
@@ -449,7 +450,7 @@ class App {
     }
     
     func didAnyRequestBodyFormChange(_ x: ERequestBodyData, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdAnyReqBodyForm, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdAnyReqBodyForm, block: { () -> Bool in
             return self.didAnyRequestBodyFormChangeImp(x, request: request)
         }, callback: { status in
             callback(status)
@@ -476,7 +477,7 @@ class App {
     }
     
     func didRequestBodyFormChange(_ body: ERequestBodyData, reqData: ERequestData, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqBodyForm, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqBodyForm, block: { () -> Bool in
             return self.didRequestBodyFormChangeImp(body, reqData: reqData, request: request)
         }, callback: { status in
             callback(status)
@@ -499,7 +500,7 @@ class App {
     }
     
     func didRequestBodyFormAttachmentChange(_ x: ERequestData, y: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqBodyFormAttachment, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqBodyFormAttachment, block: { () -> Bool in
             return self.didRequestBodyFormAttachmentChangeImp(x, y: y)
         }, callback: { status in
             callback(status)
@@ -526,7 +527,7 @@ class App {
     }
     
     func didRequestDataChange(x: ERequestData, y: [String: Any], type: RequestDataType, callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqData, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqData, block: { () -> Bool in
             return self.didRequestDataChangeImp(x: x, y: y, type: type)
         }, callback: { status in
             callback(status)
@@ -551,7 +552,7 @@ class App {
     }
     
     func didRequestFileChange(x: EFile, y: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqFile, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqFile, block: { () -> Bool in
             return self.didRequestFileChangeImp(x: x, y: y)
         }, callback: { status in
             callback(status)
@@ -573,7 +574,7 @@ class App {
     }
     
     func didRequestImageChange(x: EImage, y: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqImage, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqImage, block: { () -> Bool in
             return self.didRequestImageChangeImp(x: x, y: y)
         }, callback: { status in
             callback(status)
@@ -640,7 +641,7 @@ enum StoryboardId: String {
     case workspaceVC
     case projectVC
     case requestListVC
-    case requestVC
+    case editRequestVC
     case optionsPickerVC
     case optionsPickerNav
 }

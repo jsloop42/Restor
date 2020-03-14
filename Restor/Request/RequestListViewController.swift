@@ -47,12 +47,28 @@ class RequestListViewController: UIViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
-        if AppState.editRequest == nil {
-            let (name, idx) = self.app.getNewRequestNameWithIndex()
-            let ctx = self.localdb.getChildMOC(name: name)
-            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: idx, name: name, ctx: ctx)
+        self.viewEditRequestVC(false)
+        
+    }
+    
+    func viewEditRequestVC(_ isUpdate: Bool, index: Int? = 0) {
+        Log.debug("view edit request vc")
+        if isUpdate {
+            if let idx = index {
+                let req = self.requests[idx]
+                if let reqId = req.id, let name = req.name {
+                    let ctx = self.localdb.getChildMOC(name: name)
+                    AppState.editRequest = self.localdb.getRequest(id: reqId, ctx: ctx)
+                }
+            }
+        } else {
+            if AppState.editRequest == nil {
+                let (name, idx) = self.app.getNewRequestNameWithIndex()
+                let ctx = self.localdb.getChildMOC(name: name)
+                AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: idx, name: name, ctx: ctx)
+            }
         }
-        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestVC.rawValue)
+        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
     }
 }
 
@@ -77,5 +93,9 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
             cell.descLbl.text = req.desc
         }
         return cell
+    }
+    
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        self.viewEditRequestVC(true, index: indexPath.row)
     }
 }

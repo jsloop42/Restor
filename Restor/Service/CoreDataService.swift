@@ -266,6 +266,14 @@ class CoreDataService {
         return x
     }
     
+    /// Get project with the given managed object Id with the given context.
+    /// - Parameters:
+    ///   - moId: The managed object Id of the entity.
+    ///   - context: The managed object context used to access.
+    func getProject(moId: NSManagedObjectID, withContext context: NSManagedObjectContext) -> EProject? {
+        return context.object(with: moId) as? EProject
+    }
+    
     /// Retrieves the projects belonging to the given workspace.
     /// - Parameters:
     ///   - wsId: The workspace id.
@@ -1098,9 +1106,13 @@ class CoreDataService {
     // MARK: - Save
     
     func saveMainContext(_ callback: ((Bool) -> Void)? = nil) {
+        Log.debug("save main context")
         if self.mainMOC.hasChanges {
             do {
+                Log.debug("main context has changes")
                 try self.mainMOC.save()
+                self.mainMOC.processPendingChanges()
+                Log.debug("main context saved")
             } catch {
                 let nserror = error as NSError
                 Log.error("Persistence error \(nserror), \(nserror.userInfo)")
@@ -1112,11 +1124,24 @@ class CoreDataService {
     }
     
     /// Save the managed object context associated with the given entity and remove it from the cache.
-    func saveBackgroundContext(callback: ((Bool) -> Void)? = nil) {
+    func saveBackgroundContext(isForce: Bool? = false, callback: ((Bool) -> Void)? = nil) {
+        Log.debug("save bg context")
         var status = true
         if self.bgMOC.hasChanges {
             do {
+                Log.debug("bg context has changes")
                 try self.bgMOC.save()
+                self.bgMOC.processPendingChanges()
+                Log.debug("bg context saved")
+                if let flag = isForce, flag {
+                    self.saveMainContext()
+                } else {
+                    Log.debug("scheduling main context save")
+                    Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { t in
+                        t.invalidate()
+                        self.saveMainContext()
+                    }
+                }
             } catch {
                 status = false
                 let nserror = error as NSError
@@ -1129,16 +1154,27 @@ class CoreDataService {
     }
     
     /// Save the managed object context associated with the given entity and remove it from the cache.
-    func saveChildContext(_ entity: NSManagedObject, callback: ((Bool) -> Void)? = nil) {
+    func saveChildContext(_ entity: NSManagedObject, isForce: Bool? = false, callback: ((Bool) -> Void)? = nil) {
+        Log.debug("save child context")
         var status = true
         if let context = entity.managedObjectContext, let mocName = context.name {
             let (moc, idx) = self.getChildMOCWithIndex(name: mocName)
             moc.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
             if moc.hasChanges {
                 do {
+                    Log.debug("child context has changes")
                     try moc.save()
-                    self.saveBackgroundContext()
-                    self.saveMainContext()
+                    moc.processPendingChanges()
+                    Log.debug("child context saved")
+                    if let flag = isForce, flag {
+                        self.saveBackgroundContext()
+                    } else {
+                        Log.debug("scheduling bg context save")
+                        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { t in
+                            t.invalidate()
+                            self.saveBackgroundContext()
+                        }
+                    }
                     self.childMOCList.remove(at: idx)
                 } catch {
                     status = false

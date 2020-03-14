@@ -56,7 +56,7 @@ public struct EAReschedulerFn: Equatable, Hashable {
 public struct EARescheduler: EAReschedulable {
     public typealias EAEquatable = String
     
-    private var timer: Timer?
+    public var timer: Timer?
     public var interval: TimeInterval = 0.3
     public var repeats: Bool = false
     public var type: EAReschedulerType!
