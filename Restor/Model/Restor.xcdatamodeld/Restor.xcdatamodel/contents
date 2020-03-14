@@ -97,6 +97,7 @@
     </entity>
     <entity name="ERequestData" representedClassName=".ERequestData" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="desc" attributeType="String" defaultValueString=""/>
         <attribute name="fieldFormat" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -169,7 +170,7 @@
         <element name="EProject" positionX="-54" positionY="-9" width="128" height="193"/>
         <element name="ERequest" positionX="-36" positionY="9" width="128" height="268"/>
         <element name="ERequestBodyData" positionX="0" positionY="45" width="128" height="238"/>
-        <element name="ERequestData" positionX="18" positionY="63" width="128" height="268"/>
+        <element name="ERequestData" positionX="18" positionY="63" width="128" height="283"/>
         <element name="ERequestMethodData" positionX="-18" positionY="27" width="128" height="178"/>
         <element name="ETag" positionX="0" positionY="99" width="128" height="148"/>
         <element name="EWorkspace" positionX="-63" positionY="-18" width="128" height="163"/>
