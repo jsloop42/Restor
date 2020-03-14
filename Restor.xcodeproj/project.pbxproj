@@ -13,6 +13,7 @@
 		9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334832416C4AA002452EB /* EAFileManager.swift */; };
 		9E4334862416D1ED002452EB /* IMG_6109.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 9E4334852416D1DE002452EB /* IMG_6109.jpeg */; };
 		9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334872416DC20002452EB /* BackgroundWorker.swift */; };
+		9E473B04241CE74200DEC889 /* EditRequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */; };
 		9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */; };
 		9E538DAC239951790025C14C /* UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAB239951790025C14C /* UI.swift */; };
 		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
@@ -20,7 +21,6 @@
 		9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DBA23995B3E0025C14C /* PopupView.swift */; };
 		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
-		9E78D1D3239EC930005FC692 /* RequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */; };
 		9E85FE48240E9CDB002821F2 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE47240E9CDB002821F2 /* main.swift */; };
 		9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
 		9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
@@ -71,6 +71,7 @@
 		9E4334832416C4AA002452EB /* EAFileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAFileManager.swift; sourceTree = "<group>"; };
 		9E4334852416D1DE002452EB /* IMG_6109.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = IMG_6109.jpeg; sourceTree = "<group>"; };
 		9E4334872416DC20002452EB /* BackgroundWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundWorker.swift; sourceTree = "<group>"; };
+		9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditRequestTableViewController.swift; sourceTree = "<group>"; };
 		9E49EC002402FDE900DAA260 /* Restor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Restor.entitlements; sourceTree = "<group>"; };
 		9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
 		9E538DAB239951790025C14C /* UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI.swift; sourceTree = "<group>"; };
@@ -79,7 +80,6 @@
 		9E538DBA23995B3E0025C14C /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
 		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
 		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
-		9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTableViewController.swift; sourceTree = "<group>"; };
 		9E85FE47240E9CDB002821F2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegateMock.swift; sourceTree = "<group>"; };
 		9E85FE4E240EDB0A002821F2 /* Restor.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = Restor.xctestplan; path = RestorTests/Restor.xctestplan; sourceTree = SOURCE_ROOT; };
@@ -258,8 +258,8 @@
 		9EE34CA423D9F6C800CA08F2 /* Request */ = {
 			isa = PBXGroup;
 			children = (
+				9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */,
 				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
-				9E78D1D2239EC930005FC692 /* RequestTableViewController.swift */,
 				9EEAAEC823EE81410022A72F /* OptionsPickerViewController.swift */,
 			);
 			path = Request;
@@ -412,7 +412,6 @@
 				9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */,
 				9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */,
 				9E8759062396C6A700F949D1 /* Utils.swift in Sources */,
-				9E78D1D3239EC930005FC692 /* RequestTableViewController.swift in Sources */,
 				9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */,
 				9E926F9823945E79002DF561 /* WorkspaceViewController.swift in Sources */,
 				9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */,
@@ -430,6 +429,7 @@
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
 				9E85FE48240E9CDB002821F2 /* main.swift in Sources */,
+				9E473B04241CE74200DEC889 /* EditRequestTableViewController.swift in Sources */,
 				9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */,
 				9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */,
 				9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */,

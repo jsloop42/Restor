@@ -414,10 +414,10 @@
             </objects>
             <point key="canvasLocation" x="3697.1014492753625" y="135.9375"/>
         </scene>
-        <!--Request Table View Controller-->
+        <!--Edit Request Table View Controller-->
         <scene sceneID="dcr-I8-t5h">
             <objects>
-                <tableViewController storyboardIdentifier="requestVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Z7t-Zq-hQL" customClass="RequestTableViewController" customModule="Restor" customModuleProvider="target" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="requestVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="Z7t-Zq-hQL" customClass="EditRequestTableViewController" customModule="Restor" customModuleProvider="target" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="static" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" id="rEl-An-I40">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

@@ -1,5 +1,5 @@
 //
-//  RequestTableViewController.swift
+//  EditRequestTableViewController.swift
 //  Restor
 //
 //  Created by jsloop on 09/12/19.
@@ -9,10 +9,10 @@
 import Foundation
 import UIKit
 
-typealias RequestVC = RequestTableViewController
+typealias RequestVC = EditRequestTableViewController
 
-class RequestTableViewController: UITableViewController, UITextFieldDelegate, UITextViewDelegate {
-    static weak var shared: RequestTableViewController?
+class EditRequestTableViewController: UITableViewController, UITextFieldDelegate, UITextViewDelegate {
+    static weak var shared: EditRequestTableViewController?
     @IBOutlet weak var methodView: UIView!
     @IBOutlet weak var methodLabel: UILabel!
     @IBOutlet weak var urlTextField: EATextField!
@@ -71,7 +71,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     deinit {
         Log.debug("request tableview deinit")
-        RequestTableViewController.shared = nil
+        EditRequestTableViewController.shared = nil
         AppState.editRequest = nil
         self.nc.removeObserver(self)
     }
@@ -94,7 +94,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        RequestTableViewController.shared = self
+        EditRequestTableViewController.shared = self
         Log.debug("request table vc view did load")
         self.initState()
         self.initUI()
@@ -286,12 +286,10 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     @objc func requestBodyDidChange(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {
-                if let data = AppState.editRequest, let body = data.body {
-                    AppState.editRequest?.body?.selected = idx.toInt32()
-                    self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
-                    self.tableView.reloadRows(at: [IndexPath(row: RequestCellType.body.rawValue, section: 0)], with: .none)
-                    self.bodyKVTableViewManager.reloadData()
-                }
+                AppState.editRequest?.body?.selected = idx.toInt32()
+                self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
+                self.tableView.reloadRows(at: [IndexPath(row: RequestCellType.body.rawValue, section: 0)], with: .none)
+                self.bodyKVTableViewManager.reloadData()
             }
         }
     }
@@ -325,8 +323,8 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     }
     
     @objc func endEditing() {
-        Log.debug("entity dict: \(self.entityDict)")
-        Log.debug("edit request: \(AppState.editRequest)")
+//        Log.debug("entity dict: \(self.entityDict)")
+//        Log.debug("edit request: \(AppState.editRequest)")
         Log.debug("end editing")
         self.isEndEditing = true
         UI.endEditing()
@@ -402,7 +400,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
         } else {
             height = UITableView.automaticDimension
         }
-        Log.debug("height: \(height) for index: \(indexPath)")
+//        Log.debug("height: \(height) for index: \(indexPath)")
         return height
     }
     
@@ -471,7 +469,7 @@ class RequestTableViewController: UITableViewController, UITextFieldDelegate, UI
     }
 }
 
-extension RequestTableViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+extension EditRequestTableViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         Log.debug("image picker controller delegate")
         self.docPicker.imagePickerController(picker, didFinishPickingMediaWithInfo: info)
@@ -485,7 +483,7 @@ extension RequestTableViewController: UIImagePickerControllerDelegate, UINavigat
     }
 }
 
-extension RequestTableViewController: UIDocumentPickerDelegate {
+extension EditRequestTableViewController: UIDocumentPickerDelegate {
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         self.docPicker.documentPicker(controller, didPickDocumentsAt: urls)
         self.navigationController?.dismiss(animated: true, completion: nil)
@@ -497,7 +495,7 @@ extension RequestTableViewController: UIDocumentPickerDelegate {
     }
 }
 
-extension RequestTableViewController: KVTableViewDelegate {
+extension EditRequestTableViewController: KVTableViewDelegate {
     func reloadData() {
         self.tableView.reloadData()
     }
@@ -869,7 +867,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
                 self.reqDataId = req.id ?? ""
                 reqData = req
                 if let vc = RequestVC.shared {
-                    self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { [weak self] status in vc.updateDoneButton(status) })
+                    self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
                 }
             }
         } else {
@@ -1144,7 +1142,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
 
         var elem: ERequestData?
         var reqBodyData: ERequestBodyData?
-        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let reqId = data.id, let body = data.body, let bodyId = body.id {
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let reqId = data.id {
             if self.selectedType == .form {
                 elem = self.localdb.getRequestData(at: row, reqId: reqId, type: .form, ctx: ctx)
                 reqBodyData = elem?.form
