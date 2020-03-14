@@ -31,20 +31,20 @@ public struct EAReschedulerFn: Equatable, Hashable {
     /// The block identifier
     var id: String
     /// The block which needs to be executed
-    var block: (Any?) -> Bool
+    var block: () -> Bool
     /// The callback function after executing the block
     var callback: (Bool) -> Void
-    var arg: AnyHashable?
+    var args: [AnyHashable] = []
     
-    init(id: String, block: @escaping (Any?) -> Bool, callback: @escaping (Bool) -> Void, arg: AnyHashable) {
+    init(id: String, block: @escaping () -> Bool, callback: @escaping (Bool) -> Void, args: [AnyHashable]) {
         self.id = id
         self.block = block
         self.callback = callback
-        self.arg = arg
+        self.args = args
     }
     
     public static func == (lhs: EAReschedulerFn, rhs: EAReschedulerFn) -> Bool {
-        lhs.id == rhs.id && lhs.arg == rhs.arg
+        lhs.id == rhs.id && lhs.args == rhs.args
     }
     
     public func hash(into hasher: inout Hasher) {
@@ -77,7 +77,7 @@ public struct EARescheduler: EAReschedulable {
             Log.debug("scheduler exec block")
             if this.type == EAReschedulerType.everyFn {  // Invoke the callback function with the result of each block execution
                 this.queue.async {
-                    this.blocks.forEach { fn in fn.callback(fn.block(fn.arg)) }
+                    this.blocks.forEach { fn in fn.callback(fn.block()) }
                 }
             }
         })

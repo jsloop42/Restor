@@ -144,7 +144,7 @@ class RestorTests: XCTestCase {
                 XCTAssertNotNil(lws)
                 guard let ws = lws else { return }
                 XCTAssertEqual(ws.name, "test-ws")
-                self.localdb.saveContext(ws)
+                self.localdb.saveChildContext(ws)
                 self.localdb.deleteEntity(ws)
                 let aws = self.localdb.getWorkspace(id: "test-ws")
                 XCTAssertNil(aws)
@@ -174,7 +174,7 @@ class RestorTests: XCTestCase {
                 XCTAssertNotNil(wproj3)
                 guard let proj3 = wproj3 else { return }
                 ws.projects = NSSet(array: [proj1, proj2, proj3])
-                self.localdb.saveContext(ws)
+                self.localdb.saveChildContext(ws)
                 
                 // ws2
                 let wsname2 = "test-ws-2"
@@ -193,7 +193,7 @@ class RestorTests: XCTestCase {
                 XCTAssertNotNil(wproj23)
                 guard let proj23 = wproj23 else { return }
                 ws2.projects = NSSet(array: [proj21, proj22, proj23])
-                self.localdb.saveContext(ws2)
+                self.localdb.saveChildContext(ws2)
                 
                 let lws = self.localdb.getWorkspace(id: wsname)
                 XCTAssertNotNil(lws)
@@ -231,11 +231,12 @@ class RestorTests: XCTestCase {
         XCTAssertEqual(md5, "5eb63bbbe01eeed093cb22bb8f5acdc3")
     }
     
-    func notestEntityCRUD() {
+    func testEntityCRUD() {
         let exp = expectation(description: "Test core data CRUD")
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
-                let mreq = self.localdb.createRequest(id: "edit-req", index: 0, name: "Edit request", ctx: self.localdb.childMOC)
+                let moc = self.localdb.getChildMOC(name: "edit-req")
+                let mreq = self.localdb.createRequest(id: "edit-req", index: 0, name: "Edit request", ctx: moc)
                 XCTAssertNotNil(mreq)
                 guard let req = mreq else { XCTFail(); return }
                 guard let reqId = req.id else { XCTFail(); return }
@@ -264,7 +265,6 @@ class RestorTests: XCTestCase {
                 req.addToHeaders(h2)
                 XCTAssertNotNil(req.headers)
                 XCTAssertEqual(req.headers!.count, 3)
-                exp.fulfill()
                 var x = self.localdb.getRequestData(at: 1, reqId: reqId, type: .header, ctx: ctx)
                 XCTAssertNotNil(x)
                 XCTAssertEqual(x!.id!, h1.id!)
@@ -274,6 +274,7 @@ class RestorTests: XCTestCase {
                 x = self.localdb.getRequestData(at: 2, reqId: reqId, type: .header, ctx: ctx)
                 XCTAssertNotNil(x)
                 XCTAssertEqual(x!.id!, h2.id!)
+                XCTAssertNoThrow(self.localdb.saveChildContext(req))
                 var id = h1.id!
                 _ = self.localdb.deleteRequestData(dataId: id, req: req, type: .header, ctx: ctx)
                 XCTAssertEqual(req.headers!.count, 2)
@@ -285,6 +286,7 @@ class RestorTests: XCTestCase {
                 XCTAssertEqual(x!.id, id)
                 self.localdb.deleteEntity(req)
                 XCTAssertNil(self.localdb.getRequest(id: reqId, ctx: ctx))
+                exp.fulfill()
             }
         }
         waitForExpectations(timeout: 1.0, handler: nil)

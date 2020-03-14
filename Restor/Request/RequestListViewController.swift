@@ -43,9 +43,10 @@ class RequestListViewController: UIViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
-        if AppState.editRequest == nil, let proj = AppState.currentProject, let ctx = proj.managedObjectContext {
-            let index = proj.requests?.count ?? 0
-            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: index, name: "Request \(index)", ctx: ctx)
+        if AppState.editRequest == nil {
+            let (name, idx) = self.app.getNewRequestNameWithIndex()
+            let ctx = self.localdb.getChildMOC(name: name)
+            AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: idx, name: name, ctx: ctx)
         }
         UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestVC.rawValue)
     }

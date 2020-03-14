@@ -161,36 +161,104 @@ class App {
         return url.lastPathComponent
     }
     
+    /// Return a request name based on the current project's request count.
+    func getNewRequestName() -> String {
+        if let proj = AppState.currentProject { return "Request \(proj.requests?.count ?? 0)" }
+        return "Request"
+    }
+    
+    /// Return a request name and index based on the current project's request count.
+    func getNewRequestNameWithIndex() -> (String, Int) {
+        if let proj = AppState.currentProject {
+            let idx = proj.requests?.count ?? 0
+            return ("Request \(idx)", idx)
+        }
+        return ("Request", 0)
+    }
+    
     // MARK: - Request change
     
     /// Checks if the request changed.
-    func didRequestChange(_ x: ERequest, request: [String: Any]) -> Bool {
-        //if self.didRequestURLChange(x.url ?? "", request: request) { return true }
-        //if self.didRequestMetaChange(name: x.name ?? "", desc: x.desc ?? "", request: request) { return true }
-        if self.didRequestMethodIndexChange(x.selectedMethodIndex, y: request) { return true }
+    /// - Parameters:
+    ///   - x: The request object.
+    ///   - request: The initial request dictionary.
+    ///   - callback: The callback function.
+    func didRequestChange(_ x: ERequest, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        // We need to check the whole object for change because, if a element changes, we set true, if another element did not change, we cannot
+        // set false. So we would then have to keep track of which element changed the status and such.
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqURL, block: { () -> Bool in
+            return self.didRequestChangeImp(x, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: [x]))
+    }
+    
+    /// Checks if the request changed.
+    /// - Parameters:
+    ///   - x: The request object.
+    ///   - request: The initial request dictionary.
+    func didRequestChangeImp(_ x: ERequest, request: [String: Any]) -> Bool {
+        if x.url == nil || x.url!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
+        if self.didRequestURLChangeImp(x.url ?? "", request: request) { return true }
+        if self.didRequestMetaChangeImp(name: x.name ?? "", desc: x.desc ?? "", request: request) { return true }
+        if self.didRequestMethodIndexChangeImp(x.selectedMethodIndex, request: request) { return true }
         if let methods = x.methods?.allObjects as? [ERequestMethodData] {
-            if self.didAnyRequestMethodChange(methods, request: request) { return true }
+            if self.didAnyRequestMethodChangeImp(methods, request: request) { return true }
         }
-        if self.didRequestBodyChange(x.body, request: request) { return true }
+        if self.didRequestBodyChangeImp(x.body, request: request) { return true }
         if let headers = x.headers?.allObjects as? [ERequestData] {
-            if self.didAnyRequestHeaderChange(headers, request: request) { return true }
+            if self.didAnyRequestHeaderChangeImp(headers, request: request) { return true }
         } else {
             if let headers = request["headers"] as? [[String: Any]], headers.count > 0 { return true }
         }
         if let params = x.params?.allObjects as? [ERequestData] {
-            if self.didAnyRequestParamChange(params, request: request) { return true }
+            if self.didAnyRequestParamChangeImp(params, request: request) { return true }
         } else {
             if let params = request["params"] as? [[String: Any]], params.count > 0 { return true }
         }
         return false
     }
     
-    func didRequestMethodIndexChange(_ x: Int32, y: [String: Any]) -> Bool {
-        if let index = y["selectedMethodIndex"] as? Int32 { return x != index }
+    /// Checks if the selected request method changed.
+    /// - Parameters:
+    ///   - x: The selected request method index.
+    ///   - request: The initial request dictionary.
+    ///   - callback: The callback function.
+    func didRequestMethodIndexChange(_ x: Int32, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMethodIndex, block: { () -> Bool in
+            return self.didRequestMethodIndexChangeImp(x, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: [x]))
+    }
+    
+    /// Checks if the selected request method changed.
+    /// - Parameters:
+    ///   - x: The selected request method index.
+    ///   - request: The initial request dictionary.
+    func didRequestMethodIndexChangeImp(_ x: Int32, request: [String: Any]) -> Bool {
+        if let index = request["selectedMethodIndex"] as? Int32 { return x != index }
         return false
     }
     
-    func didRequestMethodChange(_ x: ERequestMethodData, y: [String: Any]) -> Bool {
+    /// Checks if the request method changed.
+    /// - Parameters:
+    ///   - x: The request method.
+    ///   - y: The initial request method dictionary.
+    ///   - callback: The callback function.
+    func didRequestMethodChange(_ x: ERequestMethodData, y: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMethod, block: { () -> Bool in
+            return self.didRequestMethodChangeImp(x, y: y)
+        }, callback: { status in
+            callback(status)
+        }, args: [x]))
+    }
+    
+    /// Checks if the request method changed.
+    /// - Parameters:
+    ///   - x: The request method.
+    ///   - y: The initial request method dictionary.
+    func didRequestMethodChangeImp(_ x: ERequestMethodData, y: [String: Any]) -> Bool {
         if x.created != y["created"] as? Int64 ||
             x.index != y["index"] as? Int64 ||
             x.isCustom != y["isCustom"] as? Bool ||
@@ -200,7 +268,24 @@ class App {
         return false
     }
     
-    func didAnyRequestMethodChange(_ xs: [ERequestMethodData], request: [String: Any]) -> Bool {
+    /// Checks if any request method changed.
+    /// - Parameters:
+    ///   - xs: The list of request methods.
+    ///   - request: The initial request dictionary.
+    ///   - callback: The callback function.
+    func didAnyRequestMethodChange(_ xs: [ERequestMethodData], request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdAnyReqMethod, block: { () -> Bool in
+            return self.didAnyRequestMethodChangeImp(xs, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: xs))
+    }
+    
+    /// Checks if any request method changed.
+    /// - Parameters:
+    ///   - xs: The list of request methods.
+    ///   - request: The initial request dictionary.
+    func didAnyRequestMethodChangeImp(_ xs: [ERequestMethodData], request: [String: Any]) -> Bool {
         let xsa = xs.filter { x -> Bool in x.isCustom }
         let xsb = (request["methods"] as? [[String: Any]])?.filter({ hm -> Bool in
             if let isCustom = hm["isCustom"] as? Bool { return isCustom }
@@ -211,87 +296,143 @@ class App {
         if xsb != nil && xsb!.count != len { return true }
         if xsb != nil {
             for i in 0..<len {
-                if self.didRequestMethodChange(xsa[i], y: xsb![i]) { return true }
+                if self.didRequestMethodChangeImp(xsa[i], y: xsb![i]) { return true }
             }
         }
         return false
     }
     
     /// Checks if the request URL changed.
-    func didRequestURLChange(_ x: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqURL, block: { (x: Any?) -> Bool in
-            return self.didRequestURLChangeImp(x as! String, request: request)
+    /// - Parameters:
+    ///   - url: The request url.
+    ///   - request: The initial request dictionary.
+    ///   - callback: The callback function.
+    func didRequestURLChange(_ url: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqURL, block: { () -> Bool in
+            return self.didRequestURLChangeImp(url, request: request)
         }, callback: { status in
             callback(status)
-        }, arg: x))
+        }, args: [url]))
     }
     
-    func didRequestURLChangeImp(_ x: String, request: [String: Any]) -> Bool {
-        if let url = request["url"] as? String { return x != url }
-        return !x.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    /// Checks if the request URL changed.
+    /// - Parameters:
+    ///   - url: The request url.
+    ///   - request: The initial request dictionary.
+    func didRequestURLChangeImp(_ url: String, request: [String: Any]) -> Bool {
+        if let aUrl = request["url"] as? String { return aUrl != url }
+        return !url.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     /// Checks if the request name changed.
-    func didRequestNameChange(_ x: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqName, block: { (x: Any?) -> Bool in
-            return self.didRequestNameChangeImp(x as! String, request: request)
+    /// - Parameters:
+    ///   - name: The request name
+    ///   - request: The initial request dictionary.
+    ///   - callback: The callback function.
+    func didRequestNameChange(_ name: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqName, block: { () -> Bool in
+            return self.didRequestNameChangeImp(name, request: request)
         }, callback: { status in
             callback(status)
-        }, arg: x))
+        }, args: [name]))
     }
     
-    func didRequestNameChangeImp(_ x: String, request: [String: Any]) -> Bool {
-        if let name = request["name"] as? String { return x != name }
-        return !x.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    /// Checks if the request name changed.
+    /// - Parameters:
+    ///   - name: The request name
+    ///   - request: The initial request dictionary.
+    func didRequestNameChangeImp(_ name: String, request: [String: Any]) -> Bool {
+        if let aName = request["name"] as? String { return aName != name }
+        return !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
-    /// Checks if the request's description changed.
-    func didRequestDescriptionChange(_ x: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        //self.rescheduler.schedule { [weak self] in if self != nil { callback(self!.didRequestDescriptionChangeImp(x, request: request)) } }
+    /// Checks if the request description changed.
+    /// - Parameters:
+    ///   - desc: The request description.
+    ///   - request: The initial request dictionary.
+    ///   - callback: The callback function.
+    func didRequestDescriptionChange(_ desc: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqDesc, block: { () -> Bool in
+            return self.didRequestDescriptionChangeImp(desc, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: [desc]))
     }
     
-    func didRequestDescriptionChangeImp(_ x: String, request: [String: Any]) -> Bool {
-        if let desc = request["desc"] as? String { return x != desc }
-        return !x.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    /// Checks if the request description changed.
+    /// - Parameters:
+    ///   - desc: The request description.
+    ///   - request: The initial request dictionary.
+    func didRequestDescriptionChangeImp(_ desc: String, request: [String: Any]) -> Bool {
+        if let aDesc = request["desc"] as? String { return aDesc != desc }
+        return !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     /// Checks if any of the request's meta data changed.
     func didRequestMetaChange(name: String, desc: String, request: [String: Any], callback: @escaping (Bool) -> Void) {
-        //self.rescheduler.schedule { [weak self] in if self != nil { callback(self!.didRequestMetaChangeImp(name: name, desc: desc, request: request)) } }
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMeta, block: { () -> Bool in
+            return self.didRequestMetaChangeImp(name: name, desc: desc, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: [name, desc]))
     }
     
     func didRequestMetaChangeImp(name: String, desc: String, request: [String: Any]) -> Bool {
         return self.didRequestNameChangeImp(name, request: request) || self.didRequestDescriptionChangeImp(desc, request: request)
     }
     
+    func didAnyRequestHeaderChange(_ xs: [ERequestData], request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqHeader, block: { () -> Bool in
+            return self.didAnyRequestHeaderChangeImp(xs, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: xs))
+    }
+    
     /// Check if any of the request headers changed.
-    func didAnyRequestHeaderChange(_ xs: [ERequestData], request: [String: Any]) -> Bool {
+    func didAnyRequestHeaderChangeImp(_ xs: [ERequestData], request: [String: Any]) -> Bool {
         var xs: [Entity] = xs
         self.localdb.sortByCreated(&xs)
         let len = xs.count
         if len != (request["headers"] as! [[String: Any]]).count { return true }
         let headers: [[String: Any]] = request["headers"] as! [[String: Any]]
         for i in 0..<len {
-            if self.didRequestDataChange(x: xs[i] as! ERequestData, y: headers[i], type: .header) { return true }
+            if self.didRequestDataChangeImp(x: xs[i] as! ERequestData, y: headers[i], type: .header) { return true }
         }
         return false
     }
 
+    func didAnyRequestParamChange(_ xs: [ERequestData], request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqParam, block: { () -> Bool in
+            return self.didAnyRequestParamChangeImp(xs, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: xs))
+    }
+    
     /// Check if any of the request params changed.
-    func didAnyRequestParamChange(_ xs: [ERequestData], request: [String: Any]) -> Bool {
+    func didAnyRequestParamChangeImp(_ xs: [ERequestData], request: [String: Any]) -> Bool {
         var xs: [Entity] = xs
         self.localdb.sortByCreated(&xs)
         let len = xs.count
         if len != (request["params"] as! [[String: Any]]).count { return true }
         let params: [[String: Any]] = request["params"] as! [[String: Any]]
         for i in 0..<len {
-            if self.didRequestDataChange(x: xs[i] as! ERequestData, y: params[i], type: .param) { return true }
+            if self.didRequestDataChangeImp(x: xs[i] as! ERequestData, y: params[i], type: .param) { return true }
         }
         return false
     }
     
+    func didRequestBodyChange(_ x: ERequestBodyData?, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqBody, block: { () -> Bool in
+            return self.didRequestBodyChangeImp(x, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: [x]))
+    }
+    
     /// Checks if the request body changed
-    func didRequestBodyChange(_ x: ERequestBodyData?, request: [String: Any]) -> Bool {
+    func didRequestBodyChangeImp(_ x: ERequestBodyData?, request: [String: Any]) -> Bool {
         if (x == nil && request["body"] != nil) || (x != nil && request["body"] == nil) { return true }
         if let body = request["body"] as? [String: Any] {
             if x?.binary != body["binary"] as? Data ||
@@ -302,13 +443,21 @@ class App {
                 x?.xml != body["xml"] as? String {
                 return true
             }
-            if x != nil && self.didAnyRequestBodyFormChange(x!, request: request) { return true }
+            if x != nil && self.didAnyRequestBodyFormChangeImp(x!, request: request) { return true }
         }
         return false
     }
     
+    func didAnyRequestBodyFormChange(_ x: ERequestBodyData, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdAnyReqBodyForm, block: { () -> Bool in
+            return self.didAnyRequestBodyFormChangeImp(x, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: [x]))
+    }
+    
     /// Checks if the any of the request body form elements changed.
-    func didAnyRequestBodyFormChange(_ x: ERequestBodyData, request: [String: Any]) -> Bool {
+    func didAnyRequestBodyFormChangeImp(_ x: ERequestBodyData, request: [String: Any]) -> Bool {
         if request["body"] == nil { return true }
         if let body = request["body"] as? [String: Any] {
             if (x.form != nil && body["form"] == nil) || (x.form == nil && body["form"] != nil) { return true }
@@ -320,20 +469,28 @@ class App {
             
             let len = formxsa.count
             for i in 0..<len {
-                if self.didRequestDataChange(x: formxsa[i] as! ERequestData, y: formxsb[i], type: .form) { return true }
+                if self.didRequestDataChangeImp(x: formxsa[i] as! ERequestData, y: formxsb[i], type: .form) { return true }
             }
         }
         return false
     }
     
+    func didRequestBodyFormChange(_ body: ERequestBodyData, reqData: ERequestData, request: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqBodyForm, block: { () -> Bool in
+            return self.didRequestBodyFormChangeImp(body, reqData: reqData, request: request)
+        }, callback: { status in
+            callback(status)
+        }, args: [body]))
+    }
+    
     // TODO: add unit test
-    func didRequestBodyFormChange(_ body: ERequestBodyData, reqData: ERequestData, request: [String: Any]) -> Bool {
+    func didRequestBodyFormChangeImp(_ body: ERequestBodyData, reqData: ERequestData, request: [String: Any]) -> Bool {
         if let reqDataId = reqData.id, let set = body.form, let xs = set.allObjects as? [ERequestData], let _ = xs.first(where: { x -> Bool in
             x.id == reqDataId
         }) {
             // Check if form and request data are the same
             if let type = RequestDataType(rawValue: reqData.type.toInt()) {
-                if self.didRequestDataChange(x: reqData, y: request, type: type) { return true }
+                if self.didRequestDataChangeImp(x: reqData, y: request, type: type) { return true }
             }
         } else {  // No request data found in forms => added
             return true
@@ -341,11 +498,19 @@ class App {
         return false
     }
     
+    func didRequestBodyFormAttachmentChange(_ x: ERequestData, y: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqBodyFormAttachment, block: { () -> Bool in
+            return self.didRequestBodyFormAttachmentChangeImp(x, y: y)
+        }, callback: { status in
+            callback(status)
+        }, args: [x]))
+    }
+    
     /// Checks if the given form's attachments changed.
-    func didRequestBodyFormAttachmentChange(_ x: ERequestData, y: [String: Any]) -> Bool {
+    func didRequestBodyFormAttachmentChangeImp(_ x: ERequestData, y: [String: Any]) -> Bool {
         if (x.image != nil && y["image"] == nil) || (x.image == nil && y["image"] != nil) { return true }
         if let ximage = x.image, let yimage = y["image"] as? [String: Any]  {
-            if self.didRequestImageChange(x: ximage, y: yimage) { return true }
+            if self.didRequestImageChangeImp(x: ximage, y: yimage) { return true }
         }
         if (x.files != nil && y["files"] == nil) || (x.files == nil && y["file"] != nil) { return true }
         let yfiles = y["files"] as! [[String: Any]]
@@ -354,13 +519,21 @@ class App {
             self.localdb.sortByCreated(&xs)
             let len = xs.count
             for i in 0..<len {
-                if self.didRequestFileChange(x: xs[i] as! EFile, y: yfiles[i]) { return true }
+                if self.didRequestFileChangeImp(x: xs[i] as! EFile, y: yfiles[i]) { return true }
             }
         }
         return false
     }
     
-    func didRequestDataChange(x: ERequestData, y: [String: Any], type: RequestDataType) -> Bool {
+    func didRequestDataChange(x: ERequestData, y: [String: Any], type: RequestDataType, callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqData, block: { () -> Bool in
+            return self.didRequestDataChangeImp(x: x, y: y, type: type)
+        }, callback: { status in
+            callback(status)
+        }, args: [x]))
+    }
+    
+    func didRequestDataChangeImp(x: ERequestData, y: [String: Any], type: RequestDataType) -> Bool {
         if x.created != y["created"] as? Int64 ||
             x.fieldFormat != y["fieldFormat"] as? Int32 ||
             x.index != y["index"] as? Int64 ||
@@ -370,14 +543,22 @@ class App {
             return true
         }
         if type == .form {
-            if self.didRequestBodyFormAttachmentChange(x, y: y) { return true }
+            if self.didRequestBodyFormAttachmentChangeImp(x, y: y) { return true }
         } else if type == .multipart {
             // TODO:
         }
         return false
     }
     
-    func didRequestFileChange(x: EFile, y: [String: Any]) -> Bool {
+    func didRequestFileChange(x: EFile, y: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqFile, block: { () -> Bool in
+            return self.didRequestFileChangeImp(x: x, y: y)
+        }, callback: { status in
+            callback(status)
+        }, args: [x]))
+    }
+    
+    func didRequestFileChangeImp(x: EFile, y: [String: Any]) -> Bool {
         if x.created != y["created"] as? Int64 ||
             x.index != y["index"] as? Int64 ||
             x.name != y["name"] as? String ||
@@ -391,7 +572,15 @@ class App {
         return false
     }
     
-    func didRequestImageChange(x: EImage, y: [String: Any]) -> Bool {
+    func didRequestImageChange(x: EImage, y: [String: Any], callback: @escaping (Bool) -> Void) {
+        self.rescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqImage, block: { () -> Bool in
+            return self.didRequestImageChangeImp(x: x, y: y)
+        }, callback: { status in
+            callback(status)
+        }, args: [x]))
+    }
+    
+    func didRequestImageChangeImp(x: EImage, y: [String: Any]) -> Bool {
         if x.created != y["created"] as? Int64 ||
             x.index != y["index"] as? Int64 ||
             x.name != y["name"] as? String ||
