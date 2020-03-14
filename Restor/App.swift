@@ -150,12 +150,12 @@ class App {
     }
     
     func getDataForURL(_ url: URL, completion: EADataResultCallback? = nil) {
-        if EAFileManager.isFileExists(at: url) {
+        //if EAFileManager.isFileExists(at: url) {  // since the app is sandboxed, this check will not work.
             let fm = EAFileManager(url: url)
             fm.readToEOF(completion: completion)
-        } else {
-            if let cb = completion { cb(.failure(AppError.fileNotFound)) }
-        }
+        //} else {
+         //   if let cb = completion { cb(.failure(AppError.fileNotFound)) }
+        //}
     }
     
     func getFileName(_ url: URL) -> String {
@@ -187,7 +187,7 @@ class App {
     func didRequestChange(_ x: ERequest, request: [String: Any], callback: @escaping (Bool) -> Void) {
         // We need to check the whole object for change because, if a element changes, we set true, if another element did not change, we cannot
         // set false. So we would then have to keep track of which element changed the status and such.
-        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqURL, block: { () -> Bool in
+        self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReq, block: { () -> Bool in
             return self.didRequestChangeImp(x, request: request)
         }, callback: { status in
             callback(status)
@@ -563,7 +563,6 @@ class App {
         if x.created != y["created"] as? Int64 ||
             x.index != y["index"] as? Int64 ||
             x.name != y["name"] as? String ||
-            x.path != y["path"] as? URL ||  // TODO: test
             x.type != y["type"] as? Int32  {
             return true
         }
@@ -589,7 +588,7 @@ class App {
             x.type != y["type"] as? String  {
             return true
         }
-        if let id = x.id, let xdata = x.image, let image = self.localdb.getImageData(id: id), let ydata = image.image {
+        if let id = x.id, let xdata = x.data, let image = self.localdb.getImageData(id: id), let ydata = image.data {
             if xdata != ydata { return true }
         }
         return false

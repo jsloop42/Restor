@@ -34,17 +34,13 @@ class CoreDataService {
     
     func setup(storeType: String = NSSQLiteStoreType, completion: (() -> Void)?) {
         self.storeType = storeType
-        self.loadPersistentStore {
-            completion?()
-        }
+        self.loadPersistentStore { completion?() }
     }
     
     private func loadPersistentStore(completion: @escaping () -> Void) {
         // Handle data migration on a different thread/queue here
         self.persistentContainer.loadPersistentStores { description, error  in
-            guard error == nil else {
-                fatalError("Unable to load store \(error!)")
-            }
+            guard error == nil else { fatalError("Unable to load store \(error!)") }
             self.persistentContainer.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
             completion()
         }
@@ -70,16 +66,16 @@ class CoreDataService {
     /// Sort the given list of dictonaries in the order of created and update the index property.
     func sortByCreated(_ hm: inout [[String: Any]]) {
         hm.sort { (hma, hmb) -> Bool in
-            if let c1 = hma["created"] as? Int64, let c2 = hmb["created"] as? Int64 { return c1 > c2 }
+            if let c1 = hma["created"] as? Int64, let c2 = hmb["created"] as? Int64 { return c1 < c2 }
             return false
         }
         let len = hm.count
-        for i in 0..<len { hm[i]["index"] = i.toInt64 }
+        for i in 0..<len { hm[i]["index"] = i.toInt64() }
     }
     
     /// Sort the given list of entities in the order of created and update the index property.
     func sortByCreated(_ xs: inout [Entity]) {
-        xs.sort { (a, b) -> Bool in a.getCreated() > b.getCreated() }
+        xs.sort { (a, b) -> Bool in a.getCreated() < b.getCreated() }
         xs.enumerated().forEach { arg in arg.element.setIndex(arg.offset) }
     }
     
@@ -110,9 +106,7 @@ class CoreDataService {
         if let set = x.methods, let xs = set.allObjects as? [ERequestMethodData] {
             dict["methods"] =  self.sortedByCreated(xs.map { y -> [String: Any] in self.requestMethodDataToDictionary(y) })
         }
-        if let body = x.body {
-            dict["body"] = self.requestBodyDataToDictionary(body)
-        }
+        if let body = x.body { dict["body"] = self.requestBodyDataToDictionary(body) }
         return dict
     }
     
@@ -127,9 +121,7 @@ class CoreDataService {
         if let set = x.files, let xs = set.allObjects as? [EFile] {
             dict["files"] = self.sortedByCreated(xs.map { y -> [String: Any] in self.fileToDictionary(y) })
         }
-        if let image = x.image {
-            dict["image"] = self.imageToDictionary(image)
-        }
+        if let image = x.image { dict["image"] = self.imageToDictionary(image) }
         return dict
     }
     
@@ -193,7 +185,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
-            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
                 xs = try moc.fetch(fr)
@@ -287,7 +279,7 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
             fr.predicate = NSPredicate(format: "workspace.id == %@", wsId)
-            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
                 xs = try moc.fetch(fr)
@@ -341,7 +333,7 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
             fr.predicate = NSPredicate(format: "project.id == %@", projectId)
-            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
                 xs = try moc.fetch(fr)
@@ -366,7 +358,7 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
             fr.predicate = NSPredicate(format: "project.id == %@", projectId)
-            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
                 let xs = try moc.fetch(fr)
                 if xs.count > index { x = xs[index] }
@@ -518,7 +510,7 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             fr.predicate = NSPredicate(format: "form.id == %@ AND type == %d", bodyDataId, type.rawValue.toInt32())  // ERequestBodyData.id
-            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
                 xs = try moc.fetch(fr)
@@ -575,7 +567,7 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             fr.predicate = NSPredicate(format: "headers.id == %@", reqId)
-            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
                 xs = try moc.fetch(fr)
@@ -599,7 +591,7 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             fr.predicate = NSPredicate(format: "params.id == %@", reqId)
-            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
                 xs = try moc.fetch(fr)
@@ -719,7 +711,7 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
             fr.predicate = NSPredicate(format: "requestData.id == %@ AND type == %d", reqDataId, type.rawValue.toInt32())
-            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
                 x = try moc.count(for: fr)
             } catch let error {
@@ -743,7 +735,7 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
             fr.predicate = NSPredicate(format: "requestData.id == %@ AND type == %d", reqDataId, type.rawValue.toInt32())
-            fr.sortDescriptors = [NSSortDescriptor(key: "index", ascending: true)]
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
                 xs = try moc.fetch(fr)
@@ -834,8 +826,7 @@ class CoreDataService {
     ///   - name: The workspace name.
     ///   - name: The workspace description.
     ///   - checkExists: Check whether the workspace exists before creating.
-    func createWorkspace(id: String, index: Int, name: String, desc: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
-        -> EWorkspace? {
+    func createWorkspace(id: String, index: Int, name: String, desc: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)  -> EWorkspace? {
         var x: EWorkspace?
         let ts = Date().currentTimeNanos()
         let moc: NSManagedObjectContext = {
@@ -923,18 +914,6 @@ class CoreDataService {
         }
         return x
     }
-    
-    func genDefaultRequestMethods(_ req: ERequest, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
-        let names = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-        guard let reqId = req.id else { return [] }
-        return names.enumerated().compactMap { arg -> ERequestMethodData? in
-            let (offset, element) = arg
-            let x = self.createRequestMethodData(id: self.genRequestMethodDataId(reqId, methodName: element), index: offset, name: element, isCustom: false,
-                                                 ctx: ctx)
-            x?.request =  req
-            return x
-        }
-    }
         
     /// Create request data.
     /// - Parameters:
@@ -967,6 +946,17 @@ class CoreDataService {
         return x
     }
     
+    func genDefaultRequestMethods(_ req: ERequest, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+        let names = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        guard let reqId = req.id else { return [] }
+        return names.enumerated().compactMap { arg -> ERequestMethodData? in
+            let (offset, element) = arg
+            let x = self.createRequestMethodData(id: self.genRequestMethodDataId(reqId, methodName: element), index: offset, name: element, isCustom: false, ctx: ctx)
+            x?.request =  req
+            return x
+        }
+    }
+    
     /// Crate request method data
     /// - Parameters:
     ///   - id: The request method data id.
@@ -975,8 +965,7 @@ class CoreDataService {
     ///   - checkExists: Check if the request method data exists
     ///   - ctx: The managed object context
     func createRequestMethodData(id: String, index: Int, name: String, isCustom: Bool? = true, checkExists: Bool? = true,
-                                 ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
-        -> ERequestMethodData? {
+                                 ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let ts = Date().currentTimeNanos()
         let moc: NSManagedObjectContext = {
@@ -1004,8 +993,7 @@ class CoreDataService {
     ///   - index: The order of the request body data.
     ///   - checkExists: Check if the request body data exists before creating.
     ///   - ctx: The managed object context.
-    func createRequestBodyData(id: String, index: Int, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
-        -> ERequestBodyData? {
+    func createRequestBodyData(id: String, index: Int, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
         var x: ERequestBodyData?
         let ts = Date().currentTimeNanos()
         let moc: NSManagedObjectContext = {
@@ -1044,7 +1032,7 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getImageData(id: imageId, ctx: ctx) { x = data }
             let image = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "EImage", into: moc) as! EImage
             image.id = imageId
-            image.image = data
+            image.data = data
             image.type = type
             image.created = x == nil ? ts : x!.created
             image.modified = ts
@@ -1209,9 +1197,7 @@ class CoreDataService {
     func deleteEntity(_ entity: NSManagedObject?) {
         Log.debug("delete entity: \(String(describing: entity))")
         if let x = entity, let moc = x.managedObjectContext {
-            moc.performAndWait {
-                moc.delete(x)
-            }
+            moc.performAndWait { moc.delete(x) }
         }
     }
     
@@ -1221,9 +1207,7 @@ class CoreDataService {
             return self.bgMOC
         }()
         if let x = self.getRequestData(id: id, ctx: moc) {
-            moc.performAndWait {
-                moc.delete(x)
-            }
+            moc.performAndWait { moc.delete(x) }
         }
     }
     
@@ -1291,7 +1275,7 @@ class CoreDataService {
             default:
                 break
             }
-            if let y = x as? NSManagedObject { moc.delete(y) }
+            if let y = x { moc.delete(y) }
             Log.debug("Deleted data id: \(dataId)")
         }
     }

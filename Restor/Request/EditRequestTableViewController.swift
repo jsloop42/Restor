@@ -93,6 +93,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     override func shouldPopOnBackButton() -> Bool {
+        self.endEditing()
         if self.isDirty {
             UI.viewActionSheet(vc: self, message: "Are you sure you want to discard your changes?", cancelText: "Keep Editing",
                                otherButtonText: "Discard Changes", cancelStyle: UIAlertAction.Style.cancel, otherStyle: UIAlertAction.Style.destructive,
@@ -190,10 +191,12 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
 
     func updateData() {
-        if let data = AppState.editRequest {
+        if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext {
             self.urlTextField.text = data.url
             self.nameTextField.text = data.name
             self.descTextView.text = data.desc
+            let idx = data.selectedMethodIndex.toInt()
+            if let method = self.localdb.getRequestMethodData(at: idx, reqId: reqId, ctx: ctx) { self.methodLabel.text = method.name }
         }
     }
     
@@ -491,9 +494,9 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     static func addRequestBodyToState() {
-        if let req = AppState.editRequest, let moc = req.managedObjectContext {
+        if let req = AppState.editRequest, let ctx = req.managedObjectContext {
             if req.body == nil {
-                req.body = CoreDataService.shared.createRequestBodyData(id: Utils.shared.genRandomString(), index: 0, ctx: moc)
+                req.body = CoreDataService.shared.createRequestBodyData(id: Utils.shared.genRandomString(), index: 0, ctx: ctx)
                 AppState.editRequest!.body?.request = AppState.editRequest
             }
         }
@@ -885,6 +888,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         let cvTap = UITapGestureRecognizer(target: self, action: #selector(self.presentDocPicker))
         cvTap.cancelsTouchesInView = false
         self.imageFileView.addGestureRecognizer(cvTap)
+        self.keyTextField.addTarget(self, action: #selector(self.updateState(_:)), for: .editingChanged)
+        self.valueTextField.addTarget(self, action: #selector(self.updateState(_:)), for: .editingChanged)
         self.initCollectionViewEvents()
     }
     
@@ -941,6 +946,19 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         self.nc.post(Notification(name: NotificationKey.documentPickerMenuShouldPresent))
     }
     
+    @objc func updateState(_ textField: UITextField) {
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let req = self.localdb.getRequestData(id: self.reqDataId, ctx: ctx) {
+            if textField == self.keyTextField {
+                req.key = textField.text
+            } else if textField == self.valueTextField {
+                req.value = textField.text
+            }
+            self.delegate?.updateState(req, row: self.tag)
+        }
+    }
+    
+    // MARK: - Delegate text field
+    
     func textFieldDidBeginEditing(_ textField: UITextField) {
         Log.debug("text field did begin editing")
         RequestVC.shared?.clearEditing()
@@ -954,18 +972,9 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         return true
     }
     
-    // MARK: - Delegate text field
-    
     func textFieldDidEndEditing(_ textField: UITextField) {
         Log.debug("textfield did end editing")
-        if let data = AppState.editRequest, let ctx = data.managedObjectContext, let req = self.localdb.getRequestData(id: self.reqDataId, ctx: ctx) {
-            if textField == self.keyTextField {
-                req.key = textField.text
-            } else if textField == self.valueTextField {
-                req.value = textField.text
-            }
-            self.delegate?.updateState(req, row: self.tag)
-        }
+        self.updateState(textField)
     }
     
     // MARK: - Delegate collection view
@@ -1088,27 +1097,27 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             if let data = AppState.editRequest, let ctx = data.managedObjectContext,
                 let form = self.localdb.getRequestData(id: DocumentPickerState.reqDataId, ctx: ctx) {
                 form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt32()
+                form.files = NSSet()  // clear the set, but it does not delete the data
                 DocumentPickerState.docs.enumerated().forEach { args in
                     let (offset, element) = args
-                    self.app.getDataForURL(element) { [weak self] result in  // if user exits before loading, it's the user action. So we don't retain self.
-                        if self == nil { return}
+                    self.app.getDataForURL(element) { result in  // if user exits before loading, it's the user action. So we don't retain self.
                         switch result {
                         case .success(let x):
-                            let name = self!.app.getFileName(element)
-                            if let file = self!.localdb.createFile(data: x, index: offset, name: name, path: element,
-                                                                   type: self!.selectedType == .form ? .form : .multipart, checkExists: true, ctx: ctx) {
+                            let name = self.app.getFileName(element)
+                            if let file = self.localdb.createFile(data: x, index: offset, name: name, path: element,
+                                                                  type: self.selectedType == .form ? .form : .multipart, checkExists: true, ctx: ctx) {
                                 file.requestData = form
-                                if let vc = RequestVC.shared {
-                                    self?.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
-                                }
                                 DispatchQueue.main.async {
-                                    self?.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
+                                    if let vc = RequestVC.shared {
+                                        self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
+                                    }
+                                    self.reloadRows(at: [IndexPath(row: row, section: 0)], with: .none)
+                                    DocumentPickerState.clear()
                                 }
                             }
                         case .failure(let error):
                             Log.debug("Error: \(error)")  // TODO: display alert
                         }
-                        if self != nil { DocumentPickerState.clear() }
                     }
                 }
             }
@@ -1116,10 +1125,10 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
     
     func addFields() {
-        if let data = AppState.editRequest, let body = data.body {
+        if let data = AppState.editRequest, let body = data.body, let ctx = data.managedObjectContext {
             if body.selected == RequestBodyType.form.rawValue {
                 let count = body.form?.allObjects.count ?? 0
-                let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .form, fieldFormat: .text)
+                let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .form, fieldFormat: .text, ctx: ctx)
                 if let x = data {
                     body.addToForm(x)
                     if let vc = RequestVC.shared {
@@ -1128,7 +1137,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 }
             } else if body.selected == RequestBodyType.multipart.rawValue {
                 let count = body.multipart?.allObjects.count ?? 0
-                let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .multipart, fieldFormat: .text)
+                let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .multipart, fieldFormat: .text, ctx: ctx)
                 if let x = data {
                     body.addToMultipart(x)
                     if let vc = RequestVC.shared {
@@ -1207,7 +1216,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 self.hideFileAttachment(cell: cell)
             } else if cell.selectedFieldFormat == .file {
                 cell.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
-                if let image = x.image, let imgData = image.image {
+                if let image = x.image, let imgData = image.data {
                     cell.imageFileView.image = UIImage(data: imgData)
                     self.displayImageAttachment(cell: cell)
                 } else {

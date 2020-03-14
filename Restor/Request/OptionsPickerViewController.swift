@@ -254,8 +254,6 @@ extension OptionsPickerViewController: PopupViewDelegate {
     
     func doneDidTap(name: String, desc: String) -> Bool {
         if self.pickerType == .requestMethod {
-            // TODO:
-            //OptionsPickerState.requestData.append(ERequestMethodData(name: name, isCustom: true, project: AppState.currentProject))
             if self.validateText(name) {
                 self.nc.post(name: NotificationKey.customRequestMethodDidAdd, object: self,
                              userInfo: [Const.requestMethodNameKey: name, Const.modelIndexKey: self.data.count])

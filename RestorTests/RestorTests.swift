@@ -412,6 +412,43 @@ class RestorTests: XCTestCase {
 //        }
 //        waitForExpectations(timeout: 1.0, handler: nil)
 //    }
+    
+    func testFileAttachmentDelete() {
+        let exp = expectation(description: "Test setting to-many to a new set deletes the contained entities")
+        self.localdb.setup(storeType: NSSQLiteStoreType) {
+            self.serialQueue.async {
+                let moc = self.localdb.getChildMOC(name: "edit-req")
+                let mreq = self.localdb.createRequest(id: "edit-req", index: 0, name: "Edit request", ctx: moc)
+                XCTAssertNotNil(mreq)
+                guard let req = mreq else { XCTFail(); return }
+                let ctx = req.managedObjectContext!
+                let abody = self.localdb.createRequestBodyData(id: "edit-req-body", index: 0, checkExists: false, ctx: ctx)
+                XCTAssertNotNil(abody)
+                guard let body = abody else { XCTFail(); return }
+                let mf0 = self.localdb.createRequestData(id: "body-form-data-0", index: 0, type: .header, fieldFormat: .text, ctx: ctx)
+                body.request = req
+                XCTAssertNotNil(mf0)  // managed form object 0
+                guard let f0 = mf0 else { XCTFail(); return }
+                body.addToForm(f0)
+                XCTAssertNotNil(body.form)
+                XCTAssertEqual(body.form!.count, 1)
+                let mfile0 = self.localdb.createFile(data: Data(), index: 0, name: "file-0", path: URL(fileURLWithPath: "/tmp"), checkExists: false, ctx: ctx)
+                XCTAssertNotNil(mfile0)
+                f0.addToFiles(mfile0!)
+                XCTAssertNotNil(f0.files)
+                XCTAssertEqual(f0.files!.count, 1)
+                f0.files = NSSet()  // Removing the to-many relation, deletes the entities as well.
+                XCTAssertEqual(f0.files!.count, 0)
+                let xfile0 = self.localdb.getFileData(id: "file-0", ctx: ctx)
+                XCTAssertNil(xfile0)
+                self.localdb.discardChanges(in: moc)
+                let ereq = self.localdb.getRequest(id: "edit-req")
+                XCTAssertNil(ereq)
+                exp.fulfill()
+            }
+        }
+        waitForExpectations(timeout: 1.0, handler: nil)
+    }
 
     func notestPerformanceExample() {
         // This is an example of a performance test case.
