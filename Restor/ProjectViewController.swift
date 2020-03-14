@@ -208,7 +208,7 @@ extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if let aWorkspace = AppState.workspace(forIndex: AppState.selectedWorkspace) {
             self.workspace = aWorkspace
-            return aWorkspace.projects?.allObjects.count ?? 0
+            return aWorkspace.projects?.count ?? 0
         }
         return 0
     }

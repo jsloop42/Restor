@@ -255,6 +255,7 @@ class CoreDataService {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
             fr.predicate = NSPredicate(format: "workspace.id == %@", wsId)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            fr.fetchBatchSize = self.fetchBatchSize
             do {
                 let xs = try moc.fetch(fr)
                 if xs.count > index { x = xs[index] }
@@ -1096,12 +1097,10 @@ class CoreDataService {
     
     // MARK: - Save
     
-    func saveContext(_ callback: ((Bool) -> Void)? = nil) {
-        let context = self.persistentContainer.viewContext
-        context.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
-        if context.hasChanges {
+    func saveMainContext(_ callback: ((Bool) -> Void)? = nil) {
+        if self.mainMOC.hasChanges {
             do {
-                try context.save()
+                try self.mainMOC.save()
             } catch {
                 let nserror = error as NSError
                 Log.error("Persistence error \(nserror), \(nserror.userInfo)")
@@ -1113,6 +1112,23 @@ class CoreDataService {
     }
     
     /// Save the managed object context associated with the given entity and remove it from the cache.
+    func saveBackgroundContext(callback: ((Bool) -> Void)? = nil) {
+        var status = true
+        if self.bgMOC.hasChanges {
+            do {
+                try self.bgMOC.save()
+            } catch {
+                status = false
+                let nserror = error as NSError
+                Log.error("Persistence error \(nserror), \(nserror.userInfo)")
+                if let cb = callback { cb(status) }
+                return
+            }
+        }
+        if let cb = callback { cb(status) }
+    }
+    
+    /// Save the managed object context associated with the given entity and remove it from the cache.
     func saveChildContext(_ entity: NSManagedObject, callback: ((Bool) -> Void)? = nil) {
         var status = true
         if let context = entity.managedObjectContext, let mocName = context.name {
@@ -1121,6 +1137,8 @@ class CoreDataService {
             if moc.hasChanges {
                 do {
                     try moc.save()
+                    self.saveBackgroundContext()
+                    self.saveMainContext()
                     self.childMOCList.remove(at: idx)
                 } catch {
                     status = false

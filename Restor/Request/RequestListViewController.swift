@@ -24,6 +24,7 @@ class RequestListViewController: UIViewController {
         super.viewWillAppear(animated)
         AppState.activeScreen = .requestListing
         self.navigationItem.title = "Requests"
+        self.updateData()
     }
     
     override func viewDidLoad() {
@@ -35,6 +36,9 @@ class RequestListViewController: UIViewController {
         self.app.updateViewBackground(self.view)
         self.app.updateNavigationControllerBackground(self.navigationController)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
+    }
+    
+    func updateData() {
         if let ws = AppState.currentWorkspace, let ctx = ws.managedObjectContext, let proj = AppState.currentProject, let projId = proj.id {
             self.requests = self.localdb.getRequests(projectId: projId, ctx: ctx)
         }
