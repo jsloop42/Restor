@@ -844,7 +844,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExist = checkExists, isExist, let ws = self.getWorkspace(id: id, ctx: ctx) { x = ws }
-            let ws = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "EWorkspace", into: self.bgMOC) as! EWorkspace
+            let ws = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "EWorkspace", into: moc) as! EWorkspace
             ws.id = id
             ws.index = index.toInt64()
             ws.name = name
@@ -875,7 +875,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExist = checkExists, isExist, let proj = self.getProject(id: id, ctx: ctx) { x = proj }
-            let proj = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "EProject", into: self.bgMOC) as! EProject
+            let proj = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "EProject", into: moc) as! EProject
             proj.id = id
             proj.index = index.toInt64()
             proj.name = name
@@ -907,7 +907,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExists = checkExists, isExists, let req = self.getRequest(id: id, ctx: ctx) { x = req }
-            let req = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequest", into: self.bgMOC) as! ERequest
+            let req = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequest", into: moc) as! ERequest
             req.id = id
             req.index = index.toInt64()
             req.name = name
@@ -953,7 +953,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestData(id: id, ctx: ctx) { x = data }
-            let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestData", into: self.bgMOC) as! ERequestData
+            let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestData", into: moc) as! ERequestData
             data.id = id
             data.index = index.toInt64()
             data.created = x == nil ? ts : x!.created
@@ -985,7 +985,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestMethodData(id: id, ctx: ctx) { x = data }
-            let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestMethodData", into: self.bgMOC) as! ERequestMethodData
+            let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestMethodData", into: moc) as! ERequestMethodData
             data.id = id
             data.isCustom = isCustom ?? true
             data.index = index.toInt64()
@@ -1014,7 +1014,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestBodyData(id: id, ctx: ctx) { x = data }
-            let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestBodyData", into: self.bgMOC) as! ERequestBodyData
+            let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestBodyData", into: moc) as! ERequestBodyData
             data.id = id
             data.index = index.toInt64()
             data.created = x == nil ? ts : x!.created
@@ -1175,7 +1175,7 @@ class CoreDataService {
                             self.saveBackgroundContext()
                         }
                     }
-                    self.childMOCList.remove(at: idx)
+                    self.removeChildMOC(at: idx)
                 } catch {
                     status = false
                     let nserror = error as NSError
@@ -1188,7 +1188,23 @@ class CoreDataService {
         if let cb = callback { cb(status) }
     }
     
+    func removeChildMOC(at index: Int, withName name: String) {
+        if self.childMOCList.count > index {
+            let moc = self.childMOCList[index]
+            if moc.name == name { self.childMOCList.remove(at: index); Log.debug("child moc removed from cache") }
+        }
+    }
+    
+    func removeChildMOC(at index: Int) {
+        if self.childMOCList.count > index { self.childMOCList.remove(at: index) }
+    }
+    
     // MARK: - Delete
+    
+    /// Resets the context to its base state if there are any changes.
+    func discardChanges(in context: NSManagedObjectContext) {
+        if context.hasChanges { context.reset() }
+    }
     
     func deleteEntity(_ entity: NSManagedObject?) {
         Log.debug("delete entity: \(String(describing: entity))")

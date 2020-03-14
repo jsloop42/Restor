@@ -55,6 +55,8 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     /// Indicates if the request is valid for saving (any changes made).
     private var isDirty = false
     var entityDict: [String: Any] = [:]
+    /// Used in getting child managed object context.
+    private var reqName = ""
     
     enum CellId: Int {
         case url = 0
@@ -71,19 +73,50 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     
     deinit {
         Log.debug("request tableview deinit")
-        EditRequestTableViewController.shared = nil
+    }
+    
+    func destroy() {
+        self.headerKVTableViewManager.destroy()
+        self.paramsKVTableViewManager.destroy()
+        self.bodyKVTableViewManager.destroy()
+        if let data = AppState.editRequest {
+            let ctxIdx = data.childContextIndex.toInt()
+            self.localdb.removeChildMOC(at: ctxIdx, withName: self.reqName)
+        }
         AppState.editRequest = nil
+        EditRequestTableViewController.shared = nil
         self.nc.removeObserver(self)
+    }
+    
+    func discardContextChange() {
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext { self.localdb.discardChanges(in: ctx) }
+    }
+    
+    override func shouldPopOnBackButton() -> Bool {
+        if self.isDirty {
+            UI.viewActionSheet(vc: self, message: "Are you sure you want to discard your changes?", cancelText: "Keep Editing",
+                               otherButtonText: "Discard Changes", cancelStyle: UIAlertAction.Style.cancel, otherStyle: UIAlertAction.Style.destructive,
+                               // keep editing
+                               cancelCallback: { Log.debug("cancel callback") },
+                               // discard changes
+                               otherCallback: { self.discardContextChange(); self.close() })
+            return false
+        }
+        self.destroy()
+        return true
+    }
+    
+    // Handle the pop gesture
+    override func willMove(toParent parent: UIViewController?) {
+        Log.debug("will move")
+        if parent == nil { // When the user swipe to back, the parent is nil
+            return
+        }
+        super.willMove(toParent: parent)
     }
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
-        if !self.isActive {
-            self.headerKVTableViewManager.destroy()
-            self.paramsKVTableViewManager.destroy()
-            self.bodyKVTableViewManager.destroy()
-            //RequestVC.shared = nil
-        }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -103,6 +136,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             Log.debug("initial entity dic: \(self.entityDict)")
         }
         self.updateData()
+        self.reloadAllTableViews()
     }
         
     func initUI() {
@@ -120,23 +154,19 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         self.urlTextField.delegate = self
         self.nameTextField.delegate = self
         self.descTextView.delegate = self
-        // Set bottom border
-        //self.app.updateTextFieldWithBottomBorder(self.urlTextField)
         self.addDoneButton()
         // Color
         self.urlTextField.isColor = false
-        //self.nameTextField.borderOffsetY = 2
         self.nameTextField.isColor = false
-        //self.app.updateTextFieldWithBottomBorder(self.nameTextField)
-        // test
+        // clear storyboard debug helpers
         self.urlCell.borderColor = .clear
         self.nameCell.borderColor = .clear
         self.headerCell.borderColor = .clear
         self.paramsCell.borderColor = .clear
         self.bodyCell.borderColor = .clear
-        // end test
+        // end clear
+        self.reqName = AppState.editRequest?.name ?? ""
         self.renderTheme()
-        self.tableView.reloadData()
     }
     
     func initEvents() {
@@ -221,7 +251,11 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     func close() {
-        DispatchQueue.main.async { self.navigationController?.popViewController(animated: true) }
+        DispatchQueue.main.async {
+            self.endEditing()
+            self.destroy()
+            self.navigationController?.popViewController(animated: true)
+        }
     }
     
     @objc func doneDidTap(_ sender: Any) {
@@ -232,7 +266,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             let projObjId = cproj.objectID
             if let proj = self.localdb.getProject(moId: projObjId, withContext: ctx) {
                 AppState.editRequest!.project = proj
-                AppState.editRequest?.methods?.allObjects.forEach { method in AppState.editRequest?.project?.addToRequestMethods(method as! ERequestMethodData) }
+                AppState.editRequest!.methods?.allObjects.forEach { method in AppState.editRequest?.project?.addToRequestMethods(method as! ERequestMethodData) }
                 Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { t in
                     Log.debug("edit req in save timer")
                     t.invalidate()
@@ -1365,7 +1399,8 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 }
             }
         case .body:
-            if AppState.editRequest!.body == nil { AppState.editRequest?.body = self.localdb.createRequestBodyData(id: self.utils.genRandomString(), index: 0) }
+            if AppState.editRequest!.body == nil { RequestVC.addRequestBodyToState() }
+            if AppState.editRequest!.body == nil { return }
             if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
                 if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
                 if let last = self.localdb.getLastRequestData(type: .form, ctx: ctx) { index = (last.index + 1).toInt() }
@@ -1497,20 +1532,18 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 cell.delegate = self
                 self.hideDeleteRowView(cell: cell)
                 let selectedIdx: Int = {
-                    if let body = AppState.editRequest!.body {
-                        return Int(body.selected)
-                    }
+                    if let data = AppState.editRequest, let body = data.body { return Int(body.selected) }
                     return 0
                 }()
                 switch selectedIdx {
                 case RequestBodyType.json.rawValue:
-                    cell.rawTextView.text = AppState.editRequest!.body?.json ?? ""
+                    cell.rawTextView.text = AppState.editRequest?.body?.json ?? ""
                     cell.hideFormFields()
                 case RequestBodyType.xml.rawValue:
-                    cell.rawTextView.text = AppState.editRequest!.body?.xml ?? ""
+                    cell.rawTextView.text = AppState.editRequest?.body?.xml ?? ""
                     cell.hideFormFields()
                 case RequestBodyType.raw.rawValue:
-                    cell.rawTextView.text = AppState.editRequest!.body?.raw ?? ""
+                    cell.rawTextView.text = AppState.editRequest?.body?.raw ?? ""
                     cell.hideFormFields()
                 case RequestBodyType.form.rawValue:
                     cell.displayFormFields()
@@ -1521,7 +1554,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 default:
                     break
                 }
-                if AppState.editRequest!.body != nil {
+                if AppState.editRequest != nil && AppState.editRequest!.body != nil {
                     cell.bodyDataId = AppState.editRequest!.body!.id ?? ""
                     cell.updateState(AppState.editRequest!.body!)
                 }
@@ -1585,7 +1618,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if self.tableViewType == .body {
-            if let body = AppState.editRequest!.body {
+            if let data = AppState.editRequest, let body = data.body {
                 if indexPath.section == 1 { return 0 }
                 if body.selected == RequestBodyType.form.rawValue {
                     return RequestVC.bodyFormCellHeight()

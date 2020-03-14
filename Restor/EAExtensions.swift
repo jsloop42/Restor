@@ -130,3 +130,38 @@ public extension Int64 {
         return Int32(self)
     }
 }
+
+/// Determine if view should be popped on navigation bar's back button tap
+protocol  UINavigationBarBackButtonHandler {
+    /// Should block the back button action
+    func shouldPopOnBackButton() -> Bool
+}
+
+/// To not block the back button action by default
+extension UIViewController: UINavigationBarBackButtonHandler {
+    @objc func shouldPopOnBackButton() -> Bool { return true }
+}
+
+extension UINavigationController: UINavigationBarDelegate {
+    /// Check if current view controller should be popped on tapping the navigation bar back button.
+    @objc public func navigationBar(_ navigationBar: UINavigationBar, shouldPop item: UINavigationItem) -> Bool {
+        guard let items = navigationBar.items else { return false }
+        
+        if self.viewControllers.count < items.count { return true }
+        
+        var shouldPop = true
+        if let vc = topViewController, vc.responds(to: #selector(UIViewController.shouldPopOnBackButton)) {
+            shouldPop = vc.shouldPopOnBackButton()
+        }
+        
+        if shouldPop {
+            DispatchQueue.main.async { self.popViewController(animated: true) }
+        } else {
+            for aView in navigationBar.subviews {
+                if aView.alpha > 0 && aView.alpha < 1 { aView.alpha = 1.0 }
+            }
+        }
+        
+        return false
+    }
+}

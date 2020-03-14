@@ -57,15 +57,17 @@ class RequestListViewController: UIViewController {
             if let idx = index {
                 let req = self.requests[idx]
                 if let reqId = req.id, let name = req.name {
-                    let ctx = self.localdb.getChildMOC(name: name)
+                    let (ctx, ctxIdx) = self.localdb.getChildMOCWithIndex(name: name)
                     AppState.editRequest = self.localdb.getRequest(id: reqId, ctx: ctx)
+                    AppState.editRequest?.childContextIndex = ctxIdx.toInt64()
                 }
             }
         } else {
             if AppState.editRequest == nil {
                 let (name, idx) = self.app.getNewRequestNameWithIndex()
-                let ctx = self.localdb.getChildMOC(name: name)
+                let (ctx, ctxIdx) = self.localdb.getChildMOCWithIndex(name: name)
                 AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: idx, name: name, ctx: ctx)
+                AppState.editRequest?.childContextIndex = ctxIdx.toInt64()
             }
         }
         UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
