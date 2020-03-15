@@ -79,17 +79,13 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         self.headerKVTableViewManager.destroy()
         self.paramsKVTableViewManager.destroy()
         self.bodyKVTableViewManager.destroy()
-        if let data = AppState.editRequest {
-            let ctxIdx = data.childContextIndex.toInt()
-            self.localdb.removeChildMOC(at: ctxIdx, withName: self.reqName)
-        }
         AppState.editRequest = nil
         EditRequestTableViewController.shared = nil
         self.nc.removeObserver(self)
     }
     
     func discardContextChange() {
-        if let data = AppState.editRequest, let ctx = data.managedObjectContext { self.localdb.discardChanges(in: ctx) }
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext { self.localdb.discardChanges(for: data, inContext: ctx) }
     }
     
     override func shouldPopOnBackButton() -> Bool {
@@ -148,10 +144,10 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         self.initBodyTableViewManager()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
-        if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext,
-            let x = self.localdb.getRequestMethodData(at: 0, reqId: reqId, ctx: ctx) {
-            self.methodLabel.text = x.name
-        }
+//        if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext,
+//            let x = self.localdb.getRequestMethodData(at: 0, reqId: reqId, ctx: ctx) {
+//            self.methodLabel.text = x.name
+//        }
         self.urlTextField.delegate = self
         self.nameTextField.delegate = self
         self.descTextView.delegate = self
@@ -196,7 +192,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             self.nameTextField.text = data.name
             self.descTextView.text = data.desc
             let idx = data.selectedMethodIndex.toInt()
-            if let method = self.localdb.getRequestMethodData(at: idx, reqId: reqId, ctx: ctx) { self.methodLabel.text = method.name }
+            //if let method = self.localdb.getRequestMethodData(at: idx, reqId: reqId, ctx: ctx) { self.methodLabel.text = method.name }
         }
     }
     
@@ -265,18 +261,15 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         Log.debug("Done did tap")
         self.endEditing()
         self.app.diffRescheduler.timer?.invalidate()
-        if self.isDirty, let data = AppState.editRequest, let cproj = AppState.currentProject, let ctx = data.managedObjectContext {
-            let projObjId = cproj.objectID
-            if let proj = self.localdb.getProject(moId: projObjId, withContext: ctx) {
-                AppState.editRequest!.project = proj
-                AppState.editRequest!.methods?.allObjects.forEach { method in AppState.editRequest?.project?.addToRequestMethods(method as! ERequestMethodData) }
-                Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { t in
-                    Log.debug("edit req in save timer")
-                    t.invalidate()
-                    self.localdb.saveChildContext(AppState.editRequest!)
-                    self.isDirty = false
-                    self.close()
-                }
+        if self.isDirty, let data = AppState.editRequest, let proj = AppState.currentProject {
+            proj.addToRequests(data)
+            //AppState.editRequest!.methods?.allObjects.forEach { method in AppState.editRequest?.project?.addToRequestMethods(method as! ERequestMethodData) }
+            Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { t in
+                Log.debug("edit req in save timer")
+                t.invalidate()
+                self.localdb.saveBackgroundContext()
+                self.isDirty = false
+                self.close()
             }
         }
     }

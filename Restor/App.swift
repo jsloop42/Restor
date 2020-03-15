@@ -466,6 +466,7 @@ class App {
             
             var formxsa = x.form!.allObjects as! [Entity]
             let formxsb = body["form"] as! [[String: Any]]
+            if formxsa.count != formxsb.count { return true }
             self.localdb.sortByCreated(&formxsa)
             
             let len = formxsa.count

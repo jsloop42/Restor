@@ -26,9 +26,9 @@ class CoreDataService {
     lazy var bgMOC: NSManagedObjectContext = {
         let ctx = self.persistentContainer.newBackgroundContext()
         ctx.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+        ctx.automaticallyMergesChangesFromParent = true
         return ctx
     }()
-    private var childMOCList: [NSManagedObjectContext] = []
     private let fetchBatchSize: Int = 50
     private let utils = Utils.shared
     
@@ -44,21 +44,6 @@ class CoreDataService {
             self.persistentContainer.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
             completion()
         }
-    }
-    
-    /// Returns a child managed object context with the given name.
-    func getChildMOC(name: String) -> NSManagedObjectContext {
-        return self.getChildMOCWithIndex(name: name).context
-    }
-    
-    /// Returns the child managed object context with the given name and its index in the child moc cache list.
-    func getChildMOCWithIndex(name: String) -> (context: NSManagedObjectContext, index: Int) {
-        if let idx = self.childMOCList.firstIndex(where: { moc -> Bool in moc.name == name }) { return (self.childMOCList[idx], idx) }
-        let moc = NSManagedObjectContext(concurrencyType: self.bgMOC.concurrencyType)
-        moc.parent = self.bgMOC
-        moc.name = name
-        self.childMOCList.append(moc)
-        return (moc, self.childMOCList.count - 1)
     }
     
     // MARK: - Sort
@@ -155,6 +140,14 @@ class CoreDataService {
     }
     
     // MARK: - Get
+    
+    /// Get managed object with the given object Id with the given context.
+    /// - Parameters:
+    ///   - moId: The managed object Id of the entity.
+    ///   - context: The managed object context used to access.
+    func getManagedObject(moId: NSManagedObjectID, withContext context: NSManagedObjectContext) -> NSManagedObject {
+        return context.object(with: moId)
+    }
     
     // MARK: EWorkspace
     
@@ -906,10 +899,10 @@ class CoreDataService {
             req.modified = ts
             req.version = x == nil ? 0 : x!.version + 1
             project?.addToRequests(req)
-            if req.methods == nil { req.methods = NSSet() }
-            if req.methods!.count == 0 {
-                req.methods?.addingObjects(from: self.genDefaultRequestMethods(req, ctx: moc))
-            }
+//            if req.methods == nil { req.methods = NSSet() }
+//            if req.methods!.count == 0 {
+//                req.methods?.addingObjects(from: self.genDefaultRequestMethods(req, ctx: moc))
+//            }
             x = req
         }
         return x
@@ -1140,58 +1133,20 @@ class CoreDataService {
         }
         if let cb = callback { cb(status) }
     }
-    
-    /// Save the managed object context associated with the given entity and remove it from the cache.
-    func saveChildContext(_ entity: NSManagedObject, isForce: Bool? = false, callback: ((Bool) -> Void)? = nil) {
-        Log.debug("save child context")
-        var status = true
-        if let context = entity.managedObjectContext, let mocName = context.name {
-            let (moc, idx) = self.getChildMOCWithIndex(name: mocName)
-            moc.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
-            if moc.hasChanges {
-                do {
-                    Log.debug("child context has changes")
-                    try moc.save()
-                    moc.processPendingChanges()
-                    Log.debug("child context saved")
-                    if let flag = isForce, flag {
-                        self.saveBackgroundContext()
-                    } else {
-                        Log.debug("scheduling bg context save")
-                        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { t in
-                            t.invalidate()
-                            self.saveBackgroundContext()
-                        }
-                    }
-                    self.removeChildMOC(at: idx)
-                } catch {
-                    status = false
-                    let nserror = error as NSError
-                    Log.error("Persistence error \(nserror), \(nserror.userInfo)")
-                    if let cb = callback { cb(status) }
-                    return
-                }
-            }
-        }
-        if let cb = callback { cb(status) }
-    }
-    
-    func removeChildMOC(at index: Int, withName name: String) {
-        if self.childMOCList.count > index {
-            let moc = self.childMOCList[index]
-            if moc.name == name { self.childMOCList.remove(at: index); Log.debug("child moc removed from cache") }
-        }
-    }
-    
-    func removeChildMOC(at index: Int) {
-        if self.childMOCList.count > index { self.childMOCList.remove(at: index) }
-    }
-    
+        
     // MARK: - Delete
     
     /// Resets the context to its base state if there are any changes.
     func discardChanges(in context: NSManagedObjectContext) {
         if context.hasChanges { context.reset() }
+    }
+    
+    /// Discard changes to the given entity in the managed object context.
+    /// - Parameters:
+    ///   - entity: The managed object
+    ///   - context: The managed object context.
+    func discardChanges(for entity: NSManagedObject, inContext context: NSManagedObjectContext) {
+        context.refresh(entity, mergeChanges: false)
     }
     
     func deleteEntity(_ entity: NSManagedObject?) {

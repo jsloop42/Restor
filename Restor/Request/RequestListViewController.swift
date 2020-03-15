@@ -48,29 +48,25 @@ class RequestListViewController: UIViewController {
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
         self.viewEditRequestVC(false)
-        
     }
     
     func viewEditRequestVC(_ isUpdate: Bool, index: Int? = 0) {
         Log.debug("view edit request vc")
+        var isDisplay = false
         if isUpdate {
-            if let idx = index {
-                let req = self.requests[idx]
-                if let reqId = req.id, let name = req.name {
-                    let (ctx, ctxIdx) = self.localdb.getChildMOCWithIndex(name: name)
-                    AppState.editRequest = self.localdb.getRequest(id: reqId, ctx: ctx)
-                    AppState.editRequest?.childContextIndex = ctxIdx.toInt64()
-                }
-            }
+            if let idx = index { AppState.editRequest = self.requests[idx]; isDisplay = true }
         } else {
             if AppState.editRequest == nil {
                 let (name, idx) = self.app.getNewRequestNameWithIndex()
-                let (ctx, ctxIdx) = self.localdb.getChildMOCWithIndex(name: name)
-                AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: idx, name: name, ctx: ctx)
-                AppState.editRequest?.childContextIndex = ctxIdx.toInt64()
+                AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: idx, name: name)
+                isDisplay = true
             }
         }
-        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
+        if isDisplay {
+            UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
+        } else {
+            // TODO: display error alert
+        }
     }
 }
 
