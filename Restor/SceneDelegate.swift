@@ -10,8 +10,8 @@ import UIKit
 
 @available(iOS 13.0, *)
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-
     var window: UIWindow?
+    private let app = App.shared
 
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
@@ -50,8 +50,8 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
 
         // Save changes in the application's managed object context when the application transitions to the background.
         
-        //(UIApplication.shared.delegate as? AppDelegate)?.saveContext()
-        CoreDataService.shared.saveMainContext()
+        // TODO:
+        // self.app.saveState()
     }
 }
 

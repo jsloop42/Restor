@@ -11,7 +11,5 @@ import UIKit
 
 let isRunningTests = NSClassFromString("XCTestCase") != nil
 let appDelegateClass = isRunningTests ? NSStringFromClass(AppDelegateMock.self) : NSStringFromClass(AppDelegate.self)
-if !isRunningTests {
-    CoreDataService.shared.setup(completion: nil)
-}
+CoreDataService.shared.bootstrap()
 UIApplicationMain(CommandLine.argc, CommandLine.unsafeArgv, nil, appDelegateClass)

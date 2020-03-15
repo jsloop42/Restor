@@ -11,56 +11,19 @@ import XCTest
 import CoreData
 
 class RestorTests: XCTestCase {
-    private let utils = Utils.shared
     private var localdb = CoreDataService.shared
-    static let moc: NSManagedObjectModel = {
-        let managedObjectModel = NSManagedObjectModel.mergedModel(from: [Bundle(for: RestorTests.self)])!
-        return managedObjectModel
-    }()
-    private var inMemContainer: NSPersistentContainer?
+    private let utils = Utils.shared
     private let serialQueue = DispatchQueue(label: "serial-queue")
     private let app = App.shared
 
     override func setUp() {
         super.setUp()
-//        if let container = try? NSPersistentContainer(name: "Restor", managedObjectModel: RestorTests.moc) {
-//            container.loadPersistentStores(completionHandler: { storeDescription, error in
-//                if let error = error {
-//                    fatalError("Unresolved error \(error)")
-//                }
-//                container.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
-//                container.viewContext.automaticallyMergesChangesFromParent = true
-//            })
-//            self.localdb.persistentContainer = container
-//            self.localdb.bgMOC = container.newBackgroundContext()
-//        } else {
-//            XCTFail()
-//        }
-        
-        // Setup in-memory NSPersistentContainer
-//        let storeURL = NSPersistentContainer.defaultDirectoryURL().appendingPathComponent("store")
-//        let desc = NSPersistentStoreDescription(url: storeURL)
-//        desc.shouldMigrateStoreAutomatically = true
-//        desc.shouldInferMappingModelAutomatically = true
-//        desc.shouldAddStoreAsynchronously = false
-//        desc.type = NSSQLiteStoreType
-//        let persistentContainer = NSPersistentContainer(name: "Restor", managedObjectModel: RestorTests.moc)
-//        persistentContainer.persistentStoreDescriptions = [desc]
-//        persistentContainer.loadPersistentStores { _, error in
-//            if let error = error {
-//                fatalError("Failed to create CoreData \(error.localizedDescription)")
-//            } else {
-//                Log.debug("CoreData set up with in-memory store type")
-//            }
-//        }
-//        self.inMemContainer = persistentContainer
-//        self.localdb.persistentContainer = self.inMemContainer!
     }
 
     override func tearDown() {
-        
+        super.tearDown()
     }
-
+    
     func testGenRandom() {
         let x = self.utils.genRandomString()
         XCTAssertEqual(x.count, 20)
@@ -68,29 +31,24 @@ class RestorTests: XCTestCase {
     
     // MARK: - CoreData tests
     
-    func notestCoreDataSetupCompletion() {
+    func testCoreDataSetupCompletion() {
         let exp = expectation(description: "CoreData setup completion")
-        self.localdb.setup {
-            exp.fulfill()
-        }
-        waitForExpectations(timeout: 1.0) { _ in
-            XCTAssertTrue(self.localdb.persistentContainer.persistentStoreCoordinator.persistentStores.count > 0)
-        }
+        self.localdb.setup { exp.fulfill() }
+        waitForExpectations(timeout: 1.0) { _ in XCTAssertTrue(self.localdb.persistentContainer.persistentStoreCoordinator.persistentStores.count > 0) }
     }
     
-    func notestCoreDataPersistenceStoreCreated() {
+    func testCoreDataPersistenceStoreCreated() {
         let exp = expectation(description: "CoreData setup create store")
-        self.localdb.setup(storeType: NSInMemoryStoreType) {
+        self.localdb.setup(storeType: NSSQLiteStoreType) {
+            XCTAssertTrue(self.localdb.persistentContainer.persistentStoreCoordinator.persistentStores.count > 0)
             exp.fulfill()
         }
-        waitForExpectations(timeout: 1.0) { _ in
-            XCTAssertTrue(self.localdb.persistentContainer.persistentStoreCoordinator.persistentStores.count > 0)
-        }
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
     
-    func notestCoreDataPersistenceLoadedOnDisk() {
+    func testCoreDataPersistenceLoadedOnDisk() {
         let exp = expectation(description: "CoreData persistence container loaded on disk")
-        self.localdb.setup {
+        self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
                 XCTAssertEqual(self.localdb.persistentContainer.persistentStoreDescriptions.first?.type, NSSQLiteStoreType)
                 exp.fulfill()
@@ -103,18 +61,7 @@ class RestorTests: XCTestCase {
         }
     }
     
-    func notestCoreDataPersistenceLoadedInMem() {
-        let exp = expectation(description: "CoreData persistence container loaded in memory")
-        self.localdb.setup(storeType: NSInMemoryStoreType) {
-            self.serialQueue.async {
-                XCTAssertEqual(self.localdb.persistentContainer.persistentStoreDescriptions.first?.type, NSInMemoryStoreType)
-                exp.fulfill()
-            }
-        }
-        waitForExpectations(timeout: 1.0, handler: nil)
-    }
-    
-    func notestCoreDataBackgroundContextConcurrencyType() {
+    func testCoreDataBackgroundContextConcurrencyType() {
         let exp = expectation(description: "background context")
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
@@ -125,7 +72,7 @@ class RestorTests: XCTestCase {
         waitForExpectations(timeout: 1.0, handler: nil)
     }
     
-    func notestCoreDataMainContextConcurrencyType() {
+    func testCoreDataMainContextConcurrencyType() {
         let exp = expectation(description: "main context")
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
@@ -136,7 +83,7 @@ class RestorTests: XCTestCase {
         waitForExpectations(timeout: 1.0, handler: nil)
     }
     
-    func notestCoreData() {
+    func testCoreData() {
         let exp = expectation(description: "test core data")
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
@@ -144,7 +91,7 @@ class RestorTests: XCTestCase {
                 XCTAssertNotNil(lws)
                 guard let ws = lws else { return }
                 XCTAssertEqual(ws.name, "test-ws")
-                self.localdb.saveChildContext(ws)
+                self.localdb.saveBackgroundContext()
                 self.localdb.deleteEntity(ws)
                 let aws = self.localdb.getWorkspace(id: "test-ws")
                 XCTAssertNil(aws)
@@ -154,7 +101,7 @@ class RestorTests: XCTestCase {
         waitForExpectations(timeout: 1.0, handler: nil)
     }
     
-    func notestEntitySorting() {
+    func testEntitySorting() {
         let exp = expectation(description: "test core data sorting")
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
@@ -174,7 +121,7 @@ class RestorTests: XCTestCase {
                 XCTAssertNotNil(wproj3)
                 guard let proj3 = wproj3 else { return }
                 ws.projects = NSSet(array: [proj1, proj2, proj3])
-                self.localdb.saveChildContext(ws)
+                self.localdb.saveBackgroundContext()
                 
                 // ws2
                 let wsname2 = "test-ws-2"
@@ -193,7 +140,7 @@ class RestorTests: XCTestCase {
                 XCTAssertNotNil(wproj23)
                 guard let proj23 = wproj23 else { return }
                 ws2.projects = NSSet(array: [proj21, proj22, proj23])
-                self.localdb.saveChildContext(ws2)
+                self.localdb.saveBackgroundContext()
                 
                 let lws = self.localdb.getWorkspace(id: wsname)
                 XCTAssertNotNil(lws)
@@ -218,13 +165,15 @@ class RestorTests: XCTestCase {
                 projxs2.forEach { p in self.localdb.deleteEntity(p) }
                 self.localdb.deleteEntity(ws)
                 self.localdb.deleteEntity(ws)
+                self.localdb.saveBackgroundContext()
+                self.localdb.discardChanges(in: self.localdb.bgMOC)
                 exp.fulfill()
             }
         }
         waitForExpectations(timeout: 1.0, handler: nil)
     }
     
-    func notestMD5ofData() {
+    func testMD5ofData() {
         let data = "hello world".data(using: .utf8)
         XCTAssertNotNil(data)
         let md5 = self.utils.md5(data: data!)
@@ -235,7 +184,7 @@ class RestorTests: XCTestCase {
         let exp = expectation(description: "Test core data CRUD")
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
-                let moc = self.localdb.getChildMOC(name: "edit-req")
+                let moc = self.localdb.bgMOC
                 let mreq = self.localdb.createRequest(id: "edit-req", index: 0, name: "Edit request", ctx: moc)
                 XCTAssertNotNil(mreq)
                 guard let req = mreq else { XCTFail(); return }
@@ -274,7 +223,7 @@ class RestorTests: XCTestCase {
                 x = self.localdb.getRequestData(at: 2, reqId: reqId, type: .header, ctx: ctx)
                 XCTAssertNotNil(x)
                 XCTAssertEqual(x!.id!, h2.id!)
-                XCTAssertNoThrow(self.localdb.saveChildContext(req))
+                XCTAssertNoThrow(self.localdb.saveBackgroundContext())
                 var id = h1.id!
                 _ = self.localdb.deleteRequestData(dataId: id, req: req, type: .header, ctx: ctx)
                 XCTAssertEqual(req.headers!.count, 2)
@@ -286,13 +235,18 @@ class RestorTests: XCTestCase {
                 XCTAssertEqual(x!.id, id)
                 self.localdb.deleteEntity(req)
                 XCTAssertNil(self.localdb.getRequest(id: reqId, ctx: ctx))
+                // cleaup
+                self.localdb.deleteEntity(h0)
+                self.localdb.deleteEntity(h1)
+                self.localdb.deleteEntity(h2)
+                XCTAssertNoThrow(self.localdb.saveBackgroundContext())
                 exp.fulfill()
             }
         }
         waitForExpectations(timeout: 1.0, handler: nil)
     }
     
-    func notestGetImageType() {
+    func testGetImageType() {
         let filePrivJPEG = "file:///private/var/mobile/Containers/Data/Application/0BD3B416-B9D5-4498-9781-08127199163F/tmp/60FA8CBF-2F96-464D-8DE4-C1D7FF59F698.jpeg"  // simulator
         let filePrivPNG = "file:///private/var/mobile/Containers/Data/Application/0BD3B416-B9D5-4498-9781-08127199163F/tmp/60FA8CBF-2F96-464D-8DE4-C1D7FF59F698.png"
         let filePrivJPEG1 = "file:///private/var/mobile/Containers/Data/Application/33784EF2-28F4-44A3-9278-F066DACD1717/tmp/8A0D19B0-2D08-47C3-BACD-AC788CBCD33E.jpeg"  // device
@@ -339,7 +293,7 @@ class RestorTests: XCTestCase {
                 acc.append(true)
             }
             w.stop()
-            XCTAssertEqual(acc.count, 4)
+            XCTAssertEqual(acc.count, 5)
             exp.fulfill()
         }
         self.waitForExpectations(timeout: 3, handler: nil)
@@ -361,67 +315,67 @@ class RestorTests: XCTestCase {
                 XCTAssertNotNil(req!.body)
                 req!.body!.addToForm(reqData!)
                 let hm = self.localdb.requestToDictionary(req!)
-                XCTAssertEqual(hm.count, 13)
+                XCTAssertEqual(hm.count, 12)
                 XCTAssertNotNil(hm["body"])
                 XCTAssertEqual((hm["body"] as! [String: Any]).count, 12)
                 XCTAssertEqual(((hm["body"] as! [String: Any])["form"] as! [[String: Any]]).count, 1)
-                XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]).count, 10)
+                XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]).count, 11)
                 XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]]).count, 1)
                 XCTAssertEqual(((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]])[0]).count, 8)
+                self.localdb.discardChanges(in: ctx)
                 exp.fulfill()
             }
         }
         waitForExpectations(timeout: 1.0, handler: nil)
     }
     
-//    func testRequestDidChange() {
-//        let exp = expectation(description: "Test request did change")
-//        self.localdb.setup(storeType: NSSQLiteStoreType) {
-//            self.serialQueue.async {
-//                let ctx = self.localdb.bgMOC
-//                let req = self.localdb.createRequest(id: self.utils.genRandomString(), index: 0, name: "test-request-change", project: nil, checkExists: false, ctx: ctx)
-//                XCTAssertNotNil(req)
-//                let reqhma = self.localdb.requestToDictionary(req!)
-//                XCTAssertNotNil(reqhma)
-//                XCTAssert(reqhma.count > 0)
-//                let areq = req!
-//                var status = self.app.didRequestChange(areq, request: reqhma)
-//                XCTAssertFalse(status)
-//                areq.url = "https://example.com"
-//                status = self.app.didRequestURLChange(areq.url ?? "", request: reqhma)
-//                XCTAssertTrue(status)
-//                status = self.app.didRequestChange(areq, request: reqhma)
-//                XCTAssertTrue(status)
-//                let breq = areq
-//                let reqhmb = self.localdb.requestToDictionary(breq)
-//                XCTAssertNotNil(reqhmb)
-//                XCTAssert(reqhmb.count > 0)
-//                status = self.app.didRequestChange(areq, request: reqhmb)
-//                XCTAssertFalse(status)
-//                let reqData = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .header, fieldFormat: .text)
-//                XCTAssertNotNil(reqData)
-//                breq.addToHeaders(reqData!)
-//                XCTAssertNotNil(breq.headers)
-//                let reqDataxs = breq.headers!.allObjects as! [Restor.ERequestData]
-//                XCTAssertTrue(self.app.didAnyRequestHeaderChange(reqDataxs, request: reqhmb))
-//                XCTAssertTrue(self.app.didRequestChange(areq, request: reqhmb))
-//                breq.removeFromHeaders(reqData!)
-//                XCTAssertFalse(self.app.didRequestChange(areq, request: reqhmb))
-//                exp.fulfill()
-//            }
-//        }
-//        waitForExpectations(timeout: 1.0, handler: nil)
-//    }
+    func testRequestDidChange() {
+        let exp = expectation(description: "Test request did change")
+        self.localdb.setup(storeType: NSSQLiteStoreType) {
+            self.serialQueue.async {
+                let ctx = self.localdb.bgMOC
+                let req = self.localdb.createRequest(id: self.utils.genRandomString(), index: 0, name: "test-request-change", project: nil, checkExists: false, ctx: ctx)
+                XCTAssertNotNil(req)
+                let reqhma = self.localdb.requestToDictionary(req!)
+                XCTAssertNotNil(reqhma)
+                XCTAssert(reqhma.count > 0)
+                let areq = req!
+                var status = self.app.didRequestChangeImp(areq, request: reqhma)
+                XCTAssertFalse(status)
+                areq.url = "https://example.com"
+                status = self.app.didRequestURLChangeImp(areq.url ?? "", request: reqhma)
+                XCTAssertTrue(status)
+                status = self.app.didRequestChangeImp(areq, request: reqhma)
+                XCTAssertTrue(status)
+                let breq = areq
+                let reqhmb = self.localdb.requestToDictionary(breq)
+                XCTAssertNotNil(reqhmb)
+                XCTAssert(reqhmb.count > 0)
+                status = self.app.didRequestChangeImp(areq, request: reqhmb)
+                XCTAssertFalse(status)
+                let reqData = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .header, fieldFormat: .text)
+                XCTAssertNotNil(reqData)
+                breq.addToHeaders(reqData!)
+                XCTAssertNotNil(breq.headers)
+                let reqDataxs = breq.headers!.allObjects as! [Restor.ERequestData]
+                XCTAssertTrue(self.app.didAnyRequestHeaderChangeImp(reqDataxs, request: reqhmb))
+                XCTAssertTrue(self.app.didRequestChangeImp(areq, request: reqhmb))
+                breq.removeFromHeaders(reqData!)
+                XCTAssertFalse(self.app.didRequestChangeImp(areq, request: reqhmb))
+                exp.fulfill()
+            }
+        }
+        waitForExpectations(timeout: 1.0, handler: nil)
+    }
     
     func testFileAttachmentDelete() {
         let exp = expectation(description: "Test setting to-many to a new set deletes the contained entities")
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
-                let moc = self.localdb.getChildMOC(name: "edit-req")
+                let moc = self.localdb.bgMOC
                 let mreq = self.localdb.createRequest(id: "edit-req", index: 0, name: "Edit request", ctx: moc)
                 XCTAssertNotNil(mreq)
-                guard let req = mreq else { XCTFail(); return }
-                let ctx = req.managedObjectContext!
+                guard let req = mreq, let ctx = req.managedObjectContext else { XCTFail(); return }
                 let abody = self.localdb.createRequestBodyData(id: "edit-req-body", index: 0, checkExists: false, ctx: ctx)
                 XCTAssertNotNil(abody)
                 guard let body = abody else { XCTFail(); return }
@@ -437,13 +391,13 @@ class RestorTests: XCTestCase {
                 f0.addToFiles(mfile0!)
                 XCTAssertNotNil(f0.files)
                 XCTAssertEqual(f0.files!.count, 1)
-                f0.files = NSSet()  // Removing the to-many relation, deletes the entities as well.
+                f0.files = NSSet()  // Removing the to-many relation, does not delete the entities in it.
                 XCTAssertEqual(f0.files!.count, 0)
                 let xfile0 = self.localdb.getFileData(id: "file-0", ctx: ctx)
                 XCTAssertNil(xfile0)
-                self.localdb.discardChanges(in: moc)
                 let ereq = self.localdb.getRequest(id: "edit-req")
-                XCTAssertNil(ereq)
+                XCTAssertNotNil(ereq)
+                self.localdb.discardChanges(in: moc)
                 exp.fulfill()
             }
         }

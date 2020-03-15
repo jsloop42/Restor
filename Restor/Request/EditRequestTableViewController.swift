@@ -57,6 +57,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     var entityDict: [String: Any] = [:]
     /// Used in getting child managed object context.
     private var reqName = ""
+    private var methods: [ERequestMethodData] = []
     
     enum CellId: Int {
         case url = 0
@@ -85,7 +86,11 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     func discardContextChange() {
-        if let data = AppState.editRequest, let ctx = data.managedObjectContext { self.localdb.discardChanges(for: data, inContext: ctx) }
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext {
+            //self.localdb.discardChanges(in: ctx)
+            self.localdb.discardChanges(for: self.app.editReqManIds, inContext: ctx)
+            self.app.clearEditRequestManagedObjectIds()
+        }
     }
     
     override func shouldPopOnBackButton() -> Bool {
@@ -144,10 +149,6 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         self.initBodyTableViewManager()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
-//        if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext,
-//            let x = self.localdb.getRequestMethodData(at: 0, reqId: reqId, ctx: ctx) {
-//            self.methodLabel.text = x.name
-//        }
         self.urlTextField.delegate = self
         self.nameTextField.delegate = self
         self.descTextView.delegate = self
@@ -187,12 +188,20 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
 
     func updateData() {
-        if let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext {
+        if let data = AppState.editRequest, let ctx = data.managedObjectContext {
             self.urlTextField.text = data.url
             self.nameTextField.text = data.name
             self.descTextView.text = data.desc
-            let idx = data.selectedMethodIndex.toInt()
-            //if let method = self.localdb.getRequestMethodData(at: idx, reqId: reqId, ctx: ctx) { self.methodLabel.text = method.name }
+            if let projId = AppState.currentProject?.id {
+                self.methods = self.localdb.getRequestMethodData(projId: projId, ctx: ctx)
+                let idx = data.selectedMethodIndex.toInt()
+                if self.methods.count > idx {
+                    self.methodLabel.text = self.methods[idx].name
+                } else {
+                    self.methodLabel.text = self.methods[0].name
+                    AppState.editRequest!.selectedMethodIndex = 0
+                }
+            }
         }
     }
     
@@ -263,7 +272,9 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         self.app.diffRescheduler.timer?.invalidate()
         if self.isDirty, let data = AppState.editRequest, let proj = AppState.currentProject {
             proj.addToRequests(data)
-            //AppState.editRequest!.methods?.allObjects.forEach { method in AppState.editRequest?.project?.addToRequestMethods(method as! ERequestMethodData) }
+            if let set = proj.requestMethods, let xs = set.allObjects as? [ERequestMethodData] {
+                xs.forEach { method in if method.shouldDelete { self.localdb.deleteEntity(method) } }
+            }
             Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { t in
                 Log.debug("edit req in save timer")
                 t.invalidate()
@@ -276,11 +287,10 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     
     @objc func methodViewDidTap() {
         Log.debug("method view did tap")
-        guard let data = AppState.editRequest, let reqId = data.id, let ctx = data.managedObjectContext else { return }
-        let xs = self.localdb.getRequestMethodData(reqId: reqId, ctx: ctx)
-        let model: [String] = xs.compactMap { reqData -> String? in reqData.name }
+        guard let data = AppState.editRequest else { return }
+        let model: [String] = self.methods.compactMap { reqData -> String? in reqData.name }
         self.app.presentOptionPicker(type: .requestMethod, title: "Request Method", modelIndex: 0, selectedIndex: data.selectedMethodIndex.toInt(), data: model,
-                                     modelxs: xs, storyboard: self.storyboard!, navVC: self.navigationController!)
+                                     modelxs: self.methods, storyboard: self.storyboard!, navVC: self.navigationController!)
     }
     
     @objc func requestMethodDidChange(_ notif: Notification) {
@@ -288,7 +298,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {
                 self.methodLabel.text = name
-                let i = idx.toInt32()
+                let i = idx.toInt64()
                 AppState.editRequest?.selectedMethodIndex = i
                 self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
                 self.tableView.reloadRows(at: [IndexPath(row: 0, section: 0)], with: .none)
@@ -300,7 +310,9 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         if let info = notif.userInfo as? [String: Any], let name = info[Const.requestMethodNameKey] as? String,
             let idx = info[Const.modelIndexKey] as? Int, let data = AppState.editRequest, let ctx = data.managedObjectContext {
             if let method = self.localdb.createRequestMethodData(id: self.utils.genRandomString(), index: idx, name: name, checkExists: true, ctx: ctx) {
-                method.request = data
+                data.method = method
+                self.methods.append(method)
+                AppState.currentProject?.addToRequestMethods(method)
                 self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
                 self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
                              userInfo: [Const.optionModelKey: method, Const.optionDataActionKey: OptionDataAction.add])
@@ -311,12 +323,14 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     @objc func customRequestMethodShouldDelete(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let data = info[Const.optionModelKey] as? ERequestMethodData {
             if let id = data.id {
-                data.project = nil
-                data.request = nil
-                self.localdb.deleteEntity(data)
+                if let idx = self.methods.firstIndex(of: data) { self.methods.remove(at: idx) }
+                data.shouldDelete = true
+                let selectedIdx = 0
+                AppState.editRequest?.selectedMethodIndex = selectedIdx.toInt64()
+                if let method = self.methods.first { self.methodLabel.text = method.name }
                 self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
                 self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
-                             userInfo: [Const.optionDataActionKey: OptionDataAction.delete, Const.dataKey: id])
+                             userInfo: [Const.optionDataActionKey: OptionDataAction.delete, Const.dataKey: id, Const.optionSelectedIndexKey: selectedIdx])
             }
         }
     }
@@ -324,7 +338,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     @objc func requestBodyDidChange(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int {
             DispatchQueue.main.async {
-                AppState.editRequest?.body?.selected = idx.toInt32()
+                AppState.editRequest?.body?.selected = idx.toInt64()
                 self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
                 self.tableView.reloadRows(at: [IndexPath(row: RequestCellType.body.rawValue, section: 0)], with: .none)
                 self.bodyKVTableViewManager.reloadData()
@@ -753,7 +767,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     func updateState(_ data: ERequestBodyData) {
         let idx: Int = Int(data.selected)
-        AppState.editRequest!.body!.selected = Int32(idx)
+        AppState.editRequest!.body!.selected = Int64(idx)
         self.typeLabel.text = "(\(self.optionsData[idx]))"
         self.bodyLabelViewWidth.isActive = false
         switch idx {
@@ -1056,7 +1070,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
             }
             DispatchQueue.main.async {
-                reqData.fieldFormat = idx.toInt32()
+                reqData.fieldFormat = idx.toInt64()
                 self.reloadData()
             }
         }
@@ -1067,7 +1081,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             let row = DocumentPickerState.modelIndex
             if let data = AppState.editRequest, let ctx = data.managedObjectContext,
                 let form = self.localdb.getRequestData(id: DocumentPickerState.reqDataId, ctx: ctx) {
-                form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt32()
+                form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt64()
                 if let image = DocumentPickerState.image {
                     if let imageData = DocumentPickerState.imageType == ImageType.png.rawValue ? image.pngData() : image.jpegData(compressionQuality: 1.0) {
                         let eimage = self.localdb.createImage(data: imageData, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
@@ -1089,7 +1103,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             let row = DocumentPickerState.modelIndex
             if let data = AppState.editRequest, let ctx = data.managedObjectContext,
                 let form = self.localdb.getRequestData(id: DocumentPickerState.reqDataId, ctx: ctx) {
-                form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt32()
+                form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt64()
                 form.files = NSSet()  // clear the set, but it does not delete the data
                 DocumentPickerState.docs.enumerated().forEach { args in
                     let (offset, element) = args
@@ -1327,7 +1341,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     func updateState(_ data: ERequestData, row: Int) {
         RequestVC.addRequestBodyToState()
-        AppState.editRequest!.body!.selected = self.selectedType.rawValue.toInt32()
+        AppState.editRequest!.body!.selected = self.selectedType.rawValue.toInt64()
         if self.selectedType == .form {
             if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
             AppState.editRequest!.body!.addToForm(data)

@@ -19,6 +19,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
     
+    func applicationWillTerminate(_ application: UIApplication) {
+        // TODO: handle any editing state
+        Log.debug("application will terminate")
+        self.app.saveState()
+    }
+    
+    func applicationWillResignActive(_ application: UIApplication) {
+        
+    }
+    
     // MARK: UISceneSession Lifecycle
 
     @available(iOS 13.0, *)

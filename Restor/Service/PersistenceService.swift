@@ -10,7 +10,7 @@ import Foundation
 
 struct PersistenceService {
     static let shared = PersistenceService()
-    private var db = CoreDataService.shared
+    private lazy var db = { return CoreDataService.shared }()
     
     mutating func initDefaultWorkspace() throws -> EWorkspace? {
         if !isRunningTests {

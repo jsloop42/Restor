@@ -39,6 +39,8 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     var name = ""
     var model: Any?  // Any model data, eg: RequestData associated with a body form field
     var modelxs: [Any] = []
+    private var isPopupActive = false
+    private let localdb = CoreDataService.shared
     
     deinit {
         Log.debug("option picker vc deinit")
@@ -106,6 +108,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
                 if !self.data.contains(name) {
                     self.data.append(name)
                     self.modelxs.append(data)
+                    self.cancelBtn.setTitle("Done", for: .normal)
                 }
             } else if action == .delete, let id = info[Const.dataKey] as? String {
                 if let idx = (self.modelxs.firstIndex(where: { x -> Bool in
@@ -114,15 +117,21 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
                 })) {
                     self.modelxs.remove(at: idx)
                     self.data.remove(at: idx)
+                    self.selectedIndex = info[Const.optionSelectedIndexKey] as? Int ?? 0
+                    self.cancelBtn.setTitle("Done", for: .normal)
                 }
             }
         }
         self.tableView.reloadData()
     }
     
+    /// Add custom request method
     @objc func footerDidTap() {
         Log.debug("footer did tap")
-        self.app.viewPopup(type: .requestMethod, delegate: self, parentView: self.view, bottomView: self.view, vc: self)
+        if !self.isPopupActive {
+            self.app.viewPopup(type: .requestMethod, delegate: self, parentView: self.view, bottomView: self.view, vc: self)
+            self.isPopupActive = true
+        }
     }
     
     @IBAction func cancelButtonDidTap() {
@@ -144,6 +153,10 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
                 self.nc.post(name: NotificationKey.requestBodyTypeDidChange, object: self,
                              userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex])
             }
+        } else {
+            if self.pickerType == .requestMethod {
+                self.postRequestMethodChangeNotification(self.selectedIndex)
+            }
         }
         // self.optionsDelegate?.reloadOptionsData()
         self.dismiss(animated: true, completion: nil)
@@ -151,7 +164,8 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     
     func postRequestMethodChangeNotification(_ row: Int) {
         self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
-                     userInfo: [Const.requestMethodNameKey: self.data[row], Const.modelIndexKey: row])
+                     userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
+                                Const.requestMethodNameKey: self.data[self.selectedIndex]])
     }
     
     func postRequestBodyChangeNotification(_ row: Int) {
@@ -212,22 +226,36 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     }
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let row = indexPath.row
+        let elem = self.modelxs[row] as? ERequestMethodData
+        let methodId = elem?.id ?? ""
+        let count = self.localdb.getRequestsCountForRequestMethodData(index: elem?.index, ctx: elem?.managedObjectContext)
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
-            Log.debug("delete row: \(indexPath)")
-            if self.pickerType == .requestMethod {
-                let row = indexPath.row
-                if self.selectedIndex == row {  // The selected index is being deleted. So assign selected to the first item.
-                    self.selectedIndex = 0
-                    self.postRequestMethodChangeNotification(0)
-                }
-                self.nc.post(name: NotificationKey.customRequestMethodShouldDelete, object: self,
-                             userInfo: [Const.optionModelKey: self.modelxs[row], Const.indexKey: row])
+            if count > 0, let name = elem?.name {
+                UI.viewAlert(vc: self, title: "Delete \"HEAD\"?",
+                             message: "\"\(name)\" is associated with \(count) other \(count > 1 ? "requests" : "request"). Deleting this will reset it to \"GET\".",
+                             cancelText: "Cancel", otherButtonText: "Delete", cancelStyle: .cancel, otherStyle: .destructive,
+                             cancelCallback: { completion(true) },
+                             otherCallback: { self.deleteRequestDataMethod(row); completion(true) })
+            } else {
+                self.deleteRequestDataMethod(row)
+                completion(true)
             }
-            completion(true)
         }
         let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete])
         swipeActionConfig.performsFirstActionWithFullSwipe = false
         return swipeActionConfig
+    }
+    
+    func deleteRequestDataMethod(_ index: Int) {
+        if self.pickerType == .requestMethod {
+            if self.selectedIndex == index {  // The selected index is being deleted. So assign selected to the first item.
+                self.selectedIndex = 0
+                self.postRequestMethodChangeNotification(0)
+            }
+            self.nc.post(name: NotificationKey.customRequestMethodShouldDelete, object: self,
+                         userInfo: [Const.optionModelKey: self.modelxs[index], Const.indexKey: index])
+        }
     }
 }
 
@@ -250,6 +278,7 @@ class OptionsTableViewCell: UITableViewCell {
 extension OptionsPickerViewController: PopupViewDelegate {
     func cancelDidTap(_ sender: Any) {
         self.app.addItemPopupView?.animateSlideOut()
+        self.isPopupActive = false
     }
     
     func doneDidTap(name: String, desc: String) -> Bool {
@@ -259,10 +288,9 @@ extension OptionsPickerViewController: PopupViewDelegate {
                              userInfo: [Const.requestMethodNameKey: name, Const.modelIndexKey: self.data.count])
             }
         }
+        self.isPopupActive = false
         self.app.addItemPopupView?.animateSlideOut()
-        DispatchQueue.main.async {
-            self.tableView.reloadData()
-        }
+        DispatchQueue.main.async { self.tableView.reloadData() }
         return true
     }
     

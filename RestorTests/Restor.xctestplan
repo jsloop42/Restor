@@ -26,17 +26,6 @@
   },
   "testTargets" : [
     {
-      "skippedTests" : [
-        "RestorTests\/testCoreData()",
-        "RestorTests\/testCoreDataBackgroundContextConcurrencyType()",
-        "RestorTests\/testCoreDataMainContextConcurrencyType()",
-        "RestorTests\/testCoreDataPersistenceLoadedInMem()",
-        "RestorTests\/testCoreDataPersistenceLoadedOnDisk()",
-        "RestorTests\/testCoreDataPersistenceStoreCreated()",
-        "RestorTests\/testCoreDataSetupCompletion()",
-        "RestorTests\/testEntitySorting()",
-        "RestorTests\/testGenRandom()"
-      ],
       "target" : {
         "containerPath" : "container:Restor.xcodeproj",
         "identifier" : "9E926FA823945E7D002DF561",

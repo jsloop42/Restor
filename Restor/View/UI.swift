@@ -137,6 +137,35 @@ class UI {
         }
         aVC.present(alertVC, animated: true, completion: nil)
     }
+    
+    /// Display an alert box.
+    /// - Parameters:
+    ///     - vc: A view controller conforming to `ViewControllerProtocol`.
+    ///     - title: An optional title string.
+    ///     - message: An optional message string.
+    ///     - cancelText: Cancel button text.
+    ///     - otherButtonText: Other button text.
+    ///     - cancelCallback: Callback function on cancel.
+    ///     - otherCallback: Callback function when other button is tapped.
+    static func viewAlert(vc: UIResponder, title: String? = nil, message: String? = nil, cancelText: String, otherButtonText: String,
+                          cancelStyle: UIAlertAction.Style, otherStyle: UIAlertAction.Style,
+                          cancelCallback: (() -> Void)? = nil, otherCallback: (() -> Void)? = nil) {
+        guard let aVC = vc as? UIViewController else { return }
+        let alertVC = UIAlertController(title: title, message: message, preferredStyle: .alert)
+        alertVC.addAction(UIAlertAction(title: cancelText, style: cancelStyle, handler: { _ in
+            if let cb = cancelCallback { cb() }
+        }))
+        alertVC.addAction(UIAlertAction(title: otherButtonText, style: otherStyle, handler: {_ in
+            if let cb = otherCallback { cb() }
+        }))
+        alertVC.modalPresentationStyle = .popover
+        if let popoverPresentationController = alertVC.popoverPresentationController {
+            popoverPresentationController.sourceView = aVC.view
+            popoverPresentationController.sourceRect = aVC.view.bounds
+            popoverPresentationController.permittedArrowDirections = []
+        }
+        aVC.present(alertVC, animated: true, completion: nil)
+    }
    
     /// Display toast using the presented view controller
     static func viewToast(_ message: String, hideSec: Double? = 3, vc: UIViewController) {

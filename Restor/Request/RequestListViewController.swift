@@ -58,8 +58,12 @@ class RequestListViewController: UIViewController {
         } else {
             if AppState.editRequest == nil {
                 let (name, idx) = self.app.getNewRequestNameWithIndex()
-                AppState.editRequest = self.localdb.createRequest(id: self.utils.genRandomString(), index: idx, name: name)
-                isDisplay = true
+                if let ctx = AppState.currentProject?.managedObjectContext,
+                    let req = self.localdb.createRequest(id: self.utils.genRandomString(), index: idx, name: name, ctx: ctx) {
+                    AppState.editRequest = req
+                    AppState.currentProject?.addToRequests(req)
+                    isDisplay = true
+                }
             }
         }
         if isDisplay {

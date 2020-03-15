@@ -8,6 +8,7 @@
 
 import Foundation
 import UIKit
+import CoreData
 
 class App {
     static let shared: App = App()
@@ -35,6 +36,8 @@ class App {
     private let fnIdReqData = "request-data-fn"
     private let fnIdReqFile =  "request-file-fn"
     private let fnIdReqImage = "request-image-fn"
+    /// List of managed objects modified so that in case of discard, these entities can be reset.
+    var editReqManIds: Set<NSManagedObjectID> = Set()
     
     func addSettingsBarButton() -> UIBarButtonItem {
         if #available(iOS 13.0, *) {
@@ -66,6 +69,11 @@ class App {
         } catch let error {
             Log.error("Error initializing state: \(error)")
         }
+    }
+    
+    /// Invocked before application termination to perform save state, clean up.
+    func saveState() {
+        self.localdb.saveBackgroundContext(isForce: true)
     }
 
     func addWorkspace(_ ws: EWorkspace) {
@@ -177,6 +185,20 @@ class App {
         return ("Request", 0)
     }
     
+    /// MARK: - Entity change tracking
+    
+    func addEditRequestManagedObjectId(_ id: NSManagedObjectID?) {
+        if id != nil { self.editReqManIds.insert(id!) }
+    }
+    
+    func removeEditRequestManagedObjectId(_ id: NSManagedObjectID) {
+        self.editReqManIds.remove(id)
+    }
+    
+    func clearEditRequestManagedObjectIds() {
+        self.editReqManIds.removeAll()
+    }
+    
     // MARK: - Request change
     
     /// Checks if the request changed.
@@ -199,11 +221,15 @@ class App {
     ///   - x: The request object.
     ///   - request: The initial request dictionary.
     func didRequestChangeImp(_ x: ERequest, request: [String: Any]) -> Bool {
+        self.addEditRequestManagedObjectId(x.objectID)
         if x.url == nil || x.url!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
         if self.didRequestURLChangeImp(x.url ?? "", request: request) { return true }
         if self.didRequestMetaChangeImp(name: x.name ?? "", desc: x.desc ?? "", request: request) { return true }
         if self.didRequestMethodIndexChangeImp(x.selectedMethodIndex, request: request) { return true }
-        if let methods = x.methods?.allObjects as? [ERequestMethodData] {
+        self.addEditRequestManagedObjectId(x.method?.objectID)
+        if (x.method == nil && request["method"] != nil) || (x.method != nil && (x.method!.isInserted || x.method!.isDeleted) && request["method"] == nil) { return true }
+        if let hm = request["method"] as? [String: Any], let ida = x.id, let idb = hm["id"] as? String, ida != idb { return true }
+        if let methods = x.project?.requestMethods?.allObjects as? [ERequestMethodData] {
             if self.didAnyRequestMethodChangeImp(methods, request: request) { return true }
         }
         if self.didRequestBodyChangeImp(x.body, request: request) { return true }
@@ -225,7 +251,7 @@ class App {
     ///   - x: The selected request method index.
     ///   - request: The initial request dictionary.
     ///   - callback: The callback function.
-    func didRequestMethodIndexChange(_ x: Int32, request: [String: Any], callback: @escaping (Bool) -> Void) {
+    func didRequestMethodIndexChange(_ x: Int64, request: [String: Any], callback: @escaping (Bool) -> Void) {
         self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReqMethodIndex, block: { () -> Bool in
             return self.didRequestMethodIndexChangeImp(x, request: request)
         }, callback: { status in
@@ -237,8 +263,8 @@ class App {
     /// - Parameters:
     ///   - x: The selected request method index.
     ///   - request: The initial request dictionary.
-    func didRequestMethodIndexChangeImp(_ x: Int32, request: [String: Any]) -> Bool {
-        if let index = request["selectedMethodIndex"] as? Int32 { return x != index }
+    func didRequestMethodIndexChangeImp(_ x: Int64, request: [String: Any]) -> Bool {
+        if let index = request["selectedMethodIndex"] as? Int64 { return x != index }
         return false
     }
     
@@ -287,7 +313,11 @@ class App {
     ///   - xs: The list of request methods.
     ///   - request: The initial request dictionary.
     func didAnyRequestMethodChangeImp(_ xs: [ERequestMethodData], request: [String: Any]) -> Bool {
-        let xsa = xs.filter { x -> Bool in x.isCustom }
+        let xsa = xs.filter { x -> Bool in
+            let flag = x.isCustom && x.hasChanges
+            if flag { self.addEditRequestManagedObjectId(x.objectID) }
+            return flag
+        }
         let xsb = (request["methods"] as? [[String: Any]])?.filter({ hm -> Bool in
             if let isCustom = hm["isCustom"] as? Bool { return isCustom }
             return false
@@ -393,6 +423,7 @@ class App {
     /// Check if any of the request headers changed.
     func didAnyRequestHeaderChangeImp(_ xs: [ERequestData], request: [String: Any]) -> Bool {
         var xs: [Entity] = xs
+        xs.forEach { x in self.addEditRequestManagedObjectId(x.objectID) }
         self.localdb.sortByCreated(&xs)
         let len = xs.count
         if len != (request["headers"] as! [[String: Any]]).count { return true }
@@ -414,6 +445,7 @@ class App {
     /// Check if any of the request params changed.
     func didAnyRequestParamChangeImp(_ xs: [ERequestData], request: [String: Any]) -> Bool {
         var xs: [Entity] = xs
+        xs.forEach { x in self.addEditRequestManagedObjectId(x.objectID) }
         self.localdb.sortByCreated(&xs)
         let len = xs.count
         if len != (request["params"] as! [[String: Any]]).count { return true }
@@ -434,13 +466,14 @@ class App {
     
     /// Checks if the request body changed
     func didRequestBodyChangeImp(_ x: ERequestBodyData?, request: [String: Any]) -> Bool {
+        self.addEditRequestManagedObjectId(x?.objectID)
         if (x == nil && request["body"] != nil) || (x != nil && request["body"] == nil) { return true }
         if let body = request["body"] as? [String: Any] {
             if x?.binary != body["binary"] as? Data ||
                 x?.index != body["index"] as? Int64 ||
                 x?.json != body["json"] as? String ||
                 x?.raw != body["raw"] as? String ||
-                x?.selected != body["selected"] as? Int32 ||
+                x?.selected != body["selected"] as? Int64 ||
                 x?.xml != body["xml"] as? String {
                 return true
             }
@@ -465,6 +498,7 @@ class App {
             if (x.multipart != nil && body["multipart"] == nil) || (x.multipart == nil && body["multipart"] != nil) { return true }
             
             var formxsa = x.form!.allObjects as! [Entity]
+            formxsa.forEach { e in self.addEditRequestManagedObjectId(e.objectID) }
             let formxsb = body["form"] as! [[String: Any]]
             if formxsa.count != formxsb.count { return true }
             self.localdb.sortByCreated(&formxsa)
@@ -510,6 +544,7 @@ class App {
     
     /// Checks if the given form's attachments changed.
     func didRequestBodyFormAttachmentChangeImp(_ x: ERequestData, y: [String: Any]) -> Bool {
+        self.addEditRequestManagedObjectId(x.image?.objectID)
         if (x.image != nil && y["image"] == nil) || (x.image == nil && y["image"] != nil) { return true }
         if let ximage = x.image, let yimage = y["image"] as? [String: Any]  {
             if self.didRequestImageChangeImp(x: ximage, y: yimage) { return true }
@@ -518,6 +553,7 @@ class App {
         let yfiles = y["files"] as! [[String: Any]]
         if x.files!.count != yfiles.count { return true }
         if let set = x.files, var xs = set.allObjects as? [Entity] {
+            xs.forEach { x in self.addEditRequestManagedObjectId(x.objectID) }
             self.localdb.sortByCreated(&xs)
             let len = xs.count
             for i in 0..<len {
@@ -537,10 +573,10 @@ class App {
     
     func didRequestDataChangeImp(x: ERequestData, y: [String: Any], type: RequestDataType) -> Bool {
         if x.created != y["created"] as? Int64 ||
-            x.fieldFormat != y["fieldFormat"] as? Int32 ||
+            x.fieldFormat != y["fieldFormat"] as? Int64 ||
             x.index != y["index"] as? Int64 ||
             x.key != y["key"] as? String ||
-            x.type != y["type"] as? Int32 ||
+            x.type != y["type"] as? Int64 ||
             x.value != y["value"] as? String {
             return true
         }
@@ -564,7 +600,7 @@ class App {
         if x.created != y["created"] as? Int64 ||
             x.index != y["index"] as? Int64 ||
             x.name != y["name"] as? String ||
-            x.type != y["type"] as? Int32  {
+            x.type != y["type"] as? Int64  {
             return true
         }
         if let id = x.id, let xdata = x.data, let file = self.localdb.getFileData(id: id), let ydata = file.data {

@@ -12,12 +12,7 @@ import CoreData
 class CoreDataService {
     static var shared = CoreDataService()
     private var storeType: String! = NSSQLiteStoreType
-    lazy var persistentContainer: NSPersistentContainer! = {
-        let persistentContainer = NSPersistentContainer(name: "Restor")
-        let desc = persistentContainer.persistentStoreDescriptions.first
-        desc?.type = self.storeType
-        return persistentContainer
-    }()
+    var persistentContainer: NSPersistentContainer!
     lazy var mainMOC: NSManagedObjectContext = {
         let ctx = self.persistentContainer.viewContext
         ctx.automaticallyMergesChangesFromParent = true
@@ -31,10 +26,38 @@ class CoreDataService {
     }()
     private let fetchBatchSize: Int = 50
     private let utils = Utils.shared
+    var containerName = isRunningTests ? "RestorTest" : "Restor"
     
-    func setup(storeType: String = NSSQLiteStoreType, completion: (() -> Void)?) {
-        self.storeType = storeType
-        self.loadPersistentStore { completion?() }
+    init() {
+        self.bootstrap()
+    }
+    
+    init(containerName: String) {
+        self.containerName = containerName
+        self.bootstrap()
+    }
+    
+    func bootstrap() {
+        if let modelPath = Bundle(for: type(of: self)).path(forResource: "Restor", ofType: "momd") {
+            let url = URL(fileURLWithPath: modelPath)
+            if let model = NSManagedObjectModel(contentsOf: url) {
+                self.persistentContainer = NSPersistentContainer(name: self.containerName, managedObjectModel: model)
+            }
+        } else {
+            self.persistentContainer = NSPersistentContainer(name: "Restor")
+        }
+        let desc = self.persistentContainer.persistentStoreDescriptions.first
+        desc?.type = self.storeType
+        self.setup()
+    }
+    
+    func setup(storeType: String = NSSQLiteStoreType, completion: (() -> Void)? = nil) {
+        if (self.persistentContainer.persistentStoreCoordinator.persistentStores.firstIndex(where: { store -> Bool in store.type == storeType })) != nil {
+            completion?()
+        } else {
+            self.storeType = storeType
+            self.loadPersistentStore { completion?() }
+        }
     }
     
     private func loadPersistentStore(completion: @escaping () -> Void) {
@@ -88,9 +111,10 @@ class CoreDataService {
         if let set = x.params, let xs = set.allObjects as? [ERequestData] {
             dict["params"] = self.sortedByCreated(xs.map { y -> [String: Any] in self.requestDataToDictionary(y) })
         }
-        if let set = x.methods, let xs = set.allObjects as? [ERequestMethodData] {
-            dict["methods"] =  self.sortedByCreated(xs.map { y -> [String: Any] in self.requestMethodDataToDictionary(y) })
-        }
+        // TODO:
+//        if let set = x.methods, let xs = set.allObjects as? [ERequestMethodData] {
+//            dict["methods"] =  self.sortedByCreated(xs.map { y -> [String: Any] in self.requestMethodDataToDictionary(y) })
+//        }
         if let body = x.body { dict["body"] = self.requestBodyDataToDictionary(body) }
         return dict
     }
@@ -643,12 +667,36 @@ class CoreDataService {
         return xs
     }
     
+    /// Retrieves request method data belonging to the given project.
+    /// - Parameters:
+    ///   - projId: The project id.
+    ///   - ctx: The managed object context.
+    func getRequestMethodData(projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+        var xs: [ERequestMethodData] = []
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
+            fr.predicate = NSPredicate(format: "project.id == %@", projId)
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            fr.fetchBatchSize = self.fetchBatchSize
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error getting entity: \(error)")
+            }
+        }
+        return xs
+    }
+    
     /// Retrieve the request method data.
     /// - Parameters:
     ///   - index: The index of the method.
-    ///   - reqId: The request id.
+    ///   - projId: The project id.
     ///   - ctx: The managed object context.
-    func getRequestMethodData(at index: Int, reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
+    func getRequestMethodData(at index: Int, projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let moc: NSManagedObjectContext = {
             if ctx != nil { return ctx! }
@@ -656,13 +704,36 @@ class CoreDataService {
         }()
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
-            fr.predicate = NSPredicate(format: "request.id == %@", reqId)
+            fr.predicate = NSPredicate(format: "project.id == %@", projId)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
                 let xs = try moc.fetch(fr)
                 if xs.count > index { x = xs[index] }
             } catch let error {
                 Log.error("Error getting request method data: \(error)")
+            }
+        }
+        return x
+    }
+    
+    /// Get the count for requests with the given request method data selected.
+    /// - Parameters:
+    ///   - methodDataId: The request method data id.
+    ///   - index: The method index which will be the selected method index in the request.
+    ///   - ctx: The managed object context.
+    func getRequestsCountForRequestMethodData(index: Int64? = Const.defaultRequestMethodsCount.toInt64(), ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
+        var x: Int = 0
+        let moc: NSManagedObjectContext = {
+            if ctx != nil { return ctx! }
+            return self.bgMOC
+        }()
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
+            fr.predicate = NSPredicate(format: "selectedMethodIndex == %ld", index!)
+            do {
+                x = try moc.count(for: fr)
+            } catch let error {
+                Log.error("Error getting getting request count for the method: \(error)")
             }
         }
         return x
@@ -868,6 +939,7 @@ class CoreDataService {
             proj.modified = ts
             proj.version = x == nil ? 0 : x!.version + 1
             ws?.addToProjects(proj)
+            _ = self.genDefaultRequestMethods(proj, ctx: moc)
             x = proj
         }
         return x
@@ -931,21 +1003,21 @@ class CoreDataService {
             data.created = x == nil ? ts : x!.created
             data.modified = ts
             data.version = x == nil ? 0 : x!.version + 1
-            data.fieldFormat = fieldFormat.rawValue.toInt32()
-            data.type = type.rawValue.toInt32()
+            data.fieldFormat = fieldFormat.rawValue.toInt64()
+            data.type = type.rawValue.toInt64()
             x = data
             Log.debug("RequestData \(x == nil ? "created" : "updated"): \(x!)")
         }
         return x
     }
     
-    func genDefaultRequestMethods(_ req: ERequest, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+    func genDefaultRequestMethods(_ proj: EProject, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
         let names = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-        guard let reqId = req.id else { return [] }
+        guard let projId = proj.id else { return [] }
         return names.enumerated().compactMap { arg -> ERequestMethodData? in
             let (offset, element) = arg
-            let x = self.createRequestMethodData(id: self.genRequestMethodDataId(reqId, methodName: element), index: offset, name: element, isCustom: false, ctx: ctx)
-            x?.request =  req
+            let x = self.createRequestMethodData(id: self.genRequestMethodDataId(projId, methodName: element), index: offset, name: element, isCustom: false, ctx: ctx)
+            x?.project = proj
             return x
         }
     }
@@ -1059,7 +1131,7 @@ class CoreDataService {
             file.index = index.toInt64()
             file.name = name
             file.path = path
-            file.type = type.rawValue.toInt32()
+            file.type = type.rawValue.toInt64()
             file.version = x == nil ? 0 : x!.version + 1
             x = file
         }
@@ -1089,17 +1161,20 @@ class CoreDataService {
     func saveMainContext(_ callback: ((Bool) -> Void)? = nil) {
         Log.debug("save main context")
         if self.mainMOC.hasChanges {
-            do {
-                Log.debug("main context has changes")
-                try self.mainMOC.save()
-                self.mainMOC.processPendingChanges()
-                Log.debug("main context saved")
-            } catch {
-                let nserror = error as NSError
-                Log.error("Persistence error \(nserror), \(nserror.userInfo)")
-                if let cb = callback { cb(false) }
-                return
+            self.mainMOC.perform {
+                do {
+                    Log.debug("main context has changes")
+                    try self.mainMOC.save()
+                    self.mainMOC.processPendingChanges()
+                    Log.debug("main context saved")
+                } catch {
+                    let nserror = error as NSError
+                    Log.error("Persistence error \(nserror), \(nserror.userInfo)")
+                    if let cb = callback { cb(false) }
+                    return
+                }
             }
+        } else {
             if let cb = callback { cb(true) }
         }
     }
@@ -1108,37 +1183,42 @@ class CoreDataService {
     func saveBackgroundContext(isForce: Bool? = false, callback: ((Bool) -> Void)? = nil) {
         Log.debug("save bg context")
         var status = true
+        let isForceSave = isForce ?? false
         if self.bgMOC.hasChanges {
-            do {
-                Log.debug("bg context has changes")
-                try self.bgMOC.save()
-                self.bgMOC.processPendingChanges()
-                Log.debug("bg context saved")
-                if let flag = isForce, flag {
-                    self.saveMainContext()
-                } else {
-                    Log.debug("scheduling main context save")
-                    Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { t in
-                        t.invalidate()
+            let fn: () -> Void = {
+                do {
+                    Log.debug("bg context has changes")
+                    try self.bgMOC.save()
+                    self.bgMOC.processPendingChanges()
+                    Log.debug("bg context saved")
+                    if isForceSave {
                         self.saveMainContext()
+                    } else {
+                        Log.debug("scheduling main context save")
+                        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { t in
+                            t.invalidate()
+                            self.saveMainContext()
+                        }
                     }
+                } catch {
+                    status = false
+                    let nserror = error as NSError
+                    Log.error("Persistence error \(nserror), \(nserror.userInfo)")
+                    if let cb = callback { cb(status) }
+                    return
                 }
-            } catch {
-                status = false
-                let nserror = error as NSError
-                Log.error("Persistence error \(nserror), \(nserror.userInfo)")
-                if let cb = callback { cb(status) }
-                return
             }
+            isForceSave ? self.bgMOC.performAndWait { fn() } : self.bgMOC.perform { fn() }
+        } else {
+            if let cb = callback { cb(status) }
         }
-        if let cb = callback { cb(status) }
     }
         
     // MARK: - Delete
     
     /// Resets the context to its base state if there are any changes.
     func discardChanges(in context: NSManagedObjectContext) {
-        if context.hasChanges { context.reset() }
+        if context.hasChanges { context.performAndWait { context.rollback() } }
     }
     
     /// Discard changes to the given entity in the managed object context.
@@ -1146,7 +1226,11 @@ class CoreDataService {
     ///   - entity: The managed object
     ///   - context: The managed object context.
     func discardChanges(for entity: NSManagedObject, inContext context: NSManagedObjectContext) {
-        context.refresh(entity, mergeChanges: false)
+        context.performAndWait { context.refresh(entity, mergeChanges: false) }
+    }
+    
+    func discardChanges(for objects: Set<NSManagedObjectID>, inContext context: NSManagedObjectContext) {
+        context.performAndWait { objects.forEach { oid in self.discardChanges(for: context.object(with: oid), inContext: context) } }
     }
     
     func deleteEntity(_ entity: NSManagedObject?) {

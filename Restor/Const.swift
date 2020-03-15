@@ -28,6 +28,9 @@ struct Const {
     static let optionModelKey = "optionModelKey"
     /// The action for the data (add, delete, etc.).
     static let optionDataActionKey = "optionDataActionKey"
+    
+    /// The default number of methods added (`GET`, `POST`, `PUT`, `PATCH` and `DELETE`).
+    static let defaultRequestMethodsCount = 5
 }
 
 struct NotificationKey {
