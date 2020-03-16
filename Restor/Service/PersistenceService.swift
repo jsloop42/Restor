@@ -14,7 +14,7 @@ struct PersistenceService {
     
     mutating func initDefaultWorkspace() throws -> EWorkspace? {
         if !isRunningTests {
-            return try self.db.getDefaultWorkspace()
+            return self.db.getDefaultWorkspace()
         }
         return nil
     }

@@ -445,6 +445,8 @@ class CoreDataService {
                     return "form.request.id"
                 case .multipart:
                     return "multipart.request.id"
+                case .binary:
+                    return "binary.request.id"
                 }
             }()
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
@@ -501,6 +503,8 @@ class CoreDataService {
                     return "form.request.id"
                 case .multipart:
                     return "multipart.request.id"
+                case .binary:
+                    return "binary.request.id"
                 }
             }()
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
@@ -1250,43 +1254,44 @@ class CoreDataService {
         }
     }
     
-    func deleteRequestData(at index: Int, req: ERequest, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
-        guard let reqId = req.id else { return }
-        Log.debug("delete request data: \(index) reqBodyId \(reqId)")
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
-        moc.performAndWait {
-            var x: ERequestData?
-            // Since deleting in-between elems can change the table count, we cannot fetch by index. Instead we fetch the whole list and get the element at the
-            // given index and removes it
-            switch type {
-            case .header:
-                let xs = self.getHeadersRequestData(reqId, ctx: ctx)
-                if xs.count > index { x = xs[index] }
-                if x != nil { req.removeFromHeaders(x!) }
-            case .param:
-                let xs = self.getParamsRequestData(reqId, ctx: ctx)
-                if xs.count > index { x = xs[index] }
-                if x != nil { req.removeFromParams(x!) }
-            case .form:
-                if let bodyId = req.body?.id {
-                    let xs = self.getFormRequestData(bodyId, type: .form, ctx: ctx)
-                    if xs.count > index { x = xs[index] }
-                    if x != nil { req.body?.removeFromForm(x!) }
-                }
-            case .multipart:
-                if let bodyId = req.body?.id {
-                    let xs = self.getFormRequestData(bodyId, type: .multipart, ctx: ctx)
-                    if xs.count > index { x = xs[index] }
-                    if x != nil { req.body?.removeFromMultipart(x!) }
-                }
-                break
-            }
-            if x != nil { moc.delete(x!) }
-        }
-    }
+//    func deleteRequestData(at index: Int, req: ERequest, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+//        guard let reqId = req.id else { return }
+//        Log.debug("delete request data: \(index) reqBodyId \(reqId)")
+//        let moc: NSManagedObjectContext = {
+//            if ctx != nil { return ctx! }
+//            return self.bgMOC
+//        }()
+//        moc.performAndWait {
+//            var x: ERequestData?
+//            // Since deleting in-between elems can change the table count, we cannot fetch by index. Instead we fetch the whole list and get the element at the
+//            // given index and removes it
+//            switch type {
+//            case .header:
+//                let xs = self.getHeadersRequestData(reqId, ctx: ctx)
+//                if xs.count > index { x = xs[index] }
+//                if x != nil { req.removeFromHeaders(x!) }
+//            case .param:
+//                let xs = self.getParamsRequestData(reqId, ctx: ctx)
+//                if xs.count > index { x = xs[index] }
+//                if x != nil { req.removeFromParams(x!) }
+//            case .form:
+//                if let bodyId = req.body?.id {
+//                    let xs = self.getFormRequestData(bodyId, type: .form, ctx: ctx)
+//                    if xs.count > index { x = xs[index] }
+//                    if x != nil { req.body?.removeFromForm(x!) }
+//                }
+//            case .multipart:
+//                if let bodyId = req.body?.id {
+//                    let xs = self.getFormRequestData(bodyId, type: .multipart, ctx: ctx)
+//                    if xs.count > index { x = xs[index] }
+//                    if x != nil { req.body?.removeFromMultipart(x!) }
+//                }
+//            case .binary:
+//                break
+//            }
+//            if x != nil { moc.delete(x!) }
+//        }
+//    }
     
     /// Delete the entity with the given id.
     /// - Parameters:

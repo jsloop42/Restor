@@ -488,14 +488,14 @@ class App {
         self.addEditRequestManagedObjectId(x?.objectID)
         if (x == nil && request["body"] != nil) || (x != nil && request["body"] == nil) { return true }
         if let body = request["body"] as? [String: Any] {
-            if x?.binary != body["binary"] as? Data ||
-                x?.index != body["index"] as? Int64 ||
+            if x?.index != body["index"] as? Int64 ||
                 x?.json != body["json"] as? String ||
                 x?.raw != body["raw"] as? String ||
                 x?.selected != body["selected"] as? Int64 ||
                 x?.xml != body["xml"] as? String {
                 return true
             }
+            // TODO: handle binary
             if x != nil && self.didAnyRequestBodyFormChangeImp(x!, request: request) { return true }
         }
         return false
@@ -761,6 +761,7 @@ enum RequestDataType: Int {
     case param
     case form
     case multipart
+    case binary
 }
 
 /// Form fields under request body

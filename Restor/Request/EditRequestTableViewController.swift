@@ -348,15 +348,26 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
                                                             ctx: AppState.editRequest?.managedObjectContext) {
                     AppState.editRequest?.body?.addToMultipart(req)
                 }
-            }
-            if let vc = RequestVC.shared {
-                self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
+            } else if idx == RequestBodyType.binary.rawValue {
+                if let data = AppState.editRequest, let body = data.body {
+                    if body.binary == nil {
+                        if let req = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .binary, fieldFormat: .file,
+                                                                    ctx: AppState.editRequest?.managedObjectContext) {
+                            body.binary = req
+                        }
+                    }
+                }
             }
             AppState.editRequest?.body?.selected = idx.toInt64()
             DispatchQueue.main.async {
+                // NB: Calling within main thread seem to only work in this case
                 self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
                 self.tableView.reloadRows(at: [IndexPath(row: RequestCellType.body.rawValue, section: 0)], with: .none)
                 self.bodyKVTableViewManager.reloadData()
+                if idx == RequestBodyType.binary.rawValue {
+                    self.reloadData()
+                    self.reloadAllTableViews()
+                }
             }
         }
     }
@@ -461,6 +472,9 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             if let body = AppState.editRequest?.body, (body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue) {
                 return RequestVC.bodyFormCellHeight()
             }
+            if let body = AppState.editRequest?.body, body.selected == RequestBodyType.binary.rawValue {
+                return 60  // Only this one gets called.
+            }
             height = self.bodyKVTableViewManager.getHeight()
         } else if indexPath.row == CellId.spacerAfterBody.rawValue {
             height = 12
@@ -528,9 +542,17 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     static func bodyFormCellHeight() -> CGFloat {
-        if let body = AppState.editRequest!.body, let set = body.selected == RequestBodyType.form.rawValue ? body.form : body.multipart {
-            let count: Double = set.allObjects.count == 0 ? 1 : Double(set.allObjects.count)
-            return CGFloat(count * 92.5) + 57  // 84: field cell, 81: title cell
+        if let body = AppState.editRequest!.body {
+            var xs: [Any] = []
+            if body.selected == RequestBodyType.form.rawValue {
+                xs = body.form?.allObjects ?? []
+            } else if body.selected == RequestBodyType.multipart.rawValue {
+                xs = body.multipart?.allObjects ?? []
+            } else if body.selected == RequestBodyType.binary.rawValue {
+                return 60  // TODO: remove
+            }
+            let count: Double = xs.count == 0 ? 1 : Double(xs.count)
+            return CGFloat(count * 92.5) + 57  // field cell + title cell
         }
         return 92.5 + 57  // 84 + 77
     }
@@ -689,6 +711,12 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet var bodyLabelViewWidth: NSLayoutConstraint!
     @IBOutlet weak var typeLabel: UILabel!
     @IBOutlet weak var bodyFieldTableView: KVBodyFieldTableView!
+    @IBOutlet var bodyLabelCenterY: NSLayoutConstraint!
+    @IBOutlet var deleteBtnCenterY: NSLayoutConstraint!
+    @IBOutlet var arrowCenterY: NSLayoutConstraint!
+    @IBOutlet var rawTextViewHeight: NSLayoutConstraint!
+    @IBOutlet weak var binaryTextFieldView: UIView!
+    @IBOutlet weak var binaryTextField: EATextField!
     weak var delegate: KVContentCellDelegate?
     var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
     var isEditingActive: Bool = false
@@ -697,6 +725,8 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     private let nc = NotificationCenter.default
     private let localdb = CoreDataService.shared
     private let app = App.shared
+    private var rawTextViewPrevHeight: CGFloat = 89
+    private var rawTextViewText = ""
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -712,10 +742,16 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     func initUI() {
         self.bodyFieldTableView.isHidden = true
+        // raw text view
         self.rawTextViewContainer.isHidden = false
         let font = UIFont(name: "Menlo-Regular", size: 13)
         self.rawTextView.font = font
         self.rawTextView.placeholderFont = font
+        // binary text field
+//        self.binaryTextField.borderStyle = .none
+//        self.binaryTextField.isColor = false
+//        self.binaryTextField.delegate = self
+//        self.binaryTextField.placeholder = "select file"
     }
         
     func initEvents() {
@@ -768,16 +804,73 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     func displayFormFields() {
         self.bodyFieldTableView.isHidden = false
         self.rawTextViewContainer.isHidden = true
+        //self.binaryTextFieldView.isHidden = true
         RequestVC.addRequestBodyToState()
         if let req = AppState.editRequest, let body = req.body, let type = RequestBodyType(rawValue: body.selected.toInt()) {
             self.bodyFieldTableView.selectedType = type
         }
+        self.resetConstraints()
         self.bodyFieldTableView.reloadData()
     }
     
     func hideFormFields() {
         self.bodyFieldTableView.isHidden = true
+        //self.binaryTextFieldView.isHidden = true
+        //self.binaryTextField.isHidden = true
         self.rawTextViewContainer.isHidden = false
+        self.rawTextView.isHidden = false
+        self.resetConstraints()
+    }
+    
+    /// Resets constraints to their default values
+    func resetConstraints() {
+        self.bodyLabelCenterY.isActive = false
+        self.deleteBtnCenterY.isActive = false
+        self.arrowCenterY.isActive = false
+        //self.rawTextViewHeight.isActive = false
+        //self.rawTextViewHeight.constant = self.rawTextViewPrevHeight
+        self.bodyLabelCenterY.constant = -8
+        self.deleteBtnCenterY.constant = 0
+        self.arrowCenterY.constant = 0
+        //self.rawTextViewHeight.isActive = true
+        self.arrowCenterY.isActive = true
+        self.deleteBtnCenterY.isActive = true
+        self.bodyLabelCenterY.isActive = true
+        self.layoutIfNeeded()
+    }
+    
+    // TODO: update constraints to fixed top - add constraint and activate it.
+    /// Update constraints for binary field
+    func updateConstraintsForBinaryField() {
+        self.bodyLabelCenterY.isActive = false
+        self.deleteBtnCenterY.isActive = false
+        self.arrowCenterY.isActive = false
+        //self.rawTextViewHeight.isActive = false
+          //self.rawTextViewHeight.constant = 0
+//        self.bodyLabelCenterY.constant = -29
+//        self.deleteBtnCenterY.constant = -21
+//        self.arrowCenterY.constant = -21
+        self.bodyLabelCenterY.constant = -20
+        self.deleteBtnCenterY.constant = -12
+        self.arrowCenterY.constant = -12
+          //self.rawTextViewHeight.isActive = true
+        self.arrowCenterY.isActive = true
+        self.deleteBtnCenterY.isActive = true
+        self.bodyLabelCenterY.isActive = true
+        self.layoutIfNeeded()
+    }
+    
+    func displayBinaryField() {
+        self.bodyFieldTableView.isHidden = true
+        self.rawTextViewContainer.isHidden = true
+        self.rawTextViewContainer.isHidden = true
+        self.rawTextView.isHidden = true
+        //self.binaryTextFieldView.isHidden = false
+        //self.binaryTextField.isHidden = false
+//        self.rawTextViewPrevHeight = self.rawTextViewHeight.constant
+        self.rawTextViewText = self.rawTextView.text
+        self.rawTextView.text = ""
+        self.updateConstraintsForBinaryField()
     }
     
     func updateState(_ data: ERequestBodyData) {
@@ -817,7 +910,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
 }
 
 // MARK: - Raw textview delegate
-extension KVBodyContentCell: UITextViewDelegate {
+extension KVBodyContentCell: UITextViewDelegate, UITextFieldDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         RequestVC.shared?.clearEditing()
     }
@@ -842,6 +935,10 @@ extension KVBodyContentCell: UITextViewDelegate {
             self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
         }
         self.delegate?.refreshCell(indexPath: IndexPath(row: self.tag, section: 0), cell: self)
+    }
+    
+    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        return false
     }
 }
 
@@ -871,6 +968,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     @IBOutlet weak var fieldTypeBtn: UIButton!
     @IBOutlet weak var imageFileView: UIImageView!
     @IBOutlet weak var fileCollectionView: UICollectionView!
+    @IBOutlet weak var borderView: UIView!
+    @IBOutlet var keyTextFieldHeight: NSLayoutConstraint!
     weak var delegate: KVBodyFieldTableViewCellDelegate?
     var isValueTextFieldActive = false
     var selectedType: RequestBodyType = .form
@@ -1195,9 +1294,10 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         var num = 0
         if self.selectedType == .form {
             num = self.localdb.getRequestDataCount(reqId: reqId, type: .form, ctx: ctx)
-        }
-        if self.selectedType == .multipart {
+        } else if self.selectedType == .multipart {
             num = self.localdb.getRequestDataCount(reqId: reqId, type: .multipart, ctx: ctx)
+        } else if self.selectedType == .binary {
+            num = 1
         }
         return num
     }
@@ -1219,6 +1319,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
 
         var elem: ERequestData?
         var reqBodyData: ERequestBodyData?
+        cell.selectedType = self.selectedType
         if let data = AppState.editRequest, let ctx = data.managedObjectContext, let reqId = data.id {
             if self.selectedType == .form {
                 elem = self.localdb.getRequestData(at: row, reqId: reqId, type: .form, ctx: ctx)
@@ -1226,6 +1327,9 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             } else if self.selectedType == .multipart {
                 elem = self.localdb.getRequestData(at: row, reqId: reqId, type: .multipart, ctx: ctx)
                 reqBodyData = elem?.multipart
+            } else if self.selectedType == .binary {
+                elem = self.localdb.getRequestData(at: row, reqId: reqId, type: .multipart, ctx: ctx)
+                reqBodyData = elem?.binary
             }
         }
         if let x = elem, let body = reqBodyData {
@@ -1257,6 +1361,8 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                     }
                 }
             }
+        } else {
+            cell.updateUI()
         }
         self.updateCellPlaceholder(cell)
         return cell
@@ -1267,7 +1373,11 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             cell.valueTextField.placeholder = "select files"
             cell.valueTextField.text = ""
         } else {
-            cell.valueTextField.placeholder = cell.selectedType == .form ? "form value" : "part value"
+            cell.valueTextField.placeholder = {
+                if cell.selectedType == .form { return "form value" }
+                if cell.selectedType == .multipart { return  "part value"}
+                return "select file"
+            }()
         }
     }
     
@@ -1513,7 +1623,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                     height = RequestVC.bodyFormCellHeight()
                     Log.debug("multipart cell height: \(height)")
                 } else if body.selected == RequestBodyType.binary.rawValue {
-                    height = 300
+                    height = 60  // TODO: remove
                 }
             } else {
                 height = 44
@@ -1583,9 +1693,9 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 case RequestBodyType.form.rawValue:
                     cell.displayFormFields()
                 case RequestBodyType.multipart.rawValue:
-                    cell.hideFormFields()
+                    cell.displayFormFields()
                 case RequestBodyType.binary.rawValue:
-                    cell.hideFormFields()
+                    cell.displayBinaryField()
                 default:
                     break
                 }
