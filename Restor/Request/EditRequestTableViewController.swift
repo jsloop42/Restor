@@ -343,6 +343,11 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
                                                             ctx: AppState.editRequest?.managedObjectContext) {
                     AppState.editRequest?.body?.addToForm(req)
                 }
+            } else if idx == RequestBodyType.multipart.rawValue && AppState.editRequest?.body?.multipart?.count == 0 {
+                if let req = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .multipart, fieldFormat: .text,
+                                                            ctx: AppState.editRequest?.managedObjectContext) {
+                    AppState.editRequest?.body?.addToMultipart(req)
+                }
             }
             if let vc = RequestVC.shared {
                 self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
@@ -453,7 +458,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         } else if indexPath.row == CellId.spacerAfterParams.rawValue {
             height = 12
         } else if indexPath.row == CellId.body.rawValue && indexPath.section == 0 {
-            if let body = AppState.editRequest?.body, body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue {
+            if let body = AppState.editRequest?.body, (body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue) {
                 return RequestVC.bodyFormCellHeight()
             }
             height = self.bodyKVTableViewManager.getHeight()
@@ -523,8 +528,8 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     static func bodyFormCellHeight() -> CGFloat {
-        if let body = AppState.editRequest!.body, let form = body.form {
-            let count: Double = form.allObjects.count == 0 ? 1 : Double(form.allObjects.count)
+        if let body = AppState.editRequest!.body, let set = body.selected == RequestBodyType.form.rawValue ? body.form : body.multipart {
+            let count: Double = set.allObjects.count == 0 ? 1 : Double(set.allObjects.count)
             return CGFloat(count * 92.5) + 57  // 84: field cell, 81: title cell
         }
         return 92.5 + 57  // 84 + 77
@@ -797,6 +802,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
             self.displayFormFields()
             self.bodyLabelViewWidth.constant = 63
         case 4:  // multipart
+            self.displayFormFields()
             self.bodyLabelViewWidth.constant = 78
         case 5:  // binary
             self.bodyLabelViewWidth.constant = 63
@@ -882,6 +888,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         self.renderTheme()
         self.initEvents()
         self.fileCollectionView.reloadData()
+        self.updateUI()
     }
     
     func bootstrap() {
@@ -915,6 +922,18 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         cvTap.cancelsTouchesInView = false
         self.fileCollectionView.removeGestureRecognizer(cvTap)
         self.fileCollectionView.addGestureRecognizer(cvTap)
+    }
+    
+    func updateUI() {
+        if self.selectedType == .form {
+            self.fileCollectionView.isHidden = false
+            self.fieldTypeView.isHidden = false
+            self.fileCollectionView.reloadData()
+        } else if self.selectedType == .multipart {
+            self.fileCollectionView.isHidden = true
+            self.fieldTypeView.isHidden = true
+            self.selectedFieldFormat = .text
+        }
     }
     
     @objc func fieldTypeViewDidTap(_ recog: UITapGestureRecognizer) {
@@ -1199,9 +1218,8 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 elem = self.localdb.getRequestData(at: row, reqId: reqId, type: .form, ctx: ctx)
                 reqBodyData = elem?.form
             } else if self.selectedType == .multipart {
-                // TODO:
-//                elem = self.localdb.getFormRequestData(at: row, bodyDataId: bodyId, type: .multipart, ctx: ctx)
-//                reqBodyData = elem?.multipart
+                elem = self.localdb.getRequestData(at: row, reqId: reqId, type: .multipart, ctx: ctx)
+                reqBodyData = elem?.multipart
             }
         }
         if let x = elem, let body = reqBodyData {
@@ -1211,6 +1229,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             cell.valueTextField.text = x.value
             cell.selectedType = RequestBodyType(rawValue: body.selected.toInt()) ?? RequestBodyType.json
             cell.selectedFieldFormat = RequestBodyFormFieldFormatType(rawValue: x.fieldFormat.toInt()) ?? RequestBodyFormFieldFormatType.text
+            cell.updateUI()
             if cell.selectedFieldFormat == .text {
                 cell.fieldTypeBtn.setImage(UIImage(named: "text"), for: .normal)
                 self.hideImageAttachment(cell: cell)
@@ -1630,7 +1649,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         if self.tableViewType == .body {
             if let data = AppState.editRequest, let body = data.body {
                 if indexPath.section == 1 { return 0 }
-                if body.selected == RequestBodyType.form.rawValue {
+                if body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue {
                     return RequestVC.bodyFormCellHeight()
                 }
             }
