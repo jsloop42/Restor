@@ -515,16 +515,26 @@ class App {
         if let body = request["body"] as? [String: Any] {
             if (x.form != nil && body["form"] == nil) || (x.form == nil && body["form"] != nil) { return true }
             if (x.multipart != nil && body["multipart"] == nil) || (x.multipart == nil && body["multipart"] != nil) { return true }
-            
-            var formxsa = x.form!.allObjects as! [Entity]
+            var formxsa: [Entity] = []
+            var formxsb: [[String: Any]] = []
+            let selectedType = RequestBodyType(rawValue: x.selected.toInt()) ?? .form
+            var reqDataType = RequestDataType.form
+            if selectedType == .form {
+                formxsa = x.form!.allObjects as! [Entity]
+                formxsb = body["form"] as! [[String: Any]]
+                reqDataType = .form
+            } else if selectedType == .multipart {
+                formxsa = x.multipart?.allObjects as! [Entity]
+                formxsb = body["multipart"] as! [[String: Any]]
+                reqDataType = .multipart
+            }
             formxsa.forEach { e in self.addEditRequestManagedObjectId(e.objectID) }
-            let formxsb = body["form"] as! [[String: Any]]
             if formxsa.count != formxsb.count { return true }
             self.localdb.sortByCreated(&formxsa)
             
             let len = formxsa.count
             for i in 0..<len {
-                if self.didRequestDataChangeImp(x: formxsa[i] as! ERequestData, y: formxsb[i], type: .form) { return true }
+                if self.didRequestDataChangeImp(x: formxsa[i] as! ERequestData, y: formxsb[i], type: reqDataType) { return true }
             }
         }
         return false
@@ -601,8 +611,6 @@ class App {
         }
         if type == .form {
             if self.didRequestBodyFormAttachmentChangeImp(x, y: y) { return true }
-        } else if type == .multipart {
-            // TODO:
         }
         return false
     }

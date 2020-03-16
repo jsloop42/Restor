@@ -926,10 +926,14 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     
     func updateUI() {
         if self.selectedType == .form {
+            self.keyTextField.placeholder = "form name"
+            self.valueTextField.placeholder = "form value"
             self.fileCollectionView.isHidden = false
             self.fieldTypeView.isHidden = false
             self.fileCollectionView.reloadData()
         } else if self.selectedType == .multipart {
+            self.keyTextField.placeholder = "part name"
+            self.valueTextField.placeholder = "part value"
             self.fileCollectionView.isHidden = true
             self.fieldTypeView.isHidden = true
             self.selectedFieldFormat = .text
@@ -1261,7 +1265,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             cell.valueTextField.placeholder = "select files"
             cell.valueTextField.text = ""
         } else {
-            cell.valueTextField.placeholder = "form value"
+            cell.valueTextField.placeholder = cell.selectedType == .form ? "form value" : "part value"
         }
     }
     
