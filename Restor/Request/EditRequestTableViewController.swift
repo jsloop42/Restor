@@ -1106,6 +1106,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                         let eimage = self.localdb.createImage(data: imageData, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
                         eimage?.requestData = form
                         eimage?.isCameraMode = DocumentPickerState.isCameraMode
+                        form.files?.forEach { file in self.localdb.deleteEntity(file as! Entity) }
                         if let vc = RequestVC.shared {
                             self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
                         }
@@ -1133,6 +1134,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                             if let file = self.localdb.createFile(data: x, index: offset, name: name, path: element,
                                                                   type: self.selectedType == .form ? .form : .multipart, checkExists: true, ctx: ctx) {
                                 file.requestData = form
+                                self.localdb.deleteEntity(form.image)
                                 DispatchQueue.main.async {
                                     if let vc = RequestVC.shared {
                                         self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
