@@ -135,7 +135,7 @@ class UI {
             popoverPresentationController.sourceRect = aVC.view.bounds
             popoverPresentationController.permittedArrowDirections = []
         }
-        aVC.present(alertVC, animated: true, completion: nil)
+        DispatchQueue.main.async { aVC.present(alertVC, animated: true, completion: nil) }
     }
     
     /// Display an alert box.
@@ -164,7 +164,7 @@ class UI {
             popoverPresentationController.sourceRect = aVC.view.bounds
             popoverPresentationController.permittedArrowDirections = []
         }
-        aVC.present(alertVC, animated: true, completion: nil)
+        DispatchQueue.main.async { aVC.present(alertVC, animated: true, completion: nil) }
     }
    
     /// Display toast using the presented view controller
@@ -185,9 +185,7 @@ class UI {
             popoverPresentationController.sourceRect = vc.view.bounds
             popoverPresentationController.permittedArrowDirections = []
         }
-        DispatchQueue.main.async {
-            vc.present(alert, animated: true, completion: nil)
-        }
+        DispatchQueue.main.async { vc.present(alert, animated: true, completion: nil) }
     }
    
     static func activityIndicator() -> UIActivityIndicatorView {

@@ -185,6 +185,25 @@ class App {
         return ("Request", 0)
     }
     
+    /// Returns an error message that can be displayed to the user for the given error type.
+    func getErrorMessage(for error: Error) -> String {
+        if let err = error as? AppError {
+            switch err {
+            case .fileNotFound:
+                return "The file is not found"
+            case .fileOpen:
+                return "Unable to open the file. Please try again."
+            case .fileRead:
+                return "Unable to read the file. Please try again."
+            case .fileWrite:
+                return "Unable to write to the file. Please try again."
+            default:
+                break
+            }
+        }
+        return "Application encountered an error"
+    }
+    
     /// MARK: - Entity change tracking
     
     func addEditRequestManagedObjectId(_ id: NSManagedObjectID?) {

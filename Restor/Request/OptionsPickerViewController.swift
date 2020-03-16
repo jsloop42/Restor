@@ -142,42 +142,35 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     func close(_ isCancel: Bool) {
         if !isCancel {
             if self.pickerType == .requestMethod {
-                self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
-                             userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
-                                        Const.requestMethodNameKey: self.data[self.selectedIndex]])
+                self.postRequestMethodChangeNotification()
             } else if self.pickerType == .requestBodyFormField {
-                self.nc.post(name: NotificationKey.requestBodyFormFieldTypeDidChange, object: self,
-                             userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
-                                        Const.optionModelKey: self.model as Any])
+                self.postRequestBodyFieldChangeNotification()
             } else if self.pickerType == .requestBodyForm {
-                self.nc.post(name: NotificationKey.requestBodyTypeDidChange, object: self,
-                             userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex])
+                self.postRequestBodyChangeNotification()
             }
         } else {
             if self.pickerType == .requestMethod {
-                self.postRequestMethodChangeNotification(self.selectedIndex)
+                self.postRequestMethodChangeNotification()
             }
         }
-        // self.optionsDelegate?.reloadOptionsData()
         self.dismiss(animated: true, completion: nil)
     }
     
-    func postRequestMethodChangeNotification(_ row: Int) {
+    func postRequestMethodChangeNotification() {
         self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
                      userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
                                 Const.requestMethodNameKey: self.data[self.selectedIndex]])
     }
     
-    func postRequestBodyChangeNotification(_ row: Int) {
+    func postRequestBodyChangeNotification() {
         self.nc.post(name: NotificationKey.requestBodyTypeDidChange, object: self,
-                     userInfo: [Const.optionSelectedIndexKey: row,
-                                Const.modelIndexKey: self.modelIndex])
+                     userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex])
     }
     
-    func postRequestBodyFieldChangeNotification(_ row: Int) {
+    func postRequestBodyFieldChangeNotification() {
         self.nc.post(name: NotificationKey.requestBodyFormFieldTypeDidChange, object: self,
-                     userInfo: [Const.optionSelectedIndexKey: row,
-                                Const.modelIndexKey: self.modelIndex])
+                     userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
+                                Const.optionModelKey: self.model as Any])
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -206,11 +199,11 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
         let row = indexPath.row
         self.selectedIndex = row
         if self.pickerType == .requestBodyForm {
-            self.postRequestBodyChangeNotification(row)
+            self.postRequestBodyChangeNotification()
         } else if self.pickerType == .requestMethod {
-            self.postRequestMethodChangeNotification(row)
+            self.postRequestMethodChangeNotification()
         } else if self.pickerType == .requestBodyFormField {
-            self.postRequestBodyFieldChangeNotification(row)
+            self.postRequestBodyFieldChangeNotification()
         }
         self.close(false)
     }
@@ -228,7 +221,6 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let row = indexPath.row
         let elem = self.modelxs[row] as? ERequestMethodData
-        let methodId = elem?.id ?? ""
         let count = self.localdb.getRequestsCountForRequestMethodData(index: elem?.index, ctx: elem?.managedObjectContext)
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             if count > 0, let name = elem?.name {
@@ -251,7 +243,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
         if self.pickerType == .requestMethod {
             if self.selectedIndex == index {  // The selected index is being deleted. So assign selected to the first item.
                 self.selectedIndex = 0
-                self.postRequestMethodChangeNotification(0)
+                self.postRequestMethodChangeNotification()
             }
             self.nc.post(name: NotificationKey.customRequestMethodShouldDelete, object: self,
                          userInfo: [Const.optionModelKey: self.modelxs[index], Const.indexKey: index])

@@ -337,8 +337,18 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
  
     @objc func requestBodyDidChange(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int {
+            // If form is selected and there are no fields add one
+            if idx == RequestBodyType.form.rawValue && AppState.editRequest?.body?.form?.count == 0 {
+                if let req = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .form, fieldFormat: .text,
+                                                            ctx: AppState.editRequest?.managedObjectContext) {
+                    AppState.editRequest?.body?.addToForm(req)
+                }
+            }
+            if let vc = RequestVC.shared {
+                self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
+            }
+            AppState.editRequest?.body?.selected = idx.toInt64()
             DispatchQueue.main.async {
-                AppState.editRequest?.body?.selected = idx.toInt64()
                 self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
                 self.tableView.reloadRows(at: [IndexPath(row: RequestCellType.body.rawValue, section: 0)], with: .none)
                 self.bodyKVTableViewManager.reloadData()
@@ -912,21 +922,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
         RequestVC.shared?.endEditing()
         guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
         RequestVC.addRequestBodyToState()
-        var reqData: ERequestData?
-        if self.reqDataId.isEmpty {
-            let type: RequestDataType = self.selectedType == .form ? .form : .multipart
-            if let req = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: type, fieldFormat: self.selectedFieldFormat,
-                                                        ctx: ctx) {
-                data.body!.addToForm(req)
-                self.reqDataId = req.id ?? ""
-                reqData = req
-                if let vc = RequestVC.shared {
-                    self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
-                }
-            }
-        } else {
-            reqData = self.localdb.getRequestData(id: self.reqDataId, ctx: ctx)
-        }
+        let reqData = self.localdb.getRequestData(id: self.reqDataId, ctx: ctx)
         self.nc.post(name: NotificationKey.optionScreenShouldPresent, object: self,
                      userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyFormField.rawValue,
                                 Const.modelIndexKey: self.tag,
@@ -1123,7 +1119,8 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                                 }
                             }
                         case .failure(let error):
-                            Log.debug("Error: \(error)")  // TODO: display alert
+                            Log.debug("Error: \(error)")
+                            if let vc = RequestVC.shared { UI.viewToast(self.app.getErrorMessage(for: error), vc: vc) }
                         }
                     }
                 }
@@ -1171,16 +1168,13 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             return 1
         }
         var num = 0
-        var isInc = false
         if self.selectedType == .form {
-            isInc = true
             num = self.localdb.getRequestDataCount(reqId: reqId, type: .form, ctx: ctx)
         }
         if self.selectedType == .multipart {
-            isInc = true
             num = self.localdb.getRequestDataCount(reqId: reqId, type: .multipart, ctx: ctx)
         }
-        return num == 0 && isInc ? 1 : num
+        return num
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
