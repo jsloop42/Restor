@@ -111,10 +111,6 @@ class CoreDataService {
         if let set = x.params, let xs = set.allObjects as? [ERequestData] {
             dict["params"] = self.sortedByCreated(xs.map { y -> [String: Any] in self.requestDataToDictionary(y) })
         }
-        // TODO:
-//        if let set = x.methods, let xs = set.allObjects as? [ERequestMethodData] {
-//            dict["methods"] =  self.sortedByCreated(xs.map { y -> [String: Any] in self.requestMethodDataToDictionary(y) })
-//        }
         if let body = x.body { dict["body"] = self.requestBodyDataToDictionary(body) }
         return dict
     }
@@ -143,6 +139,7 @@ class CoreDataService {
         if let set = x.multipart, let xs = set.allObjects as? [ERequestData] {
             dict["multipart"] = self.sortedByCreated(xs.map { y -> [String: Any] in self.requestDataToDictionary(y) })
         }
+        if let binary = x.binary { dict["binary"] = self.requestDataToDictionary(binary) }
         return dict
     }
     

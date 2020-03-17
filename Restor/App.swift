@@ -527,6 +527,8 @@ class App {
                 formxsa = x.multipart?.allObjects as! [Entity]
                 formxsb = body["multipart"] as! [[String: Any]]
                 reqDataType = .multipart
+            } else if selectedType == .binary {
+                return self.didRequestBodyBinaryChangeImp(x.binary, body: body)
             }
             formxsa.forEach { e in self.addEditRequestManagedObjectId(e.objectID) }
             if formxsa.count != formxsb.count { return true }
@@ -537,6 +539,15 @@ class App {
                 if self.didRequestDataChangeImp(x: formxsa[i] as! ERequestData, y: formxsb[i], type: reqDataType) { return true }
             }
         }
+        return false
+    }
+    
+    func didRequestBodyBinaryChangeImp(_ reqData: ERequestData?, body: [String: Any]) -> Bool {
+        let obin = body["binary"] as? [String: Any]
+        if (obin == nil && reqData != nil) || (obin != nil && reqData == nil) { return true }
+        guard let lbin = reqData, let rbin = obin else { return true }
+        if lbin.created != rbin["created"] as? Int64 { return true }
+        if self.didRequestBodyFormAttachmentChangeImp(lbin, y: rbin) { return true }
         return false
     }
     
