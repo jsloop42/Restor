@@ -20,6 +20,8 @@ struct AppState {
     static var currentProject: EProject?
     /// The request which is currently being added or edited.
     static var editRequest: ERequest?
+    /// Current attachment info being processed.
+    static var binaryAttachmentInfo = AttachmentInfo()
     
     static func workspace(forIndex index: Int) -> EWorkspace? {
         if index < self.workspaces.count {

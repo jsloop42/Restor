@@ -1155,8 +1155,93 @@
                                                                                         </constraints>
                                                                                     </view>
                                                                                     <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="qiz-4N-xlH" userLabel="Binary Text Field View">
-                                                                                        <rect key="frame" x="95" y="0.0" width="283" height="93"/>
+                                                                                        <rect key="frame" x="95" y="0.0" width="283" height="64"/>
+                                                                                        <subviews>
+                                                                                            <imageView hidden="YES" clipsSubviews="YES" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="ZoS-kz-W9y">
+                                                                                                <rect key="frame" x="6" y="8" width="34" height="34"/>
+                                                                                                <constraints>
+                                                                                                    <constraint firstAttribute="height" constant="34" id="Z2d-ha-tGP"/>
+                                                                                                    <constraint firstAttribute="width" secondItem="ZoS-kz-W9y" secondAttribute="height" multiplier="1:1" id="log-5H-pwC"/>
+                                                                                                    <constraint firstAttribute="width" constant="34" id="nkZ-KQ-gKV"/>
+                                                                                                </constraints>
+                                                                                                <userDefinedRuntimeAttributes>
+                                                                                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                                                                        <real key="value" value="6"/>
+                                                                                                    </userDefinedRuntimeAttribute>
+                                                                                                </userDefinedRuntimeAttributes>
+                                                                                            </imageView>
+                                                                                            <textField opaque="NO" userInteractionEnabled="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" borderStyle="roundedRect" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="ea1-UV-Uz4" userLabel="Binary Text Field" customClass="EATextField" customModule="Restor" customModuleProvider="target">
+                                                                                                <rect key="frame" x="2" y="15" width="281" height="34"/>
+                                                                                                <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                                                                                                <textInputTraits key="textInputTraits"/>
+                                                                                            </textField>
+                                                                                            <collectionView hidden="YES" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" translatesAutoresizingMaskIntoConstraints="NO" id="XSC-41-1yV">
+                                                                                                <rect key="frame" x="6" y="0.0" width="275" height="64"/>
+                                                                                                <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                                                                                <collectionViewFlowLayout key="collectionViewLayout" scrollDirection="horizontal" automaticEstimatedItemSize="YES" minimumLineSpacing="10" minimumInteritemSpacing="10" id="lNj-ix-ddB">
+                                                                                                    <size key="itemSize" width="50" height="50"/>
+                                                                                                    <size key="headerReferenceSize" width="0.0" height="0.0"/>
+                                                                                                    <size key="footerReferenceSize" width="0.0" height="0.0"/>
+                                                                                                    <inset key="sectionInset" minX="0.0" minY="0.0" maxX="0.0" maxY="0.0"/>
+                                                                                                </collectionViewFlowLayout>
+                                                                                                <cells>
+                                                                                                    <collectionViewCell opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" reuseIdentifier="fileCell" id="wMO-U8-L3M" customClass="FileCollectionViewCell" customModule="Restor" customModuleProvider="target">
+                                                                                                        <rect key="frame" x="0.0" y="7" width="45" height="50"/>
+                                                                                                        <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                                                                        <collectionViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" insetsLayoutMarginsFromSafeArea="NO" id="ynR-nB-NBM">
+                                                                                                            <rect key="frame" x="0.0" y="0.0" width="45" height="50"/>
+                                                                                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                                                                                            <subviews>
+                                                                                                                <view userInteractionEnabled="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ozt-5u-EpC">
+                                                                                                                    <rect key="frame" x="0.0" y="0.0" width="45" height="50"/>
+                                                                                                                    <subviews>
+                                                                                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Wqb-kb-Ce8">
+                                                                                                                            <rect key="frame" x="6" y="17" width="33" height="16"/>
+                                                                                                                            <fontDescription key="fontDescription" type="system" pointSize="13"/>
+                                                                                                                            <color key="textColor" name="file-attachment-fg"/>
+                                                                                                                            <nil key="highlightedColor"/>
+                                                                                                                        </label>
+                                                                                                                    </subviews>
+                                                                                                                    <color key="backgroundColor" name="file-attachment-bg"/>
+                                                                                                                    <constraints>
+                                                                                                                        <constraint firstItem="Wqb-kb-Ce8" firstAttribute="leading" secondItem="ozt-5u-EpC" secondAttribute="leading" constant="6" id="JnK-UX-RhK"/>
+                                                                                                                        <constraint firstItem="Wqb-kb-Ce8" firstAttribute="centerY" secondItem="ozt-5u-EpC" secondAttribute="centerY" id="KME-79-rN0"/>
+                                                                                                                        <constraint firstAttribute="trailing" secondItem="Wqb-kb-Ce8" secondAttribute="trailing" constant="6" id="aeo-VA-LMl"/>
+                                                                                                                    </constraints>
+                                                                                                                    <userDefinedRuntimeAttributes>
+                                                                                                                        <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                                                                                            <real key="value" value="4"/>
+                                                                                                                        </userDefinedRuntimeAttribute>
+                                                                                                                    </userDefinedRuntimeAttributes>
+                                                                                                                </view>
+                                                                                                            </subviews>
+                                                                                                            <constraints>
+                                                                                                                <constraint firstItem="ozt-5u-EpC" firstAttribute="leading" secondItem="ynR-nB-NBM" secondAttribute="leading" id="7Va-D7-7vh"/>
+                                                                                                                <constraint firstItem="ozt-5u-EpC" firstAttribute="top" secondItem="ynR-nB-NBM" secondAttribute="top" id="XCH-c9-T4F"/>
+                                                                                                                <constraint firstAttribute="trailing" secondItem="ozt-5u-EpC" secondAttribute="trailing" id="XFT-zU-8c7"/>
+                                                                                                                <constraint firstAttribute="bottom" secondItem="ozt-5u-EpC" secondAttribute="bottom" id="uEE-KC-lvi"/>
+                                                                                                            </constraints>
+                                                                                                        </collectionViewCellContentView>
+                                                                                                        <connections>
+                                                                                                            <outlet property="nameLabel" destination="Wqb-kb-Ce8" id="cmg-Uv-GBd"/>
+                                                                                                        </connections>
+                                                                                                    </collectionViewCell>
+                                                                                                </cells>
+                                                                                            </collectionView>
+                                                                                        </subviews>
                                                                                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
+                                                                                        <constraints>
+                                                                                            <constraint firstItem="ea1-UV-Uz4" firstAttribute="leading" secondItem="qiz-4N-xlH" secondAttribute="leading" constant="2" id="0Zy-RC-4el"/>
+                                                                                            <constraint firstAttribute="trailing" secondItem="XSC-41-1yV" secondAttribute="trailing" constant="2" id="1GJ-rl-w4v"/>
+                                                                                            <constraint firstAttribute="bottom" secondItem="XSC-41-1yV" secondAttribute="bottom" id="5YN-8V-cVL"/>
+                                                                                            <constraint firstItem="XSC-41-1yV" firstAttribute="leading" secondItem="qiz-4N-xlH" secondAttribute="leading" constant="6" id="5ms-38-7PO"/>
+                                                                                            <constraint firstItem="ea1-UV-Uz4" firstAttribute="top" secondItem="qiz-4N-xlH" secondAttribute="top" constant="15" id="9MJ-u7-xdP"/>
+                                                                                            <constraint firstItem="ZoS-kz-W9y" firstAttribute="top" secondItem="qiz-4N-xlH" secondAttribute="top" constant="8" id="L4f-nW-Qjt"/>
+                                                                                            <constraint firstAttribute="trailing" secondItem="ea1-UV-Uz4" secondAttribute="trailing" id="cPN-bo-9Ab"/>
+                                                                                            <constraint firstItem="XSC-41-1yV" firstAttribute="top" secondItem="qiz-4N-xlH" secondAttribute="top" id="hcv-QY-R0v"/>
+                                                                                            <constraint firstItem="ZoS-kz-W9y" firstAttribute="leading" secondItem="qiz-4N-xlH" secondAttribute="leading" constant="6" id="jNe-jY-hsI"/>
+                                                                                            <constraint firstItem="ea1-UV-Uz4" firstAttribute="centerY" secondItem="qiz-4N-xlH" secondAttribute="centerY" id="qKg-JY-dbq"/>
+                                                                                        </constraints>
                                                                                     </view>
                                                                                     <tableView hidden="YES" clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="kvBodyFieldTableView" bounces="NO" scrollEnabled="NO" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="Pij-6a-uiW" userLabel="Body Field Table View" customClass="KVBodyFieldTableView" customModule="Restor" customModuleProvider="target">
                                                                                         <rect key="frame" x="95" y="0.0" width="283" height="93"/>
@@ -1362,7 +1447,6 @@
                                                                                 </subviews>
                                                                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                                                 <constraints>
-                                                                                    <constraint firstAttribute="bottom" secondItem="qiz-4N-xlH" secondAttribute="bottom" id="2kf-IK-IUp"/>
                                                                                     <constraint firstAttribute="trailing" secondItem="qiz-4N-xlH" secondAttribute="trailing" id="4JH-g0-7Rb"/>
                                                                                     <constraint firstAttribute="trailing" secondItem="8ct-Kk-B1k" secondAttribute="trailing" id="6lz-me-RzB"/>
                                                                                     <constraint firstItem="qiz-4N-xlH" firstAttribute="top" secondItem="P2e-vn-UEM" secondAttribute="top" id="73e-G9-XOR"/>
@@ -1410,6 +1494,7 @@
                                                                         </constraints>
                                                                     </tableViewCellContentView>
                                                                     <connections>
+                                                                        <outlet property="binaryTextField" destination="ea1-UV-Uz4" id="R6r-ff-7ip"/>
                                                                         <outlet property="binaryTextFieldView" destination="qiz-4N-xlH" id="aq2-aL-Z8x"/>
                                                                         <outlet property="bodyFieldTableView" destination="Pij-6a-uiW" id="lTU-hd-doA"/>
                                                                         <outlet property="bodyLabelContainerBottom" destination="E8G-yk-ZN5" id="gR1-cw-Qcd"/>
@@ -1417,6 +1502,8 @@
                                                                         <outlet property="containerView" destination="P2e-vn-UEM" id="bQn-JT-1ih"/>
                                                                         <outlet property="deleteBtn" destination="hQz-iS-P24" id="fMC-rP-m7G"/>
                                                                         <outlet property="deleteView" destination="5xv-Yy-HJ1" id="htj-un-5ne"/>
+                                                                        <outlet property="fileCollectionView" destination="XSC-41-1yV" id="Ju0-Pv-wOp"/>
+                                                                        <outlet property="imageFileView" destination="ZoS-kz-W9y" id="6f7-Id-Xx4"/>
                                                                         <outlet property="rawTextView" destination="r0l-PP-Spy" id="dFm-EX-ZKb"/>
                                                                         <outlet property="rawTextViewContainer" destination="8ct-Kk-B1k" id="IKK-cd-NcZ"/>
                                                                         <outlet property="typeLabel" destination="ReX-hQ-Pqh" id="ga1-ml-zxy"/>

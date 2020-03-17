@@ -701,7 +701,7 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
 
 // MARK: - Body cell
 
-class KVBodyContentCell: UITableViewCell, KVContentCellType {
+class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     @IBOutlet weak var deleteBtn: UIButton!
     @IBOutlet weak var containerView: UIView!
     @IBOutlet weak var deleteView: UIView!
@@ -711,10 +711,13 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet var bodyLabelViewWidth: NSLayoutConstraint!
     @IBOutlet weak var typeLabel: UILabel!
     @IBOutlet weak var bodyFieldTableView: KVBodyFieldTableView!
+    // binary fields
     @IBOutlet weak var binaryTextFieldView: UIView!
     @IBOutlet weak var binaryTextField: EATextField!
     @IBOutlet var bodyLabelContainerBottom: NSLayoutConstraint!
     @IBOutlet var typeNameBtnTop: NSLayoutConstraint!
+    @IBOutlet weak var imageFileView: UIImageView!  // binary image attachment
+    @IBOutlet weak var fileCollectionView: UICollectionView!  // binary file attachment
     weak var delegate: KVContentCellDelegate?
     var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
     var isEditingActive: Bool = false
@@ -733,6 +736,10 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         return attributes as [NSAttributedString.Key : Any]
     }()
     
+    deinit {
+        Log.debug("KVBodyContentCell deinits")
+    }
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         Log.debug("kvcontentcell awake from nib")
@@ -743,6 +750,8 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         if RequestVC.shared != nil {
             self.updateState(AppState.editRequest!.body!)
         }
+        self.fileCollectionView.delegate = self
+        self.fileCollectionView.dataSource = self
     }
     
     func initUI() {
@@ -752,12 +761,12 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.rawTextView.placeholderFont = self.monospaceFont
         self.updateTextViewText(self.rawTextView, text: self.rawTextView.text)
         // binary text field
-//        self.binaryTextField.borderStyle = .none
-//        self.binaryTextField.isColor = false
-//        self.binaryTextField.delegate = self
-//        self.binaryTextField.placeholder = "select file"
+        self.binaryTextField.borderStyle = .none
+        self.binaryTextField.isColor = false
+        self.binaryTextField.placeholder = "select file"
+        self.imageFileView.isHidden = true
     }
-        
+            
     func initEvents() {
         let deleteBtnTap = UITapGestureRecognizer(target: self, action: #selector(self.deleteBtnDidTap))
         deleteBtnTap.cancelsTouchesInView = false
@@ -766,6 +775,13 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.deleteView.addGestureRecognizer(deleteViewTap)
         let typeLabelTap = UITapGestureRecognizer(target: self, action: #selector(self.typeBtnDidTap(_:)))
         self.typeLabel.addGestureRecognizer(typeLabelTap)
+        let binTap = UITapGestureRecognizer(target: self, action: #selector(self.binaryFieldViewDidTap(_:)))
+        self.binaryTextFieldView.addGestureRecognizer(binTap)
+    }
+    
+    @objc func binaryFieldViewDidTap(_ recog: UITapGestureRecognizer) {
+        Log.debug("binary field view did tap")
+        self.presentDocPicker()
     }
     
     @objc func deleteBtnDidTap() {
@@ -782,6 +798,11 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         Log.debug("delete view did tap")
         self.delegate?.deleteRow(self.bodyDataId, type: .body)
         self.bodyFieldTableView.reloadData()
+    }
+    
+    func presentDocPicker() {
+        DocumentPickerState.modelIndex = 0
+        self.nc.post(Notification(name: NotificationKey.documentPickerMenuShouldPresent))
     }
     
     @IBAction func typeBtnDidTap(_ sender: Any) {
@@ -812,19 +833,24 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     func displayFormFields() {
         self.bodyFieldTableView.isHidden = false
         self.rawTextViewContainer.isHidden = true
-        //self.binaryTextFieldView.isHidden = true
+        self.binaryTextFieldView.isHidden = true
         RequestVC.addRequestBodyToState()
         if let req = AppState.editRequest, let body = req.body, let type = RequestBodyType(rawValue: body.selected.toInt()) {
             self.bodyFieldTableView.selectedType = type
         }
+        self.fileCollectionView.isHidden = true
+        self.imageFileView.isHidden = true
         self.resetConstraints()
         self.bodyFieldTableView.reloadData()
     }
     
-    func hideFormFields() {
+    func hideFormFields() {  // Called for displaying raw textview
         self.bodyFieldTableView.isHidden = true
+        self.binaryTextFieldView.isHidden = true
         self.rawTextViewContainer.isHidden = false
         self.rawTextView.isHidden = false
+        self.fileCollectionView.isHidden = true
+        self.imageFileView.isHidden = true
         self.resetConstraints()
     }
     
@@ -833,7 +859,6 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.bodyLabelContainerBottom.isActive = true
         self.typeNameBtnTop.priority = UILayoutPriority.defaultHigh
         self.typeNameBtnTop.isActive = false
-        self.layoutIfNeeded()
     }
     
     /// Update constraints for binary field
@@ -845,7 +870,6 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.typeNameBtnTop.priority = UILayoutPriority.required
         self.typeNameBtnTop.isActive = true
         self.bodyLabelContainerBottom.isActive = false
-        self.layoutIfNeeded()
     }
     
     func displayBinaryField() {
@@ -855,7 +879,11 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.rawTextView.isHidden = true
         self.rawTextViewText = self.rawTextView.text
         self.rawTextView.text = ""
+        self.binaryTextFieldView.isHidden = false
+        self.fileCollectionView.isHidden = true
+        self.imageFileView.isHidden = true
         self.updateConstraintsForBinaryField()
+        self.fileCollectionView.reloadData()
     }
     
     func updateState(_ data: ERequestBodyData) {
@@ -884,6 +912,21 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
             self.bodyLabelViewWidth.constant = 78
         case 5:  // binary
             self.bodyLabelViewWidth.constant = 63
+            Log.debug("bin: update state")
+            if let binary = data.binary {
+                if let image = binary.image, let imageData = image.data {
+                    Log.debug("bin: image")
+                    self.imageFileView.image = UIImage(data: imageData)
+                    self.imageFileView.isHidden = false
+                    self.binaryTextField.isHidden = true
+                    break
+                } else {
+                    Log.debug("bin: files")
+                    self.fileCollectionView.isHidden = false
+                    self.fileCollectionView.reloadData()
+                    self.binaryTextField.isHidden = true
+                }
+            }
         default:
             break
         }
@@ -892,10 +935,44 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
             self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
         }
     }
+    
+    // MARK: - Delegate collection view
+    
+    func getFile() -> EFile? {
+        return AppState.editRequest?.body?.binary?.files?.allObjects.first as? EFile
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return self.getFile() == nil ? 0 : 1
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        Log.debug("binary file collection view cell")
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "fileCell", for: indexPath) as! FileCollectionViewCell
+        var name = ""
+        if let file = self.getFile() { Log.debug("file: \(file)"); name = file.name ?? "" }
+        cell.nameLabel.text = name
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        var width: CGFloat = 50
+        if let cell = collectionView.cellForItem(at: indexPath) as? FileCollectionViewCell {
+            width = cell.nameLabel.textWidth()
+        } else {
+            let name = self.getFile()?.name ?? ""
+            let lbl = UILabel(frame: CGRect(x: 0, y: 0, width: .greatestFiniteMagnitude, height: 19.5))
+            lbl.text = name
+            lbl.layoutIfNeeded()
+            width = lbl.textWidth()
+        }
+        Log.debug("width: \(width)")
+        return CGSize(width: width, height: 23.5)
+    }
 }
 
 // MARK: - Raw textview delegate
-extension KVBodyContentCell: UITextViewDelegate, UITextFieldDelegate {
+extension KVBodyContentCell: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         RequestVC.shared?.clearEditing()
     }
@@ -921,10 +998,6 @@ extension KVBodyContentCell: UITextViewDelegate, UITextFieldDelegate {
             self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
         }
         self.delegate?.refreshCell(indexPath: IndexPath(row: self.tag, section: 0), cell: self)
-    }
-    
-    func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
-        return false
     }
 }
 
@@ -1089,6 +1162,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     }
     
     // MARK: - Delegate collection view
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         if self.selectedFieldFormat == .file {
             if let data = AppState.editRequest, let ctx = data.managedObjectContext {
@@ -1141,6 +1215,11 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     private let localdb = CoreDataService.shared
     private let utils = Utils.shared
     
+    deinit {
+        Log.debug("KVBodyFieldTableView deinit")
+        self.nc.removeObserver(self)
+    }
+    
     override init(frame: CGRect, style: UITableView.Style) {
         super.init(frame: frame, style: style)
         Log.debug("kvbodyfieldtableview init")
@@ -1181,6 +1260,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
         
     @objc func imageAttachmentDidReceive(_ notif: Notification) {
+        Log.debug("KVBodyFieldTableView imageAttachmentDidReceive notification")
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
             if let data = AppState.editRequest, let ctx = data.managedObjectContext,
@@ -1204,6 +1284,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     }
     
     @objc func documentAttachmentDidReceive(_ notif: Notification) {
+        Log.debug("KVBodyFieldTableView documentAttachmentDidReceive notification")
         if self.selectedType == .form {
             let row = DocumentPickerState.modelIndex
             if let data = AppState.editRequest, let ctx = data.managedObjectContext,
@@ -1212,9 +1293,10 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 form.files = NSSet()  // clear the set, but it does not delete the data
                 DocumentPickerState.docs.enumerated().forEach { args in
                     let (offset, element) = args
-                    self.app.getDataForURL(element) { result in  // if user exits before loading, it's the user action. So we don't retain self.
+                    self.app.getDataForURL(element) { result in
                         switch result {
                         case .success(let x):
+                            Log.debug("body form field creating file attachment")
                             let name = self.app.getFileName(element)
                             if let file = self.localdb.createFile(data: x, index: offset, name: name, path: element,
                                                                   type: self.selectedType == .form ? .form : .multipart, checkExists: true, ctx: ctx) {
@@ -1484,6 +1566,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     private let localdb = CoreDataService.shared
     private let utils = Utils.shared
     private let app = App.shared
+    private let nc = NotificationCenter.default
     
     deinit {
         Log.debug("kvTableViewManager deinit")
@@ -1496,12 +1579,15 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func destroy() {
         self.delegate = nil
+        self.nc.removeObserver(self)
     }
     
     func bootstrap() {
         self.kvTableView?.estimatedRowHeight = 44
         self.kvTableView?.rowHeight = UITableView.automaticDimension
         self.kvTableView?.allowsMultipleSelectionDuringEditing = false
+        self.nc.addObserver(self, selector: #selector(self.imageAttachmentDidReceive(_:)), name: NotificationKey.documentPickerImageIsAvailable, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.documentAttachmentDidReceive(_:)), name: NotificationKey.documentPickerFileIsAvailable, object: nil)
     }
     
     func addRequestDataToModel() {
@@ -1561,6 +1647,77 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         self.localdb.deleteRequestData(dataId: id, req: AppState.editRequest!, type: type, ctx: ctx)
         if let vc = RequestVC.shared {
             self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
+        }
+    }
+    
+    @objc func imageAttachmentDidReceive(_ notif: Notification) {
+        Log.debug("image attachment did receive")
+        if AppState.binaryAttachmentInfo.isSame() { return }
+        AppState.binaryAttachmentInfo.copyFromState()
+        guard let image = DocumentPickerState.image, let imageData = DocumentPickerState.imageType == ImageType.png.rawValue ? image.pngData() :
+            image.jpegData(compressionQuality: 1.0) else { return }
+        if let data = AppState.editRequest, let body = data.body, let ctx = data.managedObjectContext {
+            if body.selected == RequestBodyType.binary.rawValue {
+                Log.debug("binary field - image attachment")
+                if let binary = body.binary {
+                    if binary.image?.data != imageData {
+                        let eimage = self.localdb.createImage(data: imageData, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
+                        eimage?.requestData = binary
+                        eimage?.isCameraMode = DocumentPickerState.isCameraMode
+                        binary.files?.forEach { file in self.localdb.deleteEntity(file as! Entity) }
+                    }
+                    DispatchQueue.main.async {
+                        if let vc = RequestVC.shared {
+                            vc.bodyKVTableViewManager.reloadData()
+                            self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
+                        }
+                    }
+                }
+                DocumentPickerState.clear()
+            }
+        }
+    }
+    
+    @objc func documentAttachmentDidReceive(_ notif: Notification) {
+        Log.debug("doc attachment did receive")
+        if AppState.binaryAttachmentInfo.isSame() { return }  // We are getting multiple notifications. So this prevents processing the same file again.
+        AppState.binaryAttachmentInfo.copyFromState()
+        if let data = AppState.editRequest, let body = data.body, let ctx = data.managedObjectContext {
+            if body.selected == RequestBodyType.binary.rawValue {
+                Log.debug("binary field - doc attachment")
+                if let binary = body.binary {
+                    if DocumentPickerState.docs.count == 0 { return }
+                    let fileURL = DocumentPickerState.docs[0]
+                    self.app.getDataForURL(fileURL) { result in
+                        DispatchQueue.main.async {
+                            switch result {
+                            case .success(let fileData):
+                                Log.debug("bin: file read")
+                                binary.files?.forEach { file in self.localdb.deleteEntity(file as! Entity) }
+                                let name = self.app.getFileName(fileURL)
+                                if let file = self.localdb.createFile(data: fileData, index: 0, name: name, path: fileURL,
+                                                                      type: .binary, checkExists: true, ctx: ctx) {
+                                    file.requestData = binary
+                                    binary.image = nil
+                                    self.localdb.deleteEntity(binary.image)
+                                    Log.debug("bin: entity deleted")
+                                    DispatchQueue.main.async {
+                                        if let vc = RequestVC.shared {
+                                            Log.debug("bin: tv reloaded")
+                                            vc.bodyKVTableViewManager.reloadData()
+                                            self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
+                                        }
+                                    }
+                                    DocumentPickerState.clear()
+                                }
+                            case .failure(let error):
+                                Log.debug("Error: \(error)")
+                                if let vc = RequestVC.shared { UI.viewToast(self.app.getErrorMessage(for: error), vc: vc) }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
