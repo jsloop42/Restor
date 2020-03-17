@@ -1073,17 +1073,17 @@
                                                             <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                             <prototypes>
                                                                 <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="bodyContentCell" id="acm-bD-EB9" userLabel="BodyContentCell" customClass="KVBodyContentCell" customModule="Restor" customModuleProvider="target">
-                                                                    <rect key="frame" x="0.0" y="28" width="414" height="97"/>
+                                                                    <rect key="frame" x="0.0" y="28" width="414" height="93"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                     <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="acm-bD-EB9" id="PPF-2y-5M9">
-                                                                        <rect key="frame" x="0.0" y="0.0" width="414" height="97"/>
+                                                                        <rect key="frame" x="0.0" y="0.0" width="414" height="93"/>
                                                                         <autoresizingMask key="autoresizingMask"/>
                                                                         <subviews>
                                                                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="P2e-vn-UEM" userLabel="Container View">
-                                                                                <rect key="frame" x="20" y="0.0" width="378" height="97"/>
+                                                                                <rect key="frame" x="20" y="0.0" width="378" height="93"/>
                                                                                 <subviews>
                                                                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="hQz-iS-P24" userLabel="Delete Button">
-                                                                                        <rect key="frame" x="0.0" y="37.5" width="22" height="22"/>
+                                                                                        <rect key="frame" x="0.0" y="35.5" width="22" height="22"/>
                                                                                         <constraints>
                                                                                             <constraint firstAttribute="height" constant="22" id="9pM-bg-H9k"/>
                                                                                             <constraint firstAttribute="width" constant="22" id="g5y-nI-6oN"/>
@@ -1093,10 +1093,10 @@
                                                                                         <state key="normal" image="minus.circle.fill" catalog="system"/>
                                                                                     </button>
                                                                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="OTL-M1-h7p" userLabel="Body Label Container">
-                                                                                        <rect key="frame" x="30" y="0.0" width="63" height="97"/>
+                                                                                        <rect key="frame" x="30" y="0.0" width="63" height="93"/>
                                                                                         <subviews>
                                                                                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" adjustsImageSizeForAccessibilityContentSizeCategory="YES" lineBreakMode="wordWrap" translatesAutoresizingMaskIntoConstraints="NO" id="G6K-hu-Pdz">
-                                                                                                <rect key="frame" x="0.0" y="26.5" width="37" height="28"/>
+                                                                                                <rect key="frame" x="0.0" y="4" width="37" height="69"/>
                                                                                                 <fontDescription key="fontDescription" type="system" pointSize="13"/>
                                                                                                 <state key="normal" title="body"/>
                                                                                                 <connections>
@@ -1104,13 +1104,13 @@
                                                                                                 </connections>
                                                                                             </button>
                                                                                             <label opaque="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="(binary)" textAlignment="center" lineBreakMode="wordWrap" numberOfLines="0" baselineAdjustment="alignBaselines" minimumFontSize="10" translatesAutoresizingMaskIntoConstraints="NO" id="ReX-hQ-Pqh">
-                                                                                                <rect key="frame" x="-3.5" y="50.5" width="44.5" height="14.5"/>
+                                                                                                <rect key="frame" x="-3.5" y="69" width="44.5" height="14.5"/>
                                                                                                 <fontDescription key="fontDescription" type="system" pointSize="12"/>
                                                                                                 <color key="textColor" red="0.0" green="0.47843137250000001" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                                                                                                 <nil key="highlightedColor"/>
                                                                                             </label>
                                                                                             <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="greaterthan" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="efz-es-2ls">
-                                                                                                <rect key="frame" x="43" y="41.5" width="20" height="13.5"/>
+                                                                                                <rect key="frame" x="43" y="39.5" width="20" height="13.5"/>
                                                                                                 <color key="tintColor" systemColor="placeholderTextColor" red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.29999999999999999" colorSpace="custom" customColorSpace="sRGB"/>
                                                                                                 <constraints>
                                                                                                     <constraint firstAttribute="width" secondItem="efz-es-2ls" secondAttribute="height" multiplier="1:1" id="Fd3-6H-7am"/>
@@ -1128,14 +1128,15 @@
                                                                                             <constraint firstItem="ReX-hQ-Pqh" firstAttribute="top" secondItem="G6K-hu-Pdz" secondAttribute="bottom" constant="-4" id="W6v-au-mp4"/>
                                                                                             <constraint firstItem="G6K-hu-Pdz" firstAttribute="centerY" secondItem="OTL-M1-h7p" secondAttribute="centerY" constant="-8" id="WJg-gG-Eon"/>
                                                                                             <constraint firstItem="G6K-hu-Pdz" firstAttribute="leading" secondItem="OTL-M1-h7p" secondAttribute="leading" id="ezf-pN-nNB"/>
+                                                                                            <constraint firstItem="G6K-hu-Pdz" firstAttribute="top" secondItem="OTL-M1-h7p" secondAttribute="top" priority="750" constant="4" id="np7-fC-XVe"/>
                                                                                             <constraint firstItem="ReX-hQ-Pqh" firstAttribute="centerX" secondItem="G6K-hu-Pdz" secondAttribute="centerX" id="qNd-IM-JBv"/>
                                                                                         </constraints>
                                                                                     </view>
                                                                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="8ct-Kk-B1k" userLabel="Raw Text View Container">
-                                                                                        <rect key="frame" x="95" y="0.0" width="283" height="97"/>
+                                                                                        <rect key="frame" x="95" y="0.0" width="283" height="93"/>
                                                                                         <subviews>
                                                                                             <textView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" bounces="NO" scrollEnabled="NO" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" bouncesZoom="NO" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="r0l-PP-Spy" customClass="EATextView" customModule="Restor" customModuleProvider="target">
-                                                                                                <rect key="frame" x="0.0" y="6" width="283" height="89"/>
+                                                                                                <rect key="frame" x="0.0" y="2" width="283" height="89"/>
                                                                                                 <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                                                                 <constraints>
                                                                                                     <constraint firstAttribute="height" relation="greaterThanOrEqual" priority="750" constant="89" id="UAg-q7-1Dm"/>
@@ -1148,17 +1149,17 @@
                                                                                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                                                         <constraints>
                                                                                             <constraint firstItem="r0l-PP-Spy" firstAttribute="leading" secondItem="8ct-Kk-B1k" secondAttribute="leading" id="CP2-h4-aJp"/>
-                                                                                            <constraint firstItem="r0l-PP-Spy" firstAttribute="top" secondItem="8ct-Kk-B1k" secondAttribute="top" constant="6" id="H1P-go-pBk"/>
+                                                                                            <constraint firstItem="r0l-PP-Spy" firstAttribute="top" secondItem="8ct-Kk-B1k" secondAttribute="top" constant="2" id="H1P-go-pBk"/>
                                                                                             <constraint firstAttribute="trailing" secondItem="r0l-PP-Spy" secondAttribute="trailing" id="Xyr-ud-dtj"/>
                                                                                             <constraint firstAttribute="bottom" secondItem="r0l-PP-Spy" secondAttribute="bottom" constant="2" id="qx5-km-paI"/>
                                                                                         </constraints>
                                                                                     </view>
                                                                                     <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="qiz-4N-xlH" userLabel="Binary Text Field View">
-                                                                                        <rect key="frame" x="95" y="0.0" width="283" height="97"/>
+                                                                                        <rect key="frame" x="95" y="0.0" width="283" height="93"/>
                                                                                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                                                     </view>
                                                                                     <tableView hidden="YES" clipsSubviews="YES" contentMode="scaleToFill" restorationIdentifier="kvBodyFieldTableView" bounces="NO" scrollEnabled="NO" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" dataMode="prototypes" style="plain" separatorStyle="none" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="Pij-6a-uiW" userLabel="Body Field Table View" customClass="KVBodyFieldTableView" customModule="Restor" customModuleProvider="target">
-                                                                                        <rect key="frame" x="95" y="0.0" width="283" height="97"/>
+                                                                                        <rect key="frame" x="95" y="0.0" width="283" height="93"/>
                                                                                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                                                         <prototypes>
                                                                                             <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="kvBodyTableViewCell" id="oeM-lP-YEO" customClass="KVBodyFieldTableViewCell" customModule="Restor" customModuleProvider="target">
@@ -1366,7 +1367,7 @@
                                                                                     <constraint firstAttribute="trailing" secondItem="8ct-Kk-B1k" secondAttribute="trailing" id="6lz-me-RzB"/>
                                                                                     <constraint firstItem="qiz-4N-xlH" firstAttribute="top" secondItem="P2e-vn-UEM" secondAttribute="top" id="73e-G9-XOR"/>
                                                                                     <constraint firstItem="OTL-M1-h7p" firstAttribute="leading" secondItem="hQz-iS-P24" secondAttribute="trailing" constant="8" symbolic="YES" id="9LN-GV-KIk"/>
-                                                                                    <constraint firstItem="hQz-iS-P24" firstAttribute="centerY" secondItem="P2e-vn-UEM" secondAttribute="centerY" id="9sJ-jT-kjF"/>
+                                                                                    <constraint firstItem="hQz-iS-P24" firstAttribute="centerY" secondItem="OTL-M1-h7p" secondAttribute="centerY" id="9sJ-jT-kjF"/>
                                                                                     <constraint firstAttribute="bottom" secondItem="Pij-6a-uiW" secondAttribute="bottom" id="CfI-A5-pP6"/>
                                                                                     <constraint firstAttribute="bottom" secondItem="OTL-M1-h7p" secondAttribute="bottom" id="E8G-yk-ZN5"/>
                                                                                     <constraint firstItem="Pij-6a-uiW" firstAttribute="leading" secondItem="OTL-M1-h7p" secondAttribute="trailing" constant="2" id="IpQ-IR-mci"/>
@@ -1381,10 +1382,10 @@
                                                                                 </constraints>
                                                                             </view>
                                                                             <view hidden="YES" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="5xv-Yy-HJ1" userLabel="Delete Button View">
-                                                                                <rect key="frame" x="334" y="0.0" width="80" height="97"/>
+                                                                                <rect key="frame" x="334" y="0.0" width="80" height="93"/>
                                                                                 <subviews>
                                                                                     <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Delete" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="pmj-W7-cDA">
-                                                                                        <rect key="frame" x="15.5" y="38" width="49.5" height="21"/>
+                                                                                        <rect key="frame" x="15.5" y="36" width="49.5" height="21"/>
                                                                                         <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                                                         <color key="textColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                                                                                         <nil key="highlightedColor"/>
@@ -1413,6 +1414,7 @@
                                                                         <outlet property="binaryTextFieldView" destination="qiz-4N-xlH" id="aq2-aL-Z8x"/>
                                                                         <outlet property="bodyFieldTableView" destination="Pij-6a-uiW" id="lTU-hd-doA"/>
                                                                         <outlet property="bodyLabelCenterY" destination="WJg-gG-Eon" id="2dy-bK-LNM"/>
+                                                                        <outlet property="bodyLabelContainerBottom" destination="E8G-yk-ZN5" id="gR1-cw-Qcd"/>
                                                                         <outlet property="bodyLabelViewWidth" destination="Lev-ZR-RUK" id="0oY-j4-6F7"/>
                                                                         <outlet property="containerView" destination="P2e-vn-UEM" id="bQn-JT-1ih"/>
                                                                         <outlet property="deleteBtn" destination="hQz-iS-P24" id="fMC-rP-m7G"/>
@@ -1423,10 +1425,11 @@
                                                                         <outlet property="rawTextViewHeight" destination="UAg-q7-1Dm" id="1YK-sG-CGu"/>
                                                                         <outlet property="typeLabel" destination="ReX-hQ-Pqh" id="ga1-ml-zxy"/>
                                                                         <outlet property="typeNameBtn" destination="G6K-hu-Pdz" id="Ib9-WZ-pYe"/>
+                                                                        <outlet property="typeNameBtnTop" destination="np7-fC-XVe" id="qt3-Qh-5Xt"/>
                                                                     </connections>
                                                                 </tableViewCell>
                                                                 <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="kvTitleCell" rowHeight="44" id="noP-9p-kYp" userLabel="BodyTitleCell" customClass="KVHeaderCell" customModule="Restor" customModuleProvider="target">
-                                                                    <rect key="frame" x="0.0" y="125" width="414" height="44"/>
+                                                                    <rect key="frame" x="0.0" y="121" width="414" height="44"/>
                                                                     <autoresizingMask key="autoresizingMask"/>
                                                                     <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="noP-9p-kYp" id="amH-j9-VVm">
                                                                         <rect key="frame" x="0.0" y="0.0" width="414" height="44"/>

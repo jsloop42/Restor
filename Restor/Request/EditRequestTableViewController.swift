@@ -717,6 +717,8 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet var rawTextViewHeight: NSLayoutConstraint!
     @IBOutlet weak var binaryTextFieldView: UIView!
     @IBOutlet weak var binaryTextField: EATextField!
+    @IBOutlet var bodyLabelContainerBottom: NSLayoutConstraint!
+    @IBOutlet var typeNameBtnTop: NSLayoutConstraint!
     weak var delegate: KVContentCellDelegate?
     var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
     var isEditingActive: Bool = false
@@ -727,6 +729,13 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     private let app = App.shared
     private var rawTextViewPrevHeight: CGFloat = 89
     private var rawTextViewText = ""
+    private let monospaceFont = UIFont(name: "Menlo-Regular", size: 13)
+    private lazy var textViewAttrs: [NSAttributedString.Key: NSObject?]  = {
+        let style = NSMutableParagraphStyle()
+        style.lineSpacing = 1.35
+        let attributes = [NSAttributedString.Key.paragraphStyle: style, NSAttributedString.Key.font: self.monospaceFont]
+        return attributes
+    }()
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -744,9 +753,8 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.bodyFieldTableView.isHidden = true
         // raw text view
         self.rawTextViewContainer.isHidden = false
-        let font = UIFont(name: "Menlo-Regular", size: 13)
-        self.rawTextView.font = font
-        self.rawTextView.placeholderFont = font
+        self.rawTextView.placeholderFont = self.monospaceFont
+        self.updateTextViewText(self.rawTextView, text: self.rawTextView.text)
         // binary text field
 //        self.binaryTextField.borderStyle = .none
 //        self.binaryTextField.isColor = false
@@ -801,6 +809,10 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         return self.containerView
     }
     
+    func updateTextViewText(_ textView: UITextView, text: String) {
+        textView.attributedText = NSAttributedString(string: text, attributes: self.textViewAttrs)
+    }
+    
     func displayFormFields() {
         self.bodyFieldTableView.isHidden = false
         self.rawTextViewContainer.isHidden = true
@@ -829,10 +841,13 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.arrowCenterY.isActive = false
         //self.rawTextViewHeight.isActive = false
         //self.rawTextViewHeight.constant = self.rawTextViewPrevHeight
-        self.bodyLabelCenterY.constant = -8
-        self.deleteBtnCenterY.constant = 0
+        self.bodyLabelCenterY.constant = -10
+        self.deleteBtnCenterY.constant = -4
         self.arrowCenterY.constant = 0
-        //self.rawTextViewHeight.isActive = true
+        self.bodyLabelContainerBottom.isActive = true
+        self.typeNameBtnTop.priority = UILayoutPriority.defaultHigh
+        self.typeNameBtnTop.isActive = false
+        self.rawTextViewHeight.isActive = true
         self.arrowCenterY.isActive = true
         self.deleteBtnCenterY.isActive = true
         self.bodyLabelCenterY.isActive = true
@@ -850,9 +865,12 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
 //        self.bodyLabelCenterY.constant = -29
 //        self.deleteBtnCenterY.constant = -21
 //        self.arrowCenterY.constant = -21
-        self.bodyLabelCenterY.constant = -20
-        self.deleteBtnCenterY.constant = -12
-        self.arrowCenterY.constant = -12
+//        self.bodyLabelCenterY.constant = -20
+//        self.deleteBtnCenterY.constant = -12
+//        self.arrowCenterY.constant = -12
+        self.typeNameBtnTop.priority = UILayoutPriority.required
+        self.typeNameBtnTop.isActive = true
+        self.bodyLabelContainerBottom.isActive = false
           //self.rawTextViewHeight.isActive = true
         self.arrowCenterY.isActive = true
         self.deleteBtnCenterY.isActive = true
@@ -930,6 +948,7 @@ extension KVBodyContentCell: UITextViewDelegate, UITextFieldDelegate {
         default:
             break
         }
+        self.updateTextViewText(textView, text: txt)
         AppState.editRequest!.body = body
         if let vc = RequestVC.shared {
             self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
@@ -1585,7 +1604,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     /// Returns the raw textview cell height
     func getRowTextViewCellHeight() -> CGFloat {
         if let cell = self.kvTableView?.cellForRow(at: IndexPath(row: 0, section: 0)) as? KVBodyContentCell {
-            height = cell.frame.size.height
+            height = cell.frame.size.height + 8
         }
         Log.debug("raw text cell height: \(height)")
         return height
@@ -1682,13 +1701,13 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 }()
                 switch selectedIdx {
                 case RequestBodyType.json.rawValue:
-                    cell.rawTextView.text = AppState.editRequest?.body?.json ?? ""
+                    cell.updateTextViewText(cell.rawTextView, text: AppState.editRequest?.body?.json ?? "")
                     cell.hideFormFields()
                 case RequestBodyType.xml.rawValue:
-                    cell.rawTextView.text = AppState.editRequest?.body?.xml ?? ""
+                    cell.updateTextViewText(cell.rawTextView, text: AppState.editRequest?.body?.xml ?? "")
                     cell.hideFormFields()
                 case RequestBodyType.raw.rawValue:
-                    cell.rawTextView.text = AppState.editRequest?.body?.raw ?? ""
+                    cell.updateTextViewText(cell.rawTextView, text: AppState.editRequest?.body?.raw ?? "")
                     cell.hideFormFields()
                 case RequestBodyType.form.rawValue:
                     cell.displayFormFields()
@@ -1758,6 +1777,10 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             self.disableEditing(indexPath: indexPath)
             self.reloadData()
             self.delegate?.reloadData()
+        }
+        if let data = AppState.editRequest, let body = data.body, body.selected == RequestBodyType.binary.rawValue {
+            Log.debug("binary option - reloading data")
+            self.reloadData()
         }
     }
     
