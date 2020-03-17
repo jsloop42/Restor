@@ -711,10 +711,6 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     @IBOutlet var bodyLabelViewWidth: NSLayoutConstraint!
     @IBOutlet weak var typeLabel: UILabel!
     @IBOutlet weak var bodyFieldTableView: KVBodyFieldTableView!
-    @IBOutlet var bodyLabelCenterY: NSLayoutConstraint!
-    @IBOutlet var deleteBtnCenterY: NSLayoutConstraint!
-    @IBOutlet var arrowCenterY: NSLayoutConstraint!
-    @IBOutlet var rawTextViewHeight: NSLayoutConstraint!
     @IBOutlet weak var binaryTextFieldView: UIView!
     @IBOutlet weak var binaryTextField: EATextField!
     @IBOutlet var bodyLabelContainerBottom: NSLayoutConstraint!
@@ -730,11 +726,11 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     private var rawTextViewPrevHeight: CGFloat = 89
     private var rawTextViewText = ""
     private let monospaceFont = UIFont(name: "Menlo-Regular", size: 13)
-    private lazy var textViewAttrs: [NSAttributedString.Key: NSObject?]  = {
+    private lazy var textViewAttrs: [NSAttributedString.Key: Any]  = {
         let style = NSMutableParagraphStyle()
         style.lineSpacing = 1.35
         let attributes = [NSAttributedString.Key.paragraphStyle: style, NSAttributedString.Key.font: self.monospaceFont]
-        return attributes
+        return attributes as [NSAttributedString.Key : Any]
     }()
     
     override func awakeFromNib() {
@@ -827,8 +823,6 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     func hideFormFields() {
         self.bodyFieldTableView.isHidden = true
-        //self.binaryTextFieldView.isHidden = true
-        //self.binaryTextField.isHidden = true
         self.rawTextViewContainer.isHidden = false
         self.rawTextView.isHidden = false
         self.resetConstraints()
@@ -836,45 +830,21 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
     
     /// Resets constraints to their default values
     func resetConstraints() {
-        self.bodyLabelCenterY.isActive = false
-        self.deleteBtnCenterY.isActive = false
-        self.arrowCenterY.isActive = false
-        //self.rawTextViewHeight.isActive = false
-        //self.rawTextViewHeight.constant = self.rawTextViewPrevHeight
-        self.bodyLabelCenterY.constant = -10
-        self.deleteBtnCenterY.constant = -4
-        self.arrowCenterY.constant = 0
         self.bodyLabelContainerBottom.isActive = true
         self.typeNameBtnTop.priority = UILayoutPriority.defaultHigh
         self.typeNameBtnTop.isActive = false
-        self.rawTextViewHeight.isActive = true
-        self.arrowCenterY.isActive = true
-        self.deleteBtnCenterY.isActive = true
-        self.bodyLabelCenterY.isActive = true
         self.layoutIfNeeded()
     }
     
-    // TODO: update constraints to fixed top - add constraint and activate it.
     /// Update constraints for binary field
     func updateConstraintsForBinaryField() {
-        self.bodyLabelCenterY.isActive = false
-        self.deleteBtnCenterY.isActive = false
-        self.arrowCenterY.isActive = false
-        //self.rawTextViewHeight.isActive = false
-          //self.rawTextViewHeight.constant = 0
-//        self.bodyLabelCenterY.constant = -29
-//        self.deleteBtnCenterY.constant = -21
-//        self.arrowCenterY.constant = -21
-//        self.bodyLabelCenterY.constant = -20
-//        self.deleteBtnCenterY.constant = -12
-//        self.arrowCenterY.constant = -12
+        // For binary field, we don't need to expand the label to the center of the cell. So we deactivate the bottom constraint and set the top constraint
+        // to get the label to align to cell height. This is because the default constraints are set with top, bottom and this will make the delete label to
+        // align to the cell center as it grows, in case of raw, form fields. This senario is encountered if we enter values in say json field, switch the type
+        // to binary.
         self.typeNameBtnTop.priority = UILayoutPriority.required
         self.typeNameBtnTop.isActive = true
         self.bodyLabelContainerBottom.isActive = false
-          //self.rawTextViewHeight.isActive = true
-        self.arrowCenterY.isActive = true
-        self.deleteBtnCenterY.isActive = true
-        self.bodyLabelCenterY.isActive = true
         self.layoutIfNeeded()
     }
     
@@ -883,9 +853,6 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType {
         self.rawTextViewContainer.isHidden = true
         self.rawTextViewContainer.isHidden = true
         self.rawTextView.isHidden = true
-        //self.binaryTextFieldView.isHidden = false
-        //self.binaryTextField.isHidden = false
-//        self.rawTextViewPrevHeight = self.rawTextViewHeight.constant
         self.rawTextViewText = self.rawTextView.text
         self.rawTextView.text = ""
         self.updateConstraintsForBinaryField()

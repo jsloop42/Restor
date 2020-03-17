@@ -1410,19 +1410,15 @@
                                                                         </constraints>
                                                                     </tableViewCellContentView>
                                                                     <connections>
-                                                                        <outlet property="arrowCenterY" destination="MRv-xs-3iM" id="ONr-2x-IDd"/>
                                                                         <outlet property="binaryTextFieldView" destination="qiz-4N-xlH" id="aq2-aL-Z8x"/>
                                                                         <outlet property="bodyFieldTableView" destination="Pij-6a-uiW" id="lTU-hd-doA"/>
-                                                                        <outlet property="bodyLabelCenterY" destination="WJg-gG-Eon" id="2dy-bK-LNM"/>
                                                                         <outlet property="bodyLabelContainerBottom" destination="E8G-yk-ZN5" id="gR1-cw-Qcd"/>
                                                                         <outlet property="bodyLabelViewWidth" destination="Lev-ZR-RUK" id="0oY-j4-6F7"/>
                                                                         <outlet property="containerView" destination="P2e-vn-UEM" id="bQn-JT-1ih"/>
                                                                         <outlet property="deleteBtn" destination="hQz-iS-P24" id="fMC-rP-m7G"/>
-                                                                        <outlet property="deleteBtnCenterY" destination="9sJ-jT-kjF" id="lwm-pd-Ah1"/>
                                                                         <outlet property="deleteView" destination="5xv-Yy-HJ1" id="htj-un-5ne"/>
                                                                         <outlet property="rawTextView" destination="r0l-PP-Spy" id="dFm-EX-ZKb"/>
                                                                         <outlet property="rawTextViewContainer" destination="8ct-Kk-B1k" id="IKK-cd-NcZ"/>
-                                                                        <outlet property="rawTextViewHeight" destination="UAg-q7-1Dm" id="1YK-sG-CGu"/>
                                                                         <outlet property="typeLabel" destination="ReX-hQ-Pqh" id="ga1-ml-zxy"/>
                                                                         <outlet property="typeNameBtn" destination="G6K-hu-Pdz" id="Ib9-WZ-pYe"/>
                                                                         <outlet property="typeNameBtnTop" destination="np7-fC-XVe" id="qt3-Qh-5Xt"/>
