@@ -39,17 +39,6 @@ class App {
     /// List of managed objects modified so that in case of discard, these entities can be reset.
     var editReqManIds: Set<NSManagedObjectID> = Set()
     
-    func addSettingsBarButton() -> UIBarButtonItem {
-        if #available(iOS 13.0, *) {
-            return UIBarButtonItem(image: UIImage(systemName: "gear"), style: .plain, target: self, action: #selector(self.settingsBtnDidTap(_:)))
-        }
-        return UIBarButtonItem(image: UIImage(), style: .plain, target: self, action: #selector(self.settingsBtnDidTap(_:)))
-    }
-    
-    @objc func settingsBtnDidTap(_ sender: Any) {
-        Log.debug("settings btn did tap")
-    }
-    
     func bootstrap() {
         self.initDB()
         self.initState()
@@ -676,6 +665,7 @@ class App {
         public static let darkGreen = UIColor(red: 91/255, green: 171/255, blue: 60/255, alpha: 1.0)
         public static let darkGrey = UIColor(red: 75/255, green: 74/255, blue: 75/255, alpha: 1.0)
         public static let lightGrey = UIColor(red: 209/255, green: 209/255, blue: 208/255, alpha: 1.0)
+        public static let lightGrey1 = UIColor(red: 241/255, green: 241/255, blue: 246/255, alpha: 1.0)
         public static var requestMethodBg: UIColor = {
             if #available(iOS 13, *) {
                 return UIColor { (UITraitCollection: UITraitCollection) -> UIColor in
@@ -702,6 +692,19 @@ class App {
                 return Color.lightGrey
             }
         }()
+        public static var tableViewBg: UIColor = {
+            if #available(iOS 13, *) {
+                return UIColor { (UITraitCollection: UITraitCollection) -> UIColor in
+                    if UITraitCollection.userInterfaceStyle == .dark {
+                        return UIColor.systemBackground
+                    } else {
+                        return Color.lightGrey1
+                    }
+                }
+            } else {
+                return Color.lightGrey1
+            }
+        }()
     }
 }
 
@@ -712,12 +715,13 @@ enum TableCellId: String {
 }
 
 enum StoryboardId: String {
-    case workspaceVC
+    case editRequestVC
+    case optionsPickerNav
+    case optionsPickerVC
     case projectVC
     case requestListVC
-    case editRequestVC
-    case optionsPickerVC
-    case optionsPickerNav
+    case settingsVC
+    case workspaceVC
 }
 
 /// The request option elements

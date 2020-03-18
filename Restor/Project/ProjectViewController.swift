@@ -31,7 +31,7 @@ class ProjectViewController: UIViewController {
         super.viewWillAppear(animated)
         AppState.activeScreen = .projectListing
         self.navigationItem.title = "Projects"
-        self.navigationItem.leftBarButtonItem = self.app.addSettingsBarButton()
+        self.navigationItem.leftBarButtonItem = self.addSettingsBarButton()
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
         self.updateUIState()
     }
@@ -69,6 +69,18 @@ class ProjectViewController: UIViewController {
     
     func updateUIState() {
         
+    }
+    
+    func addSettingsBarButton() -> UIBarButtonItem {
+        if #available(iOS 13.0, *) {
+            return UIBarButtonItem(image: UIImage(systemName: "gear"), style: .plain, target: self, action: #selector(self.settingsButtonDidTap(_:)))
+        }
+        return UIBarButtonItem(image: UIImage(), style: .plain, target: self, action: #selector(self.settingsButtonDidTap(_:)))
+    }
+    
+    @objc func settingsButtonDidTap(_ sender: Any) {
+        Log.debug("settings btn did tap")
+        UI.pushScreen(self.navigationController!, storyboard: self.storyboard!, storyboardId: StoryboardId.settingsVC.rawValue)
     }
     
     @objc func keyboardWillShow(notif: Notification) {

@@ -60,16 +60,17 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     private var methods: [ERequestMethodData] = []
     
     enum CellId: Int {
-        case url = 0
-        case spacerAfterUrl = 1
-        case name = 2
-        case spacerAfterName = 3
-        case header = 4
-        case spacerAfterHeader = 5
-        case params = 6
-        case spacerAfterParams = 7
-        case body = 8
-        case spacerAfterBody = 9
+        case spaceAfterTop = 0
+        case url = 1
+        case spacerAfterUrl = 2
+        case name = 3
+        case spacerAfterName = 4
+        case header = 5
+        case spacerAfterHeader = 6
+        case params = 7
+        case spacerAfterParams = 8
+        case body = 9
+        case spacerAfterBody = 10
     }
     
     deinit {
@@ -148,6 +149,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     func initUI() {
         self.app.updateViewBackground(self.view)
         self.app.updateNavigationControllerBackground(self.navigationController)
+        self.view.backgroundColor = App.Color.tableViewBg
         self.initHeadersTableViewManager()
         self.initParamsTableViewManager()
         self.initBodyTableViewManager()
@@ -456,7 +458,9 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         var height: CGFloat!
-        if indexPath.row == CellId.url.rawValue {
+        if indexPath.row == CellId.spaceAfterTop.rawValue {
+            height = 12
+        } else if indexPath.row == CellId.url.rawValue {
             height = 54
         } else if indexPath.row == CellId.spacerAfterUrl.rawValue {
             height = 12

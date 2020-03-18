@@ -38,7 +38,6 @@ class WorkspaceViewController: UIViewController {
         WorkspaceViewController.shared = self
         AppState.activeScreen = .workspaceListing
         self.navigationItem.title = "Workspaces"
-        self.navigationItem.leftBarButtonItem = self.app.addSettingsBarButton()
     }
     
     override func viewDidLoad() {
