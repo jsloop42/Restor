@@ -317,7 +317,7 @@ class RestorTests: XCTestCase {
                 let hm = self.localdb.requestToDictionary(req!)
                 XCTAssertEqual(hm.count, 12)
                 XCTAssertNotNil(hm["body"])
-                XCTAssertEqual((hm["body"] as! [String: Any]).count, 12)
+                XCTAssertEqual((hm["body"] as! [String: Any]).count, 11)
                 XCTAssertEqual(((hm["body"] as! [String: Any])["form"] as! [[String: Any]]).count, 1)
                 XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]).count, 11)
                 XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]]).count, 1)

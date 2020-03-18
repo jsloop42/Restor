@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 
-protocol Entity: NSManagedObject {
+public protocol Entity: NSManagedObject {
     func getId() -> String?
     func getIndex() -> Int
     func getName() -> String?
@@ -19,272 +19,272 @@ protocol Entity: NSManagedObject {
     func setIndex(_ i: Int)
 }
 
-class EFile: NSManagedObject, Entity {
-    func getId() -> String? {
+public class EFile: NSManagedObject, Entity {
+    public func getId() -> String? {
         return self.id
     }
     
-    func getIndex() -> Int {
+    public func getIndex() -> Int {
         return self.index.toInt()
     }
     
-    func getName() -> String? {
+    public func getName() -> String? {
         return self.name
     }
     
-    func getCreated() -> Int64 {
+    public func getCreated() -> Int64 {
         return self.created
     }
     
-    func getModified() -> Int64 {
+    public func getModified() -> Int64 {
         return self.modified
     }
     
-    func getVersion() -> Int64 {
+    public func getVersion() -> Int64 {
         return self.version
     }
     
-    func setIndex(_ i: Int) {
+    public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
 }
 
-class EImage: NSManagedObject, Entity {
-    func getId() -> String? {
+public class EImage: NSManagedObject, Entity {
+    public func getId() -> String? {
         return self.id
     }
     
-    func getIndex() -> Int {
+    public func getIndex() -> Int {
         return self.index.toInt()
     }
     
-    func getName() -> String? {
+    public func getName() -> String? {
         return self.name
     }
     
-    func getCreated() -> Int64 {
+    public func getCreated() -> Int64 {
         return self.created
     }
     
-    func getModified() -> Int64 {
+    public func getModified() -> Int64 {
         return self.modified
     }
     
-    func getVersion() -> Int64 {
+    public func getVersion() -> Int64 {
         return self.version
     }
     
-    func setIndex(_ i: Int) {
+    public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
 }
 
-class EProject: NSManagedObject, Entity {
-    func getId() -> String? {
+public class EProject: NSManagedObject, Entity {
+    public func getId() -> String? {
         return self.id
     }
     
-    func getIndex() -> Int {
+    public func getIndex() -> Int {
         return self.index.toInt()
     }
     
-    func getName() -> String? {
+    public func getName() -> String? {
         return self.name
     }
     
-    func getCreated() -> Int64 {
+    public func getCreated() -> Int64 {
         return self.created
     }
     
-    func getModified() -> Int64 {
+    public func getModified() -> Int64 {
         return self.modified
     }
     
-    func getVersion() -> Int64 {
+    public func getVersion() -> Int64 {
         return self.version
     }
     
-    func setIndex(_ i: Int) {
+    public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
 }
 
-class ERequest: NSManagedObject, Entity {
-    func getId() -> String? {
+public class ERequest: NSManagedObject, Entity {
+    public func getId() -> String? {
         return self.id
     }
     
-    func getIndex() -> Int {
+    public func getIndex() -> Int {
         return self.index.toInt()
     }
     
-    func getName() -> String? {
+    public func getName() -> String? {
         return self.name
     }
     
-    func getCreated() -> Int64 {
+    public func getCreated() -> Int64 {
         return self.created
     }
     
-    func getModified() -> Int64 {
+    public func getModified() -> Int64 {
         return self.modified
     }
     
-    func getVersion() -> Int64 {
+    public func getVersion() -> Int64 {
         return self.version
     }
     
-    func setIndex(_ i: Int) {
+    public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
 }
 
-class ERequestBodyData: NSManagedObject, Entity {
-    func getId() -> String? {
+public class ERequestBodyData: NSManagedObject, Entity {
+    public func getId() -> String? {
         return self.id
     }
     
-    func getIndex() -> Int {
+    public func getIndex() -> Int {
         return self.index.toInt()
     }
     
-    func getName() -> String? {
+    public func getName() -> String? {
         return self.id
     }
     
-    func getCreated() -> Int64 {
+    public func getCreated() -> Int64 {
         return created
     }
     
-    func getModified() -> Int64 {
+    public func getModified() -> Int64 {
         return self.modified
     }
     
-    func getVersion() -> Int64 {
+    public func getVersion() -> Int64 {
         return self.version
     }
     
-    func setIndex(_ i: Int) {
+    public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
 }
 
-class ERequestData: NSManagedObject, Entity {
-    func getId() -> String? {
+public class ERequestData: NSManagedObject, Entity {
+    public func getId() -> String? {
         return self.id
     }
     
-    func getIndex() -> Int {
+    public func getIndex() -> Int {
         return self.index.toInt()
     }
     
-    func getName() -> String? {
+    public func getName() -> String? {
         return self.id
     }
     
-    func getCreated() -> Int64 {
+    public func getCreated() -> Int64 {
         return self.created
     }
     
-    func getModified() -> Int64 {
+    public func getModified() -> Int64 {
         return self.modified
     }
     
-    func getVersion() -> Int64 {
+    public func getVersion() -> Int64 {
         return self.version
     }
     
-    func setIndex(_ i: Int) {
+    public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
 }
 
-class ERequestMethodData: NSManagedObject, Entity {
-    func getId() -> String? {
+public class ERequestMethodData: NSManagedObject, Entity {
+    public func getId() -> String? {
         return self.id
     }
     
-    func getIndex() -> Int {
+    public func getIndex() -> Int {
         return self.index.toInt()
     }
     
-    func getName() -> String? {
+    public func getName() -> String? {
         return self.name
     }
     
-    func getCreated() -> Int64 {
+    public func getCreated() -> Int64 {
         return self.created
     }
     
-    func getModified() -> Int64 {
+    public func getModified() -> Int64 {
         return self.modified
     }
     
-    func getVersion() -> Int64 {
+    public func getVersion() -> Int64 {
         return self.version
     }
     
-    func setIndex(_ i: Int) {
+    public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
 }
 
-class ETag: NSManagedObject, Entity {
-    func getId() -> String? {
+public class ETag: NSManagedObject, Entity {
+    public func getId() -> String? {
         return self.id
     }
     
-    func getIndex() -> Int {
+    public func getIndex() -> Int {
         return self.index.toInt()
     }
     
-    func getName() -> String? {
+    public func getName() -> String? {
         return self.name
     }
     
-    func getCreated() -> Int64 {
+    public func getCreated() -> Int64 {
         return self.created
     }
     
-    func getModified() -> Int64 {
+    public func getModified() -> Int64 {
         return self.modified
     }
     
-    func getVersion() -> Int64 {
+    public func getVersion() -> Int64 {
         return self.version
     }
     
-    func setIndex(_ i: Int) {
+    public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
 }
 
-class EWorkspace: NSManagedObject, Entity {
-    func getId() -> String? {
+public class EWorkspace: NSManagedObject, Entity {
+    public func getId() -> String? {
         return self.id
     }
     
-    func getIndex() -> Int {
+    public func getIndex() -> Int {
         return self.index.toInt()
     }
     
-    func getName() -> String? {
+    public func getName() -> String? {
         return self.name
     }
     
-    func getCreated() -> Int64 {
+    public func getCreated() -> Int64 {
         return self.created
     }
     
-    func getModified() -> Int64 {
+    public func getModified() -> Int64 {
         return self.modified
     }
     
-    func getVersion() -> Int64 {
+    public func getVersion() -> Int64 {
         return self.version
     }
     
-    func setIndex(_ i: Int) {
+    public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
 }

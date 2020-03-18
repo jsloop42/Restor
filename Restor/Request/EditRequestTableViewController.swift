@@ -103,6 +103,10 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
                                // discard changes
                                otherCallback: { self.discardContextChange(); self.close() })
             return false
+        } else {
+            if let data = AppState.editRequest, let url = data.url, url.isEmpty {  // New request and user taps back button without any change, so we discard.
+                self.localdb.deleteEntity(data)
+            }
         }
         self.destroy()
         return true
