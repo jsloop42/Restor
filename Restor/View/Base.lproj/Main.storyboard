@@ -623,6 +623,13 @@
                                             <rect key="frame" x="0.0" y="0.0" width="414" height="54"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="tor-XQ-peH" userLabel="Top Border View">
+                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.5" id="4lC-bG-NjL"/>
+                                                    </constraints>
+                                                </view>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="r8D-Ov-8O3">
                                                     <rect key="frame" x="0.0" y="4" width="414" height="50"/>
                                                     <subviews>
@@ -669,12 +676,25 @@
                                                         <constraint firstItem="Ezz-3P-G3h" firstAttribute="top" secondItem="r8D-Ov-8O3" secondAttribute="top" constant="8" id="Zh1-lK-iXh"/>
                                                     </constraints>
                                                 </view>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Dhg-gs-GWU" userLabel="Bottom Border View">
+                                                    <rect key="frame" x="0.0" y="53.5" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.59999999999999998" id="8Xh-c4-RLj"/>
+                                                    </constraints>
+                                                </view>
                                             </subviews>
                                             <constraints>
+                                                <constraint firstAttribute="trailing" secondItem="tor-XQ-peH" secondAttribute="trailing" id="2QX-Yz-kBf"/>
+                                                <constraint firstItem="tor-XQ-peH" firstAttribute="leading" secondItem="BQj-Y6-5po" secondAttribute="leading" id="70x-5h-6fB"/>
                                                 <constraint firstItem="r8D-Ov-8O3" firstAttribute="top" secondItem="BQj-Y6-5po" secondAttribute="top" constant="4" id="M4c-wS-vR7"/>
+                                                <constraint firstItem="tor-XQ-peH" firstAttribute="top" secondItem="BQj-Y6-5po" secondAttribute="top" id="OKU-uf-hbu"/>
+                                                <constraint firstItem="Dhg-gs-GWU" firstAttribute="leading" secondItem="BQj-Y6-5po" secondAttribute="leading" id="RaW-8A-MUw"/>
                                                 <constraint firstAttribute="trailing" secondItem="r8D-Ov-8O3" secondAttribute="trailing" id="Vd3-zn-wiq"/>
                                                 <constraint firstItem="r8D-Ov-8O3" firstAttribute="leading" secondItem="BQj-Y6-5po" secondAttribute="leading" id="ZLw-Ym-10t"/>
+                                                <constraint firstAttribute="bottom" secondItem="Dhg-gs-GWU" secondAttribute="bottom" id="ZkA-Tu-wJb"/>
                                                 <constraint firstAttribute="bottom" secondItem="r8D-Ov-8O3" secondAttribute="bottom" id="hYC-3R-yZn"/>
+                                                <constraint firstAttribute="trailing" secondItem="Dhg-gs-GWU" secondAttribute="trailing" id="zf1-X0-QzK"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <userDefinedRuntimeAttributes>
@@ -714,6 +734,13 @@
                                             <rect key="frame" x="0.0" y="0.0" width="414" height="167"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="IhG-t8-bAB" userLabel="Top Border View">
+                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.5" id="GOG-Mi-iJ8"/>
+                                                    </constraints>
+                                                </view>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Ahc-55-E3L">
                                                     <rect key="frame" x="0.0" y="8" width="414" height="147"/>
                                                     <subviews>
@@ -761,12 +788,25 @@
                                                         <constraint firstItem="b0Z-xX-cAM" firstAttribute="top" secondItem="UTJ-7s-D0j" secondAttribute="bottom" constant="2" id="pML-tw-kp5"/>
                                                     </constraints>
                                                 </view>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="2HM-tO-8Q1" userLabel="Bottom Border View">
+                                                    <rect key="frame" x="0.0" y="166.5" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.59999999999999998" id="iC2-aT-Vu3"/>
+                                                    </constraints>
+                                                </view>
                                             </subviews>
                                             <constraints>
                                                 <constraint firstAttribute="bottom" secondItem="Ahc-55-E3L" secondAttribute="bottom" constant="12" id="8vV-md-zpJ"/>
+                                                <constraint firstAttribute="trailing" secondItem="IhG-t8-bAB" secondAttribute="trailing" id="HEr-7M-pmw"/>
+                                                <constraint firstAttribute="trailing" secondItem="2HM-tO-8Q1" secondAttribute="trailing" id="OHX-Lr-vXi"/>
                                                 <constraint firstItem="Ahc-55-E3L" firstAttribute="top" secondItem="osl-IY-TY9" secondAttribute="top" constant="8" id="PWX-ia-v47"/>
                                                 <constraint firstItem="Ahc-55-E3L" firstAttribute="leading" secondItem="osl-IY-TY9" secondAttribute="leading" id="U6a-fa-afx"/>
+                                                <constraint firstItem="IhG-t8-bAB" firstAttribute="top" secondItem="osl-IY-TY9" secondAttribute="top" id="cQD-GO-6TE"/>
+                                                <constraint firstItem="2HM-tO-8Q1" firstAttribute="leading" secondItem="osl-IY-TY9" secondAttribute="leading" id="d99-ob-Bvh"/>
+                                                <constraint firstAttribute="bottom" secondItem="2HM-tO-8Q1" secondAttribute="bottom" id="dIi-kX-CJa"/>
                                                 <constraint firstAttribute="trailing" secondItem="Ahc-55-E3L" secondAttribute="trailing" id="mrb-TB-VCq"/>
+                                                <constraint firstItem="IhG-t8-bAB" firstAttribute="leading" secondItem="osl-IY-TY9" secondAttribute="leading" id="wz4-um-vtp"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <userDefinedRuntimeAttributes>
@@ -806,6 +846,13 @@
                                             <rect key="frame" x="0.0" y="0.0" width="414" height="217"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Fp8-Px-iuu" userLabel="Top Border View">
+                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.5" id="Zt8-3B-fjy"/>
+                                                    </constraints>
+                                                </view>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="wZG-Xt-lbQ">
                                                     <rect key="frame" x="0.0" y="4" width="414" height="209"/>
                                                     <subviews>
@@ -991,10 +1038,23 @@
                                                         <constraint firstItem="0cK-cB-8Sf" firstAttribute="top" secondItem="wZG-Xt-lbQ" secondAttribute="top" id="xFm-zZ-7r7"/>
                                                     </constraints>
                                                 </view>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="9Y9-z6-nvc" userLabel="Bottom Border View">
+                                                    <rect key="frame" x="0.0" y="216.5" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.59999999999999998" id="m6D-Hg-DbY"/>
+                                                    </constraints>
+                                                </view>
                                             </subviews>
                                             <constraints>
+                                                <constraint firstItem="Fp8-Px-iuu" firstAttribute="top" secondItem="TX1-FQ-7Ic" secondAttribute="top" id="BtE-Cb-AtQ"/>
+                                                <constraint firstAttribute="trailing" secondItem="Fp8-Px-iuu" secondAttribute="trailing" id="DFs-bz-mhB"/>
+                                                <constraint firstAttribute="trailing" secondItem="9Y9-z6-nvc" secondAttribute="trailing" id="Eis-le-4Vn"/>
                                                 <constraint firstItem="wZG-Xt-lbQ" firstAttribute="top" secondItem="TX1-FQ-7Ic" secondAttribute="top" constant="4" id="LOK-03-wXn"/>
+                                                <constraint firstItem="9Y9-z6-nvc" firstAttribute="leading" secondItem="TX1-FQ-7Ic" secondAttribute="leading" id="UZE-a9-6rc"/>
                                                 <constraint firstItem="wZG-Xt-lbQ" firstAttribute="leading" secondItem="TX1-FQ-7Ic" secondAttribute="leading" id="bmd-Eo-dRl"/>
+                                                <constraint firstAttribute="bottom" secondItem="9Y9-z6-nvc" secondAttribute="bottom" id="e2o-N6-OpS"/>
+                                                <constraint firstItem="Fp8-Px-iuu" firstAttribute="leading" secondItem="TX1-FQ-7Ic" secondAttribute="leading" id="fQz-nM-rMc"/>
                                                 <constraint firstAttribute="bottom" secondItem="wZG-Xt-lbQ" secondAttribute="bottom" constant="4" id="mjb-Xu-MOj"/>
                                                 <constraint firstAttribute="trailing" secondItem="wZG-Xt-lbQ" secondAttribute="trailing" id="p9N-Ef-aXy"/>
                                             </constraints>
@@ -1036,6 +1096,13 @@
                                             <rect key="frame" x="0.0" y="0.0" width="414" height="217"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="6aV-Z3-DGE" userLabel="Top Border View">
+                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.5" id="X7g-Bn-1p1"/>
+                                                    </constraints>
+                                                </view>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="S0K-5V-zXq">
                                                     <rect key="frame" x="0.0" y="4" width="414" height="209"/>
                                                     <subviews>
@@ -1222,12 +1289,25 @@
                                                         <constraint firstItem="cox-Ni-O0d" firstAttribute="leading" secondItem="S0K-5V-zXq" secondAttribute="leading" id="zJO-Jg-p1p"/>
                                                     </constraints>
                                                 </view>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="ny2-pt-GBL" userLabel="Bottom Border View">
+                                                    <rect key="frame" x="0.0" y="216.5" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.59999999999999998" id="hRP-3P-vXu"/>
+                                                    </constraints>
+                                                </view>
                                             </subviews>
                                             <constraints>
+                                                <constraint firstAttribute="trailing" secondItem="ny2-pt-GBL" secondAttribute="trailing" id="8l2-UG-7xA"/>
                                                 <constraint firstAttribute="bottom" secondItem="S0K-5V-zXq" secondAttribute="bottom" constant="4" id="REp-v0-gLP"/>
+                                                <constraint firstItem="6aV-Z3-DGE" firstAttribute="leading" secondItem="H2u-UZ-Seb" secondAttribute="leading" id="Szz-hB-3Td"/>
                                                 <constraint firstItem="S0K-5V-zXq" firstAttribute="leading" secondItem="H2u-UZ-Seb" secondAttribute="leading" id="WhA-6L-mHo"/>
+                                                <constraint firstAttribute="trailing" secondItem="6aV-Z3-DGE" secondAttribute="trailing" id="WhR-Kf-NST"/>
                                                 <constraint firstItem="S0K-5V-zXq" firstAttribute="top" secondItem="H2u-UZ-Seb" secondAttribute="top" constant="4" id="aXs-bt-DG7"/>
+                                                <constraint firstItem="6aV-Z3-DGE" firstAttribute="top" secondItem="H2u-UZ-Seb" secondAttribute="top" id="bar-Te-jrY"/>
+                                                <constraint firstAttribute="bottom" secondItem="ny2-pt-GBL" secondAttribute="bottom" id="k57-7T-lHq"/>
                                                 <constraint firstAttribute="trailing" secondItem="S0K-5V-zXq" secondAttribute="trailing" id="rbe-f9-Ac8"/>
+                                                <constraint firstItem="ny2-pt-GBL" firstAttribute="leading" secondItem="H2u-UZ-Seb" secondAttribute="leading" id="yPZ-9t-GAV"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <userDefinedRuntimeAttributes>
@@ -1267,6 +1347,13 @@
                                             <rect key="frame" x="0.0" y="0.0" width="414" height="217"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="7Zd-fe-mHr" userLabel="Top Border View">
+                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.5" id="oZr-KL-ZoT"/>
+                                                    </constraints>
+                                                </view>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Zag-LA-hJc">
                                                     <rect key="frame" x="0.0" y="4" width="414" height="209"/>
                                                     <subviews>
@@ -1767,13 +1854,26 @@
                                                         <constraint firstItem="gD1-l4-96E" firstAttribute="top" secondItem="Zag-LA-hJc" secondAttribute="top" id="dsM-Qp-Hth"/>
                                                     </constraints>
                                                 </view>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="rcx-ko-ywd" userLabel="Bottom Border View">
+                                                    <rect key="frame" x="0.0" y="216.5" width="414" height="0.5"/>
+                                                    <color key="backgroundColor" name="cell-separator-bg"/>
+                                                    <constraints>
+                                                        <constraint firstAttribute="height" constant="0.59999999999999998" id="Zc1-9d-fiV"/>
+                                                    </constraints>
+                                                </view>
                                             </subviews>
                                             <color key="backgroundColor" name="table-view-cell-bg"/>
                                             <constraints>
+                                                <constraint firstAttribute="bottom" secondItem="rcx-ko-ywd" secondAttribute="bottom" id="4VE-vd-Jbh"/>
                                                 <constraint firstItem="Zag-LA-hJc" firstAttribute="top" secondItem="3Ev-vR-d2e" secondAttribute="top" constant="4" id="CPV-hL-DW3"/>
                                                 <constraint firstItem="Zag-LA-hJc" firstAttribute="leading" secondItem="3Ev-vR-d2e" secondAttribute="leading" id="Fvs-Tk-3tP"/>
+                                                <constraint firstItem="rcx-ko-ywd" firstAttribute="leading" secondItem="3Ev-vR-d2e" secondAttribute="leading" id="UuW-HA-oKC"/>
                                                 <constraint firstAttribute="trailing" secondItem="Zag-LA-hJc" secondAttribute="trailing" id="Ycj-ij-Rck"/>
+                                                <constraint firstAttribute="trailing" secondItem="rcx-ko-ywd" secondAttribute="trailing" id="hXL-Ji-tfS"/>
                                                 <constraint firstAttribute="bottom" secondItem="Zag-LA-hJc" secondAttribute="bottom" constant="4" id="nYI-ks-bS2"/>
+                                                <constraint firstItem="7Zd-fe-mHr" firstAttribute="top" secondItem="3Ev-vR-d2e" secondAttribute="top" id="tKn-ds-qDJ"/>
+                                                <constraint firstItem="7Zd-fe-mHr" firstAttribute="leading" secondItem="3Ev-vR-d2e" secondAttribute="leading" id="usO-jb-IsO"/>
+                                                <constraint firstAttribute="trailing" secondItem="7Zd-fe-mHr" secondAttribute="trailing" id="xEi-L0-XSa"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <color key="backgroundColor" name="table-view-cell-bg"/>
@@ -1874,7 +1974,7 @@
         <image name="square.grid.2x2" catalog="system" width="64" height="56"/>
         <image name="text" width="19" height="19"/>
         <namedColor name="cell-separator-bg">
-            <color red="0.80395907160000002" green="0.80388849969999998" blue="0.81960380079999995" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+            <color red="0.80400002002716064" green="0.80400002002716064" blue="0.81999999284744263" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>
         <namedColor name="file-attachment-bg">
             <color red="1" green="0.8320000171661377" blue="0.47299998998641968" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
@@ -1883,10 +1983,10 @@
             <color white="0.33300000429153442" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </namedColor>
         <namedColor name="table-view-bg">
-            <color red="0.94514435529999996" green="0.9450574517" blue="0.96470135450000005" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+            <color red="0.94499999284744263" green="0.94499999284744263" blue="0.9649999737739563" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>
         <namedColor name="table-view-cell-bg">
-            <color red="1" green="0.9999936223" blue="0.9960699677" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+            <color red="1" green="1" blue="0.99599999189376831" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>
     </resources>
 </document>
