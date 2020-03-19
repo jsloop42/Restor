@@ -18,6 +18,7 @@ class SettingsTableViewController: UITableViewController {
         case spacerAfterWorkspace
         case toolsTitle
         case base64
+        case base64Separator
         case jwt
         case spacerAfterTools
     }
@@ -33,11 +34,37 @@ class SettingsTableViewController: UITableViewController {
         self.app.updateNavigationControllerBackground(self.navigationController)
         self.tableView.backgroundColor = App.Color.tableViewBg
         self.navigationItem.title = "Settings"
+        self.tableView.estimatedRowHeight = 44
+        self.tableView.rowHeight = UITableView.automaticDimension
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if indexPath.row == CellId.workspaceGroup.rawValue {
             UI.pushScreen(self.navigationController!, storyboard: self.storyboard!, storyboardId: StoryboardId.environmentGroupVC.rawValue)
         }
+    }
+    
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        switch indexPath.row {
+        case CellId.spacerAfterTop.rawValue:
+            return 24
+        case CellId.workspaceGroup.rawValue:
+            return 44
+        case CellId.spacerAfterWorkspace.rawValue:
+            return 24
+        case CellId.toolsTitle.rawValue:
+            return 24
+        case CellId.base64.rawValue:
+            return 44
+        case CellId.base64Separator.rawValue:
+            return 1
+        case CellId.jwt.rawValue:
+            return 44
+        case CellId.spacerAfterTools.rawValue:
+            return 24
+        default:
+            break
+        }
+        return UITableView.automaticDimension
     }
 }
