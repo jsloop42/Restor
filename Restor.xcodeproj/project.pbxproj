@@ -22,6 +22,7 @@
 		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
 		9E769AFA242147AB005B18C3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E769AF9242147AB005B18C3 /* Models.swift */; };
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
+		9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */; };
 		9E85FE48240E9CDB002821F2 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE47240E9CDB002821F2 /* main.swift */; };
 		9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
 		9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
@@ -81,6 +82,7 @@
 		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
 		9E769AF9242147AB005B18C3 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
+		9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentGroupViewController.swift; sourceTree = "<group>"; };
 		9E85FE47240E9CDB002821F2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegateMock.swift; sourceTree = "<group>"; };
 		9E85FE4E240EDB0A002821F2 /* Restor.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = Restor.xctestplan; path = RestorTests/Restor.xctestplan; sourceTree = SOURCE_ROOT; };
@@ -159,8 +161,6 @@
 		9E538DB7239958B20025C14C /* View */ = {
 			isa = PBXGroup;
 			children = (
-				9E538DB8239958FF0025C14C /* PopupView.xib */,
-				9E538DBA23995B3E0025C14C /* PopupView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -168,10 +168,12 @@
 		9E7585F023A2B24300AD6E8B /* View */ = {
 			isa = PBXGroup;
 			children = (
-				9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */,
-				9E926F9923945E79002DF561 /* Main.storyboard */,
 				9E7585F123A2B27B00AD6E8B /* EATextField.swift */,
 				9EC33FB323EEBF1A006C5B37 /* EATextView.swift */,
+				9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */,
+				9E926F9923945E79002DF561 /* Main.storyboard */,
+				9E538DB8239958FF0025C14C /* PopupView.xib */,
+				9E538DBA23995B3E0025C14C /* PopupView.swift */,
 				9E538DAB239951790025C14C /* UI.swift */,
 			);
 			path = View;
@@ -280,6 +282,7 @@
 			children = (
 				9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */,
 				9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */,
+				9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */,
 			);
 			path = Project;
 			sourceTree = "<group>";
@@ -423,6 +426,7 @@
 			files = (
 				9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */,
 				9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */,
+				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,
 				9E8759062396C6A700F949D1 /* Utils.swift in Sources */,
 				9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */,
 				9E926F9823945E79002DF561 /* WorkspaceViewController.swift in Sources */,
