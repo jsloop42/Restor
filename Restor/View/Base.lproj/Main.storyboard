@@ -247,6 +247,7 @@
                         <outlet property="doneBtn" destination="HZp-Mj-xAe" id="3x7-F0-xLv"/>
                         <outlet property="navbarView" destination="JhH-8I-X2y" id="YSZ-qa-dnt"/>
                         <outlet property="tableView" destination="0XS-e1-2KF" id="dc7-FK-CSg"/>
+                        <outlet property="titleLabel" destination="7E7-AP-RXQ" id="xGu-GB-ZzA"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="fVQ-e9-ENd" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>

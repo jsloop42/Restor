@@ -36,6 +36,7 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
     @IBOutlet weak var navbarView: UIView!
     @IBOutlet weak var doneBtn: UIButton!
     @IBOutlet weak var cancelBtn: UIButton!
+    @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var tableView: UITableView!
     var model: PopupModel?
     
@@ -46,6 +47,7 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
     override func viewDidLoad() {
         super.viewDidLoad()
         self.initUI()
+        self.initEvent()
     }
     
     func initUI() {
@@ -55,6 +57,10 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
         self.tableView.rowHeight = UITableView.automaticDimension
         if #available(iOS 13.0, *) { self.isModalInPresentation = true }  // Prevent dismissing popup by swiping down
         self.doneBtn.isEnabled = false
+        self.titleLabel.text = self.model?.title
+    }
+    
+    func initEvent() {
         // End editing on view tap
         let tap = UITapGestureRecognizer(target: self, action: #selector(self.endEditing))
         tap.cancelsTouchesInView = false

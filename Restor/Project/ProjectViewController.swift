@@ -139,6 +139,7 @@ class ProjectViewController: UIViewController {
     func viewPopup() {
         self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", doneHandler: { model in
             Log.debug("model value: \(model.name) - \(model.desc)")
+            self.addProject(name: model.name, desc: model.desc)
         }))
     }
     
