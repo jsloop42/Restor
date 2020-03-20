@@ -1317,7 +1317,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                             }
                         case .failure(let error):
                             Log.debug("Error: \(error)")
-                            if let vc = RequestVC.shared { UI.viewToast(self.app.getErrorMessage(for: error), vc: vc) }
+                            if let vc = RequestVC.shared { self.app.viewError(error, vc: vc) }
                         }
                     }
                 }

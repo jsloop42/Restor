@@ -65,6 +65,19 @@ public extension UIImage {
     }
 }
 
+public extension UITableView {
+    func scrollToBottom(_ indexPath: IndexPath? = nil) {
+        let idxPath = indexPath != nil ? indexPath! : IndexPath(row: self.numberOfRows(inSection: 0) - 1, section: 0)
+        self.scrollToRow(at: idxPath, at: .bottom, animated: true)
+    }
+    
+    func scrollToBottom(section: Int? = 0) {
+        let sec = section != nil ? section! : 0
+        let idxPath = IndexPath(row: self.numberOfRows(inSection: sec) - 1, section: sec)
+        self.scrollToRow(at: idxPath, at: .bottom, animated: true)
+    }
+}
+
 public extension Int32 {
     func toUInt8() -> UInt8 {
         return UInt8(self)

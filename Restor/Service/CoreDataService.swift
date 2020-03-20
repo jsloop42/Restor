@@ -77,6 +77,11 @@ class CoreDataService {
         }
     }
     
+    private func getMOC(ctx: NSManagedObjectContext?) -> NSManagedObjectContext {
+        if ctx != nil { return ctx! }
+        return self.bgMOC
+    }
+    
     // MARK: - Sort
     
     /// Sort the given list of dictonaries in the order of created and update the index property.
@@ -182,10 +187,7 @@ class CoreDataService {
     
     func getWorkspace(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EWorkspace? {
         var x: EWorkspace?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
             fr.predicate = NSPredicate(format: "id == %@", id)
@@ -199,16 +201,21 @@ class CoreDataService {
         return x
     }
     
-    func getAllWorkspaces(ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EWorkspace] {
+    /// Returns workspaces list batched or as per the given offset and limit.
+    /// - Parameters:
+    ///   - offset: The start index to begin with
+    ///   - limit: The maximum number of results to fetch
+    ///   - ctx: The managed object context
+    func getAllWorkspaces(offset: Int? = 0, limit: Int? = 0, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EWorkspace] {
         var xs: [EWorkspace] = []
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
-            fr.fetchBatchSize = self.fetchBatchSize
+            var shouldFetchInBatch = true
+            if let _offset = offset { fr.fetchOffset = _offset; shouldFetchInBatch = false }
+            if let _limit = limit { fr.fetchLimit = _limit; shouldFetchInBatch = false }
+            if shouldFetchInBatch { fr.fetchBatchSize = self.fetchBatchSize }
             do {
                 xs = try moc.fetch(fr)
             } catch let error {
@@ -216,6 +223,39 @@ class CoreDataService {
             }
         }
         return xs
+    }
+    
+    func getWorkspaces(offset: Int? = 0, limit: Int? = 0, completion: @escaping (Result<[EWorkspace], Error>) -> Void, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        var xs: [EWorkspace] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.perform {
+            let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            if let _offset = offset { fr.fetchOffset = _offset }
+            if let _limit = limit { fr.fetchLimit = _limit }
+            do {
+                xs = try moc.fetch(fr)
+                completion(.success(xs))
+            } catch let error {
+                Log.error("Error getting workspaces: \(error)")
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    /// Returns the total count of workspaces
+    func getWorkspaceCount(ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
+        var x: Int = 0
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
+            do {
+                x = try moc.count(for: fr)
+            } catch let error {
+                Log.error("Error getting workspaces: \(error)")
+            }
+        }
+        return x
     }
     
     /// Default entities will have the id "default"
@@ -233,14 +273,20 @@ class CoreDataService {
         return x
     }
     
+    func getFetchResultsController(obj: Entity.Type, predicate: NSPredicate? = nil, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
+        let moc = self.getMOC(ctx: ctx)
+        let fr = obj.fetchRequest()
+        fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+        if let x = predicate { fr.predicate = x }
+        fr.fetchBatchSize = self.fetchBatchSize
+        return NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
+    }
+    
     // MARK: EProject
     
     func getProject(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
         var x: EProject?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
             fr.predicate = NSPredicate(format: "id == %@", id)
@@ -261,10 +307,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getProject(at index: Int, wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
         var x: EProject?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
             fr.predicate = NSPredicate(format: "workspace.id == %@", wsId)
@@ -294,10 +337,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getProjects(wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EProject] {
         var xs: [EProject] = []
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
             fr.predicate = NSPredicate(format: "workspace.id == %@", wsId)
@@ -325,10 +365,7 @@ class CoreDataService {
     
     func getRequest(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
         var x: ERequest?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
             fr.predicate = NSPredicate(format: "id == %@", id)
@@ -348,10 +385,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getRequests(projectId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequest] {
         var xs: [ERequest] = []
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
             fr.predicate = NSPredicate(format: "project.id == %@", projectId)
@@ -373,10 +407,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getRequest(at index: Int, projectId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
         var x: ERequest?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
             fr.predicate = NSPredicate(format: "project.id == %@", projectId)
@@ -397,10 +428,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getRequestsCount(projectId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
         var x: Int = 0
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
             fr.predicate = NSPredicate(format: "project.id == %@", projectId)
@@ -417,10 +445,7 @@ class CoreDataService {
     
     func getRequestData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             fr.predicate = NSPredicate(format: "id == %@", id)
@@ -435,10 +460,7 @@ class CoreDataService {
     
     func getRequestData(at index: Int, reqId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let typeKey: String = {
                 switch type {
@@ -469,10 +491,7 @@ class CoreDataService {
     
     func getLastRequestData(type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             fr.predicate = NSPredicate(format: "type == %d", type.rawValue.toInt32())
@@ -493,10 +512,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getRequestDataCount(reqId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
         var x: Int = 0
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let typeKey: String = {
                 switch type {
@@ -529,10 +545,7 @@ class CoreDataService {
     ///   - ctx: The managed object context of the request body data object.
     func getFormRequestData(_ bodyDataId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             fr.predicate = NSPredicate(format: "form.id == %@ AND type == %d", bodyDataId, type.rawValue.toInt32())  // ERequestBodyData.id
@@ -556,10 +569,7 @@ class CoreDataService {
     func getFormRequestData(at index: Int, bodyDataId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
         -> ERequestData? {
         var x: ERequestData?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let typeKey: String = {
                 if type == .form {
@@ -586,10 +596,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getHeadersRequestData(_ reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             fr.predicate = NSPredicate(format: "headers.id == %@", reqId)
@@ -610,10 +617,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getParamsRequestData(_ reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             fr.predicate = NSPredicate(format: "params.id == %@", reqId)
@@ -636,10 +640,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getRequestMethodData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
             fr.predicate = NSPredicate(format: "id == %@", id)
@@ -658,10 +659,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getRequestMethodData(reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
         var xs: [ERequestMethodData] = []
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
             fr.predicate = NSPredicate(format: "request.id == %@", reqId)
@@ -682,10 +680,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getRequestMethodData(projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
         var xs: [ERequestMethodData] = []
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
             fr.predicate = NSPredicate(format: "project.id == %@", projId)
@@ -707,10 +702,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getRequestMethodData(at index: Int, projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
             fr.predicate = NSPredicate(format: "project.id == %@", projId)
@@ -732,10 +724,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getRequestsCountForRequestMethodData(index: Int64? = Const.defaultRequestMethodsCount.toInt64(), ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
         var x: Int = 0
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
             fr.predicate = NSPredicate(format: "selectedMethodIndex == %ld", index!)
@@ -748,14 +737,24 @@ class CoreDataService {
         return x
     }
     
+    func genDefaultRequestMethods(_ proj: EProject, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+        let names = ["GET", "POST", "PUT", "PATCH", "DELETE"]
+        guard let projId = proj.id else { return [] }
+        return names.enumerated().compactMap { arg -> ERequestMethodData? in
+            let (offset, element) = arg
+            if let x = self.createRequestMethodData(id: self.genRequestMethodDataId(projId, methodName: element), index: offset, name: element, isCustom: false, ctx: ctx) {
+                proj.addToRequestMethods(x)
+                return x
+            }
+            return nil
+        }
+    }
+    
     // MARK: ERequestBodyData
     
     func getRequestBodyData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
         var x: ERequestBodyData?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestBodyData>(entityName: "ERequestBodyData")
             fr.predicate = NSPredicate(format: "id == %@", id)
@@ -777,10 +776,7 @@ class CoreDataService {
     ///   - ctx: The managed object context of the request data.
     func getFilesCount(_ reqDataId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
         var x: Int = 0
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
             fr.predicate = NSPredicate(format: "requestData.id == %@ AND type == %d", reqDataId, type.rawValue.toInt32())
@@ -801,10 +797,7 @@ class CoreDataService {
     ///   - ctx: The managed object context of the request data.
     func getFiles(_ reqDataId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EFile] {
         var xs: [EFile] = []
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
             fr.predicate = NSPredicate(format: "requestData.id == %@ AND type == %d", reqDataId, type.rawValue.toInt32())
@@ -826,10 +819,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getFile(at index: Int, reqDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
         var x: EFile?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
             fr.predicate = NSPredicate(format: "requestData.id == %@", reqDataId)
@@ -850,10 +840,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getFileData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
         var x: EFile?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
             fr.predicate = NSPredicate(format: "id == %@", id)
@@ -874,10 +861,7 @@ class CoreDataService {
     ///   - ctx: The managed object context.
     func getImageData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
         var x: EImage?
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EImage>(entityName: "EImage")
             fr.predicate = NSPredicate(format: "id == %@", id)
@@ -902,10 +886,7 @@ class CoreDataService {
     func createWorkspace(id: String, index: Int, name: String, desc: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)  -> EWorkspace? {
         var x: EWorkspace?
         let ts = Date().currentTimeNanos()
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             if let isExist = checkExists, isExist, let ws = self.getWorkspace(id: id, ctx: ctx) { x = ws }
             let ws = x != nil ? x! : EWorkspace(context: moc)
@@ -933,10 +914,7 @@ class CoreDataService {
                        ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
         var x: EProject?
         let ts = Date().currentTimeNanos()
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             if let isExist = checkExists, isExist, let proj = self.getProject(id: id, ctx: ctx) { x = proj }
             let proj = x != nil ? x! : EProject(context: moc)
@@ -947,8 +925,8 @@ class CoreDataService {
             proj.created = x == nil ? ts : x!.created
             proj.modified = ts
             proj.version = x == nil ? 0 : x!.version + 1
-            ws?.addToProjects(proj)
             _ = self.genDefaultRequestMethods(proj, ctx: moc)
+            ws?.addToProjects(proj)
             x = proj
         }
         return x
@@ -966,10 +944,7 @@ class CoreDataService {
                        ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
         var x: ERequest?
         let ts = Date().currentTimeNanos()
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             if let isExists = checkExists, isExists, let req = self.getRequest(id: id, ctx: ctx) { x = req }
             let req = x != nil ? x! : ERequest(context: moc)
@@ -996,10 +971,7 @@ class CoreDataService {
                            ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
         let ts = Date().currentTimeNanos()
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestData(context: moc)
@@ -1016,17 +988,6 @@ class CoreDataService {
         return x
     }
     
-    func genDefaultRequestMethods(_ proj: EProject, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
-        let names = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-        guard let projId = proj.id else { return [] }
-        return names.enumerated().compactMap { arg -> ERequestMethodData? in
-            let (offset, element) = arg
-            let x = self.createRequestMethodData(id: self.genRequestMethodDataId(projId, methodName: element), index: offset, name: element, isCustom: false, ctx: ctx)
-            x?.project = proj
-            return x
-        }
-    }
-    
     /// Crate request method data
     /// - Parameters:
     ///   - id: The request method data id.
@@ -1038,10 +999,7 @@ class CoreDataService {
                                  ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let ts = Date().currentTimeNanos()
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestMethodData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestMethodData(context: moc)
@@ -1066,10 +1024,7 @@ class CoreDataService {
     func createRequestBodyData(id: String, index: Int, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
         var x: ERequestBodyData?
         let ts = Date().currentTimeNanos()
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestBodyData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestBodyData(context: moc)
@@ -1093,10 +1048,7 @@ class CoreDataService {
     func createImage(data: Data, index: Int, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
         var x: EImage?
         let ts = Date().currentTimeNanos()
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let imageId = self.genImageId(data)
             if let isExists = checkExists, isExists, let data = self.getImageData(id: imageId, ctx: ctx) { x = data }
@@ -1121,10 +1073,7 @@ class CoreDataService {
                     ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
         var x: EFile?
         let ts = Date().currentTimeNanos()
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fileId = self.genFileId(data)
             if let isExists = checkExists, isExists, let data = self.getFileData(id: fileId, ctx: ctx) { x = data }
@@ -1301,10 +1250,7 @@ class CoreDataService {
     ///   - type: The entity type.
     ///   - ctx: The managed object context.
     func deleteRequestData(dataId: String, req: ERequest, type: RequestCellType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
+        let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             var x: Entity?
             switch type {

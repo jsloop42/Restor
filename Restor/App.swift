@@ -146,6 +146,10 @@ class App {
         self.addItemPopupView = popup
     }
     
+    func viewError(_ error: Error, vc: UIViewController) {
+        UI.viewToast(self.getErrorMessage(for: error), vc: vc)
+    }
+    
     func getDataForURL(_ url: URL, completion: EADataResultCallback? = nil) {
         //if EAFileManager.isFileExists(at: url) {  // since the app is sandboxed, this check will not work.
             let fm = EAFileManager(url: url)

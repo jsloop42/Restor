@@ -31,6 +31,8 @@ struct Const {
     
     /// The default number of methods added (`GET`, `POST`, `PUT`, `PATCH` and `DELETE`).
     static let defaultRequestMethodsCount = 5
+    static let paginationOffset = 20
+    static let fetchLimit = 30
 }
 
 struct NotificationKey {
