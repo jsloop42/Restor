@@ -12,7 +12,15 @@ import CoreData
 class CoreDataService {
     static var shared = CoreDataService()
     private var storeType: String! = NSSQLiteStoreType
-    var persistentContainer: NSPersistentContainer!
+    lazy var persistentContainer: NSPersistentContainer = {
+        if let modelPath = Bundle(for: type(of: self)).path(forResource: "Restor", ofType: "momd") {
+            let url = URL(fileURLWithPath: modelPath)
+            if let model = NSManagedObjectModel(contentsOf: url) {
+                return NSPersistentContainer(name: self.containerName, managedObjectModel: model)
+            }
+        }
+        return NSPersistentContainer(name: "Restor")
+    }()
     lazy var mainMOC: NSManagedObjectContext = {
         let ctx = self.persistentContainer.viewContext
         ctx.automaticallyMergesChangesFromParent = true
@@ -38,14 +46,14 @@ class CoreDataService {
     }
     
     func bootstrap() {
-        if let modelPath = Bundle(for: type(of: self)).path(forResource: "Restor", ofType: "momd") {
-            let url = URL(fileURLWithPath: modelPath)
-            if let model = NSManagedObjectModel(contentsOf: url) {
-                self.persistentContainer = NSPersistentContainer(name: self.containerName, managedObjectModel: model)
-            }
-        } else {
-            self.persistentContainer = NSPersistentContainer(name: "Restor")
-        }
+//        if let modelPath = Bundle(for: type(of: self)).path(forResource: "Restor", ofType: "momd") {
+//            let url = URL(fileURLWithPath: modelPath)
+//            if let model = NSManagedObjectModel(contentsOf: url) {
+//                self.persistentContainer = NSPersistentContainer(name: self.containerName, managedObjectModel: model)
+//            }
+//        } else {
+//            self.persistentContainer = NSPersistentContainer(name: "Restor")
+//        }
         let desc = self.persistentContainer.persistentStoreDescriptions.first
         desc?.type = self.storeType
         self.setup()
@@ -900,7 +908,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExist = checkExists, isExist, let ws = self.getWorkspace(id: id, ctx: ctx) { x = ws }
-            let ws = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "EWorkspace", into: moc) as! EWorkspace
+            let ws = x != nil ? x! : EWorkspace(context: moc)
             ws.id = id
             ws.index = index.toInt64()
             ws.name = name
@@ -931,7 +939,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExist = checkExists, isExist, let proj = self.getProject(id: id, ctx: ctx) { x = proj }
-            let proj = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "EProject", into: moc) as! EProject
+            let proj = x != nil ? x! : EProject(context: moc)
             proj.id = id
             proj.index = index.toInt64()
             proj.name = name
@@ -964,7 +972,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExists = checkExists, isExists, let req = self.getRequest(id: id, ctx: ctx) { x = req }
-            let req = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequest", into: moc) as! ERequest
+            let req = x != nil ? x! : ERequest(context: moc)
             req.id = id
             req.index = index.toInt64()
             req.name = name
@@ -972,10 +980,6 @@ class CoreDataService {
             req.modified = ts
             req.version = x == nil ? 0 : x!.version + 1
             project?.addToRequests(req)
-//            if req.methods == nil { req.methods = NSSet() }
-//            if req.methods!.count == 0 {
-//                req.methods?.addingObjects(from: self.genDefaultRequestMethods(req, ctx: moc))
-//            }
             x = req
         }
         return x
@@ -998,7 +1002,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestData(id: id, ctx: ctx) { x = data }
-            let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestData", into: moc) as! ERequestData
+            let data = x != nil ? x! : ERequestData(context: moc)
             data.id = id
             data.index = index.toInt64()
             data.created = x == nil ? ts : x!.created
@@ -1040,7 +1044,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestMethodData(id: id, ctx: ctx) { x = data }
-            let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestMethodData", into: moc) as! ERequestMethodData
+            let data = x != nil ? x! : ERequestMethodData(context: moc)
             data.id = id
             data.isCustom = isCustom ?? true
             data.index = index.toInt64()
@@ -1068,7 +1072,7 @@ class CoreDataService {
         }()
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestBodyData(id: id, ctx: ctx) { x = data }
-            let data = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "ERequestBodyData", into: moc) as! ERequestBodyData
+            let data = x != nil ? x! : ERequestBodyData(context: moc)
             data.id = id
             data.index = index.toInt64()
             data.created = x == nil ? ts : x!.created
@@ -1096,7 +1100,7 @@ class CoreDataService {
         moc.performAndWait {
             let imageId = self.genImageId(data)
             if let isExists = checkExists, isExists, let data = self.getImageData(id: imageId, ctx: ctx) { x = data }
-            let image = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "EImage", into: moc) as! EImage
+            let image = x != nil ? x! : EImage(context: moc)
             image.id = imageId
             image.data = data
             image.type = type
@@ -1124,7 +1128,7 @@ class CoreDataService {
         moc.performAndWait {
             let fileId = self.genFileId(data)
             if let isExists = checkExists, isExists, let data = self.getFileData(id: fileId, ctx: ctx) { x = data }
-            let file = x != nil ? x! : NSEntityDescription.insertNewObject(forEntityName: "EFile", into: moc) as! EFile
+            let file = x != nil ? x! : EFile(context: moc)
             file.id = fileId
             file.data = data
             file.created = x == nil ? ts : x!.created

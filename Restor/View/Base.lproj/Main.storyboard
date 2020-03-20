@@ -2168,7 +2168,7 @@
             <color white="0.33300000429153442" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
         </namedColor>
         <namedColor name="help-text-fg">
-            <color red="0.32944563030000001" green="0.3333092332" blue="0.3450969458" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+            <color red="0.32899999618530273" green="0.33300000429153442" blue="0.3449999988079071" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
         </namedColor>
         <namedColor name="table-view-bg">
             <color red="0.94499999284744263" green="0.94499999284744263" blue="0.9649999737739563" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>

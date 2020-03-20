@@ -172,7 +172,6 @@
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="name"/>
-                <constraint value="project"/>
             </uniquenessConstraint>
         </uniquenessConstraints>
     </entity>
