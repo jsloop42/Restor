@@ -47,7 +47,7 @@ class SettingsTableViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         switch indexPath.row {
         case CellId.spacerAfterTop.rawValue:
-            return 24
+            return 36
         case CellId.workspaceGroup.rawValue:
             return 44
         case CellId.spacerAfterWorkspace.rawValue:

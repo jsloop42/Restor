@@ -53,6 +53,15 @@ class UI {
         view.layer.addSublayer(borderLayer)
     }
     
+    /// Return a done button for right navigation bar item. The button is bold than the default cancel button.
+    static func getNavbarTopDoneButton() -> UIButton {
+        let btn = UIButton(type: .custom)
+        btn.setTitle("Done", for: .normal)
+        btn.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+        btn.setTitleColor(btn.tintColor, for: .normal)
+        return btn
+    }
+    
     static func pushScreen(_ navVC: UINavigationController, storyboardId: String) {
         if let storyboard = navVC.storyboard {
             let vc = storyboard.instantiateViewController(withIdentifier: storyboardId)
@@ -69,9 +78,9 @@ class UI {
            
     /// Present the given view controller from the storyboard
     static func presentScreen(_ vc: UIViewController, storyboard: UIStoryboard, storyboardId: String) -> UIViewController {
-        let parent = storyboard.instantiateViewController(withIdentifier: storyboardId)
-        vc.present(parent, animated: true, completion: nil)
-        return parent
+        let screen = storyboard.instantiateViewController(withIdentifier: storyboardId)
+        vc.present(screen, animated: true, completion: nil)
+        return screen
     }
    
     /// Push the given view controller from the storyboard
@@ -235,6 +244,13 @@ class UI {
                                       attributes: [.font : font],
                                       context: nil)
         return frame.size.height
+    }
+    
+    /// Returns the height of the navigation bar.
+    /// - Parameter navVC: The current navigation controller (optional).
+    static func getNavBarHeight(navVC: UINavigationController? = nil) -> CGFloat {
+        let vc = navVC != nil ? navVC! : UINavigationController()
+        return vc.navigationBar.frame.size.height
     }
     
     static func endEditing() {

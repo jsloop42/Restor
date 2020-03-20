@@ -45,10 +45,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     private let db = PersistenceService.shared
     private var localdb = CoreDataService.shared
     private lazy var doneBtn: UIButton = {
-        let btn = UIButton(type: .custom)
-        btn.setTitle("Done", for: .normal)
-        btn.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .bold)
-        btn.setTitleColor(btn.tintColor, for: .normal)
+        let btn = UI.getNavbarTopDoneButton()
         btn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
         return btn
     }()

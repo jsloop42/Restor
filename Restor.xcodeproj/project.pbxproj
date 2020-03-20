@@ -37,6 +37,7 @@
 		9E926FA323945E7D002DF561 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */; };
 		9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FAD23945E7D002DF561 /* RestorTests.swift */; };
 		9E926FB923945E7D002DF561 /* RestorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FB823945E7D002DF561 /* RestorUITests.swift */; };
+		9EBCAA9F2424F3E100C82508 /* PopupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */; };
 		9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC33FB323EEBF1A006C5B37 /* EATextView.swift */; };
 		9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */; };
 		9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED99AFD240AF7940064BDCC /* PersistenceService.swift */; };
@@ -103,6 +104,7 @@
 		9E926FB423945E7D002DF561 /* RestorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RestorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926FB823945E7D002DF561 /* RestorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorUITests.swift; sourceTree = "<group>"; };
 		9E926FBA23945E7D002DF561 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupViewController.swift; sourceTree = "<group>"; };
 		9EC33FB323EEBF1A006C5B37 /* EATextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextView.swift; sourceTree = "<group>"; };
 		9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataService.swift; sourceTree = "<group>"; };
 		9ED99AFD240AF7940064BDCC /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
@@ -174,6 +176,7 @@
 				9E926F9923945E79002DF561 /* Main.storyboard */,
 				9E538DB8239958FF0025C14C /* PopupView.xib */,
 				9E538DBA23995B3E0025C14C /* PopupView.swift */,
+				9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */,
 				9E538DAB239951790025C14C /* UI.swift */,
 			);
 			path = View;
@@ -439,6 +442,7 @@
 				9E538DAE239953460025C14C /* AppState.swift in Sources */,
 				9EFF1FFE24229DB600E97632 /* SettingsTableViewController.swift in Sources */,
 				9E145F92241BD9D200962A19 /* EARescheduler.swift in Sources */,
+				9EBCAA9F2424F3E100C82508 /* PopupViewController.swift in Sources */,
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
 				9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */,
