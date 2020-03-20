@@ -193,6 +193,13 @@ class App {
         return "Application encountered an error"
     }
     
+    /// Display popup view controller with the given model
+    func viewPopupScreen(_ vc: UIViewController, model: PopupModel) {
+        let screen = vc.storyboard!.instantiateViewController(withIdentifier: StoryboardId.popupVC.rawValue) as! PopupViewController
+        screen.model = model
+        vc.present(screen, animated: true, completion: nil)
+    }
+    
     /// MARK: - Entity change tracking
     
     func addEditRequestManagedObjectId(_ id: NSManagedObjectID?) {

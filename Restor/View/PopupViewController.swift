@@ -9,33 +9,35 @@
 import Foundation
 import UIKit
 
+/// The model for the popup view controller
 struct PopupModel {
     var title: String
+    var name = ""
+    var desc = ""
+    /// Display description field
+    var descFieldEnabled = true
+    /// Display iCloud sync switch field
+    var iCloudSyncFieldEnabled = false
+    /// Will be invoked with the updated model values from the popup
+    var doneHandler: (PopupModel) -> Void
 }
 
 class PopupCell: UITableViewCell {
     @IBOutlet weak var nameView: UIView!
     @IBOutlet weak var descView: UIView!
     @IBOutlet weak var syncView: UIView!
-    @IBOutlet weak var nameTextField: UITextField!
-    @IBOutlet weak var descTextField: UITextField!
-    @IBOutlet weak var iCloudSyncSwitch: UISwitch!
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-    }
+    @IBOutlet weak var nameTextField: UITextField!  // Name
+    @IBOutlet weak var descTextField: UITextField!  // Description
+    @IBOutlet weak var iCloudSyncSwitch: UISwitch!  // iCloud Sync
 }
 
+/// Popup screen for getting user input values
 class PopupViewController: UIViewController, UITableViewDataSource, UITableViewDelegate {
     @IBOutlet weak var navbarView: UIView!
     @IBOutlet weak var doneBtn: UIButton!
     @IBOutlet weak var cancelBtn: UIButton!
     @IBOutlet weak var tableView: UITableView!
     var model: PopupModel?
-    
-    enum CellId: Int {
-        case nameText
-    }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -72,7 +74,18 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
     }
     
     @IBAction func doneButtonDidTap(_ sender: Any) {
+        if var model = self.model, let cell = self.tableView.cellForRow(at: IndexPath(row: 0, section: 0)) as? PopupCell {
+            model.name = cell.nameTextField.text ?? ""
+            model.desc = cell.descTextField.text ?? ""
+            model.doneHandler(model)
+        }
         self.close()
+    }
+    
+    func updateCellUI(_ cell: PopupCell) {
+        guard let model = self.model else { return }
+        cell.descView.isHidden = !model.descFieldEnabled
+        cell.syncView.isHidden = !model.iCloudSyncFieldEnabled
     }
     
     func initCellEvents(_ cell: PopupCell) {
@@ -90,11 +103,16 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "popupCell", for: indexPath) as! PopupCell
+        self.updateCellUI(cell)
         self.initCellEvents(cell)
         return cell
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 206
+        var height: CGFloat = 206
+        guard let model = self.model else { return height }
+        if !model.iCloudSyncFieldEnabled { height -= 50 }
+        if !model.descFieldEnabled { height -= 50 }
+        return height
     }
 }

@@ -136,13 +136,18 @@ class ProjectViewController: UIViewController {
         }
     }
     
+    func viewPopup() {
+        self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", doneHandler: { model in
+            Log.debug("model value: \(model.name) - \(model.desc)")
+        }))
+    }
+    
     func viewAlert(vc: UIViewController, storyboard: UIStoryboard, message: String? = nil, title: String? = nil) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         alert.addAction(UIAlertAction(title: "New Project", style: .default, handler: { action in
             Log.debug("new project did tap")
-            //self.app.viewPopup(type: .project, delegate: self, parentView: self.view, bottomView: self.toolbar, vc: self)
-            _ = UI.presentScreen(self, storyboard: self.storyboard!, storyboardId: StoryboardId.popupVC.rawValue)
+            alert.dismiss(animated: true) { self.viewPopup() }
         }))
         alert.modalPresentationStyle = .popover
         if let popoverPresentationController = alert.popoverPresentationController {
