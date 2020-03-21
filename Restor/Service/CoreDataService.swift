@@ -12,14 +12,22 @@ import CoreData
 class CoreDataService {
     static var shared = CoreDataService()
     private var storeType: String! = NSSQLiteStoreType
+    lazy var peristentContainerTest: NSPersistentContainer = {
+        let model = self.model
+        return NSPersistentContainer(name: self.containerName, managedObjectModel: model)
+    }()
+//    lazy var persistentContainer: NSPersistentCloudKitContainer = {
+//        let model = self.model
+//        return NSPersistentCloudKitContainer(name: self.containerName, managedObjectModel: model)
+//    }()
     lazy var persistentContainer: NSPersistentContainer = {
-        if let modelPath = Bundle(for: type(of: self)).path(forResource: "Restor", ofType: "momd") {
-            let url = URL(fileURLWithPath: modelPath)
-            if let model = NSManagedObjectModel(contentsOf: url) {
-                return NSPersistentContainer(name: self.containerName, managedObjectModel: model)
-            }
-        }
-        return NSPersistentContainer(name: "Restor")
+        let model = self.model
+        return NSPersistentContainer(name: self.containerName, managedObjectModel: model)
+    }()
+    lazy var model: NSManagedObjectModel = {
+        let modelPath = Bundle(for: type(of: self)).path(forResource: "Restor", ofType: "momd")
+        let url = URL(fileURLWithPath: modelPath!)
+        return NSManagedObjectModel(contentsOf: url)!
     }()
     lazy var mainMOC: NSManagedObjectContext = {
         let ctx = self.persistentContainer.viewContext
@@ -38,6 +46,7 @@ class CoreDataService {
     let defaultWorkspaceId = "default"
     let defaultWorkspaceName = "Default workspace"
     let defaultWorkspaceDesc = "The default workspace"
+    let cloudKitContainerId = "iCloud.com.estoapps.ios.restor8"
     
     init() {
         self.bootstrap()
@@ -49,16 +58,9 @@ class CoreDataService {
     }
     
     func bootstrap() {
-//        if let modelPath = Bundle(for: type(of: self)).path(forResource: "Restor", ofType: "momd") {
-//            let url = URL(fileURLWithPath: modelPath)
-//            if let model = NSManagedObjectModel(contentsOf: url) {
-//                self.persistentContainer = NSPersistentContainer(name: self.containerName, managedObjectModel: model)
-//            }
-//        } else {
-//            self.persistentContainer = NSPersistentContainer(name: "Restor")
-//        }
         let desc = self.persistentContainer.persistentStoreDescriptions.first
         desc?.type = self.storeType
+        // desc.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)  // for local store only
         self.setup()
     }
     
@@ -76,6 +78,18 @@ class CoreDataService {
         self.persistentContainer.loadPersistentStores { description, error  in
             guard error == nil else { fatalError("Unable to load store \(error!)") }
             self.persistentContainer.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+            //do {
+                // CloudKit related change
+                // try self.persistentContainer.viewContext.setQueryGenerationFrom(.current)
+                //let desc = self.persistentContainer.persistentStoreDescriptions.first
+                //desc?.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: self.cloudKitContainerId)
+                //desc?.configuration = "Cloud"
+                
+                // NB: This needs to be done only once and should not be included in the release version.
+                //try self.persistentContainer.initializeCloudKitSchema(options: [])
+            //} catch let error {
+                //Log.error("Persistence store error: \(error)")
+            //}
             completion()
         }
     }

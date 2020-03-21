@@ -2018,7 +2018,7 @@
                                                                                                                     <rect key="frame" x="238" y="8" width="21" height="32"/>
                                                                                                                     <subviews>
                                                                                                                         <button opaque="NO" userInteractionEnabled="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jnn-kB-WIr" userLabel="Field Type Button">
-                                                                                                                            <rect key="frame" x="-1" y="5" width="19" height="22"/>
+                                                                                                                            <rect key="frame" x="-1" y="-3" width="19" height="38"/>
                                                                                                                             <constraints>
                                                                                                                                 <constraint firstAttribute="width" constant="19" id="LKo-Bf-DRh"/>
                                                                                                                             </constraints>

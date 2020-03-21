@@ -38,6 +38,8 @@
 		9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FAD23945E7D002DF561 /* RestorTests.swift */; };
 		9E926FB923945E7D002DF561 /* RestorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FB823945E7D002DF561 /* RestorUITests.swift */; };
 		9EBCAA9F2424F3E100C82508 /* PopupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */; };
+		9EC1F94C2426565B005BDD0A /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EC1F94B2426565B005BDD0A /* CloudKit.framework */; };
+		9EC1F94E2426995A005BDD0A /* CloudKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC1F94D2426995A005BDD0A /* CloudKitService.swift */; };
 		9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC33FB323EEBF1A006C5B37 /* EATextView.swift */; };
 		9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */; };
 		9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED99AFD240AF7940064BDCC /* PersistenceService.swift */; };
@@ -105,6 +107,8 @@
 		9E926FB823945E7D002DF561 /* RestorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorUITests.swift; sourceTree = "<group>"; };
 		9E926FBA23945E7D002DF561 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupViewController.swift; sourceTree = "<group>"; };
+		9EC1F94B2426565B005BDD0A /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
+		9EC1F94D2426995A005BDD0A /* CloudKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
 		9EC33FB323EEBF1A006C5B37 /* EATextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextView.swift; sourceTree = "<group>"; };
 		9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataService.swift; sourceTree = "<group>"; };
 		9ED99AFD240AF7940064BDCC /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
@@ -121,6 +125,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9EC1F94C2426565B005BDD0A /* CloudKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -257,6 +262,7 @@
 		9ED99AFA240AF75B0064BDCC /* Service */ = {
 			isa = PBXGroup;
 			children = (
+				9EC1F94D2426995A005BDD0A /* CloudKitService.swift */,
 				9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */,
 				9ED99AFD240AF7940064BDCC /* PersistenceService.swift */,
 			);
@@ -276,6 +282,7 @@
 		9EFACA1823998A1B0004AB91 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9EC1F94B2426565B005BDD0A /* CloudKit.framework */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -427,6 +434,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9EC1F94E2426995A005BDD0A /* CloudKitService.swift in Sources */,
 				9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */,
 				9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */,
 				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,
@@ -676,7 +684,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = J7Q5T569K8;
 				INFOPLIST_FILE = RestorTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -698,7 +706,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = J7Q5T569K8;
 				INFOPLIST_FILE = RestorTests/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 11.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

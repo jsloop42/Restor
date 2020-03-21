@@ -17,11 +17,6 @@
         <fetchIndex name="byTypeAsc">
             <fetchIndexElement property="type" type="Binary" order="ascending"/>
         </fetchIndex>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="data"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
     </entity>
     <entity name="EImage" representedClassName=".EImage" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -40,12 +35,6 @@
         <fetchIndex name="byTypeAsc">
             <fetchIndexElement property="type" type="Binary" order="ascending"/>
         </fetchIndex>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="data"/>
-                <constraint value="isCameraMode"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
     </entity>
     <entity name="EProject" representedClassName=".EProject" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -64,11 +53,6 @@
         <fetchIndex name="byIdAsc">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
         </fetchIndex>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="id"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
     </entity>
     <entity name="ERequest" representedClassName=".ERequest" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -92,12 +76,6 @@
         <fetchIndex name="bySelectedMethodIndexAsc">
             <fetchIndexElement property="selectedMethodIndex" type="Binary" order="ascending"/>
         </fetchIndex>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="id"/>
-                <constraint value="url"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
     </entity>
     <entity name="ERequestBodyData" representedClassName=".ERequestBodyData" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -116,11 +94,6 @@
         <fetchIndex name="byCreatedAsc">
             <fetchIndexElement property="created" type="Binary" order="ascending"/>
         </fetchIndex>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="id"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
     </entity>
     <entity name="ERequestData" representedClassName=".ERequestData" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -146,11 +119,6 @@
         <fetchIndex name="byTypeAsc">
             <fetchIndexElement property="type" type="Binary" order="ascending"/>
         </fetchIndex>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="id"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
     </entity>
     <entity name="ERequestMethodData" representedClassName=".ERequestMethodData" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -169,11 +137,6 @@
         <fetchIndex name="byIdAsc">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
         </fetchIndex>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="id"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
     </entity>
     <entity name="ETag" representedClassName=".ETag" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -189,11 +152,6 @@
         <fetchIndex name="byIdAsc">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
         </fetchIndex>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="name"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
     </entity>
     <entity name="EWorkspace" representedClassName=".EWorkspace" syncable="YES" codeGenerationType="category">
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -211,11 +169,6 @@
         <fetchIndex name="byIdAsc">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
         </fetchIndex>
-        <uniquenessConstraints>
-            <uniquenessConstraint>
-                <constraint value="name"/>
-            </uniquenessConstraint>
-        </uniquenessConstraints>
     </entity>
     <elements>
         <element name="EFile" positionX="36" positionY="126" width="128" height="193"/>

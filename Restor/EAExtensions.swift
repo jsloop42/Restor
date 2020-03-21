@@ -160,6 +160,16 @@ public extension Int64 {
     }
 }
 
+extension Error {
+    var code: Int { return (self as NSError).code }
+    var domain: String { return (self as NSError).domain }
+    var localizedFailureReason: String? { return (self as NSError).localizedFailureReason }
+    var localizedRecoveryOptions: [String]? { return (self as NSError).localizedRecoveryOptions }
+    var localizedRecoverySuggestion: String? { return (self as NSError).localizedRecoverySuggestion }
+    var recoveryAttempter: Any? { return (self as NSError).recoveryAttempter }
+    var userInfo: [String: Any] { return (self as NSError).userInfo }
+}
+
 /// Determine if view should be popped on navigation bar's back button tap
 protocol  UINavigationBarBackButtonHandler {
     /// Should block the back button action

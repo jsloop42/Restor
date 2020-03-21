@@ -84,9 +84,7 @@ class Utils {
     
     /// Returns a random string of length 20.
     func genRandomString() -> String {
-        var xs = UUID.init().uuidString.lowercased().components(separatedBy: "-")
-        xs.removeLast()
-        return xs.joined()
+        return UUID.init().uuidString.lowercased().components(separatedBy: "-").joined()
     }
     
     func base64Encode(_ str: String) -> String {
