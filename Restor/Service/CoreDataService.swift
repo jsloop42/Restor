@@ -186,6 +186,11 @@ class CoreDataService {
         return context.object(with: moId)
     }
     
+    /// Returns a fetch results controller with the given entity type
+    /// - Parameters:
+    ///   - obj: The entity type
+    ///   - predicate: An optional fetch predicate
+    ///   - ctx: The managed object context
     func getFetchResultsController(obj: Entity.Type, predicate: NSPredicate? = nil, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
         let moc = self.getMOC(ctx: ctx)
         let fr = obj.fetchRequest()
@@ -193,6 +198,16 @@ class CoreDataService {
         if let x = predicate { fr.predicate = x }
         fr.fetchBatchSize = self.fetchBatchSize
         return NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
+    }
+        
+    /// Updates the given fetch results controller predicate
+    /// - Parameters:
+    ///   - frc: The fetch results controller
+    ///   - predicate: A fetch predicate
+    ///   - ctx: The managed object context
+    func updateFetchResultsController(_ frc: NSFetchedResultsController<NSFetchRequestResult>, predicate: NSPredicate, ctx: NSManagedObjectContext = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
+        frc.fetchRequest.predicate = predicate
+        return frc
     }
     
     // MARK: EWorkspace

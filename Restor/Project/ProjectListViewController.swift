@@ -48,7 +48,7 @@ class ProjectListViewController: UIViewController {
             self.initData()
             self.initUI()
             self.initEvent()
-            self.updateWorkspaceName()
+            self.updateWorkspaceTitle(self.workspace.name ?? "")
             // test
             //self.addProject(name: "Test Project", desc: "My awesome project")
             // end test
@@ -89,6 +89,22 @@ class ProjectListViewController: UIViewController {
             try self.frc.performFetch()
         } catch let error {
             Log.error("Error fetching: \(error)")
+        }
+    }
+    
+    func updateWorkspaceTitle(_ name: String) {
+        self.workspaceBtn.setTitle(name, for: .normal)
+    }
+    
+    func updateListingWorkspace(_ ws: EWorkspace) {
+        self.workspace = ws
+        if let wsId = ws.id {
+            if let _frc = self.localdb.updateFetchResultsController(self.frc as! NSFetchedResultsController<NSFetchRequestResult>, predicate: NSPredicate(format: "workspace.id == %@", wsId)) as? NSFetchedResultsController<EProject> {
+                self.frc = _frc
+                self.frc.delegate = self
+                self.reloadData()
+                self.tableView.reloadData()
+            }
         }
     }
     
@@ -220,8 +236,8 @@ extension ProjectListViewController: NSFetchedResultsControllerDelegate {
 }
 
 extension ProjectListViewController: WorkspaceVCDelegate {
-    func updateWorkspaceName() {
-        self.workspaceBtn.setTitle(self.app.getSelectedWorkspace().name ?? "", for: .normal)
-        self.tableView.reloadData()
+    func workspaceDidChange(ws: EWorkspace) {
+        self.updateWorkspaceTitle(ws.name ?? "")
+        self.updateListingWorkspace(ws)
     }
 }

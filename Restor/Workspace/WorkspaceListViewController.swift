@@ -7,9 +7,10 @@
 //
 
 import UIKit
+import CoreData
 
 protocol WorkspaceVCDelegate: class {
-    func updateWorkspaceName()
+    func workspaceDidChange(ws: EWorkspace)
 }
 
 class WorkspaceListViewController: UIViewController {
@@ -25,10 +26,7 @@ class WorkspaceListViewController: UIViewController {
     weak var delegate: WorkspaceVCDelegate?
     private let nc = NotificationCenter.default
     private let localdb = CoreDataService.shared
-    private var workspaces: [EWorkspace] = []
-    private var shouldFetchMore = true
-    private var isDataLoading = false
-    private var offset = Const.paginationOffset
+    private var frc: NSFetchedResultsController<EWorkspace>!
     
     deinit {
         self.nc.removeObserver(self)
@@ -43,11 +41,13 @@ class WorkspaceListViewController: UIViewController {
         WorkspaceListViewController.shared = self
         AppState.activeScreen = .workspaceListing
         self.navigationItem.title = "Workspaces"
+        self.reloadData()
+        self.tableView.reloadData()
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.getData()
+        self.initData()
         self.initUI()
         self.initEvents()
     }
@@ -66,6 +66,26 @@ class WorkspaceListViewController: UIViewController {
         //self.view.addGestureRecognizer(tap)
         self.nc.addObserver(self, selector: #selector(self.keyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
         self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+    
+    func initData() {
+        if self.frc == nil {
+            if let _frc = self.localdb.getFetchResultsController(obj: EWorkspace.self) as? NSFetchedResultsController<EWorkspace> {
+                self.frc = _frc
+                self.frc.delegate = self
+            }
+        }
+        self.reloadData()
+        self.tableView.reloadData()
+    }
+    
+    func reloadData() {
+        if self.frc == nil { return }
+        do {
+            try self.frc.performFetch()
+        } catch let error {
+            Log.error("Error fetching: \(error)")
+        }
     }
     
     @objc func viewDidTap(_ recognizer: UITapGestureRecognizer) {
@@ -128,82 +148,10 @@ class WorkspaceListViewController: UIViewController {
     }
     
     func addWorkspace(name: String, desc: String) {
-        AppState.totalworkspaces = self.localdb.getWorkspaceCount()
+        AppState.totalworkspaces = self.frc.numberOfRows(in: 0)
         _ = self.localdb.createWorkspace(id: name, index: AppState.totalworkspaces, name: name, desc: desc)
-        self.tableView.reloadData()
-    }
-    
-    func getData() {
-//        if !self.isDataLoading {
-//            self.localdb.getWorkspaces(offset: self.offset, limit: Const.fetchLimit, completion: { result in
-//                self.isDataLoading = false
-//                switch result {
-//                case .success(let wxs):
-//                    self.workspaces
-//                    self.workspaces = wxs
-//                    self.offset += Const.fetchLimit
-//                    self.tableView.reloadData()
-//                case .failure(let error):
-//                    self.app.viewError(error, vc: self)
-//                }
-//            })
-//            self.isDataLoading = true
-//        }
-    }
-}
-
-extension WorkspaceListViewController: PopupViewDelegate {
-    func validateText(_ text: String?) -> Bool {
-        guard let text = text else {
-            self.app.addItemPopupView?.viewValidationError("Please enter a name")
-            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
-            return false
-        }
-        if text.isEmpty {
-            self.app.addItemPopupView?.viewValidationError("Please enter a name")
-            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
-            return false
-        }
-        if text.trimmingCharacters(in: .whitespaces) == "" {
-            self.app.addItemPopupView?.viewValidationError("Please enter a valid name")
-            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
-            return false
-        }
-        self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: false)
-        return true
-    }
-    
-    func cancelDidTap(_ sender: Any) {
-        Log.debug("cancel did tap")
-        self.displayAddButton()
-        if let popup = self.app.addItemPopupView {
-            popup.animateSlideOut {
-                popup.nameTextField.text = ""
-                popup.removeFromSuperview()
-            }
-        }
-    }
-
-    func doneDidTap(name: String, desc: String) -> Bool {
-        Log.debug("done did tap")
-        if let popup = self.app.addItemPopupView {
-            if !name.isEmpty {
-                //self.createNewWorkspace(name: name, desc: desc)
-                popup.animateSlideOut {
-                    popup.nameTextField.text = ""
-                    popup.removeFromSuperview()
-                    self.displayAddButton()
-                }
-            } else {
-                popup.viewValidationError("Please enter a valid name")
-                return false
-            }
-        }
-        return true
-    }
-    
-    func popupStateDidChange(isErrorMode: Bool) {
-        self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: isErrorMode)
+        self.localdb.saveBackgroundContext()
+        self.reloadData()
     }
 }
 
@@ -214,31 +162,50 @@ class WorkspaceCell: UITableViewCell {
 
 extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return AppState.workspaces.count
+        return self.frc.numberOfRows(in: section)
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: TableCellId.workspaceCell.rawValue, for: indexPath) as! WorkspaceCell
-        let row = indexPath.row
-        cell.nameLbl.text = ""
-        cell.descLbl.text = ""
-        
-        
-        if let workspace = AppState.workspace(forIndex: row) {
-            cell.nameLbl.text = workspace.name
-            cell.descLbl.text = workspace.desc
-        }
+        let ws = self.frc.object(at: indexPath)
+        let wsSelected = self.app.getSelectedWorkspace()
+        cell.accessoryType = .none
+        if ws.id == wsSelected.id { cell.accessoryType = .checkmark }
+        cell.nameLbl.text = ws.name
+        cell.descLbl.text = ws.desc
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("workspace cell did select \(indexPath.row)")
-        AppState.selectedWorkspace = indexPath.row
-        self.delegate?.updateWorkspaceName()
+        let ws = self.frc.object(at: indexPath)
+        let wsSelected = self.app.getSelectedWorkspace()
+        if ws.id != wsSelected.id {
+            self.app.setSelectedWorkspace(ws)
+            self.delegate?.workspaceDidChange(ws: ws)
+        }
         self.dismiss(animated: true, completion: nil)
     }
-    
-    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
-//        self.getData()
+}
+
+extension WorkspaceListViewController: NSFetchedResultsControllerDelegate {
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        Log.debug("workspace list frc did change")
+        switch type {
+        case .delete:
+            DispatchQueue.main.async { self.tableView.deleteRows(at: [indexPath!], with: .automatic) }
+        case .insert:
+            DispatchQueue.main.async {
+                self.tableView.beginUpdates()
+                self.tableView.insertRows(at: [newIndexPath!], with: .none)
+                self.tableView.endUpdates()
+                self.tableView.layoutIfNeeded()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+            }
+        case .update:
+            DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath!], with: .none) }
+        default:
+            break
+        }
     }
 }
