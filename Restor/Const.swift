@@ -33,6 +33,7 @@ struct Const {
     static let defaultRequestMethodsCount = 5
     static let paginationOffset = 20
     static let fetchLimit = 30
+    static let helpTextForAddNewRequestMethod = "The request method name will be available to all requests within the same project and should be unique."
 }
 
 struct NotificationKey {

@@ -49,6 +49,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         AppState.activeScreen = .optionListing
+        self.isPopupActive = false
     }
     
     override func viewDidLoad() {
@@ -129,7 +130,16 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     @objc func footerDidTap() {
         Log.debug("footer did tap")
         if !self.isPopupActive {
-            self.app.viewPopup(type: .requestMethod, delegate: self, parentView: self.view, bottomView: self.view, vc: self)
+            self.app.viewPopupScreen(self, model: PopupModel(title: "New Method", helpText: Const.helpTextForAddNewRequestMethod, descFieldEnabled: false,
+                                                             shouldValidate: true, shouldDisplayHelp: true, doneHandler: { model in
+                Log.debug("model: \(model)")
+                self.isPopupActive = false
+                self.nc.post(name: NotificationKey.customRequestMethodDidAdd, object: self,
+                             userInfo: [Const.requestMethodNameKey: model.name, Const.modelIndexKey: self.data.count])
+            }, validateHandler: { model in
+                if model.name.trim().isEmpty { return false }
+                return self.data.first { x -> Bool in x == model.name } == nil
+            }))
             self.isPopupActive = true
         }
     }
@@ -157,6 +167,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     }
     
     func postRequestMethodChangeNotification() {
+        if self.data.isEmpty { return }
         self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
                      userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
                                 Const.requestMethodNameKey: self.data[self.selectedIndex]])

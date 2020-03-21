@@ -237,6 +237,30 @@ class UI {
         }
     }
     
+    /// A loading indicator snipper
+    private static var spinner: (UITableView) -> UIActivityIndicatorView = { tableView in
+        let s = UIActivityIndicatorView(style: UIActivityIndicatorView.Style.gray)
+        s.startAnimating()
+        s.frame = CGRect(x: CGFloat(0), y: CGFloat(0), width: tableView.bounds.width, height: CGFloat(44))
+        return s
+    }
+    
+    /// Show loading spinner at the bottom of the given table view
+    static func showLoadingForTableView(_ tableView: UITableView) {
+        tableView.tableFooterView = self.spinner(tableView)
+        tableView.tableFooterView?.isHidden = false
+    }
+
+    /// Hide loading spinner for the given table view if present
+    static func hideLoadingForTableView(_ tableView: UITableView) {
+        tableView.tableFooterView?.subviews.forEach({ view in
+            if view == self.spinner(tableView) {
+                view.removeFromSuperview()
+            }
+        })
+        tableView.tableFooterView?.isHidden = true
+    }
+    
     static func getTextHeight(_ text: String, width: CGFloat, font: UIFont) -> CGFloat {
         let frame = NSString(string: text)
                         .boundingRect(with: CGSize(width: width, height: .infinity),

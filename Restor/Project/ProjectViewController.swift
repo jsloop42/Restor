@@ -148,7 +148,7 @@ class ProjectViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         alert.addAction(UIAlertAction(title: "New Project", style: .default, handler: { action in
             Log.debug("new project did tap")
-            alert.dismiss(animated: true) { self.viewPopup() }
+            self.viewPopup()
         }))
         alert.modalPresentationStyle = .popover
         if let popoverPresentationController = alert.popoverPresentationController {

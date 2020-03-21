@@ -201,8 +201,10 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
                 if self.methods.count > idx {
                     self.methodLabel.text = self.methods[idx].name
                 } else {
-                    self.methodLabel.text = self.methods[0].name
-                    AppState.editRequest!.selectedMethodIndex = 0
+                    if !self.methods.isEmpty {
+                        self.methodLabel.text = self.methods[0].name
+                        AppState.editRequest!.selectedMethodIndex = 0
+                    }
                 }
             }
         }
@@ -315,7 +317,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             if let method = self.localdb.createRequestMethodData(id: self.utils.genRandomString(), index: idx, name: name, checkExists: true, ctx: ctx) {
                 data.method = method
                 self.methods.append(method)
-                AppState.currentProject?.addToRequestMethods(method)
+                method.project = AppState.currentProject
                 self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
                 self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
                              userInfo: [Const.optionModelKey: method, Const.optionDataActionKey: OptionDataAction.add])

@@ -143,12 +143,4 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource,
             break
         }
     }
-    
-    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        //self.tableView.beginUpdates()
-    }
-    
-    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        //self.tableView.endUpdates()
-    }
 }

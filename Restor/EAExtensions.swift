@@ -52,6 +52,10 @@ public extension String {
         let endIndex = self.index(startIndex, offsetBy: r.upperBound - r.lowerBound)
         return String(self[startIndex...endIndex])
     }
+    
+    func trim() -> String {
+        return self.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
 }
 
 public extension UIImage {

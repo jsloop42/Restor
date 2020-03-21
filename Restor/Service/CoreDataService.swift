@@ -743,7 +743,7 @@ class CoreDataService {
         return names.enumerated().compactMap { arg -> ERequestMethodData? in
             let (offset, element) = arg
             if let x = self.createRequestMethodData(id: self.genRequestMethodDataId(projId, methodName: element), index: offset, name: element, isCustom: false, ctx: ctx) {
-                proj.addToRequestMethods(x)
+                x.project = proj
                 return x
             }
             return nil
@@ -1094,8 +1094,8 @@ class CoreDataService {
     
     // MARK: - Generate Id
     
-    func genRequestMethodDataId(_ reqId: String, methodName: String) -> String {
-        return "\(reqId)-\(methodName)"
+    func genRequestMethodDataId(_ projId: String, methodName: String) -> String {
+        return "\(projId)-\(methodName)"
     }
     
     /// Generates the image id for the given image data.

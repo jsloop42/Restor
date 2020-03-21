@@ -69,6 +69,11 @@ public struct EARescheduler: EAReschedulable {
         self.type = type
     }
     
+    public mutating func destroy() {
+        self.timer?.invalidate()
+        self.blocks = []
+    }
+    
     public mutating func schedule() {
         self.timer?.invalidate()
         let this = self

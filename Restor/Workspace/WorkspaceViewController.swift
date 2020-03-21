@@ -24,6 +24,11 @@ class WorkspaceViewController: UIViewController {
     private let app: App = App.shared
     weak var delegate: WorkspaceVCDelegate?
     private let nc = NotificationCenter.default
+    private let localdb = CoreDataService.shared
+    private var workspaces: [EWorkspace] = []
+    private var shouldFetchMore = true
+    private var isDataLoading = false
+    private var offset = Const.paginationOffset
     
     deinit {
         self.nc.removeObserver(self)
@@ -42,6 +47,7 @@ class WorkspaceViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.getData()
         self.initUI()
         self.initEvents()
     }
@@ -90,6 +96,13 @@ class WorkspaceViewController: UIViewController {
         Log.debug("settings button did tap")
     }
     
+    func viewPopup() {
+        self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", doneHandler: { model in
+            Log.debug("model value: \(model.name) - \(model.desc)")
+            self.addWorkspace(name: model.name, desc: model.desc)
+        }))
+    }
+    
     func displayAddButton() {
         self.addBtn.isEnabled = true
     }
@@ -103,8 +116,7 @@ class WorkspaceViewController: UIViewController {
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
         alert.addAction(UIAlertAction(title: "New Workspace", style: .default, handler: { action in
             Log.debug("new workspace did tap")
-            self.hideAddButton()
-            self.app.viewPopup(type: .workspace, delegate: self, parentView: self.view, bottomView: self.toolbar, vc: self)
+            self.viewPopup()
         }))
         alert.modalPresentationStyle = .popover
         if let popoverPresentationController = alert.popoverPresentationController {
@@ -115,11 +127,28 @@ class WorkspaceViewController: UIViewController {
         vc.present(alert, animated: true, completion: nil)
     }
     
-    func createNewWorkspace(name: String, desc: String) {
-        // TODO:
-//        let ws = EWorkspace(name: name, desc: desc)
-//        AppState.workspaces.append(ws)
+    func addWorkspace(name: String, desc: String) {
+        AppState.totalworkspaces = self.localdb.getWorkspaceCount()
+        _ = self.localdb.createWorkspace(id: name, index: AppState.totalworkspaces, name: name, desc: desc)
         self.tableView.reloadData()
+    }
+    
+    func getData() {
+//        if !self.isDataLoading {
+//            self.localdb.getWorkspaces(offset: self.offset, limit: Const.fetchLimit, completion: { result in
+//                self.isDataLoading = false
+//                switch result {
+//                case .success(let wxs):
+//                    self.workspaces
+//                    self.workspaces = wxs
+//                    self.offset += Const.fetchLimit
+//                    self.tableView.reloadData()
+//                case .failure(let error):
+//                    self.app.viewError(error, vc: self)
+//                }
+//            })
+//            self.isDataLoading = true
+//        }
     }
 }
 
@@ -159,7 +188,7 @@ extension WorkspaceViewController: PopupViewDelegate {
         Log.debug("done did tap")
         if let popup = self.app.addItemPopupView {
             if !name.isEmpty {
-                self.createNewWorkspace(name: name, desc: desc)
+                //self.createNewWorkspace(name: name, desc: desc)
                 popup.animateSlideOut {
                     popup.nameTextField.text = ""
                     popup.removeFromSuperview()
@@ -193,6 +222,8 @@ extension WorkspaceViewController: UITableViewDelegate, UITableViewDataSource {
         let row = indexPath.row
         cell.nameLbl.text = ""
         cell.descLbl.text = ""
+        
+        
         if let workspace = AppState.workspace(forIndex: row) {
             cell.nameLbl.text = workspace.name
             cell.descLbl.text = workspace.desc
@@ -205,5 +236,9 @@ extension WorkspaceViewController: UITableViewDelegate, UITableViewDataSource {
         AppState.selectedWorkspace = indexPath.row
         self.delegate?.updateWorkspaceName()
         self.dismiss(animated: true, completion: nil)
+    }
+    
+    func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+//        self.getData()
     }
 }
