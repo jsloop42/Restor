@@ -66,7 +66,7 @@
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
-                <constraint value="name"/>
+                <constraint value="id"/>
             </uniquenessConstraint>
         </uniquenessConstraints>
     </entity>
