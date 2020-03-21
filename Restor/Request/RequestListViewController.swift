@@ -20,6 +20,7 @@ class RequestListViewController: UIViewController {
     private let app: App = App.shared
     private let localdb = CoreDataService.shared
     private var frc: NSFetchedResultsController<ERequest>!
+    private let cellReuseId = "requestCell"
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -96,24 +97,13 @@ class RequestCell: UITableViewCell {
     @IBOutlet weak var descLbl: UILabel!
 }
 
-extension NSFetchedResultsController {
-    @objc func numberOfSections() -> Int {
-        return self.sections?.count ?? 0
-    }
-    
-    @objc func numberOfRows(in section: Int) -> Int {
-        if let xs = self.sections, xs.count > section { return xs[section].numberOfObjects }
-        return 0
-    }
-}
-
-extension RequestListViewController: UITableViewDelegate, UITableViewDataSource, NSFetchedResultsControllerDelegate {
+extension RequestListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.frc.numberOfRows(in: section)
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: TableCellId.requestCell.rawValue, for: indexPath) as! RequestCell
+        let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseId, for: indexPath) as! RequestCell
         let req = self.frc.object(at: indexPath)
         cell.nameLbl.text = req.name
         cell.descLbl.text = req.desc
@@ -123,7 +113,9 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource,
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         self.viewEditRequestVC(true, indexPath: indexPath)
     }
-    
+}
+
+extension RequestListViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         Log.debug("requests list frc did change")    
         switch type {

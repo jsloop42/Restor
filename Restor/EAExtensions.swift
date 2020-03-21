@@ -8,6 +8,7 @@
 
 import Foundation
 import UIKit
+import CoreData
 
 public extension Date {
     func day() -> Int {
@@ -79,6 +80,17 @@ public extension UITableView {
         let sec = section != nil ? section! : 0
         let idxPath = IndexPath(row: self.numberOfRows(inSection: sec) - 1, section: sec)
         self.scrollToRow(at: idxPath, at: .bottom, animated: true)
+    }
+}
+
+extension NSFetchedResultsController {
+    @objc func numberOfSections() -> Int {
+        return self.sections?.count ?? 0
+    }
+    
+    @objc func numberOfRows(in section: Int) -> Int {
+        if let xs = self.sections, xs.count > section { return xs[section].numberOfObjects }
+        return 0
     }
 }
 

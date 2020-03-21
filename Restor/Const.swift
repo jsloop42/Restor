@@ -29,6 +29,9 @@ struct Const {
     /// The action for the data (add, delete, etc.).
     static let optionDataActionKey = "optionDataActionKey"
     
+    // User defaults kets
+    static let selectedWorkspaceIdKey = "selectedWorkspaceId"
+    
     /// The default number of methods added (`GET`, `POST`, `PUT`, `PATCH` and `DELETE`).
     static let defaultRequestMethodsCount = 5
     static let paginationOffset = 20

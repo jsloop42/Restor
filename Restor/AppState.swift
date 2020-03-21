@@ -49,16 +49,6 @@ struct AppState {
         }
         return nil
     }
-    
-    static func currentWorkspaceName() -> String {
-        return self.getCurrentWorkspace().name ?? ""
-    }
-    
-    static func getCurrentWorkspace() -> EWorkspace {
-        let ws = self.workspaces[self.selectedWorkspace]
-        self.currentWorkspace = ws
-        return ws
-    }
 }
 
 struct DocumentPickerState {

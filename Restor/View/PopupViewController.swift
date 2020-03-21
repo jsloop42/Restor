@@ -60,7 +60,7 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
     }
     
     override func viewWillDisappear(_ animated: Bool) {
-        self.rescheduler.destroy()
+        if self.rescheduler != nil { self.rescheduler.destroy() }
     }
     
     override func viewWillAppear(_ animated: Bool) {

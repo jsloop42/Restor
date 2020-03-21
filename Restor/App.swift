@@ -16,6 +16,7 @@ class App {
     var popupBottomContraints: NSLayoutConstraint?
     private var dbService = PersistenceService.shared
     private let localdb = CoreDataService.shared
+    private let utils = Utils.shared
     /// Entity diff rescheduler.
     var diffRescheduler = EARescheduler(interval: 0.3, repeats: false, type: .everyFn)
     /// Diff ids for `EAReschedulerFn`s
@@ -49,15 +50,11 @@ class App {
     }
     
     func initState() {
-        do {
-            if let ws = try self.dbService.initDefaultWorkspace() {
-                AppState.workspaces.append(ws)
-                AppState.selectedWorkspace = 0
-                AppState.selectedProject = 0
-            }
-        } catch let error {
-            Log.error("Error initializing state: \(error)")
-        }
+        _ = self.getSelectedWorkspace()
+    }
+    
+    func saveSelectedWorkspaceId(_ id: String) {
+        self.utils.setValue(key: Const.selectedWorkspaceIdKey, value: id)
     }
     
     /// Invocked before application termination to perform save state, clean up.
@@ -202,6 +199,24 @@ class App {
         let screen = vc.storyboard!.instantiateViewController(withIdentifier: StoryboardId.popupVC.rawValue) as! PopupViewController
         screen.model = model
         vc.present(screen, animated: true, completion: nil)
+    }
+    
+    func getSelectedWorkspace() -> EWorkspace {
+        if AppState.currentWorkspace != nil { return AppState.currentWorkspace! }
+        if let wsId = self.utils.getValue(Const.selectedWorkspaceIdKey) as? String {
+            if let ws = self.localdb.getWorkspace(id: wsId) {
+                AppState.currentWorkspace = ws
+                return ws
+            }
+        }
+        let ws = self.localdb.getDefaultWorkspace()
+        self.saveSelectedWorkspaceId(ws.id!)
+        return ws
+    }
+    
+    func setSelectedWorkspace(_ ws: EWorkspace) {
+        AppState.currentWorkspace = ws
+        if let wsId = ws.id { self.saveSelectedWorkspaceId(wsId) }
     }
     
     /// MARK: - Entity change tracking
@@ -721,8 +736,6 @@ class App {
 
 enum TableCellId: String {
     case workspaceCell
-    case projectCell
-    case requestCell
 }
 
 enum StoryboardId: String {
@@ -731,10 +744,10 @@ enum StoryboardId: String {
     case optionsPickerNav
     case optionsPickerVC
     case popupVC
-    case projectVC
+    case projectListVC
     case requestListVC
     case settingsVC
-    case workspaceVC
+    case workspaceListVC
 }
 
 /// The request option elements

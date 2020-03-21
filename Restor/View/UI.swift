@@ -109,7 +109,7 @@ class UI {
         if self.isToastPresenting {
             self.toastQueue.insert(msg)
         } else {
-            if let vc = WorkspaceViewController.shared {
+            if let vc = WorkspaceListViewController.shared {
                 self.viewToast(msg, vc: vc)
             }
         }

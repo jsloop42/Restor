@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  WorkspaceListViewController.swift
 //  Restor
 //
 //  Created by jsloop on 02/12/19.
@@ -12,8 +12,8 @@ protocol WorkspaceVCDelegate: class {
     func updateWorkspaceName()
 }
 
-class WorkspaceViewController: UIViewController {
-    static weak var shared: WorkspaceViewController?
+class WorkspaceListViewController: UIViewController {
+    static weak var shared: WorkspaceListViewController?
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var addBtn: UIBarButtonItem!
@@ -40,7 +40,7 @@ class WorkspaceViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        WorkspaceViewController.shared = self
+        WorkspaceListViewController.shared = self
         AppState.activeScreen = .workspaceListing
         self.navigationItem.title = "Workspaces"
     }
@@ -152,7 +152,7 @@ class WorkspaceViewController: UIViewController {
     }
 }
 
-extension WorkspaceViewController: PopupViewDelegate {
+extension WorkspaceListViewController: PopupViewDelegate {
     func validateText(_ text: String?) -> Bool {
         guard let text = text else {
             self.app.addItemPopupView?.viewValidationError("Please enter a name")
@@ -212,7 +212,7 @@ class WorkspaceCell: UITableViewCell {
     @IBOutlet weak var descLbl: UILabel!
 }
 
-extension WorkspaceViewController: UITableViewDelegate, UITableViewDataSource {
+extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return AppState.workspaces.count
     }

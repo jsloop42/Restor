@@ -30,7 +30,7 @@
 		9E8759062396C6A700F949D1 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* Utils.swift */; };
 		9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9323945E79002DF561 /* AppDelegate.swift */; };
 		9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9523945E79002DF561 /* SceneDelegate.swift */; };
-		9E926F9823945E79002DF561 /* WorkspaceViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9723945E79002DF561 /* WorkspaceViewController.swift */; };
+		9E926F9823945E79002DF561 /* WorkspaceListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9723945E79002DF561 /* WorkspaceListViewController.swift */; };
 		9E926F9B23945E79002DF561 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9E926F9923945E79002DF561 /* Main.storyboard */; };
 		9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */; };
 		9E926FA023945E7D002DF561 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9E926F9F23945E7D002DF561 /* Assets.xcassets */; };
@@ -43,7 +43,7 @@
 		9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED99AFD240AF7940064BDCC /* PersistenceService.swift */; };
 		9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */; };
 		9EE34CA323D9F67C00CA08F2 /* App.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE34CA223D9F67C00CA08F2 /* App.swift */; };
-		9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */; };
+		9EEA7A90239EA30C00A1CA68 /* ProjectListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A8F239EA30C00A1CA68 /* ProjectListViewController.swift */; };
 		9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A91239EA4AA00A1CA68 /* Const.swift */; };
 		9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEAAEC823EE81410022A72F /* OptionsPickerViewController.swift */; };
 		9EFF1FFE24229DB600E97632 /* SettingsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */; };
@@ -92,7 +92,7 @@
 		9E926F9023945E78002DF561 /* Restor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Restor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926F9323945E79002DF561 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9E926F9523945E79002DF561 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
-		9E926F9723945E79002DF561 /* WorkspaceViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceViewController.swift; sourceTree = "<group>"; };
+		9E926F9723945E79002DF561 /* WorkspaceListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListViewController.swift; sourceTree = "<group>"; };
 		9E926F9A23945E79002DF561 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		9E926F9D23945E79002DF561 /* Restor.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = Restor.xcdatamodel; sourceTree = "<group>"; };
 		9E926F9F23945E7D002DF561 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -110,7 +110,7 @@
 		9ED99AFD240AF7940064BDCC /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
 		9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAExtensions.swift; sourceTree = "<group>"; };
 		9EE34CA223D9F67C00CA08F2 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = App.swift; sourceTree = "<group>"; };
-		9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectViewController.swift; sourceTree = "<group>"; };
+		9EEA7A8F239EA30C00A1CA68 /* ProjectListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewController.swift; sourceTree = "<group>"; };
 		9EEA7A91239EA4AA00A1CA68 /* Const.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Const.swift; sourceTree = "<group>"; };
 		9EEAAEC823EE81410022A72F /* OptionsPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionsPickerViewController.swift; sourceTree = "<group>"; };
 		9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTableViewController.swift; sourceTree = "<group>"; };
@@ -155,7 +155,7 @@
 			isa = PBXGroup;
 			children = (
 				9E538DB7239958B20025C14C /* View */,
-				9E926F9723945E79002DF561 /* WorkspaceViewController.swift */,
+				9E926F9723945E79002DF561 /* WorkspaceListViewController.swift */,
 			);
 			path = Workspace;
 			sourceTree = "<group>";
@@ -283,7 +283,7 @@
 		9EFF1FFC24229D8D00E97632 /* Project */ = {
 			isa = PBXGroup;
 			children = (
-				9EEA7A8F239EA30C00A1CA68 /* ProjectViewController.swift */,
+				9EEA7A8F239EA30C00A1CA68 /* ProjectListViewController.swift */,
 				9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */,
 				9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */,
 			);
@@ -432,7 +432,7 @@
 				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,
 				9E8759062396C6A700F949D1 /* Utils.swift in Sources */,
 				9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */,
-				9E926F9823945E79002DF561 /* WorkspaceViewController.swift in Sources */,
+				9E926F9823945E79002DF561 /* WorkspaceListViewController.swift in Sources */,
 				9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */,
 				9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */,
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
@@ -445,7 +445,7 @@
 				9EBCAA9F2424F3E100C82508 /* PopupViewController.swift in Sources */,
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
 				9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */,
-				9EEA7A90239EA30C00A1CA68 /* ProjectViewController.swift in Sources */,
+				9EEA7A90239EA30C00A1CA68 /* ProjectListViewController.swift in Sources */,
 				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,

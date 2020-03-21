@@ -35,6 +35,9 @@ class CoreDataService {
     private let fetchBatchSize: Int = 50
     private let utils = Utils.shared
     var containerName = isRunningTests ? "RestorTest" : "Restor"
+    let defaultWorkspaceId = "default"
+    let defaultWorkspaceName = "Default workspace"
+    let defaultWorkspaceDesc = "The default workspace"
     
     init() {
         self.bootstrap()
@@ -183,6 +186,15 @@ class CoreDataService {
         return context.object(with: moId)
     }
     
+    func getFetchResultsController(obj: Entity.Type, predicate: NSPredicate? = nil, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
+        let moc = self.getMOC(ctx: ctx)
+        let fr = obj.fetchRequest()
+        fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+        if let x = predicate { fr.predicate = x }
+        fr.fetchBatchSize = self.fetchBatchSize
+        return NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
+    }
+    
     // MARK: EWorkspace
     
     func getWorkspace(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EWorkspace? {
@@ -262,8 +274,8 @@ class CoreDataService {
     func getDefaultWorkspace(with project: Bool? = false) -> EWorkspace {
         var x: EWorkspace!
         self.bgMOC.performAndWait {
-            if let ws = self.getWorkspace(id: "default") { x = ws; return }
-            let ws: EWorkspace! = self.createWorkspace(id: "default", index: 0, name: "Default workspace", desc: "The default workspace")
+            if let ws = self.getWorkspace(id: self.defaultWorkspaceId) { x = ws; return }
+            let ws: EWorkspace! = self.createWorkspace(id: self.defaultWorkspaceId, index: 0, name: self.defaultWorkspaceName, desc: self.defaultWorkspaceDesc)
             if let isProj = project, isProj {
                 ws.projects = NSSet()
                 ws.projects!.adding(self.getDefaultProject() as Any)
@@ -271,15 +283,6 @@ class CoreDataService {
             x = ws
         }
         return x
-    }
-    
-    func getFetchResultsController(obj: Entity.Type, predicate: NSPredicate? = nil, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
-        let moc = self.getMOC(ctx: ctx)
-        let fr = obj.fetchRequest()
-        fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
-        if let x = predicate { fr.predicate = x }
-        fr.fetchBatchSize = self.fetchBatchSize
-        return NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
     }
     
     // MARK: EProject

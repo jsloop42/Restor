@@ -1,5 +1,5 @@
 //
-//  ProjectViewController.swift
+//  ProjectListViewController.swift
 //  Restor
 //
 //  Created by jsloop on 09/12/19.
@@ -8,12 +8,13 @@
 
 import Foundation
 import UIKit
+import CoreData
 
-class ProjectViewController: UIViewController {
+class ProjectListViewController: UIViewController {
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var workspaceBtn: UIButton!
-    private var workspace: EWorkspace?
+    private var workspace: EWorkspace!
     private weak var addItemPopupView: PopupView?
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
@@ -22,6 +23,8 @@ class ProjectViewController: UIViewController {
     private let app: App = App.shared
     private let nc = NotificationCenter.default
     private let localdb = CoreDataService.shared
+    private var frc: NSFetchedResultsController<EProject>!
+    private let cellReuseId = "projectCell"
     
     deinit {
         self.nc.removeObserver(self)
@@ -33,7 +36,8 @@ class ProjectViewController: UIViewController {
         self.navigationItem.title = "Projects"
         self.navigationItem.leftBarButtonItem = self.addSettingsBarButton()
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
-        self.updateUIState()
+        self.reloadData()
+        self.tableView.reloadData()
     }
 
     override func viewDidLoad() {
@@ -41,11 +45,10 @@ class ProjectViewController: UIViewController {
         Log.debug("project view did load")
         if !isRunningTests {
             self.app.bootstrap()
+            self.initData()
             self.initUI()
             self.initEvent()
-            self.workspace = AppState.getCurrentWorkspace()
             self.updateWorkspaceName()
-            self.tableView.reloadData()
             // test
             //self.addProject(name: "Test Project", desc: "My awesome project")
             // end test
@@ -67,8 +70,26 @@ class ProjectViewController: UIViewController {
         self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
-    func updateUIState() {
-        
+    func initData() {
+        self.workspace = self.app.getSelectedWorkspace()
+        if self.frc == nil, let wsId = self.workspace.id {
+            let predicate = NSPredicate(format: "workspace.id == %@", wsId)
+            if let _frc = self.localdb.getFetchResultsController(obj: EProject.self, predicate: predicate) as? NSFetchedResultsController<EProject> {
+                self.frc = _frc
+                self.frc.delegate = self
+            }
+        }
+        self.reloadData()
+        self.tableView.reloadData()
+    }
+    
+    func reloadData() {
+        if self.frc == nil { return }
+        do {
+            try self.frc.performFetch()
+        } catch let error {
+            Log.error("Error fetching: \(error)")
+        }
     }
     
     func addSettingsBarButton() -> UIBarButtonItem {
@@ -102,21 +123,13 @@ class ProjectViewController: UIViewController {
     }
     
     func addProject(name: String, desc: String) {
-        if let ws = self.workspace, let ctx = ws.managedObjectContext {
-            let projCount = ws.projects?.count ?? 0
-            if let proj = self.localdb.createProject(id: self.utils.genRandomString(), index: projCount, name: name, desc: desc, ws: ws, ctx: ctx) {
-                proj.workspace = ws
+        if let ctx = self.workspace.managedObjectContext {
+            let projCount = self.frc.numberOfRows(in: 0)
+            if let proj = self.localdb.createProject(id: self.utils.genRandomString(), index: projCount, name: name, desc: desc, ws: self.workspace, ctx: ctx) {
+                proj.workspace = self.workspace
                 self.localdb.saveBackgroundContext()
             }
-            self.tableView.reloadData()
         }
-    }
-    
-    func getProject(at index: Int) -> EProject? {
-        if let ws = self.workspace, let wsId = ws.id, let ctx = ws.managedObjectContext {
-            return self.localdb.getProject(at: index, wsId: wsId, ctx: ctx)
-        }
-        return nil
     }
     
     @objc func addBtnDidTap(_ sender: Any) {
@@ -130,7 +143,7 @@ class ProjectViewController: UIViewController {
     
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "workspaceSegue" {
-            if let vc = segue.destination as? WorkspaceViewController {
+            if let vc = segue.destination as? WorkspaceListViewController {
                 vc.delegate = self
             }
         }
@@ -160,102 +173,55 @@ class ProjectViewController: UIViewController {
     }
 }
 
-extension ProjectViewController: PopupViewDelegate {
-    func validateText(_ text: String?) -> Bool {
-        guard let text = text else {
-            self.app.addItemPopupView?.viewValidationError("Please enter a name")
-            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
-            return false
-        }
-        if text.isEmpty {
-            self.app.addItemPopupView?.viewValidationError("Please enter a name")
-            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
-            return false
-        }
-        if text.trimmingCharacters(in: .whitespaces) == "" {
-            self.app.addItemPopupView?.viewValidationError("Please enter a valid name")
-            self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: true)
-            return false
-        }
-        self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: false)
-        return true
-    }
-    
-    func cancelDidTap(_ sender: Any) {
-        Log.debug("cancel did tap")
-        if let popup = self.app.addItemPopupView {
-            popup.animateSlideOut {
-                popup.nameTextField.text = ""
-                popup.delegate = nil
-                self.addItemPopupView = nil
-                popup.removeFromSuperview()
-            }
-        }
-    }
-
-    func doneDidTap(name: String, desc: String) -> Bool {
-        Log.debug("done did tap")
-        if let popup = self.app.addItemPopupView {
-            if !name.isEmpty {
-                self.addProject(name: name, desc: desc)
-                self.tableView.reloadData()
-                popup.animateSlideOut {
-                    popup.nameTextField.text = ""
-                    popup.removeFromSuperview()
-                    self.addItemPopupView = nil
-                }
-            } else {
-                popup.viewValidationError("Please enter a valid name")
-                return false
-            }
-        }
-        return true
-    }
-    
-    func popupStateDidChange(isErrorMode: Bool) {
-        self.app.addItemPopupView?.updatePopupConstraints(self.view, isErrorMode: isErrorMode)
-    }
-}
-
-
 class ProjectCell: UITableViewCell {
     @IBOutlet weak var nameLbl: UILabel!
     @IBOutlet weak var descLbl: UILabel!
 }
 
-extension ProjectViewController: UITableViewDelegate, UITableViewDataSource {
+extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if let aWorkspace = AppState.workspace(forIndex: AppState.selectedWorkspace) {
-            self.workspace = aWorkspace
-            return aWorkspace.projects?.count ?? 0
-        }
-        return 0
+        return self.frc.numberOfRows(in: section)
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: TableCellId.projectCell.rawValue, for: indexPath) as! ProjectCell
-        cell.nameLbl.text = ""
-        cell.descLbl.text = ""
-        let row = indexPath.row
-        if let project = self.getProject(at: row) {
-            cell.nameLbl.text = project.name
-            cell.descLbl.text = project.desc
-        }
+        let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseId, for: indexPath) as! ProjectCell
+        let proj = self.frc.object(at: indexPath)
+        cell.nameLbl.text = proj.name
+        cell.descLbl.text = proj.desc
         return cell
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        Log.debug("project cell did select \(indexPath.row)")
-        if let ws = AppState.currentWorkspace, let wsId = ws.id, let ctx = ws.managedObjectContext {
-            AppState.currentProject = self.localdb.getProject(at: indexPath.row, wsId: wsId, ctx: ctx)
-        }
+        AppState.currentProject = self.frc.object(at: indexPath)
         UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestListVC.rawValue)
     }
 }
 
-extension ProjectViewController: WorkspaceVCDelegate {
+extension ProjectListViewController: NSFetchedResultsControllerDelegate {
+    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
+        Log.debug("projects list frc did change")
+        switch type {
+        case .delete:
+            DispatchQueue.main.async { self.tableView.deleteRows(at: [indexPath!], with: .automatic) }
+        case .insert:
+            DispatchQueue.main.async {
+                self.tableView.beginUpdates()
+                self.tableView.insertRows(at: [newIndexPath!], with: .none)
+                self.tableView.endUpdates()
+                self.tableView.layoutIfNeeded()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+            }
+        case .update:
+            DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath!], with: .none) }
+        default:
+            break
+        }
+    }
+}
+
+extension ProjectListViewController: WorkspaceVCDelegate {
     func updateWorkspaceName() {
-        self.workspaceBtn.setTitle(AppState.currentWorkspaceName(), for: .normal)
+        self.workspaceBtn.setTitle(self.app.getSelectedWorkspace().name ?? "", for: .normal)
         self.tableView.reloadData()
     }
 }

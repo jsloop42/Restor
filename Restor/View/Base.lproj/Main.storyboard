@@ -292,10 +292,10 @@
             </objects>
             <point key="canvasLocation" x="2060.8695652173915" y="859.82142857142856"/>
         </scene>
-        <!--Workspace View Controller-->
+        <!--Workspace List View Controller-->
         <scene sceneID="tne-QT-ifu">
             <objects>
-                <viewController storyboardIdentifier="workspaceVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="BYZ-38-t0r" customClass="WorkspaceViewController" customModule="Restor" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="workspaceListVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="BYZ-38-t0r" customClass="WorkspaceListViewController" customModule="Restor" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="8bC-Xf-vdC">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="842"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
@@ -860,10 +860,10 @@
             </objects>
             <point key="canvasLocation" x="3695.652173913044" y="-552.45535714285711"/>
         </scene>
-        <!--Project View Controller-->
+        <!--Project List View Controller-->
         <scene sceneID="PjN-rz-0a3">
             <objects>
-                <viewController storyboardIdentifier="projectVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="p67-zo-gl1" customClass="ProjectViewController" customModule="Restor" customModuleProvider="target" sceneMemberID="viewController">
+                <viewController storyboardIdentifier="projectListVC" useStoryboardIdentifierAsRestorationIdentifier="YES" id="p67-zo-gl1" customClass="ProjectListViewController" customModule="Restor" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" contentMode="scaleToFill" id="Ne5-qf-7a3">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
