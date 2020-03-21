@@ -117,9 +117,9 @@ class WorkspaceListViewController: UIViewController {
     }
     
     func viewPopup() {
-        self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", doneHandler: { model in
+        self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", iCloudSyncFieldEnabled: true, doneHandler: { model in
             Log.debug("model value: \(model.name) - \(model.desc)")
-            self.addWorkspace(name: model.name, desc: model.desc)
+            self.addWorkspace(name: model.name, desc: model.desc, isSyncEnabled: model.iCloudSyncFieldEnabled)
         }))
     }
     
@@ -147,9 +147,9 @@ class WorkspaceListViewController: UIViewController {
         vc.present(alert, animated: true, completion: nil)
     }
     
-    func addWorkspace(name: String, desc: String) {
+    func addWorkspace(name: String, desc: String, isSyncEnabled: Bool) {
         AppState.totalworkspaces = self.frc.numberOfRows(in: 0)
-        _ = self.localdb.createWorkspace(id: name, index: AppState.totalworkspaces, name: name, desc: desc)
+        _ = self.localdb.createWorkspace(id: name, index: AppState.totalworkspaces, name: name, desc: desc, isSyncEnabled: isSyncEnabled)
         self.localdb.saveBackgroundContext()
         self.reloadData()
     }

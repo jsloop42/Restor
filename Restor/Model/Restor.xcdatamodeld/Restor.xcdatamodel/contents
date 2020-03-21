@@ -200,6 +200,7 @@
         <attribute name="desc" attributeType="String" defaultValueString=""/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="index" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="isSyncEnabled" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
         <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="name" attributeType="String" defaultValueString=""/>
         <attribute name="version" attributeType="Integer 64" defaultValueString="0.0" usesScalarValueType="YES"/>
@@ -225,6 +226,6 @@
         <element name="ERequestData" positionX="18" positionY="63" width="128" height="298"/>
         <element name="ERequestMethodData" positionX="-18" positionY="27" width="128" height="193"/>
         <element name="ETag" positionX="0" positionY="99" width="128" height="148"/>
-        <element name="EWorkspace" positionX="-63" positionY="-18" width="128" height="163"/>
+        <element name="EWorkspace" positionX="-63" positionY="-18" width="128" height="178"/>
     </elements>
 </model>

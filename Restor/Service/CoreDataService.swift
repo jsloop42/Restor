@@ -290,7 +290,7 @@ class CoreDataService {
         var x: EWorkspace!
         self.bgMOC.performAndWait {
             if let ws = self.getWorkspace(id: self.defaultWorkspaceId) { x = ws; return }
-            let ws: EWorkspace! = self.createWorkspace(id: self.defaultWorkspaceId, index: 0, name: self.defaultWorkspaceName, desc: self.defaultWorkspaceDesc)
+            let ws: EWorkspace! = self.createWorkspace(id: self.defaultWorkspaceId, index: 0, name: self.defaultWorkspaceName, desc: self.defaultWorkspaceDesc, isSyncEnabled: true)
             if let isProj = project, isProj {
                 ws.projects = NSSet()
                 ws.projects!.adding(self.getDefaultProject() as Any)
@@ -901,7 +901,7 @@ class CoreDataService {
     ///   - name: The workspace name.
     ///   - name: The workspace description.
     ///   - checkExists: Check whether the workspace exists before creating.
-    func createWorkspace(id: String, index: Int, name: String, desc: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)  -> EWorkspace? {
+    func createWorkspace(id: String, index: Int, name: String, desc: String, isSyncEnabled: Bool, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)  -> EWorkspace? {
         var x: EWorkspace?
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
@@ -912,6 +912,7 @@ class CoreDataService {
             ws.index = index.toInt64()
             ws.name = name
             ws.desc = desc
+            ws.isSyncEnabled = isSyncEnabled
             ws.created = x == nil ? ts : x!.created
             ws.modified = ts
             ws.version = x == nil ? 0 : x!.version + 1
