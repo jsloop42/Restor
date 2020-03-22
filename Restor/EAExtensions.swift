@@ -114,6 +114,10 @@ public extension Int32 {
     func toInt64() -> Int64 {
         return Int64(self)
     }
+    
+    func toDouble() -> Double {
+        return Double(self)
+    }
 }
 
 public extension Int {
@@ -136,6 +140,10 @@ public extension Int {
     func toInt64() -> Int64 {
         return Int64(self)
     }
+    
+    func toDouble() -> Double {
+        return Double(self)
+    }
 }
 
 public extension Int64 {
@@ -157,6 +165,10 @@ public extension Int64 {
     
     func toInt32() -> Int32 {
         return Int32(self)
+    }
+    
+    func toDouble() -> Double {
+        return Double(self)
     }
 }
 

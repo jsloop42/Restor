@@ -36,8 +36,10 @@ class ProjectListViewController: UIViewController {
         self.navigationItem.title = "Projects"
         self.navigationItem.leftBarButtonItem = self.addSettingsBarButton()
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
-        self.reloadData()
-        self.tableView.reloadData()
+        if !isRunningTests {
+            self.reloadData()
+            self.tableView.reloadData()
+        }
     }
 
     override func viewDidLoad() {
@@ -196,6 +198,7 @@ class ProjectCell: UITableViewCell {
 
 extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if self.frc == nil { return 0 }
         return self.frc.numberOfRows(in: section)
     }
     

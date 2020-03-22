@@ -87,7 +87,7 @@ class RestorTests: XCTestCase {
         let exp = expectation(description: "test core data")
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
-                let lws = self.localdb.createWorkspace(id: "test-ws", index: 0, name: "test-ws", desc: "")
+                let lws = self.localdb.createWorkspace(id: "test-ws", index: 0, name: "test-ws", desc: "", isSyncEnabled: false)
                 XCTAssertNotNil(lws)
                 guard let ws = lws else { return }
                 XCTAssertEqual(ws.name, "test-ws")
@@ -106,7 +106,7 @@ class RestorTests: XCTestCase {
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
                 let wsname = "test-ws"
-                let rws = self.localdb.createWorkspace(id: wsname, index: 0, name: wsname, desc: "")
+                let rws = self.localdb.createWorkspace(id: wsname, index: 0, name: wsname, desc: "", isSyncEnabled: false)
                 XCTAssertNotNil(rws)
                 guard let ws = rws else { return }
                 ws.name = wsname
@@ -125,7 +125,7 @@ class RestorTests: XCTestCase {
                 
                 // ws2
                 let wsname2 = "test-ws-2"
-                let rws2 = self.localdb.createWorkspace(id: wsname2, index: 1, name: wsname2, desc: "")
+                let rws2 = self.localdb.createWorkspace(id: wsname2, index: 1, name: wsname2, desc: "", isSyncEnabled: false)
                 XCTAssertNotNil(rws2)
                 guard let ws2 = rws2 else { return }
                 ws2.name = wsname2

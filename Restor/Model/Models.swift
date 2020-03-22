@@ -8,6 +8,7 @@
 
 import Foundation
 import UIKit
+import CoreData
 
 /// Used to hold the current attachment details being processed to avoid duplicates
 struct AttachmentInfo {
@@ -61,3 +62,15 @@ struct AttachmentInfo {
         self.reqDataId = ""
     }
 }
+
+public protocol Entity: NSManagedObject {
+    func getId() -> String?
+    func getIndex() -> Int
+    func getName() -> String?
+    func getCreated() -> Int64
+    func getModified() -> Int64
+    func getVersion() -> Int64
+    func setIndex(_ i: Int)
+}
+
+
