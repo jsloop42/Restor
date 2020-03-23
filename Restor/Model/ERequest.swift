@@ -39,7 +39,7 @@ public class ERequest: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
-    public func updateCKRecord(_ record: CKRecord) {
+    func updateCKRecord(_ record: CKRecord, project: CKRecord) {
         record["created"] = self.created as CKRecordValue
         record["modified"] = self.modified as CKRecordValue
         record["desc"] = (self.desc ?? "") as CKRecordValue
@@ -49,9 +49,31 @@ public class ERequest: NSManagedObject, Entity {
         record["selectedMethodIndex"] = self.selectedMethodIndex as CKRecordValue
         record["url"] = (self.url ?? "") as CKRecordValue
         record["version"] = self.version as CKRecordValue
+        let ref = CKRecord.Reference(record: project, action: .none)
+        record["project"] = ref
     }
     
-    public func updateFromCKRecord(_ record: CKRecord) {
+    func updateRequestDataReference(to request: CKRecord, requestData: CKRecord, type: RequestDataType) {
+        let key: String = {
+            if type == .header { return "headers" }
+            if type == .param { return "params" }
+            return ""
+        }()
+        guard !key.isEmpty else { Log.error("Wrong request data type passed: \(type.rawValue)"); return }
+        let ref = CKRecord.Reference(record: requestData, action: .deleteSelf)
+        var xs = request[key] as? [CKRecord.Reference] ?? [CKRecord.Reference]()
+        if !xs.contains(ref) {
+            xs.append(ref)
+            request[key] = xs as CKRecordValue
+        }
+    }
+    
+    func updateBodyReference(_ request: CKRecord, body: CKRecord) {
+        let ref = CKRecord.Reference(record: body, action: .deleteSelf)
+        request["body"] = ref as CKRecordValue
+    }
+    
+    func updateFromCKRecord(_ record: CKRecord, project: CKRecord) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["id"] as? String { self.id = x }

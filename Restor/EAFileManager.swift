@@ -48,6 +48,10 @@ public class EAFileManager: NSObject {
         return false
     }
     
+    public static func getTemporaryURL(_ name: String) -> URL {
+        return URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(name)
+    }
+    
     /// Create directory at the given path including intermediate directories as well.
     public static func createDirectory(at url: URL) -> Bool {
         do {

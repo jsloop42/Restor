@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 import CoreData
+import CloudKit
 
 /// Used to hold the current attachment details being processed to avoid duplicates
 struct AttachmentInfo {

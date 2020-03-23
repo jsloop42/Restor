@@ -38,4 +38,12 @@ public class ETag: NSManagedObject, Entity {
     public func setIndex(_ i: Int) {
         self.index = i.toInt64()
     }
+    
+    func updateCKRecord(_ record: CKRecord) {
+        fatalError("Not implemented yet.")
+    }
+    
+    func updateFromCKRecord(_ record: CKRecord) {
+        fatalError("Not implemented yet.")
+    }
 }

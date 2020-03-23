@@ -58,15 +58,18 @@ class CloudKitService {
     
     // MARK: - CloudKit setup
     
+    /// Return the current iCloud user's full name.
     func currentUsername() -> String {
         return CKCurrentUserDefaultName
     }
     
+    /// Returns the custom iCloud container.
     func container() -> CKContainer {
         if self._container == nil { self._container = CKContainer(identifier: self.cloudKitContainerId) }
         return self._container
     }
     
+    /// Return user's private iCloud database.
     func privateDatabase() -> CKDatabase {
         if self._privateDatabase == nil { self._privateDatabase = self.container().privateCloudDatabase }
         return self._privateDatabase
@@ -74,6 +77,7 @@ class CloudKitService {
     
     // MARK: - Helper methods
     
+    /// Invokes the given callback with the iCloud account status.
     func accountStatus(completion: @escaping (Result<CKAccountStatus, Error>) -> Void) {
         CKContainer.default().accountStatus { status, error in
             if let err = error { completion(.failure(err)); return }
@@ -81,33 +85,45 @@ class CloudKitService {
         }
     }
     
+    /// Returns whether the zone has been created for the given zone ID.
     func isZoneCreated(_ zoneID: CKRecordZone.ID) -> Bool {
         let key = "\(zoneID.zoneName)-created"
         return self.kvstore.bool(forKey: key)
     }
     
+    /// Set zone created flag in kv store for the given zone ID.
     func setZoneCreated(_ zoneID: CKRecordZone.ID) {
         let key = "\(zoneID.zoneName)-created"
         self.kvstore.set(true, forKey: key)
     }
     
+    /// Removes the zone created flag from kv store for the given zone ID.
     func removeZoneCreated(_ zoneID: CKRecordZone.ID) {
         let key = "\(zoneID.zoneName)-created"
         self.kvstore.removeObject(forKey: key)
     }
     
+    /// Returns a zone ID with the given name.
     func zoneID(with name: String) -> CKRecordZone.ID {
         return CKRecordZone.ID(zoneName: name, ownerName: self.currentUsername())
     }
     
+    /// Returns a zone ID for the given workspace id.
     func zoneID(workspaceId: String) -> CKRecordZone.ID {
         return CKRecordZone.ID(zoneName: "ws-\(workspaceId)", ownerName: self.currentUsername())
     }
     
+    /// Returns the record ID for the given entity id.
     func recordID(entityId: String, zoneID: CKRecordZone.ID) -> CKRecord.ID {
         return CKRecord.ID(recordName: "\(entityId).\(zoneID.zoneName)", zoneID: zoneID)
     }
     
+    /// Returns the entity id for the given record ID.
+    func entityID(recordID: CKRecord.ID) -> String {
+        return recordID.recordName.components(separatedBy: ".").first ?? ""
+    }
+    
+    /// Handles remote iCloud notifications
     func handleNotification(zoneID: CKRecordZone.ID) {
         var changeToken: CKServerChangeToken? = nil
         if let changeTokenData = UserDefaults.standard.data(forKey: PropKey.serverChangeToken.rawValue) {
@@ -144,6 +160,7 @@ class CloudKitService {
     
     // MARK: - Create
     
+    /// Create zone with the given zone Id.
     func createZone(recordZoneId: CKRecordZone.ID, completion: @escaping (Result<CKRecordZone, Error>) -> Void) {
         let z = CKRecordZone(zoneID: recordZoneId)
         if !self.zones.contains(z) {
@@ -165,6 +182,7 @@ class CloudKitService {
         }
     }
     
+    /// Fetch the given zones.
     func fetchZone(recordZoneIDs: [CKRecordZone.ID], completion: @escaping (Result<[CKRecordZone.ID: CKRecordZone], Error>) -> Void) {
         let op = CKFetchRecordZonesOperation(recordZoneIDs: recordZoneIDs)
         op.qualityOfService = .utility
@@ -175,6 +193,7 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
+    /// Create zone if not created already.
     func createZoneIfNotExist(recordZoneId: CKRecordZone.ID, completion: @escaping (Result<CKRecordZone, Error>) -> Void) {
         self.fetchZone(recordZoneIDs: [recordZoneId], completion: { result in
             switch result {
@@ -232,6 +251,7 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
+    /// Returns zone name from the given subscription ID.
     func getZoneNameFromSubscriptionID(_ subID: CKSubscription.ID) -> String {
         let name = subID.description
         let xs = name.components(separatedBy: ".")
@@ -264,6 +284,7 @@ class CloudKitService {
     
     // MARK: - Delete
     
+    /// Delete zone with the given zone ID.
     func deleteZone(recordZoneId: CKRecordZone.ID, completion: @escaping (Result<Bool, Error>) -> Void) {
         let op = CKModifyRecordZonesOperation(recordZonesToSave: [], recordZoneIDsToDelete: [recordZoneId])
         op.modifyRecordZonesCompletionBlock = { _, _, error in
@@ -285,6 +306,7 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
+    /// Delete record with the given record ID.
     func deleteRecord(recordID: CKRecord.ID, completion: @escaping (Result<Bool, Error>) -> Void) {
         let op = CKModifyRecordsOperation(recordsToSave: [], recordIDsToDelete: [recordID])
         op.qualityOfService = .utility
@@ -296,6 +318,7 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
+    /// Delete subscription with the given subscription ID.
     func deleteSubscription(subscriptionID: CKSubscription.ID, completion: @escaping (Result<Bool, Error>) -> Void) {
         let op = CKModifySubscriptionsOperation.init(subscriptionsToSave: [], subscriptionIDsToDelete: [subscriptionID])
         op.qualityOfService = .utility

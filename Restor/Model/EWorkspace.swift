@@ -39,7 +39,7 @@ public class EWorkspace: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
-    public func updateCKRecord(_ record: CKRecord) {
+    func updateCKRecord(_ record: CKRecord) {
         record["created"] = self.created as CKRecordValue
         record["modified"] = self.modified as CKRecordValue
         record["desc"] = (self.desc ?? "") as CKRecordValue
@@ -50,7 +50,16 @@ public class EWorkspace: NSManagedObject, Entity {
         record["version"] = self.version as CKRecordValue
     }
     
-    public func updateFromCKRecord(_ record: CKRecord) {
+    func addProjectReference(to workspace: CKRecord, project: CKRecord) {
+        let ref = CKRecord.Reference(record: project, action: .deleteSelf)
+        var xs = workspace["projects"] as? [CKRecord.Reference] ?? [CKRecord.Reference]()
+        if !xs.contains(ref) {
+            xs.append(ref)
+            workspace["projects"] = xs as CKRecordValue
+        }
+    }
+    
+    func updateFromCKRecord(_ record: CKRecord) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["id"] as? String { self.id = x }
