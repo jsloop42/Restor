@@ -219,20 +219,26 @@ class CloudKitService {
         })
     }
     
+    /// Creates a record with the given ID and type
+    func createRecord(recordID: CKRecord.ID, recordType: String) -> CKRecord {
+        return CKRecord(recordType: recordType, recordID: recordID)
+    }
+    
     // MARK - Save
     
     /// Saves the given record. If the record does not exists, then creates a new one, else updates the existing one after conflict resolution.
-    func saveRecord(_ record: CKRecord, recordType: String, completion: @escaping (Result<Bool, Error>) -> Void) {
-        let op = CKModifyRecordsOperation(recordsToSave: [record], recordIDsToDelete: [])
+    func saveRecords(_ records: [CKRecord], completion: @escaping (Result<Bool, Error>) -> Void) {
+        guard !records.isEmpty else { completion(.success(false)); return }
+        let op = CKModifyRecordsOperation(recordsToSave: records, recordIDsToDelete: [])
         op.qualityOfService = .utility
         op.modifyRecordsCompletionBlock = { _, _, error in
             guard error == nil else {
                 guard let ckerror = error as? CKError else { completion(.failure(error!)); return }
                 if ckerror.isZoneNotFound() {  // Zone not found, create one
-                    self.createZone(recordZoneId: record.recordID.zoneID) { result in
+                    self.createZone(recordZoneId: records.first!.recordID.zoneID) { result in
                         switch result {
                         case .success(_):
-                            self.saveRecord(record, recordType: recordType, completion: completion)
+                            self.saveRecords(records, completion: completion)
                         case .failure(let error):
                             completion(.failure(error)); return
                         }
@@ -245,7 +251,7 @@ class CloudKitService {
             }
             // Create subscription on the first record write, which will only subscribe if not done already.
             //self.saveSubscription(recordType: recordType)
-            Log.info("Record saved successfully: \(record.recordID.recordName)")
+            Log.info("Records saved successfully: \(records.map { r -> String in r.recordID.recordName })")
             completion(.success(true))
         }
         self.privateDatabase().add(op)
