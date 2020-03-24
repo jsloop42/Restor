@@ -58,6 +58,11 @@ public class EFile: NSManagedObject, Entity {
         record["version"] = self.version as CKRecordValue
     }
     
+    func addRequestDataReference(_ file: CKRecord, reqData: CKRecord) {
+        let ref = CKRecord.Reference(record: reqData, action: .none)
+        file["requestData"] = ref as CKRecordValue
+    }
+    
     func updateFromCKRecord(_ record: CKRecord) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }

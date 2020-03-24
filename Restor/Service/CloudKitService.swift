@@ -171,7 +171,7 @@ class CloudKitService {
                     completion(.failure(err))
                     return
                 }
-                Log.info("Zone created successfully: \(recordZoneId.zoneName)")
+                Log.debug("Zone created successfully: \(recordZoneId.zoneName)")
                 self.zones.insert(z)
                 completion(.success(z))
             }
@@ -251,7 +251,7 @@ class CloudKitService {
             }
             // Create subscription on the first record write, which will only subscribe if not done already.
             //self.saveSubscription(recordType: recordType)
-            Log.info("Records saved successfully: \(records.map { r -> String in r.recordID.recordName })")
+            Log.debug("Records saved successfully: \(records.map { r -> String in r.recordID.recordName })")
             completion(.success(true))
         }
         self.privateDatabase().add(op)
@@ -282,7 +282,7 @@ class CloudKitService {
             UserDefaults.standard.set(true, forKey: subSavedKey)
             self.subscriptions.insert(subscription)
             self.zoneSubscriptions[subscription.subscriptionID] = zoneID
-            Log.info("Subscribed to events successfully: \(recordType) with ID: \(subscription.subscriptionID.description)")
+            Log.debug("Subscribed to events successfully: \(recordType) with ID: \(subscription.subscriptionID.description)")
         }
         op.qualityOfService = .utility
         self.privateDatabase().add(op)
@@ -291,20 +291,20 @@ class CloudKitService {
     // MARK: - Delete
     
     /// Delete zone with the given zone ID.
-    func deleteZone(recordZoneId: CKRecordZone.ID, completion: @escaping (Result<Bool, Error>) -> Void) {
-        let op = CKModifyRecordZonesOperation(recordZonesToSave: [], recordZoneIDsToDelete: [recordZoneId])
+    func deleteZone(recordZoneIds: [CKRecordZone.ID], completion: @escaping (Result<Bool, Error>) -> Void) {
+        let op = CKModifyRecordZonesOperation(recordZonesToSave: [], recordZoneIDsToDelete: recordZoneIds)
         op.modifyRecordZonesCompletionBlock = { _, _, error in
             if let err = error {
                 Log.error("Error deleting zone: \(err)")
                 completion(.failure(err))
                 return
             }
-            Log.info("Zone deleted successfully: \(recordZoneId.zoneName)")
-            if let idx = (self.zoneIDs.firstIndex { id -> Bool in id == recordZoneId }) {
-                self.zoneIDs.remove(at: idx)
-            }
-            if let idx = (self.zones.firstIndex { zone -> Bool in zone.zoneID == recordZoneId }) {
-                self.zones.remove(at: idx)
+            Log.debug("Zone deleted successfully: \(recordZoneIds.map { r -> String in r.zoneName })")
+            recordZoneIds.forEach { zoneID in
+                self.zoneIDs.remove(zoneID)
+                if let idx = (self.zones.firstIndex(where: { zone -> Bool in zone.zoneID == zoneID })) {
+                    self.zones.remove(at: idx)
+                }
             }
             completion(.success(true))
         }
@@ -312,13 +312,13 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
-    /// Delete record with the given record ID.
-    func deleteRecord(recordID: CKRecord.ID, completion: @escaping (Result<Bool, Error>) -> Void) {
-        let op = CKModifyRecordsOperation(recordsToSave: [], recordIDsToDelete: [recordID])
+    /// Delete records with the given record IDs.
+    func deleteRecords(recordIDs: [CKRecord.ID], completion: @escaping (Result<Bool, Error>) -> Void) {
+        let op = CKModifyRecordsOperation(recordsToSave: [], recordIDsToDelete: recordIDs)
         op.qualityOfService = .utility
         op.modifyRecordsCompletionBlock = { _, _, error in
             if let err = error { completion(.failure(err)); return }
-            Log.info("Record deleted successfully: \(recordID.recordName)")
+            Log.debug("Records deleted successfully: \(recordIDs.map { r -> String in r.recordName })")
             completion(.success(true))
         }
         self.privateDatabase().add(op)
@@ -331,7 +331,7 @@ class CloudKitService {
         op.modifySubscriptionsCompletionBlock = { _, _, error in
             if let err = error { completion(.failure(err)); return }
             self.zoneSubscriptions.removeValue(forKey: subscriptionID)
-            Log.info("Subscription deleted successfully: \(subscriptionID.description)")
+            Log.debug("Subscription deleted successfully: \(subscriptionID.description)")
             completion(.success(true))
         }
         self.privateDatabase().add(op)

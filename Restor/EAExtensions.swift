@@ -172,6 +172,12 @@ public extension Int64 {
     }
 }
 
+extension Set {
+    func toArray() -> [Element] {
+        return Array(self)
+    }
+}
+
 extension Error {
     var code: Int { return (self as NSError).code }
     var domain: String { return (self as NSError).domain }
