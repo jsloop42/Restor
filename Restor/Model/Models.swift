@@ -65,6 +65,7 @@ struct AttachmentInfo {
 }
 
 public protocol Entity: NSManagedObject {
+    var recordType: String { get }
     func getId() -> String?
     func getIndex() -> Int
     func getName() -> String?

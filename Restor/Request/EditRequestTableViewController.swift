@@ -83,6 +83,11 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         self.nc.removeObserver(self)
     }
     
+    override func didReceiveMemoryWarning() {
+        self.app.didReceiveMemoryWarning()
+        super.didReceiveMemoryWarning()
+    }
+    
     func discardContextChange() {
         if let data = AppState.editRequest, let ctx = data.managedObjectContext {
             //self.localdb.discardChanges(in: ctx)

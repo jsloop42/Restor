@@ -11,6 +11,8 @@ import CloudKit
 import CoreData
 
 public class EProject: NSManagedObject, Entity {
+    public var recordType: String { return "Project" }
+    
     public func getId() -> String? {
         return self.id
     }

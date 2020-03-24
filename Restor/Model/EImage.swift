@@ -11,6 +11,8 @@ import CloudKit
 import CoreData
 
 public class EImage: NSManagedObject, Entity {
+    public var recordType: String { return "Image" }
+    
     public func getId() -> String? {
         return self.id
     }

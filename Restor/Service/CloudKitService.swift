@@ -158,6 +158,30 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
+    // MARK: - Fetch
+    
+    /// Fetch the given zones.
+    func fetchZone(recordZoneIDs: [CKRecordZone.ID], completion: @escaping (Result<[CKRecordZone.ID: CKRecordZone], Error>) -> Void) {
+        let op = CKFetchRecordZonesOperation(recordZoneIDs: recordZoneIDs)
+        op.qualityOfService = .utility
+        op.fetchRecordZonesCompletionBlock = { res, error in
+            if let err = error { completion(.failure(err)); return }
+            if let hm = res { completion(.success(hm)) }
+        }
+        self.privateDatabase().add(op)
+    }
+    
+    /// Fetch the given zones.
+    func fetchRecord(recordIDs: [CKRecord.ID], completion: @escaping (Result<[CKRecord.ID: CKRecord], Error>) -> Void) {
+        let op = CKFetchRecordsOperation(recordIDs: recordIDs)
+        op.qualityOfService = .utility
+        op.fetchRecordsCompletionBlock = { res, error in
+            if let err = error { completion(.failure(err)); return }
+            if let hm = res { completion(.success(hm)) }
+        }
+        self.privateDatabase().add(op)
+    }    
+    
     // MARK: - Create
     
     /// Create zone with the given zone Id.
@@ -180,17 +204,6 @@ class CloudKitService {
         } else {
             completion(.success(z))
         }
-    }
-    
-    /// Fetch the given zones.
-    func fetchZone(recordZoneIDs: [CKRecordZone.ID], completion: @escaping (Result<[CKRecordZone.ID: CKRecordZone], Error>) -> Void) {
-        let op = CKFetchRecordZonesOperation(recordZoneIDs: recordZoneIDs)
-        op.qualityOfService = .utility
-        op.fetchRecordZonesCompletionBlock = { res, error in
-            if let err = error { completion(.failure(err)); return }
-            if let hm = res { completion(.success(hm)) }
-        }
-        self.privateDatabase().add(op)
     }
     
     /// Create zone if not created already.

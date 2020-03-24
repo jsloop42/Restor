@@ -11,6 +11,8 @@ import CloudKit
 import CoreData
 
 public class EWorkspace: NSManagedObject, Entity {
+    public var recordType: String { return "Workspace" }
+    
     public func getId() -> String? {
         return self.id
     }

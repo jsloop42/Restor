@@ -11,6 +11,8 @@ import CloudKit
 import CoreData
 
 public class ERequestBodyData: NSManagedObject, Entity {
+    public var recordType: String { return "RequestBodyData" }
+    
     public func getId() -> String? {
         return self.id
     }

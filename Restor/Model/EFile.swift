@@ -11,6 +11,8 @@ import CloudKit
 import CoreData
 
 public class EFile: NSManagedObject, Entity {
+    public var recordType: String { return "File" }
+    
     public func getId() -> String? {
         return self.id
     }

@@ -11,6 +11,8 @@ import CloudKit
 import CoreData
 
 public class ETag: NSManagedObject, Entity {
+    public var recordType: String { return "Tag" }
+    
     public func getId() -> String? {
         return self.id
     }

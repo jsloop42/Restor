@@ -11,6 +11,8 @@ import CloudKit
 import CoreData
 
 public class ERequestMethodData: NSManagedObject, Entity {
+    public var recordType: String { return "RequestMethodData" }
+    
     public func getId() -> String? {
         return self.id
     }
