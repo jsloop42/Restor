@@ -219,6 +219,11 @@ class App {
         if let wsId = ws.id { self.saveSelectedWorkspaceId(wsId) }
     }
     
+    func didReceiveMemoryWarning() {
+        Log.debug("app: did receive memory warning")
+        PersistenceService.shared.clearCache()
+    }
+    
     /// MARK: - Entity change tracking
     
     func addEditRequestManagedObjectId(_ id: NSManagedObjectID?) {
