@@ -15,6 +15,9 @@ public enum FileIOMode {
     case append
 }
 
+/// A result type of `Data`.
+public typealias EADataResultCallback = ((Result<Data, Error>) -> Void)
+
 public class EAFileManager: NSObject {
     private let url: URL!
     private var callback: EADataResultCallback?

@@ -41,6 +41,10 @@ public class EWorkspace: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
+    public func getZoneID() -> CKRecordZone.ID {
+        return CloudKitService.shared.zoneID(workspaceId: self.id!)
+    }
+    
     func updateCKRecord(_ record: CKRecord) {
         record["created"] = self.created as CKRecordValue
         record["modified"] = self.modified as CKRecordValue

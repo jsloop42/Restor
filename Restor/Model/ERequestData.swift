@@ -41,6 +41,24 @@ public class ERequestData: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
+    public func getZoneID() -> CKRecordZone.ID {
+        let type = RequestDataType(rawValue: self.type.toInt())!
+        let wsId: String
+        switch type {
+        case .header:
+            wsId = self.header!.project!.workspace!.id!
+        case .param:
+            wsId = self.param!.project!.workspace!.id!
+        case .form:
+            wsId = self.form!.request!.project!.workspace!.id!
+        case .multipart:
+            wsId = self.multipart!.request!.project!.workspace!.id!
+        case .binary:
+            wsId = self.binary!.request!.project!.workspace!.id!
+        }
+        return CloudKitService.shared.zoneID(workspaceId: wsId)
+    }
+    
     func updateCKRecord(_ record: CKRecord) {
         record["created"] = self.created as CKRecordValue
         record["modified"] = self.modified as CKRecordValue

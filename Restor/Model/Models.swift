@@ -72,6 +72,7 @@ public protocol Entity: NSManagedObject {
     func getCreated() -> Int64
     func getModified() -> Int64
     func getVersion() -> Int64
+    func getZoneID() -> CKRecordZone.ID
     func setIndex(_ i: Int)
 }
 

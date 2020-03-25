@@ -41,6 +41,10 @@ public class ETag: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
+    public func getZoneID() -> CKRecordZone.ID {
+        return CloudKitService.shared.zoneID(workspaceId: self.request!.project!.workspace!.id!)
+    }
+    
     func updateCKRecord(_ record: CKRecord) {
         fatalError("Not implemented yet.")
     }

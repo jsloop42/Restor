@@ -840,4 +840,8 @@ enum AppError: Error {
     case fileRead
     case fileWrite
     case fileNotFound
+    case notFound
+    case read
+    case write
+    case fetch
 }
