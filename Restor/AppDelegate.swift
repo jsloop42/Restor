@@ -8,8 +8,9 @@
 
 import UIKit
 import CloudKit
+import UserNotifications
 
-class AppDelegate: UIResponder, UIApplicationDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     var window: UIWindow?
     //private let keyboardManager = IQKeyboardManager.shared
     private let app = App.shared
@@ -19,7 +20,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         UI.setGlobalStyle()
         self.app.updateWindowBackground(self.window)
-        application.registerForRemoteNotifications()
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+            if let error = error {
+                Log.error("Notification auth req err:  \(error.localizedDescription)")
+            } else {
+                DispatchQueue.main.async {
+                    application.registerForRemoteNotifications()
+                }
+            }
+        }
+        UNUserNotificationCenter.current().delegate = self
+        //application.registerForRemoteNotifications()
+        //self.ck.deleteAllSubscriptions()
+        self.db.subscribeToCloudKitEvents()
+        
         return true
     }
     
@@ -34,17 +48,25 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
     
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
+        Log.debug("Remote notification did receive: \(userInfo)")
         if let info = userInfo as? [String: NSObject], let notif = CKNotification(fromRemoteNotificationDictionary: info) {
-            if let sub = (self.ck.subscriptions.first { sub -> Bool in sub.subscriptionID == notif.subscriptionID }) {
-                if let zoneID = self.ck.zoneSubscriptions[sub.subscriptionID] {
-                    self.ck.handleNotification(zoneID: zoneID)
-                    completionHandler(.newData)
-                    return
-                }
+            if let subID = notif.subscriptionID, self.ck.isSubscribed(to: subID) {
+                let zoneID = self.ck.zoneID(subscriptionID: subID)
+                self.ck.handleNotification(zoneID: zoneID)
+                completionHandler(.newData)
+                return
             } else {
                 completionHandler(.noData)
             }
         }
+    }
+    
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Log.debug("did register for remote notification with token: \(String(bytes: deviceToken, encoding: .utf8) ?? "")")
+    }
+    
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.alert, .sound, .badge])
     }
     
     // MARK: UISceneSession Lifecycle

@@ -843,5 +843,10 @@ enum AppError: Error {
     case notFound
     case read
     case write
+    case delete
+    case update
+    case network
+    case offline
+    case server
     case fetch
 }

@@ -13,8 +13,8 @@ import CoreData
 public class ERequestData: NSManagedObject, Entity {
     public var recordType: String { return "RequestData" }
     
-    public func getId() -> String? {
-        return self.id
+    public func getId() -> String {
+        return self.id ?? ""
     }
     
     public func getIndex() -> Int {
@@ -39,6 +39,10 @@ public class ERequestData: NSManagedObject, Entity {
     
     public func setIndex(_ i: Int) {
         self.index = i.toInt64()
+    }
+    
+    public func setIsSynced(_ status: Bool) {
+        self.isSynced = status
     }
     
     public func getZoneID() -> CKRecordZone.ID {
@@ -73,13 +77,13 @@ public class ERequestData: NSManagedObject, Entity {
     }
     
     /// Adds a to-one reference to the `binary` field.
-    func addBinaryReference(_ requestData: CKRecord, binary: CKRecord) {
+    static func addBinaryReference(_ requestData: CKRecord, binary: CKRecord) {
         let ref = CKRecord.Reference(record: binary, action: .none)
         requestData["binary"] = ref
     }
     
     /// Adds a to-many reference to `file` field.
-    func addFileReference(_ requestData: CKRecord, file: CKRecord) {
+    static func addFileReference(_ requestData: CKRecord, file: CKRecord) {
         var xs = requestData["file"] as? [CKRecord.Reference] ?? [CKRecord.Reference]()
         let ref = CKRecord.Reference(record: file, action: .deleteSelf)
         if !xs.contains(ref) {
@@ -89,7 +93,7 @@ public class ERequestData: NSManagedObject, Entity {
     }
     
     /// Adds a to-one reference to `form` field.
-    func addFormReference(_ requestData: CKRecord, form: CKRecord, type: RequestDataType) {
+    static func addFormReference(_ requestData: CKRecord, form: CKRecord, type: RequestDataType) {
         let ref = CKRecord.Reference(record: form, action: .deleteSelf)
         let key: String = {
             if type == .form { return "form" }
@@ -101,7 +105,7 @@ public class ERequestData: NSManagedObject, Entity {
     }
     
     /// Adds a to-one reference to `image` field.
-    func addImageReference(_ requestData: CKRecord, image: CKRecord) {
+    static func addImageReference(_ requestData: CKRecord, image: CKRecord) {
         let ref = CKRecord.Reference(record: image, action: .deleteSelf)
         requestData["image"] = ref
     }

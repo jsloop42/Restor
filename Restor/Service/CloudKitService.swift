@@ -19,11 +19,11 @@ class CloudKitService {
     private var _container: CKContainer!
     var zoneIDs: Set<CKRecordZone.ID> = Set()
     var zones: Set<CKRecordZone> = Set()
-    var subscriptions: Set<CKSubscription> = Set()
-    var zoneSubscriptions: [CKSubscription.ID: CKRecordZone.ID] = [:]
     private let nc = NotificationCenter.default
     private let kvstore = NSUbiquitousKeyValueStore.default
     weak var delegate: CloudKitDelegate?
+    /// Cloudkit user defaults subscriptions key
+    let subscriptionsKey = "ck-subscriptions"
     
     enum PropKey: String {
         case isZoneCreated
@@ -32,6 +32,10 @@ class CloudKitService {
     
     deinit {
         self.nc.removeObserver(self)
+    }
+    
+    init() {
+        self.loadSubscriptions()
     }
 
     // MARK: - KV Store
@@ -113,6 +117,11 @@ class CloudKitService {
         return CKRecordZone.ID(zoneName: "ws-\(workspaceId)", ownerName: self.currentUsername())
     }
     
+    /// Returns zone ID from the given subscription ID.
+    func zoneID(subscriptionID: CKSubscription.ID) -> CKRecordZone.ID {
+        return self.zoneID(with: subscriptionID.components(separatedBy: ".").last ?? "")
+    }
+    
     /// Returns the record ID for the given entity id.
     func recordID(entityId: String, zoneID: CKRecordZone.ID) -> CKRecord.ID {
         return CKRecord.ID(recordName: "\(entityId).\(zoneID.zoneName)", zoneID: zoneID)
@@ -121,6 +130,10 @@ class CloudKitService {
     /// Returns the entity id for the given record ID.
     func entityID(recordID: CKRecord.ID) -> String {
         return recordID.recordName.components(separatedBy: ".").first ?? ""
+    }
+    
+    func subscriptionID(_ id: String, zoneID: CKRecordZone.ID) -> CKSubscription.ID {
+        return CKSubscription.ID(format: "%@.%@", id, zoneID.zoneName)
     }
     
     /// Handles remote iCloud notifications
@@ -158,6 +171,27 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
+    /// Fetches all subscriptions from cloud and updates user defaults.
+    func loadSubscriptions() {
+        self.fetchSubscriptions { result in
+            switch result {
+            case .success(let xs):
+                let subIds: [CKSubscription.ID] = xs.map { $0.subscriptionID }
+                UserDefaults.standard.set(subIds, forKey: self.subscriptionsKey)
+                break
+            case .failure(let err):
+                Log.error("Error fetching subscriptions: \(err)")
+                break
+            }
+        }
+    }
+    
+    /// Returns if a subscription had been made for the given subscription id.
+    func isSubscribed(to subId: CKSubscription.ID) -> Bool {
+        let xs = UserDefaults.standard.array(forKey: self.subscriptionsKey) as? [CKSubscription.ID] ?? []
+        return xs.contains(subId)
+    }
+    
     // MARK: - Fetch
     
     /// Fetch the given zones.
@@ -180,7 +214,14 @@ class CloudKitService {
             if let hm = res { completion(.success(hm)) }
         }
         self.privateDatabase().add(op)
-    }    
+    }
+    
+    func fetchSubscriptions(completion: @escaping (Result<[CKSubscription], Error>) -> Void) {
+        self.privateDatabase().fetchAllSubscriptions { subscriptions, error in
+            if let err = error { completion(.failure(err)); return }
+            completion(.success(subscriptions ?? []))
+        }
+    }
     
     // MARK: - Create
     
@@ -240,10 +281,19 @@ class CloudKitService {
     // MARK - Save
     
     /// Saves the given record. If the record does not exists, then creates a new one, else updates the existing one after conflict resolution.
-    func saveRecords(_ records: [CKRecord], completion: @escaping (Result<Bool, Error>) -> Void) {
-        guard !records.isEmpty else { completion(.success(false)); return }
+    func saveRecords(_ records: [CKRecord], count: Int? = 0, isForce: Bool? = false, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        guard !records.isEmpty else { completion(.success([])); return }
         let op = CKModifyRecordsOperation(recordsToSave: records, recordIDsToDelete: [])
+        var saved: [CKRecord] = []
+        let lock = NSLock()
         op.qualityOfService = .utility
+        if isForce! { op.savePolicy = .changedKeys }
+        op.perRecordCompletionBlock = { record, error in
+            guard error == nil else { return }
+            lock.lock()
+            saved.append(record)
+            lock.unlock()
+        }
         op.modifyRecordsCompletionBlock = { _, _, error in
             guard error == nil else {
                 guard let ckerror = error as? CKError else { completion(.failure(error!)); return }
@@ -257,15 +307,20 @@ class CloudKitService {
                         }
                     }
                 } else if ckerror.isRecordExists() {
-                    // TODO: merge in the changes, save the new record
-                    completion(.failure(ckerror)); return
+                    Log.error("Error saving record. Record already exists.")
+                    if count! >= 2 { completion(.failure(ckerror)); return }  // Tried three time.
+                    // Merge in the changes, save the new record
+                    let (local, server) = ckerror.getMergeRecords()
+                    if let merged = PersistenceService.shared.mergeRecords(local: local, server: server, recordType: local?.recordType ?? "") {
+                        self.saveRecords([merged], count: count! + 1, isForce: true, completion: completion)
+                    } else {
+                        completion(.failure(ckerror))
+                    }
                 }
                 return
             }
-            // Create subscription on the first record write, which will only subscribe if not done already.
-            //self.saveSubscription(recordType: recordType)
             Log.debug("Records saved successfully: \(records.map { r -> String in r.recordID.recordName })")
-            completion(.success(true))
+            completion(.success(saved))
         }
         self.privateDatabase().add(op)
     }
@@ -277,24 +332,27 @@ class CloudKitService {
         return xs.last ?? ""
     }
     
-    /// Save subscription will be made only once for the given type.
-    func saveSubscription(_ subId: String, recordType: String, zoneID: CKRecordZone.ID) {
-        let subSavedKey = "\(recordType)-subscription-saved.\(zoneID.zoneName)"
-        let isSaved = UserDefaults.standard.bool(forKey: subSavedKey)
-        guard !isSaved else { return }
+    /// Subscribe to an record change event if not already subscribed.
+    /// - Parameters:
+    ///   - subId: A subscription key to identify the subscription, which includes the zone ID as well.
+    ///   - recordType: The record type.
+    ///   - zoneID: The zone ID of the record.
+    func subscribe(_ subId: String, recordType: String, zoneID: CKRecordZone.ID) {
+        var xs = UserDefaults.standard.array(forKey: self.subscriptionsKey) as? [CKSubscription.ID] ?? []
+        if xs.contains(subId) { return }
         let predicate = NSPredicate(value: true)
         let subscription = CKQuerySubscription(recordType: recordType, predicate: predicate, subscriptionID: subId,
                                                options: [CKQuerySubscription.Options.firesOnRecordCreation, CKQuerySubscription.Options.firesOnRecordDeletion,
                                                          CKQuerySubscription.Options.firesOnRecordUpdate])
         let notifInfo = CKSubscription.NotificationInfo()
         notifInfo.shouldSendContentAvailable = true
+        notifInfo.alertBody = "Yay!"
         subscription.notificationInfo = notifInfo
         let op = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription], subscriptionIDsToDelete: [])
         op.modifySubscriptionsCompletionBlock = { _, _, error in
             guard error == nil else { return }
-            UserDefaults.standard.set(true, forKey: subSavedKey)
-            self.subscriptions.insert(subscription)
-            self.zoneSubscriptions[subscription.subscriptionID] = zoneID
+            xs.append(subId)
+            UserDefaults.standard.set(xs, forKey: self.subscriptionsKey)
             Log.debug("Subscribed to events successfully: \(recordType) with ID: \(subscription.subscriptionID.description)")
         }
         op.qualityOfService = .utility
@@ -338,16 +396,37 @@ class CloudKitService {
     }
     
     /// Delete subscription with the given subscription ID.
-    func deleteSubscription(subscriptionID: CKSubscription.ID, completion: @escaping (Result<Bool, Error>) -> Void) {
-        let op = CKModifySubscriptionsOperation.init(subscriptionsToSave: [], subscriptionIDsToDelete: [subscriptionID])
+    func deleteSubscriptions(subscriptionIDs: [CKSubscription.ID], completion: @escaping (Result<[CKSubscription.ID], Error>) -> Void) {
+        let op = CKModifySubscriptionsOperation.init(subscriptionsToSave: [], subscriptionIDsToDelete: subscriptionIDs)
         op.qualityOfService = .utility
-        op.modifySubscriptionsCompletionBlock = { _, _, error in
+        op.modifySubscriptionsCompletionBlock = { _, ids, error in
             if let err = error { completion(.failure(err)); return }
-            self.zoneSubscriptions.removeValue(forKey: subscriptionID)
-            Log.debug("Subscription deleted successfully: \(subscriptionID.description)")
-            completion(.success(true))
+            guard let xs = ids else { completion(.failure(AppError.delete)); return }
+            Log.debug("Subscriptions deleted successfully: \(xs)")
+            completion(.success(xs))
         }
         self.privateDatabase().add(op)
+    }
+    
+    func deleteAllSubscriptions() {
+        self.fetchSubscriptions { result in
+            switch result {
+            case .success(let subs):
+                self.deleteSubscriptions(subscriptionIDs: subs.map { $0.subscriptionID }) { result in
+                    switch result {
+                    case .success(let ids):
+                        let xs = UserDefaults.standard.array(forKey: self.subscriptionsKey) as? [CKSubscription.ID] ?? []
+                        let diff = Utils.shared.subtract(lxs: xs, rxs: ids)  // not deleted subscriptions
+                        UserDefaults.standard.set(diff, forKey: self.subscriptionsKey)
+                    case .failure(let err):
+                        Log.error("Error deleting subscriptions: \(err)")
+                    }
+                }
+            case .failure(let err):
+                Log.error("Error fetching subscriptions: \(err)")
+                break
+            }
+        }
     }
 }
 

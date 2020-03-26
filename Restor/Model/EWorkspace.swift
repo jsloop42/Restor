@@ -13,8 +13,8 @@ import CoreData
 public class EWorkspace: NSManagedObject, Entity {
     public var recordType: String { return "Workspace" }
     
-    public func getId() -> String? {
-        return self.id
+    public func getId() -> String {
+        return self.id ?? ""
     }
     
     public func getIndex() -> Int {
@@ -41,6 +41,10 @@ public class EWorkspace: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
+    public func setIsSynced(_ status: Bool) {
+        self.isSynced = status
+    }
+    
     public func getZoneID() -> CKRecordZone.ID {
         return CloudKitService.shared.zoneID(workspaceId: self.id!)
     }
@@ -56,7 +60,7 @@ public class EWorkspace: NSManagedObject, Entity {
         record["version"] = self.version as CKRecordValue
     }
     
-    func addProjectReference(to workspace: CKRecord, project: CKRecord) {
+    static func addProjectReference(to workspace: CKRecord, project: CKRecord) {
         let ref = CKRecord.Reference(record: project, action: .deleteSelf)
         var xs = workspace["projects"] as? [CKRecord.Reference] ?? [CKRecord.Reference]()
         if !xs.contains(ref) {

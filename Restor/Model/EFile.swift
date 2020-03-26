@@ -13,8 +13,8 @@ import CoreData
 public class EFile: NSManagedObject, Entity {
     public var recordType: String { return "File" }
     
-    public func getId() -> String? {
-        return self.id
+    public func getId() -> String {
+        return self.id ?? ""
     }
     
     public func getIndex() -> Int {
@@ -41,6 +41,10 @@ public class EFile: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
+    public func setIsSynced(_ status: Bool) {
+        self.isSynced = status
+    }
+    
     public func getZoneID() -> CKRecordZone.ID {
         return self.requestData!.getZoneID()
     }
@@ -64,7 +68,7 @@ public class EFile: NSManagedObject, Entity {
         record["version"] = self.version as CKRecordValue
     }
     
-    func addRequestDataReference(_ file: CKRecord, reqData: CKRecord) {
+    static func addRequestDataReference(_ file: CKRecord, reqData: CKRecord) {
         let ref = CKRecord.Reference(record: reqData, action: .none)
         file["requestData"] = ref as CKRecordValue
     }

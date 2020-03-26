@@ -13,8 +13,8 @@ import CoreData
 public class EProject: NSManagedObject, Entity {
     public var recordType: String { return "Project" }
     
-    public func getId() -> String? {
-        return self.id
+    public func getId() -> String {
+        return self.id ?? ""
     }
     
     public func getIndex() -> Int {
@@ -41,6 +41,10 @@ public class EProject: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
+    public func setIsSynced(_ status: Bool) {
+        self.isSynced = status
+    }
+    
     public func getZoneID() -> CKRecordZone.ID {
         return CloudKitService.shared.zoneID(workspaceId: self.workspace!.id!)
     }
@@ -57,7 +61,7 @@ public class EProject: NSManagedObject, Entity {
         record["workspace"] = ref
     }
     
-    func addRequestReference(to project: CKRecord, request: CKRecord) {
+    static func addRequestReference(to project: CKRecord, request: CKRecord) {
         let ref = CKRecord.Reference(record: request, action: .deleteSelf)
         var xs = project["requests"] as? [CKRecord.Reference] ?? [CKRecord.Reference]()
         if !xs.contains(ref) {
@@ -66,7 +70,7 @@ public class EProject: NSManagedObject, Entity {
         }
     }
     
-    func addRequestMethodReference(to project: CKRecord, requestMethod: CKRecord) {
+    static func addRequestMethodReference(to project: CKRecord, requestMethod: CKRecord) {
         let ref = CKRecord.Reference(record: requestMethod, action: .deleteSelf)
         var xs = project["requestMethods"] as? [CKRecord.Reference] ?? [CKRecord.Reference]()
         if !xs.contains(ref) {

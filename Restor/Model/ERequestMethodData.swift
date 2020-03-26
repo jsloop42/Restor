@@ -13,8 +13,8 @@ import CoreData
 public class ERequestMethodData: NSManagedObject, Entity {
     public var recordType: String { return "RequestMethodData" }
     
-    public func getId() -> String? {
-        return self.id
+    public func getId() -> String {
+        return self.id ?? ""
     }
     
     public func getIndex() -> Int {
@@ -39,6 +39,10 @@ public class ERequestMethodData: NSManagedObject, Entity {
     
     public func setIndex(_ i: Int) {
         self.index = i.toInt64()
+    }
+    
+    public func setIsSynced(_ status: Bool) {
+        self.isSynced = status
     }
     
     public func getZoneID() -> CKRecordZone.ID {

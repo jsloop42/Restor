@@ -93,10 +93,10 @@ class CloudKitTests: XCTestCase {
         ws.updateCKRecord(ckws)
         let ckproj = self.ck.createRecord(recordID: projRecordID, recordType: "Project")
         proj.updateCKRecord(ckproj, workspace: ckws)
-        ws.addProjectReference(to: ckws, project: ckproj)  // add project reference to workspace
+        EWorkspace.addProjectReference(to: ckws, project: ckproj)  // add project reference to workspace
         let ckreq = self.ck.createRecord(recordID: reqRecordID, recordType: "Request")
         req.updateCKRecord(ckreq, project: ckproj)
-        proj.addRequestReference(to: ckproj, request: ckreq)  // add req reference to project
+        EProject.addRequestReference(to: ckproj, request: ckreq)  // add req reference to project
         self.ck.saveRecords([ckws, ckproj, ckreq]) { result in
             if case .failure(_) = result { XCTFail("Error saving record") }
             self.ck.deleteRecords(recordIDs: [wsRecordID, projRecordID, reqRecordID]) { result in
@@ -128,13 +128,13 @@ class CloudKitTests: XCTestCase {
         let ckReqData = self.ck.createRecord(recordID: ckReqDataID, recordType: "RequestData")
         let ckFile = self.ck.createRecord(recordID: ckFileID, recordType: "File")
         reqData.updateCKRecord(ckReqData)
-        reqData.addFileReference(ckReqData, file: ckFile)
+        ERequestData.addFileReference(ckReqData, file: ckFile)
         file.updateCKRecord(ckFile)
-        file.addRequestDataReference(ckFile, reqData: ckReqData)
+        EFile.addRequestDataReference(ckFile, reqData: ckReqData)
         self.ck.saveRecords([ckFile, ckReqData]) { result in
             switch result {
             case .success(let res):
-                XCTAssertTrue(res)
+                XCTAssertTrue(!res.isEmpty)
             case .failure(_):
                 XCTFail("Error saving record")
             }

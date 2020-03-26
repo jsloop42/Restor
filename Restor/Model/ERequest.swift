@@ -13,8 +13,8 @@ import CoreData
 public class ERequest: NSManagedObject, Entity {
     public var recordType: String { return "Request" }
     
-    public func getId() -> String? {
-        return self.id
+    public func getId() -> String {
+        return self.id ?? ""
     }
     
     public func getIndex() -> Int {
@@ -41,6 +41,10 @@ public class ERequest: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
+    public func setIsSynced(_ status: Bool) {
+        self.isSynced = status
+    }
+    
     public func getZoneID() -> CKRecordZone.ID {
         return CloudKitService.shared.zoneID(workspaceId: self.project!.workspace!.id!)
     }
@@ -59,7 +63,7 @@ public class ERequest: NSManagedObject, Entity {
         record["project"] = ref
     }
     
-    func updateRequestDataReference(to request: CKRecord, requestData: CKRecord, type: RequestDataType) {
+    static func updateRequestDataReference(to request: CKRecord, requestData: CKRecord, type: RequestDataType) {
         let key: String = {
             if type == .header { return "headers" }
             if type == .param { return "params" }
@@ -74,7 +78,7 @@ public class ERequest: NSManagedObject, Entity {
         }
     }
     
-    func updateBodyReference(_ request: CKRecord, body: CKRecord) {
+    static func updateBodyReference(_ request: CKRecord, body: CKRecord) {
         let ref = CKRecord.Reference(record: body, action: .deleteSelf)
         request["body"] = ref as CKRecordValue
     }

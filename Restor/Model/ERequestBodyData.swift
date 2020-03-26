@@ -13,8 +13,8 @@ import CoreData
 public class ERequestBodyData: NSManagedObject, Entity {
     public var recordType: String { return "RequestBodyData" }
     
-    public func getId() -> String? {
-        return self.id
+    public func getId() -> String {
+        return self.id ?? ""
     }
     
     public func getIndex() -> Int {
@@ -41,6 +41,10 @@ public class ERequestBodyData: NSManagedObject, Entity {
         self.index = i.toInt64()
     }
     
+    public func setIsSynced(_ status: Bool) {
+        self.isSynced = status
+    }
+    
     public func getZoneID() -> CKRecordZone.ID {
         return CloudKitService.shared.zoneID(workspaceId: self.request!.project!.workspace!.id!)
     }
@@ -59,12 +63,12 @@ public class ERequestBodyData: NSManagedObject, Entity {
         record["request"] = ref as CKRecordValue
     }
     
-    func addBinaryToRequestBodyData(_ reqBodyData: CKRecord, binary: CKRecord) {
+    static func addBinaryToRequestBodyData(_ reqBodyData: CKRecord, binary: CKRecord) {
         let ref = CKRecord.Reference(record: binary, action: .deleteSelf)
         reqBodyData["binary"] = ref
     }
     
-    func addFormToRequestBodyData(_ reqBodyData: CKRecord, form: CKRecord, type: RequestDataType) {
+    static func addFormToRequestBodyData(_ reqBodyData: CKRecord, form: CKRecord, type: RequestDataType) {
         let key: String = {
             if type == .form { return "form" }
             if type == .multipart { return "multipart" }

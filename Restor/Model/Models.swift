@@ -66,7 +66,7 @@ struct AttachmentInfo {
 
 public protocol Entity: NSManagedObject {
     var recordType: String { get }
-    func getId() -> String?
+    func getId() -> String
     func getIndex() -> Int
     func getName() -> String?
     func getCreated() -> Int64
@@ -74,6 +74,5 @@ public protocol Entity: NSManagedObject {
     func getVersion() -> Int64
     func getZoneID() -> CKRecordZone.ID
     func setIndex(_ i: Int)
+    func setIsSynced(_ status: Bool)
 }
-
-

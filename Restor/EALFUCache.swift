@@ -83,7 +83,11 @@ public struct EALFUCache {
     
     mutating func add(_ value: EACacheValue) {
         self.maintainCacheSize()
-        if self.cache[value.key()] == nil { self.cacheList.add(CacheListValue(key: value.key(), accessCount: value.accessCount())) }
+        if let val = self.cache[value.key()] as? EACacheValue {
+            value.setAccessCount(val.accessCount())
+        } else {
+            self.cacheList.add(CacheListValue(key: value.key(), accessCount: value.accessCount()))
+        }
         self.cache[value.key()] = value
     }
     
@@ -101,6 +105,16 @@ public struct EALFUCache {
         if let x = elem as? CacheListValue { x.setAccessCount(val.accessCount()) }  // todo: check this gets updated
         self.updateCacheOrder()
         return val
+    }
+    
+    /// Return the element from the cache without incrementing the counter.
+    func peek(_ key: String) -> EACacheValue? {
+        return self.cache[key] as? EACacheValue
+    }
+    
+    /// Check if the given key is present in the cache.
+    func contains(_ key: String) -> Bool {
+        return self.peek(key) != nil
     }
     
     /// Sort workspace cache

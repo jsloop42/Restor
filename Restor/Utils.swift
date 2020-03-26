@@ -153,6 +153,14 @@ class Utils {
         }
         return .jpeg  // default photo extension
     }
+    
+    /// Returns elements in the first list that are not in the second list.
+    func subtract<T: Hashable>(lxs: [T], rxs: [T]) -> [T] {
+        var lset = Set<T>(lxs)
+        let rset = Set<T>(rxs)
+        lset.subtract(rset)
+        return lset.toArray()
+    }
 }
 
 class Log {
@@ -163,7 +171,7 @@ class Log {
     }
     
     static func error(_ msg: Any) {
-        print("[ERR] \(msg)")
+        print("[ERROR] \(msg)")
     }
     
     static func info(_ msg: Any) {

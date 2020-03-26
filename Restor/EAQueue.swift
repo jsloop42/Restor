@@ -21,15 +21,14 @@ public class EAQueue<T> {
         self.completion = completion
     }
     
-    public func enqueue(_ x: T) {
-        Log.debug("enqueue: \(x)")
+    public func updateTimer() {
         if self.queue.isEmpty && self.timer == nil {
             self.timer = Timer(timeInterval: self.interval, repeats: true, block: { [weak self] _ in
                 guard let this = self else { return }
                 Log.debug("in timer queue len: \(this.queue.count)")
                 if this.isEmpty() {
                     this.timer?.invalidate()
-                    this.completion([])
+                    this.timer = nil
                     return
                 }
                 this.accessq.sync {
@@ -37,11 +36,21 @@ public class EAQueue<T> {
                     this.queue.removeAll()
                 }
             })
-            self.accessq.sync { self.queue.append(x); Log.debug("enqueued: \(x)") }
             if let x = self.timer { RunLoop.main.add(x, forMode: .common) }
-        } else {
-            self.accessq.sync { self.queue.append(x); Log.debug("enqueued: \(x)") }
         }
+    }
+    
+    /// Enqueues the given list in one operation.
+    public func enqueue(_ xs: [T]) {
+        self.updateTimer()
+        self.accessq.sync { self.queue.append(contentsOf: xs); Log.debug("enqueued: \(xs)") }
+    }
+    
+    /// Enqueues the given element.
+    public func enqueue(_ x: T) {
+        Log.debug("enqueue: \(x)")
+        self.updateTimer()
+        self.accessq.sync { self.queue.append(x); Log.debug("enqueued: \(x)") }
     }
     
     public func dequeue() -> T? {

@@ -144,7 +144,7 @@ class RestorTests: XCTestCase {
                 
                 let lws = self.localdb.getWorkspace(id: wsname)
                 XCTAssertNotNil(lws)
-                let projxs = self.localdb.getProjects(wsId: ws.getId()!)
+                let projxs = self.localdb.getProjects(wsId: ws.getId())
                 XCTAssert(projxs.count == 3)
                 Log.debug("projxs: \(projxs)")
                 XCTAssertEqual(projxs[0].name, "test-project-22")
@@ -153,7 +153,7 @@ class RestorTests: XCTestCase {
                 
                 let lws2 = self.localdb.getWorkspace(id: wsname2)
                 XCTAssertNotNil(lws2)
-                let projxs2 = self.localdb.getProjects(wsId: ws2.getId()!)
+                let projxs2 = self.localdb.getProjects(wsId: ws2.getId())
                 XCTAssert(projxs2.count == 3)
                 Log.debug("projxs: \(projxs2)")
                 XCTAssertEqual(projxs2[0].name, "ws2-test-project-22")

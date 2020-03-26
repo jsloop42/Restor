@@ -27,7 +27,7 @@ class EAQueueTests: XCTestCase {
         let exp = expectation(description: "enqueue dequeue")
         let q = EAQueue<Int>(interval: 1.0) { xs in
             flag += 1
-            if xs.count >= 9 || xs.isEmpty { exp.fulfill() }
+            if flag == 2 { exp.fulfill() }
         }
         self.timer = Timer(timeInterval: 0.2, repeats: true) { _ in
             q.enqueue(count)
