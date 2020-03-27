@@ -69,6 +69,13 @@ public class EWorkspace: NSManagedObject, Entity {
         }
     }
     
+    static func getProjectRecordIDs(_ record: CKRecord) -> [CKRecord.ID] {
+        if let xs = record["projects"] as? [CKRecord.Reference] {
+            return xs.map { ref -> CKRecord.ID in ref.recordID }
+        }
+        return []
+    }
+    
     func updateFromCKRecord(_ record: CKRecord) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
@@ -76,6 +83,7 @@ public class EWorkspace: NSManagedObject, Entity {
         if let x = record["index"] as? Int64 { self.index = x }
         if let x = record["isSyncEnabled"] as? Bool { self.isSyncEnabled = x }
         if let x = record["name"] as? String { self.name = x }
+        if let x = record["desc"] as? String { self.desc = x }
         if let x = record["version"] as? Int64 { self.version = x }
     }
 }

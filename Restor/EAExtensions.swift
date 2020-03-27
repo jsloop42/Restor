@@ -178,6 +178,16 @@ extension Set {
     }
 }
 
+extension Dictionary {
+    func allKeys() -> [Key] {
+        return Array(self.keys)
+    }
+    
+    func allValues() -> [Value] {
+        return Array(self.values)
+    }
+}
+
 extension Error {
     var code: Int { return (self as NSError).code }
     var domain: String { return (self as NSError).domain }

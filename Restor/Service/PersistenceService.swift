@@ -86,6 +86,7 @@ class PersistenceService {
     var imageCache = EALFUCache(size: 16)
     var saveQueueCompletionHandler: (([CKRecord]) -> Void)!
     var saveQueue: EAQueue<DeferredSaveModel>!
+    private let nc = NotificationCenter.default
     
     enum SubscriptionId: String {
         case fileChange = "file-change"
@@ -239,28 +240,6 @@ class PersistenceService {
         }
     }
     
-    /// Checks if the record is present in cache. If present, returns, else fetch from cloud, adds to the cache and returns.
-    func fetchRecord(_ entity: Entity, type: RecordType, completion: @escaping (Result<CKRecord, Error>) -> Void) {
-        let id = entity.getId()
-        if let cached = self.getFromCache(entityId: id, type: type) as? CacheValue, let record = cached.value() as? CKRecord { completion(.success(record)); return }
-        // Not in cache, fetch from cloud
-        let recordID = self.ck.recordID(entityId: id, zoneID: entity.getZoneID())
-        self.ck.fetchRecord(recordIDs: [recordID]) { result in
-            switch result {
-            case .success(let hm):
-                if let record = hm[recordID] {
-                    self.addToCache(record: record, entityId: id, type: type)
-                    completion(.success(record))
-                } else {
-                    completion(.failure(AppError.fetch))
-                }
-            case .failure(let error):
-                Log.error("Error fetching record \(error)")
-                completion(.failure(error))
-            }
-        }
-    }
-    
     /// Check if server record is latest. Cases were a record is created locally, but failed to sync, new record gets added from another device, and then the
     /// former record gets saved, in which case the server copy is latest.
     func isServerLatest(local: CKRecord, server: CKRecord) -> Bool {
@@ -319,6 +298,214 @@ class PersistenceService {
             return self.mergeFileData(local: client, server: remote)
         case .image:
             return self.mergeImageData(local: client, server: remote)
+        }
+    }
+    
+    func updateWorkspaceFromCloud(_ record: CKRecord) {
+        let wsId = record.id()
+        let moc = self.localdb.getChildMOC()
+        if let ws = self.localdb.getWorkspace(id: wsId, ctx: moc) {
+            if ws.isSyncEnabled && ws.modified <= record.modified() {  // => server has new copy
+                ws.updateFromCKRecord(record)
+                self.localdb.saveChildContext(moc)
+                Log.debug("Workspace synced")
+                self.nc.post(Notification(name: NotificationKey.workspaceDidSync))
+            }
+        } else {  // workspace not found, create one
+            if self.localdb.createWorkspace(id: wsId, index: record.index().toInt(), name: record.name(), desc: record.desc(), isSyncEnabled: record.isSyncEnabled(), ctx: moc) != nil {
+                self.localdb.saveChildContext(moc)
+                Log.debug("Workspace synced")
+                self.nc.post(Notification(name: NotificationKey.workspaceDidSync))
+            }
+        }
+    }
+    
+    func updateProjectFromCloud(_ record: CKRecord) {
+        let projId = record.id()
+        let moc = self.localdb.getChildMOC()
+        if let proj = self.localdb.getProject(id: projId, ctx: moc) {
+            if proj.modified <= record.modified() {  // => server has new copy
+                proj.updateFromCKRecord(record)
+                self.localdb.saveChildContext(moc)
+                Log.debug("Project synced")
+                self.nc.post(Notification(name: NotificationKey.projectDidSync))
+            }
+        } else {  // project not found, create one
+            if self.localdb.createProject(id: record.id(), index: record.index().toInt(), name: record.name(), desc: record.desc(), checkExists: false, ctx: moc) != nil {
+                self.localdb.saveChildContext(moc)
+                Log.debug("Project synced")
+                self.nc.post(Notification(name: NotificationKey.projectDidSync))
+            }
+        }
+    }
+    
+    func updateRequestFromCloud(_ record: CKRecord) {
+        let moc = self.localdb.getChildMOC()
+        guard let proj = ERequest.getProject(record, ctx: moc) else { Log.error("Error getting project"); return }
+        let reqId = record.id()
+        if let req = self.localdb.getRequest(id: reqId, ctx: moc) {
+            if req.modified <= record.modified() {  // => server has new copy
+                req.updateFromCKRecord(record)
+                req.project = proj
+                self.localdb.saveChildContext(moc)
+                Log.debug("Request synced")
+                self.nc.post(Notification(name: NotificationKey.requestDidSync))
+            }
+        } else {  // request not found, create one
+            if self.localdb.createRequest(id: record.id(), index: record.index().toInt(), name: record.name(), project: proj, checkExists: false, ctx: moc) != nil {
+                self.localdb.saveChildContext(moc)
+                Log.debug("Request synced")
+                self.nc.post(Notification(name: NotificationKey.projectDidSync))
+            }
+        }
+    }
+        
+    func updateRequestBodyDataFromCloud(_ record: CKRecord) {
+        
+    }
+    
+    func updateRequestDataFromCloud(_ record: CKRecord) {
+        
+    }
+    
+    func updateRequestMethodDataFromCloud(_ record: CKRecord) {
+        
+    }
+    
+    func updateFileDataFromCloud(_ record: CKRecord) {
+        
+    }
+    
+    func updateImageDataFromCloud(_ record: CKRecord) {
+        
+    }
+    
+    func cloudRecordDidChange(_ record: CKRecord) {
+        let type = RecordType(rawValue: record.recordType)
+        switch type {
+        case .workspace:
+            self.updateWorkspaceFromCloud(record)
+        case .project:
+            self.updateProjectFromCloud(record)
+        case .request:
+            self.updateRequestFromCloud(record)
+        case .requestBodyData:
+            self.updateRequestBodyDataFromCloud(record)
+        case .requestData:
+            self.updateRequestDataFromCloud(record)
+        case .requestMethodData:
+            self.updateRequestMethodDataFromCloud(record)
+        case .file:
+            self.updateFileDataFromCloud(record)
+        case .image:
+            self.updateImageDataFromCloud(record)
+        case .none:
+            Log.error("Unknow record: \(record)")
+        }
+    }
+    
+    func syncFromCloud() {
+        self.ck.fetchAllZones { result in
+            switch result {
+            case .success(let (_, new)):
+                self.fetchWorkspaces(zones: new, completion: self.workspacesFetchHandler(_:))
+            case .failure(let err):
+                Log.error("Error fetching all zones: \(err)")
+            }
+        }
+    }
+    
+    func workspacesFetchHandler(_ result: Result<[CKRecord], Error>) {
+        switch result {
+        case .success(let records):
+            records.forEach { record in
+                self.updateWorkspaceFromCloud(record)
+                let projIDs = EWorkspace.getProjectRecordIDs(record)
+                self.fetchRecords(recordIDs: projIDs,completion: self.projectsFetchHandler(_:))
+            }
+            break
+        case .failure(let err):
+            Log.error("Error fetching workspaces: \(err)")
+        }
+    }
+    
+    func projectsFetchHandler(_ result: Result<[CKRecord], Error>) {
+        switch result {
+        case .success(let records):
+            records.forEach { record in
+                self.updateProjectFromCloud(record)
+                let reqIDs = EProject.getRequestRecordIDs(record)
+                self.fetchRecords(recordIDs: reqIDs,completion: self.projectsFetchHandler(_:))
+            }
+            break
+        case .failure(let err):
+            Log.error("Error fetching projects: \(err)")
+        }
+    }
+    
+    func requestsFetchHandler(_ result: Result<[CKRecord], Error>) {
+        switch result {
+        case .success(let records):
+            records.forEach { record in
+                self.updateRequestFromCloud(record)
+                // TODO: fetch nested data
+            }
+            break
+        case .failure(let err):
+            Log.error("Error fetching projects: \(err)")
+        }
+    }
+    
+    // MARK: - Fetch
+    
+    /// Checks if the record is present in cache. If present, returns, else fetch from cloud, adds to the cache and returns.
+    func fetchRecord(_ entity: Entity, type: RecordType, completion: @escaping (Result<CKRecord, Error>) -> Void) {
+        let id = entity.getId()
+        if let cached = self.getFromCache(entityId: id, type: type) as? CacheValue, let record = cached.value() as? CKRecord { completion(.success(record)); return }
+        // Not in cache, fetch from cloud
+        let recordID = self.ck.recordID(entityId: id, zoneID: entity.getZoneID())
+        self.ck.fetchRecords(recordIDs: [recordID]) { result in
+            switch result {
+            case .success(let hm):
+                if let record = hm[recordID] {
+                    self.addToCache(record: record, entityId: id, type: type)
+                    completion(.success(record))
+                } else {
+                    completion(.failure(AppError.fetch))
+                }
+            case .failure(let error):
+                Log.error("Error fetching record \(error)")
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    func fetchRecords(recordIDs: [CKRecord.ID], completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        self.ck.fetchRecords(recordIDs: recordIDs) { result in
+            switch result {
+            case .success(let hm):
+                let records = hm.allValues()
+                records.forEach { record in self.addToCache(record: record, entityId: record.id(), type: RecordType(rawValue: record.type())!) }
+                completion(.success(records))
+            case .failure(let error):
+                Log.error("Error fetching record \(error)")
+                completion(.failure(error))
+            }
+        }
+    }
+    
+    /// Fetches workspaces from cloud and caches the result.
+    func fetchWorkspaces(zones: [CKRecordZone], completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        self.ck.fetchRecords(recordIDs: self.ck.recordIDs(zones: zones)) { result in
+            switch result {
+            case .success(let hm):
+                let zones = hm.allValues()
+                zones.forEach { record in self.addToCache(record: record, entityId: record.id(), type: .workspace) }
+                completion(.success(zones))
+            case .failure(let error):
+                Log.error("Error fetching record \(error)")
+                completion(.failure(error))
+            }
         }
     }
     

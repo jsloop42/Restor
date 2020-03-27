@@ -28,7 +28,6 @@ class WorkspaceListViewController: UIViewController {
     private let localdb = CoreDataService.shared
     private var frc: NSFetchedResultsController<EWorkspace>!
     private let db = PersistenceService.shared
-    var count = 0
     
     deinit {
         self.nc.removeObserver(self)
@@ -43,11 +42,6 @@ class WorkspaceListViewController: UIViewController {
         WorkspaceListViewController.shared = self
         AppState.activeScreen = .workspaceListing
         self.navigationItem.title = "Workspaces"
-        let ws = self.localdb.getDefaultWorkspace()
-        self.count += 1
-        ws.name = "CloudKit is cool \(self.count)"
-        self.localdb.saveBackgroundContext()
-        self.db.saveWorkspaceToCloud(ws)
         self.reloadData()
         self.tableView.reloadData()
     }

@@ -23,6 +23,8 @@ struct AppState {
     static var editRequest: ERequest?
     /// Current attachment info being processed.
     static var binaryAttachmentInfo = AttachmentInfo()
+    /// If any request is begin currently edited, in which case, we delay saving context, until done.
+    static var isRequestEdit = false
     
     static func workspace(forIndex index: Int) -> EWorkspace? {
         if index < self.workspaces.count {

@@ -20,20 +20,20 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         UI.setGlobalStyle()
         self.app.updateWindowBackground(self.window)
-        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-            if let error = error {
-                Log.error("Notification auth req err:  \(error.localizedDescription)")
-            } else {
-                DispatchQueue.main.async {
-                    application.registerForRemoteNotifications()
-                }
-            }
-        }
-        UNUserNotificationCenter.current().delegate = self
-        //application.registerForRemoteNotifications()
+//        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+//            if let error = error {
+//                Log.error("Notification auth req err:  \(error.localizedDescription)")
+//            } else {
+//                DispatchQueue.main.async {
+//                    application.registerForRemoteNotifications()
+//                }
+//            }
+//        }
+//        UNUserNotificationCenter.current().delegate = self
+        application.registerForRemoteNotifications()
         //self.ck.deleteAllSubscriptions()
         self.db.subscribeToCloudKitEvents()
-        
+        self.db.syncFromCloud()
         return true
     }
     

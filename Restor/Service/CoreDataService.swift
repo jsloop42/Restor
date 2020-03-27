@@ -99,6 +99,15 @@ class CoreDataService {
         return self.bgMOC
     }
     
+    /// Returns a child managed object context with parent as the background context.
+    func getChildMOC() -> NSManagedObjectContext {
+        let moc = NSManagedObjectContext(concurrencyType: NSManagedObjectContextConcurrencyType.privateQueueConcurrencyType)
+        moc.parent = self.bgMOC
+        moc.automaticallyMergesChangesFromParent = true
+        moc.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
+        return moc
+    }
+    
     // MARK: - Sort
     
     /// Sort the given list of dictonaries in the order of created and update the index property.
@@ -1198,6 +1207,19 @@ class CoreDataService {
             isForceSave ? self.bgMOC.performAndWait { fn() } : self.bgMOC.perform { fn() }
         } else {
             if let cb = callback { cb(status) }
+        }
+    }
+    
+    func saveChildContext(_ ctx: NSManagedObjectContext) {
+        if ctx.hasChanges {
+            ctx.performAndWait {
+                do { try ctx.save() } catch let error { Log.error("Error saving child context: \(error)") }
+            }
+            ctx.parent?.performAndWait {
+                if !AppState.isRequestEdit {
+                    do { try ctx.parent?.save() } catch let error { Log.error("Error saving background context: \(error)") }
+                }
+            }
         }
     }
         

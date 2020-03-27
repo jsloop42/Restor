@@ -79,6 +79,20 @@ public class EProject: NSManagedObject, Entity {
         }
     }
     
+    static func getWorkspace(_ record: CKRecord, ctx: NSManagedObjectContext) -> EWorkspace? {
+        if let ref = record["workspace"] as? CKRecord.Reference {
+            return CoreDataService.shared.getWorkspace(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+        }
+        return nil
+    }
+    
+    static func getRequestRecordIDs(_ record: CKRecord) -> [CKRecord.ID] {
+        if let xs = record["requests"] as? [CKRecord.Reference] {
+            return xs.map { ref -> CKRecord.ID in ref.recordID }
+        }
+        return []
+    }
+    
     func updateFromCKRecord(_ record: CKRecord) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }

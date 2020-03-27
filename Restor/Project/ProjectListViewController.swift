@@ -36,6 +36,8 @@ class ProjectListViewController: UIViewController {
         self.navigationItem.title = "Projects"
         self.navigationItem.leftBarButtonItem = self.addSettingsBarButton()
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
+        self.workspace = self.app.getSelectedWorkspace()
+        self.updateWorkspaceTitle(self.workspace.name ?? "")
         if !isRunningTests {
             self.reloadData()
             self.tableView.reloadData()
@@ -50,7 +52,6 @@ class ProjectListViewController: UIViewController {
             self.initData()
             self.initUI()
             self.initEvent()
-            self.updateWorkspaceTitle(self.workspace.name ?? "")
             // test
             //self.addProject(name: "Test Project", desc: "My awesome project")
             // end test
@@ -70,6 +71,7 @@ class ProjectListViewController: UIViewController {
     func initEvent() {
         self.nc.addObserver(self, selector: #selector(self.keyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
         self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.workspaceDidSync(_:)), name: NotificationKey.workspaceDidSync, object: nil)
     }
     
     func initData() {
@@ -95,7 +97,7 @@ class ProjectListViewController: UIViewController {
     }
     
     func updateWorkspaceTitle(_ name: String) {
-        self.workspaceBtn.setTitle(name, for: .normal)
+        DispatchQueue.main.async { self.workspaceBtn.setTitle(name, for: .normal) }
     }
     
     func updateListingWorkspace(_ ws: EWorkspace) {
@@ -115,6 +117,11 @@ class ProjectListViewController: UIViewController {
             return UIBarButtonItem(image: UIImage(systemName: "gear"), style: .plain, target: self, action: #selector(self.settingsButtonDidTap(_:)))
         }
         return UIBarButtonItem(image: UIImage(), style: .plain, target: self, action: #selector(self.settingsButtonDidTap(_:)))
+    }
+    
+    @objc func workspaceDidSync(_ notif: Notification) {
+        self.workspace = self.app.getSelectedWorkspace()
+        self.updateWorkspaceTitle(self.workspace.name ?? "")
     }
     
     @objc func settingsButtonDidTap(_ sender: Any) {

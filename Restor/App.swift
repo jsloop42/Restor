@@ -841,10 +841,11 @@ enum AppError: Error {
     case fileWrite
     case fileNotFound
     case notFound
+    case create
     case read
     case write
-    case delete
     case update
+    case delete
     case network
     case offline
     case server
