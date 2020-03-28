@@ -97,11 +97,12 @@ class PersistenceService {
         case requestDataChange = "request-data-change"
         case requestMethodChange = "request-method-change"
         case workspaceChange = "workspace-change"
+        case databaseChange = "database-change"
         
         static var allCases: [String] {
             return [SubscriptionId.fileChange.rawValue, SubscriptionId.imageChange.rawValue, SubscriptionId.projectChange.rawValue,
                     SubscriptionId.requestChange.rawValue, SubscriptionId.requestBodyChange.rawValue, SubscriptionId.requestDataChange.rawValue,
-                    SubscriptionId.requestMethodChange.rawValue, SubscriptionId.workspaceChange.rawValue]
+                    SubscriptionId.requestMethodChange.rawValue, SubscriptionId.workspaceChange.rawValue, SubscriptionId.databaseChange.rawValue]
         }
     }
     
@@ -168,7 +169,8 @@ class PersistenceService {
     
     func subscribeToCloudKitEvents() {
         Log.debug("subscribe to cloudkit events")
-        self.subscribeToWorkspaceChange(self.localdb.getDefaultWorkspace().getId())
+        self.ck.subscribeToDBChanges(subId: SubscriptionId.databaseChange.rawValue)
+        //self.subscribeToWorkspaceChange(self.localdb.getDefaultWorkspace().getId())
     }
     
     func subscribeToWorkspaceChange(_ wsId: String) {
@@ -534,7 +536,16 @@ class PersistenceService {
         let projId = proj.getId()
         let zoneID = proj.getZoneID()
         let recordID = self.ck.recordID(entityId: projId, zoneID: zoneID)
-        // TODO: create record when a record already exists in cloud (but no conflict (old)) => what happens when saving? -> updates?
+        let ckproj = self.ck.createRecord(recordID: recordID, recordType: RecordType.project.rawValue)
+        guard let ws = proj.workspace else { Log.error("Workspace is empty for project"); return }
+        self.fetchRecord(ws, type: .workspace) { result in
+            switch result {
+            case .success(let ckws):
+                self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws)
+            case .failure(let err):
+                Log.error("Error getting workspace from cloud: \(err)")
+            }
+        }
     }
     
     /// Save the given request and updates the associated project to the cloud.
@@ -565,12 +576,23 @@ class PersistenceService {
     }
     
     /// Saves the given request and corresponding project to the cloud.
+    func saveProjectToCloudImp(ckproj: CKRecord, proj: EProject, ckws: CKRecord, ws: EWorkspace) {
+        proj.updateCKRecord(ckproj, workspace: ckws)
+        EWorkspace.addProjectReference(to: ckws, project: ckproj)
+        let projModel = DeferredSaveModel(record: ckproj, entity: proj, id: proj.getId())
+        let wsModel = DeferredSaveModel(record: ckws, entity: ws, id: ws.getId())
+        self.saveToCloud([projModel, wsModel])
+        // TODO: subscribe to project change
+    }
+    
+    /// Saves the given request and corresponding project to the cloud.
     func saveRequestToCloudImp(ckreq: CKRecord, req: ERequest, ckproj: CKRecord, proj: EProject) {
         req.updateCKRecord(ckreq, project: ckproj)
         EProject.addRequestReference(to: ckproj, request: ckreq)
         let projModel = DeferredSaveModel(record: ckproj, entity: proj, id: proj.getId())
         let reqModel = DeferredSaveModel(record: ckreq, entity: req, id: req.getId())
         self.saveToCloud([reqModel, projModel])  // we need to save this in the same request so that the deps are created and referrenced properly.
+        // TODO: subscribe to request change
     }
     
     /*

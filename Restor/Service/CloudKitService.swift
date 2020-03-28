@@ -151,7 +151,7 @@ class CloudKitService {
     
     /// Returns a zone ID for the given workspace id.
     func zoneID(workspaceId: String) -> CKRecordZone.ID {
-        return CKRecordZone.ID(zoneName: "ws-\(workspaceId)", ownerName: self.currentUsername())
+        return CKRecordZone.ID(zoneName: "\(workspaceId)", ownerName: self.currentUsername())
     }
     
     /// Returns zone ID from the given subscription ID.
@@ -233,6 +233,46 @@ class CloudKitService {
         self.setCachedZones(zones)
     }
     
+    // MARK: - Subscription Local Cache
+    
+    func getCachedSubscriptions() -> [CKSubscription.ID] {
+        return self.store.array(forKey: self.subscriptionsKey) as? [CKSubscription.ID] ?? []
+    }
+    
+    func containsCachedSubscription(_ subID: CKSubscription.ID) -> Bool {
+        let xs = self.getCachedSubscriptions()
+        return xs.contains(subID)
+    }
+    
+    func addToCachedSubscriptions(_ subID: CKSubscription.ID) {
+        var xs = self.getCachedSubscriptions()
+        if !xs.contains(subID) {
+            xs.append(subID)
+            self.setCachedSubscriptions(xs)
+        }
+    }
+    
+    func addToCachedSubscriptions(_ subIDs: [CKSubscription.ID]) {
+        var xs = self.getCachedSubscriptions()
+        let count = xs.count
+        subIDs.forEach { subID in
+            if !xs.contains(subID) { xs.append(subID) }
+        }
+        if xs.count > count { self.setCachedSubscriptions(xs) }
+    }
+    
+    func setCachedSubscriptions(_ xs: [CKSubscription.ID]) {
+        self.store.set(xs, forKey: self.subscriptionsKey)
+    }
+    
+    func removeCachedSubscription(_ subID: CKSubscription.ID) {
+        var xs = self.getCachedSubscriptions()
+        if let idx = xs.firstIndex(of: subID) {
+            xs.remove(at: idx)
+            self.setCachedSubscriptions(xs)
+        }
+    }
+    
     /// Handles remote iCloud notifications
     func handleNotification(zoneID: CKRecordZone.ID) {
         var changeToken: CKServerChangeToken? = nil
@@ -275,8 +315,7 @@ class CloudKitService {
             switch result {
             case .success(let xs):
                 let subIds: [CKSubscription.ID] = xs.map { $0.subscriptionID }
-                self.store.set(subIds, forKey: self.subscriptionsKey)
-                break
+                self.addToCachedSubscriptions(subIds)
             case .failure(let err):
                 Log.error("Error fetching subscriptions: \(err)")
                 break
@@ -286,8 +325,7 @@ class CloudKitService {
     
     /// Returns if a subscription had been made for the given subscription id.
     func isSubscribed(to subId: CKSubscription.ID) -> Bool {
-        let xs = self.store.array(forKey: self.subscriptionsKey) as? [CKSubscription.ID] ?? []
-        return xs.contains(subId)
+        return self.containsCachedSubscription(subId)
     }
     
     // MARK: - Fetch
@@ -464,8 +502,7 @@ class CloudKitService {
     ///   - recordType: The record type.
     ///   - zoneID: The zone ID of the record.
     func subscribe(_ subId: String, recordType: String, zoneID: CKRecordZone.ID) {
-        var xs = UserDefaults.standard.array(forKey: self.subscriptionsKey) as? [CKSubscription.ID] ?? []
-        if xs.contains(subId) { return }
+        if isSubscribed(to: subId) { return }
         let predicate = NSPredicate(value: true)
         let subscription = CKQuerySubscription(recordType: recordType, predicate: predicate, subscriptionID: subId,
                                                options: [CKQuerySubscription.Options.firesOnRecordCreation, CKQuerySubscription.Options.firesOnRecordDeletion,
@@ -477,9 +514,24 @@ class CloudKitService {
         let op = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription], subscriptionIDsToDelete: [])
         op.modifySubscriptionsCompletionBlock = { _, _, error in
             guard error == nil else { return }
-            xs.append(subId)
-            UserDefaults.standard.set(xs, forKey: self.subscriptionsKey)
+            self.addToCachedSubscriptions(subId)
             Log.debug("Subscribed to events successfully: \(recordType) with ID: \(subscription.subscriptionID.description)")
+        }
+        op.qualityOfService = .utility
+        self.privateDatabase().add(op)
+    }
+    
+    func subscribeToDBChanges(subId: String) {
+        if isSubscribed(to: subId) { return }
+        let sub = CKDatabaseSubscription(subscriptionID: subId)
+        let notifInfo = CKSubscription.NotificationInfo()
+        notifInfo.shouldSendContentAvailable = true
+        sub.notificationInfo = notifInfo
+        let op = CKModifySubscriptionsOperation(subscriptionsToSave: [sub], subscriptionIDsToDelete: [])
+        op.modifySubscriptionsCompletionBlock = { _, _, error in
+            guard error == nil else { return }
+            self.addToCachedSubscriptions(subId)
+            Log.debug("Subscribed to database change event: \(subId)")
         }
         op.qualityOfService = .utility
         self.privateDatabase().add(op)

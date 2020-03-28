@@ -23,6 +23,7 @@ class ProjectListViewController: UIViewController {
     private let app: App = App.shared
     private let nc = NotificationCenter.default
     private let localdb = CoreDataService.shared
+    private let db = PersistenceService.shared
     private var frc: NSFetchedResultsController<EProject>!
     private let cellReuseId = "projectCell"
     
@@ -153,6 +154,7 @@ class ProjectListViewController: UIViewController {
             if let proj = self.localdb.createProject(id: self.utils.genRandomString(), index: projCount, name: name, desc: desc, ws: self.workspace, ctx: ctx) {
                 proj.workspace = self.workspace
                 self.localdb.saveBackgroundContext()
+                self.db.saveProjectToCloud(proj)
             }
         }
     }
