@@ -10,17 +10,17 @@ import Foundation
 import CloudKit
 
 class ZoneInfo: NSObject, NSCoding {
-    var zone: CKRecordZone
+    var zoneID: CKRecordZone.ID
     var serverChangeToken: CKServerChangeToken? = nil
     
     enum CodingKeys: String, CodingKey {
-        case zone
+        case zoneID
         case serverChangeToken
     }
     
     func encode(with coder: NSCoder) {
-        let zoneData = NSKeyedArchiver.archivedData(withRootObject: self.zone)
-        coder.encode(zoneData, forKey: CodingKeys.zone.rawValue)
+        let zoneIDData = NSKeyedArchiver.archivedData(withRootObject: self.zoneID)
+        coder.encode(zoneIDData, forKey: CodingKeys.zoneID.rawValue)
         if let token = self.serverChangeToken {
             let tokenData = NSKeyedArchiver.archivedData(withRootObject: token)
             coder.encode(tokenData, forKey: CodingKeys.serverChangeToken.rawValue)
@@ -28,15 +28,20 @@ class ZoneInfo: NSObject, NSCoding {
     }
     
     required init?(coder: NSCoder) {
-        let zoneData = coder.decodeObject(forKey: CodingKeys.zone.rawValue) as! Data
-        self.zone = NSKeyedUnarchiver.unarchiveObject(with: zoneData) as! CKRecordZone
-        if let tokenData = coder.decodeObject(forKey: CodingKeys.zone.rawValue) as? Data {
+        let zoneIDData = coder.decodeObject(forKey: CodingKeys.zoneID.rawValue) as! Data
+        self.zoneID = NSKeyedUnarchiver.unarchiveObject(with: zoneIDData) as! CKRecordZone.ID
+        if let tokenData = coder.decodeObject(forKey: CodingKeys.serverChangeToken.rawValue) as? Data {
             self.serverChangeToken = NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
         }
     }
     
     init(zone: CKRecordZone, serverChangeToken: CKServerChangeToken? = nil) {
-        self.zone = zone
+        self.zoneID = zone.zoneID
+        self.serverChangeToken = serverChangeToken
+    }
+    
+    init(zoneID: CKRecordZone.ID, serverChangeToken: CKServerChangeToken? = nil) {
+        self.zoneID = zoneID
         self.serverChangeToken = serverChangeToken
     }
 
@@ -169,6 +174,10 @@ class CloudKitService {
         return zones.map { self.recordID(entityId: self.entityID(zoneID: $0.zoneID), zoneID: $0.zoneID) }
     }
     
+    func recordIDs(zoneIDs: [CKRecordZone.ID]) -> [CKRecord.ID] {
+        return zoneIDs.map { self.recordID(entityId: self.entityID(zoneID: $0), zoneID: $0) }
+    }
+    
     /// Returns the entity id for the given record ID.
     func entityID(recordID: CKRecord.ID) -> String {
         return recordID.recordName.components(separatedBy: ".").first ?? ""
@@ -206,17 +215,31 @@ class CloudKitService {
         }
     }
     
-    func getCachedZone(_ zoneID: CKRecordZone.ID) -> CKRecordZone? {
+    func addServerChangeTokenToCache(_ token: CKServerChangeToken, zoneID: CKRecordZone.ID) {
+        var zones = self.getCachedZones()
+        let key = zoneID.zoneName
+        if let data = zones[key], let info = ZoneInfo.decode(data) {
+            info.serverChangeToken = token
+            zones[key] = info.encode()
+            self.setCachedZones(zones)
+        }
+    }
+    
+    func containsCachedZoneID(_ zoneID: CKRecordZone.ID) -> Bool {
+        return self.getCachedZones()[zoneID.zoneName] != nil
+    }
+    
+    func getCachedServerChangeToken(_ zoneID: CKRecordZone.ID) -> CKServerChangeToken? {
         let zones = self.getCachedZones()
-        if let data = zones[zoneID.zoneName], let zinfo = ZoneInfo.decode(data) { return zinfo.zone }
+        if let data = zones[zoneID.zoneName], let zinfo = ZoneInfo.decode(data) { return zinfo.serverChangeToken }
         return nil
     }
     
-    func getZonesNotInLocal(_ remote: [String: ZoneInfo]) -> [CKRecordZone] {
+    func getZonesIDNotInLocal(_ remote: [String: ZoneInfo]) -> [CKRecordZone.ID] {
         let zones = self.getCachedZones()
-        var acc: [CKRecordZone] = []
+        var acc: [CKRecordZone.ID] = []
         remote.forEach { kv in
-            if zones[kv.key] == nil { acc.append(kv.value.zone) }
+            if zones[kv.key] == nil { acc.append(kv.value.zoneID) }
         }
         return acc
     }
@@ -330,7 +353,8 @@ class CloudKitService {
     
     // MARK: - Fetch
     
-    func fetchAllZones(completion: @escaping (Result<(all: [CKRecordZone], new: [CKRecordZone]), Error>) -> Void) {
+    func fetchAllZones(completion: @escaping (Result<(all: [CKRecordZone], new: [CKRecordZone.ID]), Error>) -> Void) {
+        Log.debug("fetching all zones")
         self.privateDatabase().fetchAllRecordZones { zones, error in
             if let err = error { completion(.failure(err)); return }
             if let xs = zones {
@@ -344,8 +368,9 @@ class CloudKitService {
                         hme[key] = zinfo.encode()
                     }
                 }
+                Log.debug("fetched zone: \(hm.count)")
                 if hm.count > 0 {
-                    let new = self.getZonesNotInLocal(hm)
+                    let new = self.getZonesIDNotInLocal(hm)
                     self.setCachedZones(hme)
                     completion(.success((all: xs, new: new)))
                     return
@@ -365,6 +390,32 @@ class CloudKitService {
             if let hm = res { completion(.success(hm)) }
         }
         self.privateDatabase().add(op)
+    }
+    
+    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], completion: @escaping (Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) -> Void) {
+        var zoneOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneOptions] = [:]
+        var savedRecords: [CKRecord] = []
+        var deletedRecords: [CKRecord.ID] = []
+        zoneIDs.forEach { zID in
+            let token: CKServerChangeToken? = self.getCachedServerChangeToken(zID)
+            let opt = CKFetchRecordZoneChangesOperation.ZoneOptions()
+            opt.previousServerChangeToken = token
+            zoneOptions[zID] = opt
+        }
+        let op = CKFetchRecordZoneChangesOperation(recordZoneIDs: zoneIDs, optionsByRecordZoneID: zoneOptions)
+        op.recordChangedBlock = { record in
+            savedRecords.append(record)
+        }
+        op.recordWithIDWasDeletedBlock = { recordID, _ in
+            deletedRecords.append(recordID)
+        }
+        op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, _ in
+            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
+        }
+        op.fetchRecordZoneChangesCompletionBlock = { error in
+            if let err = error { Log.error("Error fetching zone changes: \(err)"); completion(.failure(err)); return }
+            completion(.success((savedRecords, deletedRecords)))
+        }
     }
     
     /// Fetch the given zones.
@@ -388,9 +439,9 @@ class CloudKitService {
     // MARK: - Create
     
     /// Create zone with the given zone Id.
-    func createZone(recordZoneId: CKRecordZone.ID, completion: @escaping (Result<CKRecordZone, Error>) -> Void) {
+    func createZone(recordZoneId: CKRecordZone.ID, completion: @escaping (Result<CKRecordZone.ID, Error>) -> Void) {
         let z = CKRecordZone(zoneID: recordZoneId)
-        if let zone = self.getCachedZone(recordZoneId) { completion(.success(zone)); return }
+        if self.containsCachedZoneID(recordZoneId) { completion(.success(recordZoneId)); return }
         let op = CKModifyRecordZonesOperation(recordZonesToSave: [z], recordZoneIDsToDelete: [])
         op.modifyRecordZonesCompletionBlock = { zones, _, error in
             if let err = error {
@@ -401,7 +452,7 @@ class CloudKitService {
             if let x = zones?.first {
                 Log.debug("Zone created successfully: \(x.zoneID.zoneName)")
                 self.addToCachedZones(x)
-                completion(.success(x))
+                completion(.success(recordZoneId))
             } else {
                 Log.error("Error creating zone. Zone is empty.")
                 completion(.failure(AppError.create))
@@ -412,13 +463,13 @@ class CloudKitService {
     }
     
     /// Create zone if not created already.
-    func createZoneIfNotExist(recordZoneId: CKRecordZone.ID, completion: @escaping (Result<CKRecordZone, Error>) -> Void) {
+    func createZoneIfNotExist(recordZoneId: CKRecordZone.ID, completion: @escaping (Result<CKRecordZone.ID, Error>) -> Void) {
         self.fetchZone(recordZoneIDs: [recordZoneId], completion: { result in
             switch result {
             case .success(let hm):
                 if let zone = hm[recordZoneId] {
                     self.addToCachedZones(zone)
-                    completion(.success(zone))
+                    completion(.success(zone.zoneID))
                 } else {
                     completion(.failure(AppError.error))
                 }
@@ -426,8 +477,8 @@ class CloudKitService {
                 if let err = error as? CKError, err.isZoneNotFound() {
                     self.createZone(recordZoneId: recordZoneId) { result in
                         switch result {
-                        case .success(let zone):
-                            completion(.success(zone))
+                        case .success(let zoneID):
+                            completion(.success(zoneID))
                         case .failure(let err):
                             completion(.failure(err))
                         }

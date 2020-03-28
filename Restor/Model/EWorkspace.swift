@@ -61,18 +61,18 @@ public class EWorkspace: NSManagedObject, Entity {
     }
     
     static func addProjectReference(to workspace: CKRecord, project: CKRecord) {
-        let ref = CKRecord.Reference(record: project, action: .deleteSelf)
-        var xs = workspace["projects"] as? [CKRecord.Reference] ?? [CKRecord.Reference]()
-        if !xs.contains(ref) {
-            xs.append(ref)
-            workspace["projects"] = xs as CKRecordValue
-        }
+//        let ref = CKRecord.Reference(record: project, action: .deleteSelf)
+//        var xs = workspace["projects"] as? [CKRecord.Reference] ?? [CKRecord.Reference]()
+//        if !xs.contains(ref) {
+//            xs.append(ref)
+//            workspace["projects"] = xs as CKRecordValue
+//        }
     }
     
     static func getProjectRecordIDs(_ record: CKRecord) -> [CKRecord.ID] {
-        if let xs = record["projects"] as? [CKRecord.Reference] {
-            return xs.map { ref -> CKRecord.ID in ref.recordID }
-        }
+//        if let xs = record["projects"] as? [CKRecord.Reference] {
+//            return xs.map { ref -> CKRecord.ID in ref.recordID }
+//        }
         return []
     }
     

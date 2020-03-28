@@ -402,15 +402,16 @@ class PersistenceService {
         case .image:
             self.updateImageDataFromCloud(record)
         case .none:
-            Log.error("Unknow record: \(record)")
+            Log.error("Unknown record: \(record)")
         }
     }
     
     func syncFromCloud() {
+        Log.debug("sync from cloud")
         self.ck.fetchAllZones { result in
             switch result {
             case .success(let (_, new)):
-                self.fetchWorkspaces(zones: new, completion: self.workspacesFetchHandler(_:))
+                self.fetchWorkspaces(zoneIDs: new, completion: self.workspacesFetchHandler(_:))
             case .failure(let err):
                 Log.error("Error fetching all zones: \(err)")
             }
@@ -420,6 +421,7 @@ class PersistenceService {
     func workspacesFetchHandler(_ result: Result<[CKRecord], Error>) {
         switch result {
         case .success(let records):
+            Log.debug("workspaces fetched: \(records.count)")
             records.forEach { record in
                 self.updateWorkspaceFromCloud(record)
                 let projIDs = EWorkspace.getProjectRecordIDs(record)
@@ -434,6 +436,7 @@ class PersistenceService {
     func projectsFetchHandler(_ result: Result<[CKRecord], Error>) {
         switch result {
         case .success(let records):
+            Log.debug("projects fetched: \(records.count)")
             records.forEach { record in
                 self.updateProjectFromCloud(record)
                 let reqIDs = EProject.getRequestRecordIDs(record)
@@ -448,6 +451,7 @@ class PersistenceService {
     func requestsFetchHandler(_ result: Result<[CKRecord], Error>) {
         switch result {
         case .success(let records):
+            Log.debug("requests fetched \(records.count)")
             records.forEach { record in
                 self.updateRequestFromCloud(record)
                 // TODO: fetch nested data
@@ -497,13 +501,14 @@ class PersistenceService {
     }
     
     /// Fetches workspaces from cloud and caches the result.
-    func fetchWorkspaces(zones: [CKRecordZone], completion: @escaping (Result<[CKRecord], Error>) -> Void) {
-        self.ck.fetchRecords(recordIDs: self.ck.recordIDs(zones: zones)) { result in
+    func fetchWorkspaces(zoneIDs: [CKRecordZone.ID], completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        Log.debug("fetching workspaces")
+        self.ck.fetchRecords(recordIDs: self.ck.recordIDs(zoneIDs: zoneIDs)) { result in
             switch result {
             case .success(let hm):
-                let zones = hm.allValues()
-                zones.forEach { record in self.addToCache(record: record, entityId: record.id(), type: .workspace) }
-                completion(.success(zones))
+                let records = hm.allValues()
+                records.forEach { record in self.addToCache(record: record, entityId: record.id(), type: .workspace) }
+                completion(.success(records))
             case .failure(let error):
                 Log.error("Error fetching record \(error)")
                 completion(.failure(error))
@@ -528,7 +533,7 @@ class PersistenceService {
         let recordID = self.ck.recordID(entityId: wsId, zoneID: zoneID)
         let record = self.ck.createRecord(recordID: recordID, recordType: RecordType.workspace.rawValue)
         ws.updateCKRecord(record)
-        self.saveToCloud(record: record, entity: ws, completion: { self.subscribeToWorkspaceChange(wsId) })
+        self.saveToCloud(record: record, entity: ws, completion: { /* self.subscribeToWorkspaceChange(wsId) */ })
     }
     
     /// Save the given project and updates the associated workspace to the cloud.
@@ -542,8 +547,25 @@ class PersistenceService {
             switch result {
             case .success(let ckws):
                 self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws)
-            case .failure(let err):
-                Log.error("Error getting workspace from cloud: \(err)")
+            case .failure(let error):
+                Log.error("Error getting workspace from cloud: \(error)")
+                if let err = error as? CKError {
+                    if err.isZoneNotFound() {  // => workspace is not created
+                        self.ck.createZone(recordZoneId: zoneID) { result in
+                            switch result {
+                            case .success(_):
+                                let wsId = ws.getId()
+                                let ckwsID = self.ck.recordID(entityId: wsId, zoneID: zoneID)
+                                let ckws = self.ck.createRecord(recordID: ckwsID, recordType: RecordType.workspace.rawValue)
+                                ws.updateCKRecord(ckws)
+                                self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws)
+                                //self.saveRecords(records, completion: completion)
+                            case .failure(let error):
+                                Log.error("Error creating zone: \(error)")
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -578,7 +600,7 @@ class PersistenceService {
     /// Saves the given request and corresponding project to the cloud.
     func saveProjectToCloudImp(ckproj: CKRecord, proj: EProject, ckws: CKRecord, ws: EWorkspace) {
         proj.updateCKRecord(ckproj, workspace: ckws)
-        EWorkspace.addProjectReference(to: ckws, project: ckproj)
+        //EWorkspace.addProjectReference(to: ckws, project: ckproj)
         let projModel = DeferredSaveModel(record: ckproj, entity: proj, id: proj.getId())
         let wsModel = DeferredSaveModel(record: ckws, entity: ws, id: ws.getId())
         self.saveToCloud([projModel, wsModel])
@@ -588,7 +610,7 @@ class PersistenceService {
     /// Saves the given request and corresponding project to the cloud.
     func saveRequestToCloudImp(ckreq: CKRecord, req: ERequest, ckproj: CKRecord, proj: EProject) {
         req.updateCKRecord(ckreq, project: ckproj)
-        EProject.addRequestReference(to: ckproj, request: ckreq)
+        //EProject.addRequestReference(to: ckproj, request: ckreq)
         let projModel = DeferredSaveModel(record: ckproj, entity: proj, id: proj.getId())
         let reqModel = DeferredSaveModel(record: ckreq, entity: req, id: req.getId())
         self.saveToCloud([reqModel, projModel])  // we need to save this in the same request so that the deps are created and referrenced properly.
