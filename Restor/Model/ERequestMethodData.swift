@@ -21,8 +21,8 @@ public class ERequestMethodData: NSManagedObject, Entity {
         return self.index.toInt()
     }
     
-    public func getName() -> String? {
-        return self.name
+    public func getName() -> String {
+        return self.name ?? ""
     }
     
     public func getCreated() -> Int64 {

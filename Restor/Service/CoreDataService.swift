@@ -9,6 +9,71 @@
 import Foundation
 import CoreData
 
+enum RecordType: String {
+    case file = "File"
+    case image = "Image"
+    case project = "Project"
+    case request = "Request"
+    case requestBodyData = "RequestBodyData"
+    case requestData = "RequestData"
+    case requestMethodData = "RequestMethodData"
+    case workspace = "Workspace"
+    // CloudKit specific
+    case zone = "Zone"
+    
+    static func from(id: String) -> RecordType? {
+        switch id.components(separatedBy: "-").first {
+        case "ws":
+            return self.workspace
+        case "pj":
+            return self.project
+        case "rq":
+            return self.request
+        case "rb":
+            return self.requestBodyData
+        case "rd":
+            return self.requestData
+        case "rm":
+            return self.requestMethodData
+        case "fl":
+            return self.file
+        case "im":
+            return self.image
+        case "zn":
+            return self.zone
+        default:
+            return nil
+        }
+    }
+    
+    static func prefix(for type: RecordType) -> String {
+        switch type {
+        case .workspace:
+            return "ws"
+        case .project:
+            return "pj"
+        case .request:
+            return "rq"
+        case .requestBodyData:
+            return "rb"
+        case .requestData:
+            return "rd"
+        case .requestMethodData:
+            return "rm"
+        case .file:
+            return "fl"
+        case .image:
+            return "im"
+        case .zone:
+            return "zn"
+        }
+    }
+    
+    /// All data record type
+    static let allCases: [RecordType] = [RecordType.workspace, RecordType.project, RecordType.request, RecordType.requestBodyData, RecordType.requestData,
+                                         RecordType.requestMethodData, RecordType.file, RecordType.image]
+}
+
 class CoreDataService {
     static var shared = CoreDataService()
     private var storeType: String! = NSSQLiteStoreType
@@ -106,6 +171,38 @@ class CoreDataService {
         moc.automaticallyMergesChangesFromParent = true
         moc.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
         return moc
+    }
+    
+    func workspaceId() -> String {
+        return "\(RecordType.prefix(for: .workspace))\(self.utils.genRandomString())"
+    }
+    
+    func projectId() -> String {
+        return "\(RecordType.prefix(for: .project))\(self.utils.genRandomString())"
+    }
+    
+    func requestId() -> String {
+        return "\(RecordType.prefix(for: .request))\(self.utils.genRandomString())"
+    }
+    
+    func requestBodyDataId() -> String {
+        return "\(RecordType.prefix(for: .requestBodyData))\(self.utils.genRandomString())"
+    }
+    
+    func requestDataId() -> String {
+        return "\(RecordType.prefix(for: .requestData))\(self.utils.genRandomString())"
+    }
+    
+    func requestMethodDataId() -> String {
+        return "\(RecordType.prefix(for: .requestMethodData))\(self.utils.genRandomString())"
+    }
+    
+    func fileId() -> String {
+        return "\(RecordType.prefix(for: .file))\(self.utils.genRandomString())"
+    }
+    
+    func imageId() -> String {
+        return "\(RecordType.prefix(for: .image))\(self.utils.genRandomString())"
     }
     
     // MARK: - Sort
@@ -313,7 +410,8 @@ class CoreDataService {
         var x: EWorkspace!
         self.bgMOC.performAndWait {
             if let ws = self.getWorkspace(id: self.defaultWorkspaceId) { x = ws; return }
-            let ws: EWorkspace! = self.createWorkspace(id: self.defaultWorkspaceId, index: 0, name: self.defaultWorkspaceName, desc: self.defaultWorkspaceDesc, isSyncEnabled: true)
+            // We create the default workspace with active flag as false. Only if any change by the user gets made, the flag is enabled. This helps in syncing from cloud.
+            let ws: EWorkspace! = self.createWorkspace(id: self.defaultWorkspaceId, index: 0, name: self.defaultWorkspaceName, desc: self.defaultWorkspaceDesc, isSyncEnabled: true, isActive: false)
             if let isProj = project, isProj {
                 ws.projects = NSSet()
                 ws.projects!.adding(self.getDefaultProject() as Any)
@@ -924,7 +1022,7 @@ class CoreDataService {
     ///   - name: The workspace name.
     ///   - name: The workspace description.
     ///   - checkExists: Check whether the workspace exists before creating.
-    func createWorkspace(id: String, index: Int, name: String, desc: String, isSyncEnabled: Bool, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)  -> EWorkspace? {
+    func createWorkspace(id: String, index: Int, name: String, desc: String, isSyncEnabled: Bool, isActive: Bool? = true, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)  -> EWorkspace? {
         var x: EWorkspace?
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
@@ -935,6 +1033,7 @@ class CoreDataService {
             ws.index = index.toInt64()
             ws.name = name
             ws.desc = desc
+            ws.isActive = isActive!
             ws.isSyncEnabled = isSyncEnabled
             ws.created = x == nil ? ts : x!.created
             ws.modified = ts
@@ -969,6 +1068,7 @@ class CoreDataService {
             proj.version = x == nil ? 0 : x!.version + 1
             _ = self.genDefaultRequestMethods(proj, ctx: moc)
             ws?.addToProjects(proj)
+            ws?.isActive = true
             x = proj
         }
         return x
@@ -1249,14 +1349,44 @@ class CoreDataService {
         }
     }
     
+    func deleteWorkspace(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        let moc = self.getMOC(ctx: ctx)
+        self.deleteEntity(self.getWorkspace(id: id, ctx: moc))
+    }
+    
+    func deleteProject(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        let moc = self.getMOC(ctx: ctx)
+        self.deleteEntity(self.getProject(id: id, ctx: moc))
+    }
+    
+    func deleteRequest(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        let moc = self.getMOC(ctx: ctx)
+        self.deleteEntity(self.getRequest(id: id, ctx: moc))
+    }
+    
+    func deleteRequestBodyData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        let moc = self.getMOC(ctx: ctx)
+        self.deleteEntity(self.getRequestBodyData(id: id, ctx: moc))
+    }
+    
     func deleteRequestData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
-        let moc: NSManagedObjectContext = {
-            if ctx != nil { return ctx! }
-            return self.bgMOC
-        }()
-        if let x = self.getRequestData(id: id, ctx: moc) {
-            moc.performAndWait { moc.delete(x) }
-        }
+        let moc = self.getMOC(ctx: ctx)
+        self.deleteEntity(self.getRequestData(id: id, ctx: moc))
+    }
+    
+    func deleteRequestMethodData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        let moc = self.getMOC(ctx: ctx)
+        self.deleteEntity(self.getRequestMethodData(id: id, ctx: moc))
+    }
+    
+    func deleteFileData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        let moc = self.getMOC(ctx: ctx)
+        self.deleteEntity(self.getFileData(id: id, ctx: moc))
+    }
+    
+    func deleteImageData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        let moc = self.getMOC(ctx: ctx)
+        self.deleteEntity(self.getImageData(id: id, ctx: moc))
     }
     
 //    func deleteRequestData(at index: Int, req: ERequest, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {

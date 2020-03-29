@@ -21,8 +21,8 @@ public class EProject: NSManagedObject, Entity {
         return self.index.toInt()
     }
     
-    public func getName() -> String? {
-        return self.name
+    public func getName() -> String {
+        return self.name ?? ""
     }
     
     public func getCreated() -> Int64 {
@@ -93,7 +93,7 @@ public class EProject: NSManagedObject, Entity {
         return []
     }
     
-    func updateFromCKRecord(_ record: CKRecord) {
+    func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["desc"] as? String { self.desc = x }
@@ -101,5 +101,6 @@ public class EProject: NSManagedObject, Entity {
         if let x = record["index"] as? Int64 { self.index = x }
         if let x = record["name"] as? String { self.name = x }
         if let x = record["version"] as? Int64 { self.version = x }
+        if let ws = EProject.getWorkspace(record, ctx: ctx) { self.workspace = ws }
     }
 }

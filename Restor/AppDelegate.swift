@@ -51,13 +51,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         Log.debug("Remote notification did receive: \(userInfo)")
         if let info = userInfo as? [String: NSObject], let notif = CKNotification(fromRemoteNotificationDictionary: info) {
             if let subID = notif.subscriptionID, self.ck.isSubscribed(to: subID) {
-                let zoneID = self.ck.zoneID(subscriptionID: subID)
-                self.ck.handleNotification(zoneID: zoneID)
-                completionHandler(.newData)
-                return
-            } else {
-                completionHandler(.noData)
+                if let ckhm = userInfo["ck"] as? [String: Any], let meta = ckhm["met"] as? [String: Any], let zid = meta["zid"] as? String {
+                    let zoneID = self.ck.zoneID(with: zid)
+                    self.db.fetchZoneChanges(zoneIDs: [zoneID])
+                    completionHandler(.newData)
+                    return
+                }
             }
+            completionHandler(.noData)
         }
     }
     

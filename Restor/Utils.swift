@@ -82,11 +82,37 @@ class Utils {
         return String(bytes: decrypted, encoding: .utf8)!
     }
     
-    /// Returns a random string of length 20.
+    /// Returns a random string of length 22 by compressing the UUID.
     func genRandomString() -> String {
-        return UUID.init().uuidString.lowercased().components(separatedBy: "-").joined()
+        return self.compress(uuid: UUID()) ?? ""
     }
     
+    /// Generates a uuid with the given identifier and compresses it to return a 22 bytes string.
+    func compress(id: String) -> String? {
+        guard let uuid = UUID(uuidString: id) else { return nil }
+        print("uuid: \(uuid)")
+        return self.compress(uuid: uuid)
+    }
+    
+    /// Compresses the given UUID to a 22 bytes string.
+    func compress(uuid: UUID) -> String? {
+        print("uuid: \(uuid)")
+        let padding = "="
+        let base64 = uuid.data.base64EncodedString(options: Data.Base64EncodingOptions())
+        return base64.replacingOccurrences(of: padding, with: "")
+    }
+
+    /// Decompresses a compressed UUID string back to its full form returning a 36 bytes string.
+    func decompress(shortId: String?) -> String? {
+        guard let id = shortId else { return nil }
+        let padding = "="
+        let idPadded = "\(id)\(padding)\(padding)"
+        if let data = Data(base64Encoded: idPadded) {
+            return UUID.fromBytes(data.toBytes()).uuidString
+        }
+        return nil
+    }
+
     func base64Encode(_ str: String) -> String {
         return Data(str.utf8).base64EncodedString()
     }

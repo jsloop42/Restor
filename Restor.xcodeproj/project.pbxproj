@@ -28,6 +28,8 @@
 		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
 		9E538DB9239958FF0025C14C /* PopupView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E538DB8239958FF0025C14C /* PopupView.xib */; };
 		9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DBA23995B3E0025C14C /* PopupView.swift */; };
+		9E568E3C24308C67003150EC /* EAUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3B24308C67003150EC /* EAUtilsTests.swift */; };
+		9E568E3F2430B576003150EC /* Zone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3E2430B576003150EC /* Zone.swift */; };
 		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
 		9E769AFA242147AB005B18C3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E769AF9242147AB005B18C3 /* Models.swift */; };
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
@@ -103,6 +105,8 @@
 		9E538DAD239953460025C14C /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		9E538DB8239958FF0025C14C /* PopupView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PopupView.xib; sourceTree = "<group>"; };
 		9E538DBA23995B3E0025C14C /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
+		9E568E3B24308C67003150EC /* EAUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUtilsTests.swift; sourceTree = "<group>"; };
+		9E568E3E2430B576003150EC /* Zone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone.swift; sourceTree = "<group>"; };
 		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
 		9E769AF9242147AB005B18C3 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
@@ -177,12 +181,13 @@
 				9E1B2DE52427994000994233 /* EImage.swift */,
 				9E1B2DDD242798D700994233 /* EProject.swift */,
 				9E1B2DDF242798EF00994233 /* ERequest.swift */,
-				9E1B2DE9242799AF00994233 /* ERequestData.swift */,
 				9E1B2DE72427997E00994233 /* ERequestBodyData.swift */,
+				9E1B2DE9242799AF00994233 /* ERequestData.swift */,
 				9E1B2DE12427990600994233 /* ERequestMethodData.swift */,
 				9E1B2DEB242799E700994233 /* ETag.swift */,
 				9E1B2DDB242798BB00994233 /* EWorkspace.swift */,
 				9E769AF9242147AB005B18C3 /* Models.swift */,
+				9E568E3E2430B576003150EC /* Zone.swift */,
 				9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */,
 			);
 			path = Model;
@@ -279,9 +284,10 @@
 				9E1B2DD8242753AA00994233 /* CloudKitTests.swift */,
 				9E926FAD23945E7D002DF561 /* RestorTests.swift */,
 				9EB78E70242B7AFF009663FE /* EALFUCacheTests.swift */,
-				9E145F93241C118800962A19 /* EAReschedulerTests.swift */,
-				9E926FAF23945E7D002DF561 /* Info.plist */,
 				9EB78E74242BF767009663FE /* EAQueueTests.swift */,
+				9E145F93241C118800962A19 /* EAReschedulerTests.swift */,
+				9E568E3B24308C67003150EC /* EAUtilsTests.swift */,
+				9E926FAF23945E7D002DF561 /* Info.plist */,
 			);
 			path = RestorTests;
 			sourceTree = "<group>";
@@ -493,6 +499,7 @@
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
 				9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectListViewController.swift in Sources */,
+				9E568E3F2430B576003150EC /* Zone.swift in Sources */,
 				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
 				9E1B2DE82427997E00994233 /* ERequestBodyData.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
@@ -521,6 +528,7 @@
 				9E1B2DD9242753AA00994233 /* CloudKitTests.swift in Sources */,
 				9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */,
 				9EB78E71242B7AFF009663FE /* EALFUCacheTests.swift in Sources */,
+				9E568E3C24308C67003150EC /* EAUtilsTests.swift in Sources */,
 				9EB78E75242BF767009663FE /* EAQueueTests.swift in Sources */,
 				9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */,
 				9E145F94241C118800962A19 /* EAReschedulerTests.swift in Sources */,

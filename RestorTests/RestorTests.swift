@@ -24,11 +24,6 @@ class RestorTests: XCTestCase {
         super.tearDown()
     }
     
-    func testGenRandom() {
-        let x = self.utils.genRandomString()
-        XCTAssertEqual(x.count, 20)
-    }
-    
     // MARK: - CoreData tests
     
     func testCoreDataSetupCompletion() {
@@ -173,13 +168,6 @@ class RestorTests: XCTestCase {
         waitForExpectations(timeout: 1.0, handler: nil)
     }
     
-    func testMD5ofData() {
-        let data = "hello world".data(using: .utf8)
-        XCTAssertNotNil(data)
-        let md5 = self.utils.md5(data: data!)
-        XCTAssertEqual(md5, "5eb63bbbe01eeed093cb22bb8f5acdc3")
-    }
-    
     func testEntityCRUD() {
         let exp = expectation(description: "Test core data CRUD")
         self.localdb.setup(storeType: NSSQLiteStoreType) {
@@ -306,12 +294,12 @@ class RestorTests: XCTestCase {
                 let ctx = self.localdb.bgMOC
                 let file = self.localdb.createFile(data: Data(), index: 0, name: "test-file", path: URL(fileURLWithPath: "/tmp"), checkExists: false, ctx: ctx)
                 XCTAssertNotNil(file)
-                let req = self.localdb.createRequest(id: self.utils.genRandomString(), index: 0, name: "test-request", project: nil, checkExists: true, ctx: ctx)
+                let req = self.localdb.createRequest(id: self.localdb.requestId(), index: 0, name: "test-request", project: nil, checkExists: true, ctx: ctx)
                 XCTAssertNotNil(req)
-                let reqData = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .form, fieldFormat: .file, checkExists: false, ctx: ctx)
+                let reqData = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: 0, type: .form, fieldFormat: .file, checkExists: false, ctx: ctx)
                 XCTAssertNotNil(reqData)
                 file!.requestData = reqData
-                req!.body = self.localdb.createRequestBodyData(id: self.utils.genRandomString(), index: 0, checkExists: false, ctx: ctx)
+                req!.body = self.localdb.createRequestBodyData(id: self.localdb.requestBodyDataId(), index: 0, checkExists: false, ctx: ctx)
                 XCTAssertNotNil(req!.body)
                 req!.body!.addToForm(reqData!)
                 let hm = self.localdb.requestToDictionary(req!)
@@ -334,7 +322,7 @@ class RestorTests: XCTestCase {
         self.localdb.setup(storeType: NSSQLiteStoreType) {
             self.serialQueue.async {
                 let ctx = self.localdb.bgMOC
-                let req = self.localdb.createRequest(id: self.utils.genRandomString(), index: 0, name: "test-request-change", project: nil, checkExists: false, ctx: ctx)
+                let req = self.localdb.createRequest(id: self.localdb.requestId(), index: 0, name: "test-request-change", project: nil, checkExists: false, ctx: ctx)
                 XCTAssertNotNil(req)
                 let reqhma = self.localdb.requestToDictionary(req!)
                 XCTAssertNotNil(reqhma)
@@ -353,7 +341,7 @@ class RestorTests: XCTestCase {
                 XCTAssert(reqhmb.count > 0)
                 status = self.app.didRequestChangeImp(areq, request: reqhmb)
                 XCTAssertFalse(status)
-                let reqData = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .header, fieldFormat: .text)
+                let reqData = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: 0, type: .header, fieldFormat: .text)
                 XCTAssertNotNil(reqData)
                 breq.addToHeaders(reqData!)
                 XCTAssertNotNil(breq.headers)

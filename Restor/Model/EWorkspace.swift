@@ -21,8 +21,8 @@ public class EWorkspace: NSManagedObject, Entity {
         return self.index.toInt()
     }
     
-    public func getName() -> String? {
-        return self.name
+    public func getName() -> String {
+        return self.name ?? ""
     }
     
     public func getCreated() -> Int64 {
@@ -55,6 +55,7 @@ public class EWorkspace: NSManagedObject, Entity {
         record["desc"] = (self.desc ?? "") as CKRecordValue
         record["id"] = self.id! as CKRecordValue
         record["index"] = self.index as CKRecordValue
+        record["isActive"] = self.isActive as CKRecordValue
         record["isSyncEnabled"] = self.isSyncEnabled as CKRecordValue
         record["name"] = self.name! as CKRecordValue
         record["version"] = self.version as CKRecordValue
@@ -81,6 +82,7 @@ public class EWorkspace: NSManagedObject, Entity {
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["id"] as? String { self.id = x }
         if let x = record["index"] as? Int64 { self.index = x }
+        if let x = record["isActive"] as? Bool { self.isActive = x }
         if let x = record["isSyncEnabled"] as? Bool { self.isSyncEnabled = x }
         if let x = record["name"] as? String { self.name = x }
         if let x = record["desc"] as? String { self.desc = x }

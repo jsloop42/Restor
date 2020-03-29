@@ -19,19 +19,14 @@ class ZoneInfo: NSObject, NSCoding {
     }
     
     func encode(with coder: NSCoder) {
-        let zoneIDData = NSKeyedArchiver.archivedData(withRootObject: self.zoneID)
-        coder.encode(zoneIDData, forKey: CodingKeys.zoneID.rawValue)
-        if let token = self.serverChangeToken {
-            let tokenData = NSKeyedArchiver.archivedData(withRootObject: token)
-            coder.encode(tokenData, forKey: CodingKeys.serverChangeToken.rawValue)
-        }
+        coder.encode(zoneID.encode(), forKey: CodingKeys.zoneID.rawValue)
+        coder.encode(serverChangeToken?.encode(), forKey: CodingKeys.serverChangeToken.rawValue)
     }
     
     required init?(coder: NSCoder) {
-        let zoneIDData = coder.decodeObject(forKey: CodingKeys.zoneID.rawValue) as! Data
-        self.zoneID = NSKeyedUnarchiver.unarchiveObject(with: zoneIDData) as! CKRecordZone.ID
+        self.zoneID = CKRecordZone.ID.decode(coder.decodeObject(forKey: CodingKeys.zoneID.rawValue) as! Data)!
         if let tokenData = coder.decodeObject(forKey: CodingKeys.serverChangeToken.rawValue) as? Data {
-            self.serverChangeToken = NSKeyedUnarchiver.unarchiveObject(with: tokenData) as? CKServerChangeToken
+            self.serverChangeToken = CKServerChangeToken.decode(tokenData)
         }
     }
     
@@ -66,6 +61,9 @@ class CloudKitService {
     let subscriptionsKey = "ck-subscriptions"
     /// A dictionary of all zones [String: Data]  // [zone-name: zone-info]
     let zonesKey = "zones-key"
+    let dbChangeTokenKey = "db-change-token"
+    let defaultZoneName = "_defaultZone"
+    private var _defaultZoneID: CKRecordZone.ID!
     
     enum PropKey: String {
         case isZoneCreated
@@ -164,6 +162,11 @@ class CloudKitService {
         return self.zoneID(with: subscriptionID.components(separatedBy: ".").last ?? "")
     }
     
+    func defaultZoneID() -> CKRecordZone.ID {
+        if self._defaultZoneID == nil { self._defaultZoneID = CKRecordZone.ID(zoneName: self.defaultZoneName, ownerName: self.currentUsername()) }
+        return self._defaultZoneID
+    }
+    
     /// Returns the record ID for the given entity id.
     func recordID(entityId: String, zoneID: CKRecordZone.ID) -> CKRecord.ID {
         return CKRecord.ID(recordName: "\(entityId).\(zoneID.zoneName)", zoneID: zoneID)
@@ -194,6 +197,22 @@ class CloudKitService {
     
     func subscriptionID(_ id: String, zoneID: CKRecordZone.ID) -> CKSubscription.ID {
         return CKSubscription.ID(format: "%@.%@", id, zoneID.zoneName)
+    }
+    
+    // MARK: - Database change token cache
+    
+    func getDBChangeToken() -> CKServerChangeToken? {
+        guard let data = self.store.data(forKey: self.dbChangeTokenKey) else { return nil }
+        return CKServerChangeToken.decode(data)
+    }
+    
+    func setDBChangeToken(_ token: CKServerChangeToken?) {
+        guard let token = token else { self.removeDBChangeToken(); return }
+        if let data = token.encode() { self.store.set(data, forKey: self.dbChangeTokenKey) }
+    }
+    
+    func removeDBChangeToken() {
+        self.store.removeObject(forKey: self.dbChangeTokenKey)
     }
     
     // MARK: - Local Zone Records
@@ -392,33 +411,71 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
+    func fetchDatabaseChanges() {
+        var zonesChanged: [CKRecordZone.ID] = []
+        var zonesDeleted: [CKRecordZone.ID] = []
+        let op = CKFetchDatabaseChangesOperation(previousServerChangeToken: self.getDBChangeToken())
+        op.changeTokenUpdatedBlock = { token in
+            self.setDBChangeToken(token)
+        }
+        op.recordZoneWithIDChangedBlock = { zoneID in
+            zonesChanged.append(zoneID)
+        }
+        op.recordZoneWithIDWasPurgedBlock = { zoneID in
+            zonesDeleted.append(zoneID)
+        }
+        op.recordZoneWithIDWasDeletedBlock = { zoneID in
+            zonesDeleted.append(zoneID)
+        }
+        op.fetchDatabaseChangesCompletionBlock = { token, moreComing, error in
+            if let err = error { Log.error("Error fetching database changes: \(err)"); return }
+            self.setDBChangeToken(token)
+            if moreComing { self.fetchDatabaseChanges() }
+        }
+        self.privateDatabase().add(op)
+    }
+    
     func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], completion: @escaping (Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) -> Void) {
+        Log.debug("ck: fetch zone changes")
         var zoneOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneOptions] = [:]
         var savedRecords: [CKRecord] = []
         var deletedRecords: [CKRecord.ID] = []
+        var moreZones: [CKRecordZone.ID] = []
         zoneIDs.forEach { zID in
             let token: CKServerChangeToken? = self.getCachedServerChangeToken(zID)
             let opt = CKFetchRecordZoneChangesOperation.ZoneOptions()
             opt.previousServerChangeToken = token
             zoneOptions[zID] = opt
         }
+        Log.debug("zone options: \(zoneOptions)")
         let op = CKFetchRecordZoneChangesOperation(recordZoneIDs: zoneIDs, optionsByRecordZoneID: zoneOptions)
         op.recordChangedBlock = { record in
+            Log.debug("zone change: record obtained: \(record)")
             savedRecords.append(record)
         }
         op.recordWithIDWasDeletedBlock = { recordID, _ in
+            Log.debug("zone change: record ID deleted: \(recordID)")
             deletedRecords.append(recordID)
         }
         op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, _ in
+            Log.debug("zone change: \(zoneID) token update: \(String(describing: changeToken))")
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
+        }
+        op.recordZoneFetchCompletionBlock = { zoneID, changeToken, _, moreComing, error in
+            if let err = error { Log.error("Error fetching changes for zone: \(err)"); return }
+            if moreComing {
+                if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
+                moreZones.append(zoneID)
+            }
         }
         op.fetchRecordZoneChangesCompletionBlock = { error in
             if let err = error { Log.error("Error fetching zone changes: \(err)"); completion(.failure(err)); return }
             completion(.success((savedRecords, deletedRecords)))
+            self.fetchZoneChanges(zoneIDs: moreZones, completion: completion)
         }
     }
     
-    /// Fetch the given zones.
+    /// Fetch the given records.
     func fetchRecords(recordIDs: [CKRecord.ID], completion: @escaping (Result<[CKRecord.ID: CKRecord], Error>) -> Void) {
         let op = CKFetchRecordsOperation(recordIDs: recordIDs)
         op.qualityOfService = .utility
@@ -434,6 +491,27 @@ class CloudKitService {
             if let err = error { completion(.failure(err)); return }
             completion(.success(subscriptions ?? []))
         }
+    }
+    
+    // MARK: - Query
+    
+    func queryRecords(zoneID: CKRecordZone.ID, recordType: String, predicate: NSPredicate, cursor: CKQueryOperation.Cursor? = nil, limit: Int? = nil,
+                      completion: @escaping (Result<(records: [CKRecord], cursor: CKQueryOperation.Cursor?), Error>) -> Void) {
+        Log.debug("query records: zoneID: \(zoneID), recordType: \(recordType)")
+        var records: [CKRecord] = []
+        let query = CKQuery(recordType: recordType, predicate: predicate)
+        let op = CKQueryOperation(query: query)
+        op.cursor = cursor
+        if let x = limit, x > 0 { op.resultsLimit = x }
+        op.zoneID = zoneID
+        op.recordFetchedBlock = { record in
+            records.append(record)
+        }
+        op.queryCompletionBlock = { cursor, error in
+            if let err = error { completion(.failure(err)); return }
+            completion(.success((records: records, cursor: cursor)))
+        }
+        self.privateDatabase().add(op)
     }
     
     // MARK: - Create
@@ -750,5 +828,47 @@ extension CKRecord {
     
     func zoneID() -> CKRecordZone.ID {
         self.recordID.zoneID
+    }
+}
+
+extension CKQueryOperation.Cursor {
+    static func encode(_ cursor: CKQueryOperation.Cursor) -> Data? {
+        return try? NSKeyedArchiver.archivedData(withRootObject: cursor, requiringSecureCoding: true)
+    }
+    
+    func encode() -> Data? {
+        return CKQueryOperation.Cursor.encode(self)
+    }
+    
+    static func decode(_ data: Data) -> CKQueryOperation.Cursor? {
+        return try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKQueryOperation.Cursor.self, from: data)
+    }
+}
+
+extension CKServerChangeToken {
+    static func encode(_ token: CKServerChangeToken) -> Data? {
+        return try? NSKeyedArchiver.archivedData(withRootObject: token, requiringSecureCoding: true)
+    }
+    
+    func encode() -> Data? {
+        return CKServerChangeToken.encode(self)
+    }
+    
+    static func decode(_ data: Data) -> CKServerChangeToken? {
+        return try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKServerChangeToken.self, from: data)
+    }
+}
+
+extension CKRecordZone.ID {
+    static func encode(_ id: CKRecordZone.ID) -> Data? {
+        return try? NSKeyedArchiver.archivedData(withRootObject: id, requiringSecureCoding: true)
+    }
+    
+    func encode() -> Data? {
+        return CKRecordZone.ID.encode(self)
+    }
+    
+    static func decode(_ data: Data) -> CKRecordZone.ID? {
+        return try? NSKeyedUnarchiver.unarchivedObject(ofClass: CKRecordZone.ID.self, from: data)
     }
 }

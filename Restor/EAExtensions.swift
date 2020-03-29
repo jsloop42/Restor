@@ -83,7 +83,7 @@ public extension UITableView {
     }
 }
 
-extension NSFetchedResultsController {
+public extension NSFetchedResultsController {
     @objc func numberOfSections() -> Int {
         return self.sections?.count ?? 0
     }
@@ -172,13 +172,13 @@ public extension Int64 {
     }
 }
 
-extension Set {
+public extension Set {
     func toArray() -> [Element] {
         return Array(self)
     }
 }
 
-extension Dictionary {
+public extension Dictionary {
     func allKeys() -> [Key] {
         return Array(self.keys)
     }
@@ -188,7 +188,40 @@ extension Dictionary {
     }
 }
 
-extension Error {
+public extension Array {
+    static func from<T>(_ data: UnsafePointer<T>, count: Int) -> [T] {
+        let buff = UnsafeBufferPointer<T>(start: data, count: count)
+        return Array<T>(buff)
+    }
+}
+
+public extension UUID {
+    var bytes: [UInt8] {
+        let (u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10,u11,u12,u13,u14,u15) = self.uuid  // Is a tuple, so destructure.
+        return [u0,u1,u2,u3,u4,u5,u6,u7,u8,u9,u10,u11,u12,u13,u14,u15]
+    }
+    
+    var data: Data { Data(self.bytes) }
+    
+    static func fromBytes(_ xs: [UInt8]) -> UUID {
+        return UUID(uuid: (xs[0], xs[1], xs[2], xs[3], xs[4], xs[5], xs[6], xs[7], xs[8], xs[9], xs[10], xs[11], xs[12], xs[13], xs[14], xs[15]))
+    }
+}
+
+public extension Data {
+    func toUnsafeBytes() -> UnsafePointer<UInt8>? {
+        return self.withUnsafeBytes { $0.baseAddress?.assumingMemoryBound(to: UInt8.self) }
+    }
+    
+    func toBytes() -> [UInt8] {
+        let count = self.count * MemoryLayout<UInt8>.size
+        var ba: [UInt8] = Array(repeating: 0, count: count)
+        ba = withUnsafeBytes { $0.compactMap { byte -> UInt8? in byte } }
+        return ba
+    }
+}
+
+public extension Error {
     var code: Int { return (self as NSError).code }
     var domain: String { return (self as NSError).domain }
     var localizedFailureReason: String? { return (self as NSError).localizedFailureReason }
@@ -199,14 +232,14 @@ extension Error {
 }
 
 /// Determine if view should be popped on navigation bar's back button tap
-protocol  UINavigationBarBackButtonHandler {
+public protocol UINavigationBarBackButtonHandler {
     /// Should block the back button action
     func shouldPopOnBackButton() -> Bool
 }
 
 /// To not block the back button action by default
 extension UIViewController: UINavigationBarBackButtonHandler {
-    @objc func shouldPopOnBackButton() -> Bool { return true }
+    @objc public func shouldPopOnBackButton() -> Bool { return true }
 }
 
 extension UINavigationController: UINavigationBarDelegate {

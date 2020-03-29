@@ -25,7 +25,7 @@ public class BackgroundWorker: NSObject {
             Thread.exit()
         }
         self.thread.name = "\(threadName)-\(self.utils.genRandomString())"
-        Log.debug("Background worker thread name: \(self.thread.name)")
+        Log.debug("Background worker thread name: \(self.thread.name ?? "")")
         self.thread.start()
         self.perform(#selector(self.runBlock), on: self.thread, with: nil, waitUntilDone: false, modes: [(CFRunLoopMode.defaultMode.rawValue as String)])
     }

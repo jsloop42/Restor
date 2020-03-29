@@ -21,8 +21,8 @@ public class ERequestBodyData: NSManagedObject, Entity {
         return self.index.toInt()
     }
     
-    public func getName() -> String? {
-        return self.id
+    public func getName() -> String {
+        return self.id ?? ""
     }
     
     public func getCreated() -> Int64 {
@@ -79,7 +79,14 @@ public class ERequestBodyData: NSManagedObject, Entity {
         reqBodyData[key] = ref as CKRecordValue
     }
     
-    func updateFromCKRecord(_ record: CKRecord) {
+    static func getRequest(_ record: CKRecord, ctx: NSManagedObjectContext) -> ERequest? {
+        if let ref = record["request"] as? CKRecord.Reference {
+            return CoreDataService.shared.getRequest(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+        }
+        return nil
+    }
+    
+    func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["id"] as? String { self.id = x }
@@ -89,5 +96,6 @@ public class ERequestBodyData: NSManagedObject, Entity {
         if let x = record["selected"] as? Int64 { self.selected = x }
         if let x = record["version"] as? Int64 { self.version = x }
         if let x = record["xml"] as? String { self.xml = x }
+        if let req = ERequestBodyData.getRequest(record, ctx: ctx) { self.request = req }
     }
 }

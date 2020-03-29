@@ -21,8 +21,8 @@ public class ERequest: NSManagedObject, Entity {
         return self.index.toInt()
     }
     
-    public func getName() -> String? {
-        return self.name
+    public func getName() -> String {
+        return self.name ?? ""
     }
     
     public func getCreated() -> Int64 {
@@ -90,7 +90,7 @@ public class ERequest: NSManagedObject, Entity {
         return nil
     }
     
-    func updateFromCKRecord(_ record: CKRecord) {
+    func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["id"] as? String { self.id = x }
@@ -99,5 +99,6 @@ public class ERequest: NSManagedObject, Entity {
         if let x = record["selectedMethodIndex"] as? Int64 { self.selectedMethodIndex = x }
         if let x = record["url"] as? String { self.url = x }
         if let x = record["version"] as? Int64 { self.version = x }
+        if let proj = ERequest.getProject(record, ctx: ctx) { self.project = proj }
     }
 }

@@ -319,7 +319,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     @objc func customRequestMethodDidAdd(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let name = info[Const.requestMethodNameKey] as? String,
             let idx = info[Const.modelIndexKey] as? Int, let data = AppState.editRequest, let ctx = data.managedObjectContext {
-            if let method = self.localdb.createRequestMethodData(id: self.utils.genRandomString(), index: idx, name: name, checkExists: true, ctx: ctx) {
+            if let method = self.localdb.createRequestMethodData(id: self.localdb.requestMethodDataId(), index: idx, name: name, checkExists: true, ctx: ctx) {
                 data.method = method
                 self.methods.append(method)
                 method.project = AppState.currentProject
@@ -349,19 +349,19 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int {
             // If form is selected and there are no fields add one
             if idx == RequestBodyType.form.rawValue && AppState.editRequest?.body?.form?.count == 0 {
-                if let req = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .form, fieldFormat: .text,
+                if let req = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: 0, type: .form, fieldFormat: .text,
                                                             ctx: AppState.editRequest?.managedObjectContext) {
                     AppState.editRequest?.body?.addToForm(req)
                 }
             } else if idx == RequestBodyType.multipart.rawValue && AppState.editRequest?.body?.multipart?.count == 0 {
-                if let req = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .multipart, fieldFormat: .text,
+                if let req = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: 0, type: .multipart, fieldFormat: .text,
                                                             ctx: AppState.editRequest?.managedObjectContext) {
                     AppState.editRequest?.body?.addToMultipart(req)
                 }
             } else if idx == RequestBodyType.binary.rawValue {
                 if let data = AppState.editRequest, let body = data.body {
                     if body.binary == nil {
-                        if let req = self.localdb.createRequestData(id: self.utils.genRandomString(), index: 0, type: .binary, fieldFormat: .file,
+                        if let req = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: 0, type: .binary, fieldFormat: .file,
                                                                     ctx: AppState.editRequest?.managedObjectContext) {
                             body.binary = req
                         }
@@ -542,9 +542,10 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     static func addRequestBodyToState() {
+        let localdb = CoreDataService.shared
         if let req = AppState.editRequest, let ctx = req.managedObjectContext {
             if req.body == nil {
-                req.body = CoreDataService.shared.createRequestBodyData(id: Utils.shared.genRandomString(), index: 0, ctx: ctx)
+                req.body = localdb.createRequestBodyData(id: localdb.requestBodyDataId(), index: 0, ctx: ctx)
                 AppState.editRequest!.body?.request = AppState.editRequest
             }
         }
@@ -1336,7 +1337,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         if let data = AppState.editRequest, let body = data.body, let ctx = data.managedObjectContext {
             if body.selected == RequestBodyType.form.rawValue {
                 let count = body.form?.allObjects.count ?? 0
-                let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .form, fieldFormat: .text, ctx: ctx)
+                let data = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: count, type: .form, fieldFormat: .text, ctx: ctx)
                 if let x = data {
                     body.addToForm(x)
                     if let vc = RequestVC.shared {
@@ -1345,7 +1346,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 }
             } else if body.selected == RequestBodyType.multipart.rawValue {
                 let count = body.multipart?.allObjects.count ?? 0
-                let data = self.localdb.createRequestData(id: self.utils.genRandomString(), index: count, type: .multipart, fieldFormat: .text, ctx: ctx)
+                let data = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: count, type: .multipart, fieldFormat: .text, ctx: ctx)
                 if let x = data {
                     body.addToMultipart(x)
                     if let vc = RequestVC.shared {
@@ -1610,7 +1611,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         case .header:
             if data.headers == nil { AppState.editRequest!.headers = NSSet() }
             if let last = self.localdb.getLastRequestData(type: .header, ctx: ctx) { index = (last.index + 1).toInt() }
-            x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .header, fieldFormat: .text, ctx: ctx)
+            x = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: index, type: .header, fieldFormat: .text, ctx: ctx)
             if let y = x {
                 AppState.editRequest!.addToHeaders(y)
                 if let vc = RequestVC.shared {
@@ -1620,7 +1621,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         case .params:
             if AppState.editRequest!.params == nil { AppState.editRequest!.params = NSSet() }
             if let last = self.localdb.getLastRequestData(type: .param, ctx: ctx) { index = (last.index + 1).toInt() }
-            x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .param, fieldFormat: .text, ctx: ctx)
+            x = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: index, type: .param, fieldFormat: .text, ctx: ctx)
             if let y = x {
                 AppState.editRequest!.addToParams(y)
                 if let vc = RequestVC.shared {
@@ -1633,7 +1634,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
                 if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
                 if let last = self.localdb.getLastRequestData(type: .form, ctx: ctx) { index = (last.index + 1).toInt() }
-                x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .form, fieldFormat: .text, ctx: ctx)
+                x = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: index, type: .form, fieldFormat: .text, ctx: ctx)
                 if let y = x {
                     AppState.editRequest!.body!.addToForm(y)
                     if let vc = RequestVC.shared {
@@ -1643,7 +1644,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
                 if AppState.editRequest!.body!.multipart == nil { AppState.editRequest!.body!.multipart = NSSet() }
                 if let last = self.localdb.getLastRequestData(type: .multipart, ctx: ctx) { index = (last.index + 1).toInt() }
-                x = self.localdb.createRequestData(id: self.utils.genRandomString(), index: index, type: .multipart, fieldFormat: .text, ctx: ctx)
+                x = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: index, type: .multipart, fieldFormat: .text, ctx: ctx)
                 if let y = x {
                     AppState.editRequest!.body!.addToMultipart(y)
                     if let vc = RequestVC.shared {

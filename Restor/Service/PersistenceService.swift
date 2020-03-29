@@ -58,7 +58,7 @@ fileprivate class CacheValue: EACacheValue {
 
 struct DeferredSaveModel: Hashable {
     var record: CKRecord
-    var entity: Entity
+    var entity: Entity? = nil
     /// Entity id
     var id: String
     var completion: (() -> Void)?
@@ -87,6 +87,11 @@ class PersistenceService {
     var saveQueueCompletionHandler: (([CKRecord]) -> Void)!
     var saveQueue: EAQueue<DeferredSaveModel>!
     private let nc = NotificationCenter.default
+    var defaultZoneCursor: CKQueryOperation.Cursor?
+    private let store = UserDefaults.standard
+    private let lastSyncedKey = "last-synced-key"
+    private let defaultQueryCursorKey = "default-query-cursor-key"
+    private let defaultZoneRecordFetchLimit = 50
     
     enum SubscriptionId: String {
         case fileChange = "file-change"
@@ -97,6 +102,7 @@ class PersistenceService {
         case requestDataChange = "request-data-change"
         case requestMethodChange = "request-method-change"
         case workspaceChange = "workspace-change"
+        case zoneChange = "zone-change"  // default zone change
         case databaseChange = "database-change"
         
         static var allCases: [String] {
@@ -106,15 +112,39 @@ class PersistenceService {
         }
     }
     
-    enum RecordType: String {
-        case file = "File"
-        case image = "Image"
-        case project = "Project"
-        case request = "Request"
-        case requestBodyData = "RequestBodyData"
-        case requestData = "RequestData"
-        case requestMethodData = "RequestMethodData"
-        case workspace = "Workspace"
+    enum CursorKey: String {
+        case workspace = "workspace-cursor-key"
+        case project = "project-cursor-key"
+        case request = "request-cursor-key"
+        case requestBodyData = "request-body-data-cursor-key"
+        case requestData = "request-data-cursor-key"
+        case requestMethodData = "request-method-data-cursor-key"
+        case file = "file-cursor-key"
+        case image = "image-cursor-key"
+        case zone = "zone-cursor-key"
+        
+        init(type: RecordType) {
+            switch type {
+            case .workspace:
+                self = .workspace
+            case .project:
+                self = .project
+            case .request:
+                self = .request
+            case .requestBodyData:
+                self = .requestBodyData
+            case .requestData:
+                self = .requestData
+            case .requestMethodData:
+                self = .requestMethodData
+            case .file:
+                self = .file
+            case .image:
+                self = .image
+            case .zone:
+                self = .zone
+            }
+        }
     }
     
     init() {
@@ -152,12 +182,13 @@ class PersistenceService {
                     // Update the entities' attribute and cache
                     xs.forEach { record in
                         if let map = entityMap[record.recordID] {
-                            let entity = map.entity
-                            entity.setIsSynced(true)
-                            if let type = RecordType(rawValue: record.recordType) {
-                                self.addToCache(record: record, entityId: entity.getId(), type: type)
-                                map.completion?()
+                            if let entity = map.entity {
+                                entity.setIsSynced(true)
+                                if let type = RecordType(rawValue: record.recordType) {
+                                    self.addToCache(record: record, entityId: entity.getId(), type: type)
+                                }
                             }
+                            map.completion?()
                         }
                     }
                 case .failure(let error):
@@ -165,6 +196,192 @@ class PersistenceService {
                 }
             }
         })
+    }
+
+    // MARK: - Cache
+    
+    func isSyncedOnce() -> Bool {
+        return self.store.integer(forKey: self.lastSyncedKey) > 0
+    }
+    
+    func setIsSyncedOnce() {
+        self.store.set(Date().currentTimeNanos(), forKey: self.lastSyncedKey)
+    }
+    
+    func removeIsSyncedOnce() {
+        self.store.removeObject(forKey: self.lastSyncedKey)
+    }
+    
+    // MARK: Query cursor cache
+    
+    func getCachedDefaultZoneQueryCursor() -> CKQueryOperation.Cursor? {
+        guard let data = self.store.data(forKey: self.defaultQueryCursorKey) else { return nil }
+        return CKQueryOperation.Cursor.decode(data)
+    }
+    
+    func setDefaultZoneQueryCursorToCache(_ cursor: CKQueryOperation.Cursor) {
+        if let data = cursor.encode() { self.store.set(data, forKey: self.defaultQueryCursorKey) }
+    }
+    
+    func removeDefaultZoneQueryCursorFromCache() {
+        self.store.removeObject(forKey: self.defaultQueryCursorKey)
+    }
+    
+    func getQueryCursor(_ type: RecordType, zoneID: CKRecordZone.ID) -> CKQueryOperation.Cursor? {
+        let key = CursorKey(type: type).rawValue
+        if let zonesMap = self.store.dictionary(forKey: key), let data = zonesMap[zoneID.zoneName] as? Data {
+            return CKQueryOperation.Cursor.decode(data)
+        }
+        return nil
+    }
+    
+    func setQueryCursor(_ cursor: CKQueryOperation.Cursor, type: RecordType, zoneID: CKRecordZone.ID) {
+        let key = CursorKey(type: type).rawValue
+        var zonesMap = self.store.dictionary(forKey: key) ?? [:]
+        zonesMap[zoneID.zoneName] = cursor.encode()
+        self.store.set(zonesMap, forKey: key)
+    }
+    
+    func removeQueryCursor(for type: RecordType) {
+        self.store.removeObject(forKey: CursorKey(type: type).rawValue)
+    }
+    
+    func removeQueryCursor(for type: RecordType, zoneID: CKRecordZone.ID) {
+        let key = CursorKey(type: type).rawValue
+        var zonesMap = self.store.dictionary(forKey: key) ?? [:]
+        zonesMap.removeValue(forKey: zoneID.zoneName)
+        self.store.set(zonesMap, forKey: key)
+    }
+    
+    func getFromCache(entityId: String, type: RecordType) -> EACacheValue? {
+        switch type {
+        case .workspace:
+            return self.wsCache.get(entityId)
+        case .project:
+            return self.projCache.get(entityId)
+        case .request:
+            return self.reqCache.get(entityId)
+        case .requestData:
+            return self.reqDataCache.get(entityId)
+        case .requestBodyData:
+            return self.reqBodyCache.get(entityId)
+        case .requestMethodData:
+            return self.reqMethodCache.get(entityId)
+        case .file:
+            return self.fileCache.get(entityId)
+        case .image:
+            return self.imageCache.get(entityId)
+        case .zone:
+            return nil
+        }
+    }
+    
+    func addToCache(record: CKRecord, entityId: String, type: RecordType) {
+        switch type {
+        case .workspace:
+            self.wsCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .project:
+            self.projCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .request:
+            self.reqCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .requestData:
+            self.reqDataCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .requestBodyData:
+            self.reqBodyCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .requestMethodData:
+            self.reqMethodCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .file:
+            self.fileCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .image:
+            self.imageCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .zone:
+            break
+        }
+    }
+    
+    // MARK: - Sync
+    
+    func syncFromCloud() {
+        Log.debug("sync from cloud")
+        if !self.isSyncedOnce() {
+            self.queryDefaultZoneRecords(completion: self.syncFromCloudHandler)
+        } else {
+            self.fetchZoneChanges(zoneIDs: [self.ck.defaultZoneID()], success: { (saved, deleted) in
+                
+            })
+//            let types = RecordType.allCases
+//            var key: String!
+//            var hm: [String: Any] = [:]
+//            var allKeys: [String] = []
+//            var zoneIDs: [CKRecordZone.ID] = []
+//            let len = types.count
+//            for i in 0..<len {
+//                key = CursorKey(type: types[i]).rawValue
+//                hm = self.store.dictionary(forKey: key) ?? [:]
+//                allKeys = hm.allKeys()
+//                if allKeys.count > 0 {
+//                    zoneIDs = allKeys.map { self.ck.zoneID(with: $0) }
+//                    DispatchQueue.global().asyncAfter(deadline: .now() + TimeInterval(i * 3)) {
+//                        self.fetchZoneChanges(zoneIDs: zoneIDs)
+//                    }
+//                } else {
+//                    self.removeIsSyncedOnce()
+//                    self.syncFromCloud()
+//                    break
+//                }
+//            }
+        }
+    }
+    
+    func syncFromCloudHandler(_ result: Result<[CKRecord], Error>) {
+        Log.debug("sync from cloud handler")
+        switch result {
+        case .success(let records):
+            Log.debug("sync from cloud handler: records \(records.count)")
+            records.forEach { record in
+                switch RecordType(rawValue: record.type()) {
+                case .zone:
+                    fallthrough
+                case .workspace:
+                    self.updateWorkspaceFromCloud(record)
+                    let wsId = record.id()
+                    self.queryRecords(zoneID: self.ck.zoneID(workspaceId: wsId), type: .project, parentId: wsId, completion: self.syncFromCloudHandler)
+                case .project:
+                    self.updateProjectFromCloud(record)
+                    let zoneID = record.zoneID()
+                    let projId = record.id()
+                    self.queryRecords(zoneID: zoneID, type: .request, parentId: projId, completion: self.syncFromCloudHandler)
+                    self.queryRecords(zoneID: zoneID, type: .requestMethodData, parentId: projId, completion: self.syncFromCloudHandler)
+                case .request:
+                    self.updateRequestFromCloud(record)
+                    let zoneID = record.zoneID()
+                    let reqId = record.id()
+                    self.queryRecords(zoneID: zoneID, type: .requestData, parentId: reqId, completion: self.syncFromCloudHandler)  // headers, params
+                    self.queryRecords(zoneID: zoneID, type: .requestBodyData, parentId: reqId, completion: self.syncFromCloudHandler)  // body
+                case .requestBodyData:
+                    self.updateRequestBodyDataFromCloud(record)
+                    self.queryRecords(zoneID: record.zoneID(), type: .requestData, parentId: record.id(), completion: self.syncFromCloudHandler)  // forms
+                case .requestData:
+                    self.updateRequestDataFromCloud(record)
+                    let zoneID = record.zoneID()
+                    let reqDataId = record.id()
+                    self.queryRecords(zoneID: zoneID, type: .file, parentId: reqDataId, completion: self.syncFromCloudHandler)  // attachments
+                    self.queryRecords(zoneID: zoneID, type: .image, parentId: reqDataId, completion: self.syncFromCloudHandler)
+                case .requestMethodData:
+                    self.updateRequestMethodDataFromCloud(record)
+                case .file:
+                    self.updateFileDataFromCloud(record)
+                case .image:
+                    self.updateImageDataFromCloud(record)
+                case .none:
+                    Log.error("Unknown record: \(record)")
+                }
+            }
+            break
+        case .failure(let error):
+            Log.error("Error syncing from cloud: \(error)")
+            break
+        }
     }
     
     func subscribeToCloudKitEvents() {
@@ -197,50 +414,12 @@ class PersistenceService {
             return SubscriptionId.requestMethodChange.rawValue
         case .workspace:
             return SubscriptionId.workspaceChange.rawValue
+        case .zone:
+            return SubscriptionId.zoneChange.rawValue
         }
     }
     
-    func getFromCache(entityId: String, type: RecordType) -> EACacheValue? {
-        switch type {
-        case .workspace:
-            return self.wsCache.get(entityId)
-        case .project:
-            return self.projCache.get(entityId)
-        case .request:
-            return self.reqCache.get(entityId)
-        case .requestData:
-            return self.reqDataCache.get(entityId)
-        case .requestBodyData:
-            return self.reqBodyCache.get(entityId)
-        case .requestMethodData:
-            return self.reqMethodCache.get(entityId)
-        case .file:
-            return self.fileCache.get(entityId)
-        case .image:
-            return self.imageCache.get(entityId)
-        }
-    }
-    
-    func addToCache(record: CKRecord, entityId: String, type: RecordType) {
-        switch type {
-        case .workspace:
-            self.wsCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .project:
-            self.projCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .request:
-            self.reqCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .requestData:
-            self.reqDataCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .requestBodyData:
-            self.reqBodyCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .requestMethodData:
-            self.reqMethodCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .file:
-            self.fileCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .image:
-            self.imageCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        }
-    }
+    // MARK: - Cloud record merge (conflict)
     
     /// Check if server record is latest. Cases were a record is created locally, but failed to sync, new record gets added from another device, and then the
     /// former record gets saved, in which case the server copy is latest.
@@ -300,22 +479,28 @@ class PersistenceService {
             return self.mergeFileData(local: client, server: remote)
         case .image:
             return self.mergeImageData(local: client, server: remote)
+        case .zone:
+            return server
         }
     }
     
+    // MARK: - Cloud record updated
+    
     func updateWorkspaceFromCloud(_ record: CKRecord) {
         let wsId = record.id()
-        let moc = self.localdb.getChildMOC()
-        if let ws = self.localdb.getWorkspace(id: wsId, ctx: moc) {
-            if ws.isSyncEnabled && ws.modified <= record.modified() {  // => server has new copy
+        let ctx = self.localdb.getChildMOC()
+        if let ws = self.localdb.getWorkspace(id: wsId, ctx: ctx) {
+            if ws.isSyncEnabled && (!ws.isActive || ws.modified <= record.modified()) {  // => server has new copy
                 ws.updateFromCKRecord(record)
-                self.localdb.saveChildContext(moc)
+                ws.isSynced = true
+                self.localdb.saveChildContext(ctx)
                 Log.debug("Workspace synced")
                 self.nc.post(Notification(name: NotificationKey.workspaceDidSync))
             }
         } else {  // workspace not found, create one
-            if self.localdb.createWorkspace(id: wsId, index: record.index().toInt(), name: record.name(), desc: record.desc(), isSyncEnabled: record.isSyncEnabled(), ctx: moc) != nil {
-                self.localdb.saveChildContext(moc)
+            if let ws = self.localdb.createWorkspace(id: wsId, index: record.index().toInt(), name: record.name(), desc: record.desc(), isSyncEnabled: record.isSyncEnabled(), ctx: ctx) {
+                ws.isSynced = true
+                self.localdb.saveChildContext(ctx)
                 Log.debug("Workspace synced")
                 self.nc.post(Notification(name: NotificationKey.workspaceDidSync))
             }
@@ -324,17 +509,19 @@ class PersistenceService {
     
     func updateProjectFromCloud(_ record: CKRecord) {
         let projId = record.id()
-        let moc = self.localdb.getChildMOC()
-        if let proj = self.localdb.getProject(id: projId, ctx: moc) {
+        let ctx = self.localdb.getChildMOC()
+        if let proj = self.localdb.getProject(id: projId, ctx: ctx) {
             if proj.modified <= record.modified() {  // => server has new copy
-                proj.updateFromCKRecord(record)
-                self.localdb.saveChildContext(moc)
+                proj.updateFromCKRecord(record, ctx: ctx)
+                proj.isSynced = true
+                self.localdb.saveChildContext(ctx)
                 Log.debug("Project synced")
                 self.nc.post(Notification(name: NotificationKey.projectDidSync))
             }
         } else {  // project not found, create one
-            if self.localdb.createProject(id: record.id(), index: record.index().toInt(), name: record.name(), desc: record.desc(), checkExists: false, ctx: moc) != nil {
-                self.localdb.saveChildContext(moc)
+            if let proj = self.localdb.createProject(id: record.id(), index: record.index().toInt(), name: record.name(), desc: record.desc(), checkExists: false, ctx: ctx) {
+                proj.isSynced = true
+                self.localdb.saveChildContext(ctx)
                 Log.debug("Project synced")
                 self.nc.post(Notification(name: NotificationKey.projectDidSync))
             }
@@ -342,28 +529,49 @@ class PersistenceService {
     }
     
     func updateRequestFromCloud(_ record: CKRecord) {
-        let moc = self.localdb.getChildMOC()
-        guard let proj = ERequest.getProject(record, ctx: moc) else { Log.error("Error getting project"); return }
+        let ctx = self.localdb.getChildMOC()
+        guard let proj = ERequest.getProject(record, ctx: ctx) else { Log.error("Error getting project"); return }
         let reqId = record.id()
-        if let req = self.localdb.getRequest(id: reqId, ctx: moc) {
+        if let req = self.localdb.getRequest(id: reqId, ctx: ctx) {
             if req.modified <= record.modified() {  // => server has new copy
-                req.updateFromCKRecord(record)
+                req.updateFromCKRecord(record, ctx: ctx)
                 req.project = proj
-                self.localdb.saveChildContext(moc)
+                req.isSynced = true
+                self.localdb.saveChildContext(ctx)
                 Log.debug("Request synced")
                 self.nc.post(Notification(name: NotificationKey.requestDidSync))
             }
         } else {  // request not found, create one
-            if self.localdb.createRequest(id: record.id(), index: record.index().toInt(), name: record.name(), project: proj, checkExists: false, ctx: moc) != nil {
-                self.localdb.saveChildContext(moc)
+            if let req = self.localdb.createRequest(id: record.id(), index: record.index().toInt(), name: record.name(), project: proj, checkExists: false, ctx: ctx) {
+                req.isSynced = true
+                self.localdb.saveChildContext(ctx)
                 Log.debug("Request synced")
-                self.nc.post(Notification(name: NotificationKey.projectDidSync))
+                self.nc.post(Notification(name: NotificationKey.requestDidSync))
             }
         }
     }
         
     func updateRequestBodyDataFromCloud(_ record: CKRecord) {
-        
+        let ctx = self.localdb.getChildMOC()
+        guard let req = ERequestBodyData.getRequest(record, ctx: ctx) else { Log.error("Error getting request"); return }
+        let reqId = record.id()
+        if let reqBodyData = self.localdb.getRequestBodyData(id: reqId, ctx: ctx) {
+            if reqBodyData.modified <= record.modified() {  // => server has new copy
+                reqBodyData.updateFromCKRecord(record, ctx: ctx)
+                reqBodyData.request = req
+                reqBodyData.isSynced = true
+                self.localdb.saveChildContext(ctx)
+                Log.debug("Request synced")
+                self.nc.post(Notification(name: NotificationKey.requestBodyDataDidSync))
+            }
+        } else {  // request body data not found, create one
+            if let reqBodyData = self.localdb.createRequestBodyData(id: record.id(), index: record.index().toInt(), checkExists: false, ctx: ctx) {
+                reqBodyData.isSynced = true
+                self.localdb.saveChildContext(ctx)
+                Log.debug("Request synced")
+                self.nc.post(Notification(name: NotificationKey.projectDidSync))
+            }
+        }
     }
     
     func updateRequestDataFromCloud(_ record: CKRecord) {
@@ -401,68 +609,190 @@ class PersistenceService {
             self.updateFileDataFromCloud(record)
         case .image:
             self.updateImageDataFromCloud(record)
+        case .zone:
+            self.updateWorkspaceFromCloud(record)
         case .none:
             Log.error("Unknown record: \(record)")
         }
     }
     
-    func syncFromCloud() {
-        Log.debug("sync from cloud")
-        self.ck.fetchAllZones { result in
+    // MARK: - Cloud record deleted
+    
+    func workspaceDidDeleteFromCloud(_ id: String) {
+        let ctx = self.localdb.getChildMOC()
+        self.localdb.deleteWorkspace(id: id, ctx: ctx)
+        self.localdb.saveChildContext(ctx)
+    }
+    
+    func projectDidDeleteFromCloud(_ id: String) {
+        let ctx = self.localdb.getChildMOC()
+        self.localdb.deleteProject(id: id, ctx: ctx)
+        self.localdb.saveChildContext(ctx)
+    }
+    
+    func requestDidDeleteFromCloud(_ id: String) {
+        let ctx = self.localdb.getChildMOC()
+        self.localdb.deleteRequest(id: id, ctx: ctx)
+        self.localdb.saveChildContext(ctx)
+    }
+        
+    func requestBodyDataDidDeleteFromCloud(_ id: String) {
+        let ctx = self.localdb.getChildMOC()
+        self.localdb.deleteRequestBodyData(id: id, ctx: ctx)
+        self.localdb.saveChildContext(ctx)
+    }
+    
+    func requestDataDidDeleteFromCloud(_ id: String) {
+        let ctx = self.localdb.getChildMOC()
+        self.localdb.deleteRequestData(id: id, ctx: ctx)
+        self.localdb.saveChildContext(ctx)
+    }
+    
+    func requestMethodDataDidDeleteFromCloud(_ id: String) {
+        let ctx = self.localdb.getChildMOC()
+        self.localdb.deleteRequestMethodData(id: id, ctx: ctx)
+        self.localdb.saveChildContext(ctx)
+    }
+    
+    func fileDataDidDeleteFromCloud(_ id: String) {
+        let ctx = self.localdb.getChildMOC()
+        self.localdb.deleteFileData(id: id, ctx: ctx)
+        self.localdb.saveChildContext(ctx)
+    }
+    
+    func imageDataDidDeleteFromCloud(_ id: String) {
+        let ctx = self.localdb.getChildMOC()
+        self.localdb.deleteImageData(id: id, ctx: ctx)
+        self.localdb.saveChildContext(ctx)
+    }
+    
+    func cloudRecordDidDelete(_ recordID: CKRecord.ID) {
+        Log.debug("cloud record did delete: \(recordID)")
+        let id = recordID.recordName
+        let type = RecordType.from(id: id)
+        switch type {
+        case .workspace:
+            self.workspaceDidDeleteFromCloud(id)
+        case .project:
+            self.projectDidDeleteFromCloud(id)
+        case .request:
+            self.requestDidDeleteFromCloud(id)
+        case .requestBodyData:
+            self.requestBodyDataDidDeleteFromCloud(id)
+        case .requestData:
+            self.requestDataDidDeleteFromCloud(id)
+        case .requestMethodData:
+            self.requestMethodDataDidDeleteFromCloud(id)
+        case .file:
+            self.fileDataDidDeleteFromCloud(id)
+        case .image:
+            self.imageDataDidDeleteFromCloud(id)
+        case .zone:
+            break
+        case .none:
+            Log.error("Unknown record type: \(id)")
+        }
+    }
+    
+    func cloudRecordsDidDelete(_ recordsIDs: [CKRecord.ID]) {
+        recordsIDs.forEach { self.cloudRecordDidDelete($0) }
+    }
+    
+    // MARK: - Query
+    
+    func queryDefaultZoneRecords(completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        Log.debug("query default zone records")
+        self.ck.queryRecords(zoneID: self.ck.defaultZoneID(), recordType: RecordType.zone.rawValue, predicate: NSPredicate(format: "isSyncEnabled == %hdd", true),
+                             cursor: self.getCachedDefaultZoneQueryCursor(), limit: self.defaultZoneRecordFetchLimit) { result in
+            Log.debug("query default zone records handler")
             switch result {
-            case .success(let (_, new)):
-                self.fetchWorkspaces(zoneIDs: new, completion: self.workspacesFetchHandler(_:))
-            case .failure(let err):
-                Log.error("Error fetching all zones: \(err)")
+            case .success(let (records, cursor)):
+                self.setIsSyncedOnce()
+                if let cursor = cursor { self.setDefaultZoneQueryCursorToCache(cursor) }
+                completion(.success(records))
+            case .failure(let error):
+                Log.error("Error querying default zone record: \(error)")
+                completion(.failure(error))
+                break
             }
         }
     }
     
-    func workspacesFetchHandler(_ result: Result<[CKRecord], Error>) {
-        switch result {
-        case .success(let records):
-            Log.debug("workspaces fetched: \(records.count)")
-            records.forEach { record in
-                self.updateWorkspaceFromCloud(record)
-                let projIDs = EWorkspace.getProjectRecordIDs(record)
-                self.fetchRecords(recordIDs: projIDs,completion: self.projectsFetchHandler(_:))
-            }
-            break
-        case .failure(let err):
-            Log.error("Error fetching workspaces: \(err)")
-        }
-    }
     
-    func projectsFetchHandler(_ result: Result<[CKRecord], Error>) {
-        switch result {
-        case .success(let records):
-            Log.debug("projects fetched: \(records.count)")
-            records.forEach { record in
-                self.updateProjectFromCloud(record)
-                let reqIDs = EProject.getRequestRecordIDs(record)
-                self.fetchRecords(recordIDs: reqIDs,completion: self.projectsFetchHandler(_:))
-            }
-            break
-        case .failure(let err):
-            Log.error("Error fetching projects: \(err)")
+    /// Fetch records belonging to the given record type with id in the given zone.
+    /// - Parameters:
+    ///   - zoneID: The zone in which the record exists
+    ///   - type: The record type
+    ///   - parentId: The parent Id of the record which is used in predicate
+    ///   - isContinue: Should continue from the previous cursor if exists. If set to false, the cursor will be removed from the cache.
+    ///   - completion: The completion handler.
+    func queryRecords(zoneID: CKRecordZone.ID, type: RecordType, parentId: String, isContinue: Bool? = true, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        Log.debug("query records: \(zoneID), type: \(type), parentId: \(parentId)")
+        var predicate: NSPredicate!
+        let cursor: CKQueryOperation.Cursor? = self.getQueryCursor(type, zoneID: zoneID)
+        switch type {
+        case .workspace:
+            predicate = NSPredicate(value: true)
+        case .project:
+            predicate = NSPredicate(format: "workspace == %@", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none))
+        case .request:
+            predicate = NSPredicate(format: "project == %@", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none))
+        case .requestBodyData:
+            predicate = NSPredicate(format: "request == %@", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none))
+        case .requestData:
+            predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+                NSPredicate(format: "binary == %@ ", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none)),
+                NSPredicate(format: "form == %@ ", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none)),
+                NSPredicate(format: "header == %@ ", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none)),
+                NSPredicate(format: "image == %@ ", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none)),
+                NSPredicate(format: "multipart == %@ ", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none)),
+                NSPredicate(format: "param == %@ ", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none))
+            ])
+        case .requestMethodData:
+            predicate = NSPredicate(format: "project == %@", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none))
+        case .file:
+            predicate = NSPredicate(format: "requestData == %@", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none))
+        case .image:
+            predicate = NSPredicate(format: "requestData == %@", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none))
+        case .zone:
+            predicate = NSPredicate(format: "isSyncEnabled == %hdd", true)
         }
-    }
-    
-    func requestsFetchHandler(_ result: Result<[CKRecord], Error>) {
-        switch result {
-        case .success(let records):
-            Log.debug("requests fetched \(records.count)")
-            records.forEach { record in
-                self.updateRequestFromCloud(record)
-                // TODO: fetch nested data
+        self.ck.queryRecords(zoneID: zoneID, recordType: type.rawValue, predicate: predicate,
+                             cursor: cursor, limit: self.defaultZoneRecordFetchLimit) { result in
+            switch result {
+            case .success(let (records, cursor)):
+                if let cursor = cursor {
+                    self.setQueryCursor(cursor, type: type, zoneID: zoneID)
+                    DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
+                        self.queryRecords(zoneID: zoneID, type: type, parentId: parentId, isContinue: isContinue, completion: completion)
+                    }
+                } else {
+                    self.removeQueryCursor(for: type, zoneID: zoneID)
+                }
+                completion(.success(records))
+            case .failure(let error):
+                Log.error("Error querying records: \(error)")
+                completion(.failure(error))
+                break
             }
-            break
-        case .failure(let err):
-            Log.error("Error fetching projects: \(err)")
         }
     }
     
     // MARK: - Fetch
+    
+    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], success: (((new: [CKRecord], deleted: [CKRecord.ID])) -> Void)? = nil) {
+        Log.debug("fetching zone changes for zoneIDs: \(zoneIDs)")
+        self.ck.fetchZoneChanges(zoneIDs: zoneIDs) { result in
+            switch result {
+            case .success(let (saved, deleted)):
+                saved.forEach { record in self.cloudRecordDidChange(record) }
+                deleted.forEach { record in self.cloudRecordDidDelete(record) }
+                if let cb = success { cb((saved, deleted)) }
+            case .failure(let error):
+                Log.error("Error getting zone changes: \(error)")
+            }
+        }
+    }
     
     /// Checks if the record is present in cache. If present, returns, else fetch from cloud, adds to the cache and returns.
     func fetchRecord(_ entity: Entity, type: RecordType, completion: @escaping (Result<CKRecord, Error>) -> Void) {
@@ -533,7 +863,9 @@ class PersistenceService {
         let recordID = self.ck.recordID(entityId: wsId, zoneID: zoneID)
         let record = self.ck.createRecord(recordID: recordID, recordType: RecordType.workspace.rawValue)
         ws.updateCKRecord(record)
-        self.saveToCloud(record: record, entity: ws, completion: { /* self.subscribeToWorkspaceChange(wsId) */ })
+        let wsModel = DeferredSaveModel(record: record, entity: ws, id: wsId)
+        let zoneModel = self.zoneDeferredSaveModel(ws: ws)
+        self.saveToCloud([wsModel, zoneModel])
     }
     
     /// Save the given project and updates the associated workspace to the cloud.
@@ -558,7 +890,7 @@ class PersistenceService {
                                 let ckwsID = self.ck.recordID(entityId: wsId, zoneID: zoneID)
                                 let ckws = self.ck.createRecord(recordID: ckwsID, recordType: RecordType.workspace.rawValue)
                                 ws.updateCKRecord(ckws)
-                                self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws)
+                                self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws, isCreateZoneRecord: true)
                                 //self.saveRecords(records, completion: completion)
                             case .failure(let error):
                                 Log.error("Error creating zone: \(error)")
@@ -597,13 +929,25 @@ class PersistenceService {
         }
     }
     
+    func zoneDeferredSaveModel(ws: EWorkspace) -> DeferredSaveModel {
+        let wsId = ws.getId()
+        let zone = Zone(id: wsId, name: ws.getName(), desc: ws.desc ?? "", isSyncEnabled: ws.isSyncEnabled, created: ws.created, modified: ws.modified, version: ws.version)
+        let recordID = self.ck.recordID(entityId: wsId, zoneID: self.ck.defaultZoneID())
+        let ckzn = self.ck.createRecord(recordID: recordID, recordType: RecordType.zone.rawValue)
+        zone.updateCKRecord(ckzn)
+        return DeferredSaveModel(record: ckzn, id: ws.getId())
+    }
+    
     /// Saves the given request and corresponding project to the cloud.
-    func saveProjectToCloudImp(ckproj: CKRecord, proj: EProject, ckws: CKRecord, ws: EWorkspace) {
+    func saveProjectToCloudImp(ckproj: CKRecord, proj: EProject, ckws: CKRecord, ws: EWorkspace, isCreateZoneRecord: Bool? = false) {
         proj.updateCKRecord(ckproj, workspace: ckws)
-        //EWorkspace.addProjectReference(to: ckws, project: ckproj)
         let projModel = DeferredSaveModel(record: ckproj, entity: proj, id: proj.getId())
         let wsModel = DeferredSaveModel(record: ckws, entity: ws, id: ws.getId())
-        self.saveToCloud([projModel, wsModel])
+        if let createZoneRecord = isCreateZoneRecord, createZoneRecord {
+            self.saveToCloud([projModel, wsModel, self.zoneDeferredSaveModel(ws: ws)])
+        } else {
+            self.saveToCloud([projModel, wsModel])
+        }
         // TODO: subscribe to project change
     }
     
