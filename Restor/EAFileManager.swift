@@ -25,7 +25,7 @@ public class EAFileManager: NSObject {
     private let fm = FileManager.default
     private static let fm = FileManager.default
     private var fileHandle: FileHandle?
-    private let queue = DispatchQueue(label: "com.estoapps.ios.restor8", qos: .userInitiated, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+    private let queue = EACommon.userInitiatedQueue
     var isFileOpened = false
 
     deinit {

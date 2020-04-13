@@ -18,7 +18,7 @@ public class BackgroundWorker: NSObject {
     public func start(_ block: @escaping () -> Void) {
         self.block = block
         let threadName = String(describing: self).components(separatedBy: .punctuationCharacters)[1]
-        self.thread = Thread { [ weak self] in
+        self.thread = Thread { [weak self] in
             while self != nil && !self!.thread!.isCancelled {
                 RunLoop.current.run(mode: .default, before: Date.distantFuture)
             }

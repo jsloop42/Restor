@@ -61,7 +61,7 @@ public struct EARescheduler: EAReschedulable {
     public var repeats: Bool = false
     public var type: EAReschedulerType!
     private var blocks: [EAReschedulerFn] = []
-    private let queue = DispatchQueue(label: "com.estoapps.ios.rescheduler", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+    private let queue = EACommon.userInteractiveQueue
 
     public init(interval: TimeInterval, repeats: Bool, type: EAReschedulerType) {
         self.interval = interval

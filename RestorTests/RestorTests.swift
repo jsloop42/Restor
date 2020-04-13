@@ -391,6 +391,26 @@ class RestorTests: XCTestCase {
         }
         waitForExpectations(timeout: 1.0, handler: nil)
     }
+    
+    func testTemp() {
+        let exp = expectation(description: "test")
+        let printerOperation = BlockOperation()
+
+        printerOperation.addExecutionBlock { print("I") }
+        printerOperation.addExecutionBlock { print("am") }
+        printerOperation.addExecutionBlock { print("printing") }
+        printerOperation.addExecutionBlock { print("block") }
+        printerOperation.addExecutionBlock { print("operation") }
+
+        printerOperation.completionBlock = {
+            print("I'm done printing")
+            exp.fulfill()
+        }
+
+        let operationQueue = OperationQueue()
+        operationQueue.addOperation(printerOperation)
+        waitForExpectations(timeout: 10.0, handler: nil)
+    }
 
     func notestPerformanceExample() {
         // This is an example of a performance test case.

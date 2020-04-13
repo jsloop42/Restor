@@ -14,7 +14,7 @@ public class EAQueue<T> {
     var timer: Timer?  // timer
     public var interval: TimeInterval = 4.0  // seconds
     public var completion: ([T]) -> Void
-    private let accessq = DispatchQueue(label: "com.estoapps.ios.restor.access-queue", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+    private let accessq = EACommon.userInteractiveQueue
     
     init(interval: TimeInterval, completion: @escaping ([T]) -> Void) {
         self.interval = interval
