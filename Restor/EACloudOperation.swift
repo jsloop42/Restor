@@ -11,11 +11,18 @@ import CloudKit
 
 /// A class to work with CloudKit record fetch using Operation.
 class EACloudOperation: Operation {
+    var parentId: String!
     var record: CKRecord?
-    var type: String
-    var zoneID: CKRecordZone.ID
-    var recordID: CKRecord.ID
+    var savedRecords: [CKRecord] = []
+    var deletedRecordIDs: [CKRecord.ID] = []
+    var recordType: RecordType
+    var opType: OpType = .fetchRecord
+    var predicate: NSPredicate?
+    var cursor: CKQueryOperation.Cursor?
+    var limit = 50
+    var zoneID: CKRecordZone.ID!
     var error: Error?
+    var completionHandler: ((Result<[CKRecord], Error>) -> Void)!
     
     public enum State: String {
         case ready, executing, finished
@@ -23,6 +30,12 @@ class EACloudOperation: Operation {
         fileprivate var keyPath: String {
             return "is" + rawValue.capitalized
         }
+    }
+    
+    public enum OpType {
+        case fetchRecord
+        case queryRecord
+        case fetchZoneChange
     }
     
     public var state = State.ready {
@@ -36,10 +49,13 @@ class EACloudOperation: Operation {
         }
     }
     
-    init(type: String, recordID: CKRecord.ID, zoneID: CKRecordZone.ID) {
-        self.type = type
-        self.recordID = recordID
+    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String, predicate: NSPredicate, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        self.recordType = recordType
+        self.opType = opType
         self.zoneID = zoneID
+        self.parentId = parentId
+        self.predicate = predicate
+        self.completionHandler = completion
     }
     
     override var isAsynchronous: Bool { return true }
@@ -56,22 +72,28 @@ class EACloudOperation: Operation {
     
     override func main() {
         if self.isCancelled { return }
-        self.fetch()
+        switch self.opType {
+        case .fetchRecord:
+            self.fetchRecord()
+        case .queryRecord:
+            self.queryRecord()
+        case .fetchZoneChange:
+            self.fetchZoneChanges()
+        }
     }
     
-    private func fetch() {
-        Log.debug("op fetching")
-        CloudKitService.shared.fetchRecords(recordIDs: [self.recordID]) { [weak self] result in
-            Log.debug("op fetch complete")
-            guard let self = self else { return }
-            switch result {
-            case .success(let hm):
-                self.record = hm[self.recordID]
-            case .failure(let error):
-                self.error = error
-            }
-            if self.isCancelled { self.state = .finished; return }
+    private func fetchRecord() {
+    }
+    
+    private func queryRecord() {
+        PersistenceService.shared.queryRecords(zoneID: self.zoneID, type: self.recordType, parentId: self.parentId) { result in
+            if self.isCancelled { return }
             self.state = .finished
+            self.completionHandler(result)
         }
+    }
+    
+    private func fetchZoneChanges() {
+        
     }
 }

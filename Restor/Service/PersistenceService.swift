@@ -92,6 +92,7 @@ class PersistenceService {
     private let lastSyncedKey = "last-synced-key"
     private let defaultQueryCursorKey = "default-query-cursor-key"
     private let defaultZoneRecordFetchLimit = 50
+    private let opqueue = EAOperationQueue()
     
     enum SubscriptionId: String {
         case fileChange = "file-change"
@@ -306,9 +307,7 @@ class PersistenceService {
         if !self.isSyncedOnce() {
             self.queryDefaultZoneRecords(completion: self.syncFromCloudHandler)
         } else {
-            self.fetchZoneChanges(zoneIDs: [self.ck.defaultZoneID()], success: { (saved, deleted) in
-                
-            })
+            self.fetchZoneChanges(zoneIDs: [self.ck.defaultZoneID()])
 //            let types = RecordType.allCases
 //            var key: String!
 //            var hm: [String: Any] = [:]
@@ -345,7 +344,12 @@ class PersistenceService {
                 case .workspace:
                     self.updateWorkspaceFromCloud(record)
                     let wsId = record.id()
-                    self.queryRecords(zoneID: self.ck.zoneID(workspaceId: wsId), type: .project, parentId: wsId, completion: self.syncFromCloudHandler)
+                    let op = EACloudOperation(recordType: .project, opType: .queryRecord, zoneID: self.ck.zoneID(workspaceId: wsId), parentId: wsId, predicate: NSPredicate(value: true), completion: self.syncFromCloudHandler(_:))
+                    //self.queryRecords(zoneID: self.ck.zoneID(workspaceId: wsId), type: .project, parentId: wsId, completion: self.syncFromCloudHandler)
+                    op.completionBlock = {
+                        Log.debug("op completion: - query project")
+                    }
+                    _ = self.opqueue.add(op)
                 case .project:
                     self.updateProjectFromCloud(record)
                     let zoneID = record.zoneID()
@@ -759,38 +763,43 @@ class PersistenceService {
         }
         self.ck.queryRecords(zoneID: zoneID, recordType: type.rawValue, predicate: predicate,
                              cursor: cursor, limit: self.defaultZoneRecordFetchLimit) { result in
-            switch result {
-            case .success(let (records, cursor)):
-                if let cursor = cursor {
-                    self.setQueryCursor(cursor, type: type, zoneID: zoneID)
-                    DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
-                        self.queryRecords(zoneID: zoneID, type: type, parentId: parentId, isContinue: isContinue, completion: completion)
-                    }
-                } else {
-                    self.removeQueryCursor(for: type, zoneID: zoneID)
+            self.queryRecordsHandler(zoneID: zoneID, type: type, parentId: parentId, isContinue: isContinue, result: result, completion: completion)
+        }
+    }
+    
+    func queryRecordsHandler(zoneID: CKRecordZone.ID, type: RecordType, parentId: String, isContinue: Bool? = true, result: Result<(records: [CKRecord], cursor: CKQueryOperation.Cursor?), Error>, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        switch result {
+        case .success(let (records, cursor)):
+            if let cursor = cursor {
+                self.setQueryCursor(cursor, type: type, zoneID: zoneID)
+                DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
+                    self.queryRecords(zoneID: zoneID, type: type, parentId: parentId, isContinue: isContinue, completion: completion)
                 }
-                completion(.success(records))
-            case .failure(let error):
-                Log.error("Error querying records: \(error)")
-                completion(.failure(error))
-                break
+            } else {
+                self.removeQueryCursor(for: type, zoneID: zoneID)
             }
+            completion(.success(records))
+        case .failure(let error):
+            Log.error("Error querying records: \(error)")
+            completion(.failure(error))
+            break
         }
     }
     
     // MARK: - Fetch
     
-    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], success: (((new: [CKRecord], deleted: [CKRecord.ID])) -> Void)? = nil) {
+    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID]) {
         Log.debug("fetching zone changes for zoneIDs: \(zoneIDs)")
-        self.ck.fetchZoneChanges(zoneIDs: zoneIDs) { result in
-            switch result {
-            case .success(let (saved, deleted)):
-                saved.forEach { record in self.cloudRecordDidChange(record) }
-                deleted.forEach { record in self.cloudRecordDidDelete(record) }
-                if let cb = success { cb((saved, deleted)) }
-            case .failure(let error):
-                Log.error("Error getting zone changes: \(error)")
-            }
+        self.ck.fetchZoneChanges(zoneIDs: zoneIDs, completion: self.zoneChangeHandler(_:))
+    }
+    
+    func zoneChangeHandler(_ result: Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) {
+        switch result {
+        case .success(let (saved, deleted)):
+            saved.forEach { record in self.cloudRecordDidChange(record) }
+            deleted.forEach { record in self.cloudRecordDidDelete(record) }
+        case .failure(let error):
+            Log.error("Error getting zone changes: \(error)")
         }
     }
     
