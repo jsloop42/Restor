@@ -172,6 +172,66 @@ public extension Int64 {
     }
 }
 
+public extension UInt64 {
+    func toUInt8() -> UInt8 {
+        return UInt8(self)
+    }
+    
+    func toUInt32() -> UInt32 {
+        return UInt32(self)
+    }
+    
+    func toUInt() -> UInt {
+        return UInt(self)
+    }
+    
+    func toInt() -> Int {
+        return Int(self)
+    }
+    
+    func toInt32() -> Int32 {
+        return Int32(self)
+    }
+    
+    func toInt64() -> Int64 {
+        return Int64(self)
+    }
+    
+    func toDouble() -> Double {
+        return Double(self)
+    }
+}
+
+public extension Float {
+    func toUInt8() -> UInt8 {
+        return UInt8(self)
+    }
+    
+    func toUInt32() -> UInt32 {
+        return UInt32(self)
+    }
+    
+    func toUInt() -> UInt {
+        return UInt(self)
+    }
+    
+    func toInt() -> Int {
+        return Int(self)
+    }
+    
+    func toInt32() -> Int32 {
+        return Int32(self)
+    }
+    
+    func toInt64() -> Int64 {
+        return Int64(self)
+    }
+    
+    func toDouble() -> Double {
+        return Double(self)
+    }
+}
+
 public extension Set {
     func toArray() -> [Element] {
         return Array(self)

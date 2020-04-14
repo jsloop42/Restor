@@ -39,4 +39,13 @@ class EAUtilsTests: XCTestCase {
         let decomp = self.utils.decompress(shortId: comp)
         XCTAssertEqual(decomp, uuid.uuidString)
     }
+    
+    func testSysInfo() {
+        let mem: Float = EASystem.memoryFootprint() ?? 0.0
+        Log.debug("mem: \(mem / 1024 / 1024)")
+        Log.debug("phy mem: \(EASystem.totalMemory())")
+        Log.debug("active cpu: \(EASystem.activeProcessorCount())")
+        Log.debug("total cpu: \(EASystem.processorCount())")
+        XCTAssertTrue(mem > 0.0)
+    }
 }

@@ -19,7 +19,7 @@
 		9E1B2DE82427997E00994233 /* ERequestBodyData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1B2DE72427997E00994233 /* ERequestBodyData.swift */; };
 		9E1B2DEA242799AF00994233 /* ERequestData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1B2DE9242799AF00994233 /* ERequestData.swift */; };
 		9E1B2DEC242799E700994233 /* ETag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1B2DEB242799E700994233 /* ETag.swift */; };
-		9E223D532436261600229855 /* EAOperationQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D522436261600229855 /* EAOperationQueue.swift */; };
+		9E223D532436261600229855 /* EACloudOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D522436261600229855 /* EACloudOperation.swift */; };
 		9E223D55243626E000229855 /* EACommon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D54243626E000229855 /* EACommon.swift */; };
 		9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334832416C4AA002452EB /* EAFileManager.swift */; };
 		9E4334862416D1ED002452EB /* IMG_6109.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 9E4334852416D1DE002452EB /* IMG_6109.jpeg */; };
@@ -64,6 +64,8 @@
 		9EEA7A90239EA30C00A1CA68 /* ProjectListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A8F239EA30C00A1CA68 /* ProjectListViewController.swift */; };
 		9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEA7A91239EA4AA00A1CA68 /* Const.swift */; };
 		9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EEAAEC823EE81410022A72F /* OptionsPickerViewController.swift */; };
+		9EFA58BB2445E0F0003C8AEA /* EASystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFA58BA2445E0F0003C8AEA /* EASystem.swift */; };
+		9EFA58BD2445EBA8003C8AEA /* EAOperationQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFA58BC2445EBA8003C8AEA /* EAOperationQueue.swift */; };
 		9EFF1FFE24229DB600E97632 /* SettingsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */; };
 /* End PBXBuildFile section */
 
@@ -97,7 +99,7 @@
 		9E1B2DE72427997E00994233 /* ERequestBodyData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ERequestBodyData.swift; sourceTree = "<group>"; };
 		9E1B2DE9242799AF00994233 /* ERequestData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ERequestData.swift; sourceTree = "<group>"; };
 		9E1B2DEB242799E700994233 /* ETag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETag.swift; sourceTree = "<group>"; };
-		9E223D522436261600229855 /* EAOperationQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAOperationQueue.swift; sourceTree = "<group>"; };
+		9E223D522436261600229855 /* EACloudOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACloudOperation.swift; sourceTree = "<group>"; };
 		9E223D54243626E000229855 /* EACommon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACommon.swift; sourceTree = "<group>"; };
 		9E4334832416C4AA002452EB /* EAFileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAFileManager.swift; sourceTree = "<group>"; };
 		9E4334852416D1DE002452EB /* IMG_6109.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = IMG_6109.jpeg; sourceTree = "<group>"; };
@@ -149,6 +151,8 @@
 		9EEA7A8F239EA30C00A1CA68 /* ProjectListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListViewController.swift; sourceTree = "<group>"; };
 		9EEA7A91239EA4AA00A1CA68 /* Const.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Const.swift; sourceTree = "<group>"; };
 		9EEAAEC823EE81410022A72F /* OptionsPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionsPickerViewController.swift; sourceTree = "<group>"; };
+		9EFA58BA2445E0F0003C8AEA /* EASystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EASystem.swift; sourceTree = "<group>"; };
+		9EFA58BC2445EBA8003C8AEA /* EAOperationQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAOperationQueue.swift; sourceTree = "<group>"; };
 		9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTableViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -269,9 +273,11 @@
 				9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */,
 				9E4334832416C4AA002452EB /* EAFileManager.swift */,
 				9E7B5847242A9BAB00997302 /* EALFUCache.swift */,
-				9E223D522436261600229855 /* EAOperationQueue.swift */,
+				9E223D522436261600229855 /* EACloudOperation.swift */,
+				9EFA58BC2445EBA8003C8AEA /* EAOperationQueue.swift */,
 				9EB78E72242BE6FF009663FE /* EAQueue.swift */,
 				9E145F91241BD9D200962A19 /* EARescheduler.swift */,
+				9EFA58BA2445E0F0003C8AEA /* EASystem.swift */,
 				9E85FE47240E9CDB002821F2 /* main.swift */,
 				9E926F9523945E79002DF561 /* SceneDelegate.swift */,
 				9E8759052396C6A700F949D1 /* Utils.swift */,
@@ -485,9 +491,10 @@
 				9E223D55243626E000229855 /* EACommon.swift in Sources */,
 				9EC1F94E2426995A005BDD0A /* CloudKitService.swift in Sources */,
 				9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */,
+				9EFA58BD2445EBA8003C8AEA /* EAOperationQueue.swift in Sources */,
 				9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */,
 				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,
-				9E223D532436261600229855 /* EAOperationQueue.swift in Sources */,
+				9E223D532436261600229855 /* EACloudOperation.swift in Sources */,
 				9E8759062396C6A700F949D1 /* Utils.swift in Sources */,
 				9E1B2DE62427994000994233 /* EImage.swift in Sources */,
 				9E7B5848242A9BAB00997302 /* EALFUCache.swift in Sources */,
@@ -511,6 +518,7 @@
 				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
 				9E1B2DE82427997E00994233 /* ERequestBodyData.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
+				9EFA58BB2445E0F0003C8AEA /* EASystem.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
 				9E1B2DDC242798BB00994233 /* EWorkspace.swift in Sources */,
 				9E1B2DEA242799AF00994233 /* ERequestData.swift in Sources */,

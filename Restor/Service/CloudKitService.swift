@@ -75,7 +75,7 @@ class CloudKitService {
     }
     
     init() {
-        self.loadSubscriptions()
+        if !isRunningTests { self.loadSubscriptions() }
     }
 
     // MARK: - KV Store

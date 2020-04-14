@@ -2,40 +2,39 @@
 //  EAOperationQueue.swift
 //  Restor
 //
-//  Created by jsloop on 02/04/20.
+//  Created by jsloop on 14/04/20.
 //  Copyright © 2020 EstoApps OÜ. All rights reserved.
 //
 
 import Foundation
-import CloudKit
 
-class EACloudOperation: Operation {
-    var record: CKRecord?
-    var type: String
-    var zoneID: CKRecordZone.ID
-    var recordID: CKRecord.ID
-    var error: Error?
+/// An operation queue class to work with operation objects with dynamic limits.
+public class EAOperationQueue {
+    private var opqueue: OperationQueue!
     
-    init(type: String, recordID: CKRecord.ID, zoneID: CKRecordZone.ID) {
-        self.type = type
-        self.recordID = recordID
-        self.zoneID = zoneID
+    public init() {
+        self.opqueue = OperationQueue()
+        self.opqueue.qualityOfService = .utility
+        self.opqueue.maxConcurrentOperationCount = self.maxConcurrentOpCount()
     }
     
-    override func main() {
-        if self.isCancelled { return }
-        self.fetch()
+    public func add(_ op: Operation) -> Bool {
+        if !self.canAdd() { return false }
+        self.opqueue.maxConcurrentOperationCount = self.maxConcurrentOpCount()
+        self.opqueue.addOperation(op)
+        return true
     }
     
-    private func fetch() {
-        CloudKitService.shared.fetchRecords(recordIDs: [self.recordID]) { [weak self] result in
-            guard let self = self else { return }
-            switch result {
-            case .success(let hm):
-                self.record = hm[self.recordID]
-            case .failure(let error):
-                self.error = error
-            }
-        }
+    public func canAdd() -> Bool {
+        return self.opqueue.operationCount < self.opqueue.maxConcurrentOperationCount
+    }
+    
+    public func maxConcurrentOpCount() -> Int {
+        let used: Double = (EASystem.memoryFootprint() ?? 0.0).toDouble()
+        let total: Double = EASystem.totalMemory().toDouble()
+        let avail: Double =  used / total
+        if avail >= 0.5 { return 128 }
+        if avail >= 0.25 { return 32 }
+        return 16
     }
 }
