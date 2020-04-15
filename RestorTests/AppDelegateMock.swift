@@ -7,7 +7,6 @@
 //
 
 import Foundation
-@testable import Restor
 
 class AppDelegateMock: NSObject {
     override init() {

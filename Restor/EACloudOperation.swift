@@ -17,8 +17,9 @@ class EACloudOperation: Operation {
     var deletedRecordIDs: [CKRecord.ID] = []
     var recordType: RecordType
     var opType: OpType = .fetchRecord
-    var predicate: NSPredicate?
+    var predicate: NSPredicate = NSPredicate(value: true)
     var cursor: CKQueryOperation.Cursor?
+    var modified: Int!
     var limit = 50
     var zoneID: CKRecordZone.ID!
     var error: Error?
@@ -49,12 +50,13 @@ class EACloudOperation: Operation {
         }
     }
     
-    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String, predicate: NSPredicate, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String, predicate: NSPredicate? = nil, modified: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
         self.recordType = recordType
         self.opType = opType
         self.zoneID = zoneID
         self.parentId = parentId
-        self.predicate = predicate
+        if predicate != nil { self.predicate = predicate! }
+        self.modified = modified ?? 0
         self.completionHandler = completion
     }
     
@@ -86,7 +88,7 @@ class EACloudOperation: Operation {
     }
     
     private func queryRecord() {
-        PersistenceService.shared.queryRecords(zoneID: self.zoneID, type: self.recordType, parentId: self.parentId) { result in
+        PersistenceService.shared.queryRecords(zoneID: self.zoneID, type: self.recordType, parentId: self.parentId, modified: self.modified) { result in
             if self.isCancelled { return }
             self.state = .finished
             self.completionHandler(result)

@@ -449,6 +449,7 @@ class CloudKitService {
         }
         Log.debug("zone options: \(zoneOptions)")
         let op = CKFetchRecordZoneChangesOperation(recordZoneIDs: zoneIDs, optionsByRecordZoneID: zoneOptions)
+        op.qualityOfService = .utility
         op.recordChangedBlock = { record in
             Log.debug("zone change: record obtained: \(record)")
             savedRecords.append(record)
@@ -458,7 +459,7 @@ class CloudKitService {
             deletedRecords.append(recordID)
         }
         op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, _ in
-            Log.debug("zone change: \(zoneID) token update: \(String(describing: changeToken))")
+            Log.debug("zone change token update for: \(zoneID) - \(String(describing: changeToken))")
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
         }
         op.recordZoneFetchCompletionBlock = { zoneID, changeToken, _, moreComing, error in
@@ -471,8 +472,9 @@ class CloudKitService {
         op.fetchRecordZoneChangesCompletionBlock = { error in
             if let err = error { Log.error("Error fetching zone changes: \(err)"); completion(.failure(err)); return }
             completion(.success((savedRecords, deletedRecords)))
-            self.fetchZoneChanges(zoneIDs: moreZones, completion: completion)
+            if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, completion: completion) }
         }
+        self.privateDatabase().add(op)
     }
     
     /// Fetch the given records.

@@ -1043,6 +1043,19 @@ class CoreDataService {
         return x
     }
     
+    func setWorkspaceActive(_ wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let ws = self.getWorkspace(id: wsId, ctx: ctx)
+            ws?.isActive = true
+            do {
+                try moc.save()
+            } catch let error {
+                Log.error("Error saving workspace with active flag set: \(error)")
+            }
+        }
+    }
+    
     /// Create project.
     /// - Parameters:
     ///   - id: The project id.
