@@ -69,7 +69,14 @@ public class EImage: NSManagedObject, Entity {
         record["version"] = self.version as CKRecordValue
     }
     
-    func updateFromCKRecord(_ record: CKRecord) {
+    static func getRequestData(_ record: CKRecord, ctx: NSManagedObjectContext) -> ERequestData? {
+        if let ref = record["requestData"] as? CKRecord.Reference {
+            return CoreDataService.shared.getRequestData(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+        }
+        return nil
+    }
+    
+    func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["data"] as? CKAsset, let url = x.fileURL {
@@ -81,5 +88,6 @@ public class EImage: NSManagedObject, Entity {
         if let x = record["name"] as? String { self.name = x }
         if let x = record["type"] as? String { self.type = x }
         if let x = record["version"] as? Int64 { self.version = x }
+        if let reqData = EImage.getRequestData(record, ctx: ctx) { self.requestData = reqData }
     }
 }

@@ -180,7 +180,8 @@ class PersistenceService {
             var records: [CKRecord] = []
             var entityMap: [CKRecord.ID: DeferredSaveModel] = [:]
             elems.forEach { records.append($0.record); entityMap[$0.record.recordID] = $0 }
-            self.ck.saveRecords(records) { result in
+            self.ck.saveRecords(records) { [weak self] result in
+                guard let self = self else { return }
                 switch result {
                 case .success(let xs):
                     Log.debug("Save to cloud success")
@@ -309,7 +310,8 @@ class PersistenceService {
     
     func addSyncRecordToLocal(_ record: CKRecord) {
         if self.syncTimer == nil {
-            self.syncTimer = Timer(timeInterval: 1.5, repeats: true, block: { _ in
+            self.syncTimer = Timer(timeInterval: 1.5, repeats: true, block: { [weak self] timer in
+                guard let self = self else { timer.invalidate(); return }
                 var hm = self.getSyncRecordsFromLocal()
                 let xs = hm.allValues()
                 xs.forEach { record in
@@ -573,44 +575,39 @@ class PersistenceService {
     func updateWorkspaceFromCloud(_ record: CKRecord) {
         let wsId = record.id()
         let ctx = self.localdb.getChildMOC()
-        if let ws = self.localdb.getWorkspace(id: wsId, ctx: ctx) {
-            if ws.isSyncEnabled && (!ws.isActive || ws.modified <= record.modified()) {  // => server has new copy
-                ws.updateFromCKRecord(record)
-                ws.isSynced = true
-                self.localdb.saveChildContext(ctx)
-                Log.debug("Workspace synced")
-                self.nc.post(Notification(name: NotificationKey.workspaceDidSync))
-            }
-        } else {  // workspace not found, create one
-            if let ws = self.localdb.createWorkspace(id: wsId, index: record.index().toInt(), name: record.name(), desc: record.desc(), isSyncEnabled: record.isSyncEnabled(), ctx: ctx) {
-                ws.isSynced = true
-                self.localdb.saveChildContext(ctx)
-                Log.debug("Workspace synced")
-                self.nc.post(Notification(name: NotificationKey.workspaceDidSync))
-            }
+        var aws = self.localdb.getWorkspace(id: wsId, ctx: ctx)
+        var isNew = false
+        if aws == nil {
+            aws = self.localdb.createWorkspace(id: wsId, index: record.index().toInt(), name: record.name(), desc: record.desc(), isSyncEnabled: record.isSyncEnabled(), ctx: ctx)
+            isNew = true
+        }
+        guard let ws = aws else { return }
+        if isNew || (ws.isSyncEnabled && (!ws.isActive || ws.modified <= record.modified())) {  // => server has new copy
+            ws.updateFromCKRecord(record)
+            ws.isSynced = true
+            ws.isActive = true
+            self.localdb.saveChildContext(ctx)
+            Log.debug("Workspace synced")
+            self.nc.post(Notification(name: NotificationKey.workspaceDidSync))
         }
     }
     
     func updateProjectFromCloud(_ record: CKRecord) {
         let projId = record.id()
         let ctx = self.localdb.getChildMOC()
-        if let proj = self.localdb.getProject(id: projId, ctx: ctx) {
-            if proj.modified <= record.modified() {  // => server has new copy
-                proj.updateFromCKRecord(record, ctx: ctx)
-                proj.isSynced = true
-                self.localdb.saveChildContext(ctx)
-                Log.debug("Project synced")
-                self.nc.post(Notification(name: NotificationKey.projectDidSync))
-            }
-        } else {  // project not found, create one
-            if let proj = self.localdb.createProject(id: record.id(), index: record.index().toInt(), name: record.name(), desc: record.desc(), checkExists: false, ctx: ctx) {
-                let ws = EProject.getWorkspace(record, ctx: ctx)
-                proj.workspace = ws
-                proj.isSynced = true
-                self.localdb.saveChildContext(ctx)
-                Log.debug("Project synced")
-                self.nc.post(Notification(name: NotificationKey.projectDidSync))
-            }
+        var aproj = self.localdb.getProject(id: projId, ctx: ctx)
+        var isNew = false
+        if aproj == nil {
+            aproj = self.localdb.createProject(id: record.id(), index: record.index().toInt(), name: record.name(), desc: record.desc(), checkExists: false, ctx: ctx)
+            isNew = true
+        }
+        guard let proj = aproj else { return }
+        if isNew || proj.modified <= record.modified() {  // => server has new copy
+            proj.updateFromCKRecord(record, ctx: ctx)
+            proj.isSynced = true
+            self.localdb.saveChildContext(ctx)
+            Log.debug("Project synced")
+            self.nc.post(Notification(name: NotificationKey.projectDidSync))
         }
     }
     
@@ -618,66 +615,117 @@ class PersistenceService {
         let ctx = self.localdb.getChildMOC()
         guard let proj = ERequest.getProject(record, ctx: ctx) else { Log.error("Error getting project"); return }
         let reqId = record.id()
-        if let req = self.localdb.getRequest(id: reqId, ctx: ctx) {
-            if req.modified <= record.modified() {  // => server has new copy
-                req.updateFromCKRecord(record, ctx: ctx)
-                req.project = proj
-                req.isSynced = true
-                self.localdb.saveChildContext(ctx)
-                Log.debug("Request synced")
-                self.nc.post(Notification(name: NotificationKey.requestDidSync))
-            }
-        } else {  // request not found, create one
-            if let req = self.localdb.createRequest(id: record.id(), index: record.index().toInt(), name: record.name(), project: proj, checkExists: false, ctx: ctx) {
-                let proj = ERequest.getProject(record, ctx: ctx)
-                req.project = proj
-                req.isSynced = true
-                self.localdb.saveChildContext(ctx)
-                Log.debug("Request synced")
-                self.nc.post(Notification(name: NotificationKey.requestDidSync))
-            }
+        var areq = self.localdb.getRequest(id: reqId, ctx: ctx)
+        var isNew = false
+        if areq == nil {
+            areq = self.localdb.createRequest(id: record.id(), index: record.index().toInt(), name: record.name(), project: proj, checkExists: false, ctx: ctx)
+            isNew = true
+        }
+        guard let req = areq else { return }
+        if isNew || req.modified <= record.modified() {  // => server has new copy
+            req.updateFromCKRecord(record, ctx: ctx)
+            req.isSynced = true
+            self.localdb.saveChildContext(ctx)
+            Log.debug("Request synced")
+            self.nc.post(Notification(name: NotificationKey.requestDidSync))
         }
     }
         
     func updateRequestBodyDataFromCloud(_ record: CKRecord) {
         let ctx = self.localdb.getChildMOC()
-        guard let req = ERequestBodyData.getRequest(record, ctx: ctx) else { Log.error("Error getting request"); return }
         let reqId = record.id()
-        if let reqBodyData = self.localdb.getRequestBodyData(id: reqId, ctx: ctx) {
-            if reqBodyData.modified <= record.modified() {  // => server has new copy
-                reqBodyData.updateFromCKRecord(record, ctx: ctx)
-                reqBodyData.request = req
-                reqBodyData.isSynced = true
-                self.localdb.saveChildContext(ctx)
-                Log.debug("Request synced")
-                self.nc.post(Notification(name: NotificationKey.requestBodyDataDidSync))
-            }
-        } else {  // request body data not found, create one
-            if let reqBodyData = self.localdb.createRequestBodyData(id: record.id(), index: record.index().toInt(), checkExists: false, ctx: ctx) {
-                let req = ERequestBodyData.getRequest(record, ctx: ctx)
-                reqBodyData.request = req
-                reqBodyData.isSynced = true
-                self.localdb.saveChildContext(ctx)
-                Log.debug("Request synced")
-                self.nc.post(Notification(name: NotificationKey.projectDidSync))
-            }
+        var aReqBodyData = self.localdb.getRequestBodyData(id: reqId, ctx: ctx)
+        var isNew = false
+        if aReqBodyData == nil {
+            aReqBodyData = self.localdb.createRequestBodyData(id: record.id(), index: record.index().toInt(), checkExists: false, ctx: ctx)
+            isNew = true
+        }
+        guard let reqBodyData = aReqBodyData else { return }
+        if isNew || reqBodyData.modified <= record.modified() {  // => server has new copy
+            reqBodyData.updateFromCKRecord(record, ctx: ctx)
+            reqBodyData.isSynced = true
+            self.localdb.saveChildContext(ctx)
+            Log.debug("Request synced")
+            self.nc.post(Notification(name: NotificationKey.requestBodyDataDidSync))
         }
     }
     
     func updateRequestDataFromCloud(_ record: CKRecord) {
-        
+        let ctx = self.localdb.getChildMOC()
+        guard let type = ERequestData.getRecordType(record) else { return }
+        let fieldType = ERequestData.getFormFieldFormatType(record)
+        let reqId = record.id()
+        var aData = self.localdb.getRequestData(id: reqId, ctx: ctx)
+        var isNew = false
+        if aData == nil {
+            aData = self.localdb.createRequestData(id: reqId, index: record.index().toInt(), type: type, fieldFormat: fieldType, checkExists: false, ctx: ctx)
+            isNew = true
+        }
+        guard let reqData = aData else { return }
+        if isNew || reqData.modified <= record.modified() {  // => server has new copy
+            reqData.updateFromCKRecord(record, ctx: ctx)
+            reqData.isSynced = true
+            self.localdb.saveChildContext(ctx)
+            Log.debug("Request data synced")
+            self.nc.post(Notification(name: NotificationKey.requestDataDidSync))
+        }
     }
     
     func updateRequestMethodDataFromCloud(_ record: CKRecord) {
-        
+        let ctx = self.localdb.getChildMOC()
+        let reqMethodDataId = record.id()
+        var aReqMethodData = self.localdb.getRequestMethodData(id: reqMethodDataId, ctx: ctx)
+        var isNew = false
+        if aReqMethodData == nil {
+            aReqMethodData = self.localdb.createRequestMethodData(id: reqMethodDataId, index: record.index().toInt(), name: record.name(), isCustom: true, checkExists: false, ctx: ctx)
+            isNew = true
+        }
+        guard let reqMethodData = aReqMethodData else { return }
+        if isNew || reqMethodData.modified <= record.modified() {  // => server has new copy
+            reqMethodData.updateFromCKRecord(record, ctx: ctx)
+            reqMethodData.isSynced = true
+            self.localdb.saveChildContext(ctx)
+            Log.debug("Request method data synced")
+            self.nc.post(Notification(name: NotificationKey.requestMethodDataDidSync))
+        }
     }
     
     func updateFileDataFromCloud(_ record: CKRecord) {
-        
+        let ctx = self.localdb.getChildMOC()
+        let fileId = record.id()
+        var aFileData = self.localdb.getFileData(id: fileId, ctx: ctx)
+        var isNew = false
+        if aFileData == nil {
+            aFileData = self.localdb.createFile(data: Data(), index: record.index().toInt(), name: record.name(), path: URL(fileURLWithPath: "/tmp/"), checkExists: false, ctx: ctx)
+            isNew = true
+        }
+        guard let fileData = aFileData else { return }
+        if isNew || fileData.modified <= record.modified() {  // => server has new copy
+            fileData.updateFromCKRecord(record, ctx: ctx)
+            fileData.isSynced = true
+            self.localdb.saveChildContext(ctx)
+            Log.debug("File data synced")
+            self.nc.post(Notification(name: NotificationKey.fileDataDidSync))
+        }
     }
     
     func updateImageDataFromCloud(_ record: CKRecord) {
-        
+        let ctx = self.localdb.getChildMOC()
+        let fileId = record.id()
+        var aImageData = self.localdb.getImageData(id: fileId, ctx: ctx)
+        var isNew = false
+        if aImageData == nil {
+            aImageData = self.localdb.createImage(data: Data(), index: record.index().toInt(), type: ImageType.jpeg.rawValue, checkExists: false, ctx: ctx)
+            isNew = true
+        }
+        guard let imageData = aImageData else { return }
+        if isNew || imageData.modified <= record.modified() {  // => server has new copy
+            imageData.updateFromCKRecord(record, ctx: ctx)
+            imageData.isSynced = true
+            self.localdb.saveChildContext(ctx)
+            Log.debug("Image data synced")
+            self.nc.post(Notification(name: NotificationKey.imageDataDidSync))
+        }
     }
     
     func cloudRecordDidChange(_ record: CKRecord) {
@@ -793,8 +841,9 @@ class PersistenceService {
     func queryDefaultZoneRecords(completion: @escaping (Result<[CKRecord], Error>) -> Void) {
         Log.debug("query default zone records")
         self.ck.queryRecords(zoneID: self.ck.defaultZoneID(), recordType: RecordType.zone.rawValue, predicate: NSPredicate(format: "isSyncEnabled == %hdd", true),
-                             cursor: self.getCachedDefaultZoneQueryCursor(), limit: self.defaultZoneRecordFetchLimit) { result in
+                             cursor: self.getCachedDefaultZoneQueryCursor(), limit: self.defaultZoneRecordFetchLimit) { [weak self] result in
             Log.debug("query default zone records handler")
+            guard let self = self else { return }
             switch result {
             case .success(let (records, cursor)):
                 self.setIsSyncedOnce()
@@ -820,7 +869,7 @@ class PersistenceService {
     ///   - modified: The last sync time which is used to fetch records modified after that
     ///   - completion: The completion handler.
     func queryRecords(zoneID: CKRecordZone.ID, type: RecordType, parentId: String, isContinue: Bool? = true, modified: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
-        Log.debug("query records: \(zoneID), type: \(type), parentId: \(parentId) modified: \(modified)")
+        Log.debug("query records: \(zoneID), type: \(type), parentId: \(parentId) modified: \(modified ?? 0)")
         let modified = modified ?? 0
         var predicate: NSPredicate!
         let cursor: CKQueryOperation.Cursor? = self.getQueryCursor(type, zoneID: zoneID)
@@ -852,8 +901,8 @@ class PersistenceService {
             predicate = NSPredicate(format: "isSyncEnabled == %hdd AND modified >= %ld", true, modified)
         }
         self.ck.queryRecords(zoneID: zoneID, recordType: type.rawValue, predicate: predicate,
-                             cursor: cursor, limit: self.defaultZoneRecordFetchLimit) { result in
-            self.queryRecordsHandler(zoneID: zoneID, type: type, parentId: parentId, isContinue: isContinue, result: result, completion: completion)
+                             cursor: cursor, limit: self.defaultZoneRecordFetchLimit) { [weak self] result in
+            self?.queryRecordsHandler(zoneID: zoneID, type: type, parentId: parentId, isContinue: isContinue, result: result, completion: completion)
         }
     }
     
@@ -899,7 +948,8 @@ class PersistenceService {
         if let cached = self.getFromCache(entityId: id, type: type) as? CacheValue, let record = cached.value() as? CKRecord { completion(.success(record)); return }
         // Not in cache, fetch from cloud
         let recordID = self.ck.recordID(entityId: id, zoneID: entity.getZoneID())
-        self.ck.fetchRecords(recordIDs: [recordID]) { result in
+        self.ck.fetchRecords(recordIDs: [recordID]) { [weak self] result in
+            guard let self = self else { return }
             switch result {
             case .success(let hm):
                 if let record = hm[recordID] {
@@ -916,7 +966,8 @@ class PersistenceService {
     }
     
     func fetchRecords(recordIDs: [CKRecord.ID], completion: @escaping (Result<[CKRecord], Error>) -> Void) {
-        self.ck.fetchRecords(recordIDs: recordIDs) { result in
+        self.ck.fetchRecords(recordIDs: recordIDs) { [weak self] result in
+            guard let self = self else { return }
             switch result {
             case .success(let hm):
                 let records = hm.allValues()
@@ -932,7 +983,8 @@ class PersistenceService {
     /// Fetches workspaces from cloud and caches the result.
     func fetchWorkspaces(zoneIDs: [CKRecordZone.ID], completion: @escaping (Result<[CKRecord], Error>) -> Void) {
         Log.debug("fetching workspaces")
-        self.ck.fetchRecords(recordIDs: self.ck.recordIDs(zoneIDs: zoneIDs)) { result in
+        self.ck.fetchRecords(recordIDs: self.ck.recordIDs(zoneIDs: zoneIDs)) { [weak self] result in
+            guard let self = self else { return }
             switch result {
             case .success(let hm):
                 let records = hm.allValues()
@@ -974,7 +1026,8 @@ class PersistenceService {
         let recordID = self.ck.recordID(entityId: projId, zoneID: zoneID)
         let ckproj = self.ck.createRecord(recordID: recordID, recordType: RecordType.project.rawValue)
         guard let ws = proj.workspace else { Log.error("Workspace is empty for project"); return }
-        self.fetchRecord(ws, type: .workspace) { result in
+        self.fetchRecord(ws, type: .workspace) { [weak self] result in
+            guard let self = self else { return }
             switch result {
             case .success(let ckws):
                 self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws)
@@ -1013,7 +1066,8 @@ class PersistenceService {
         let zoneID = self.ck.zoneID(workspaceId: wsId)
         let ckReqID = self.ck.recordID(entityId: reqId, zoneID: zoneID)
         let ckreq = self.ck.createRecord(recordID: ckReqID, recordType: req.recordType)
-        self.fetchRecord(proj, type: .project) { result in
+        self.fetchRecord(proj, type: .project) { [weak self] result in
+            guard let self = self else { return }
             switch result {
             case .success(let ckproj):
                 self.saveRequestToCloudImp(ckreq: ckreq, req: req, ckproj: ckproj, proj: proj)

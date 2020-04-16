@@ -331,20 +331,20 @@ class CloudKitService {
             Log.debug("record changed: \(record)")
             PersistenceService.shared.cloudRecordDidChange(record)
         }
-        op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, data in
+        op.recordZoneChangeTokensUpdatedBlock = { [unowned self] zoneID, changeToken, data in
             guard let changeToken = changeToken else { return }
             Log.debug("record zone change tokens updated")
             let changeTokenData = NSKeyedArchiver.archivedData(withRootObject: changeToken)
             self.store.set(changeTokenData, forKey: PropKey.serverChangeToken.rawValue)
         }
-        op.recordZoneFetchCompletionBlock = { zoneID, changeToken, data, more, error in
+        op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, data, more, error in
             guard error == nil else { return }
             guard let changeToken = changeToken else { return }
             Log.debug("record zone fetch completion")
             let changeTokenData = NSKeyedArchiver.archivedData(withRootObject: changeToken)
             self.store.set(changeTokenData, forKey: PropKey.serverChangeToken.rawValue)
         }
-        op.fetchRecordZoneChangesCompletionBlock = { error in
+        op.fetchRecordZoneChangesCompletionBlock = {error in
             guard error == nil else { return }
             Log.debug("fetch record zone changes completion")
         }
@@ -353,7 +353,7 @@ class CloudKitService {
     
     /// Fetches all subscriptions from cloud and updates user defaults.
     func loadSubscriptions() {
-        self.fetchSubscriptions { result in
+        self.fetchSubscriptions { [unowned self] result in
             switch result {
             case .success(let xs):
                 let subIds: [CKSubscription.ID] = xs.map { $0.subscriptionID }
@@ -374,7 +374,7 @@ class CloudKitService {
     
     func fetchAllZones(completion: @escaping (Result<(all: [CKRecordZone], new: [CKRecordZone.ID]), Error>) -> Void) {
         Log.debug("fetching all zones")
-        self.privateDatabase().fetchAllRecordZones { zones, error in
+        self.privateDatabase().fetchAllRecordZones { [unowned self] zones, error in
             if let err = error { completion(.failure(err)); return }
             if let xs = zones {
                 var hm: [String: ZoneInfo] = [:]
@@ -427,7 +427,7 @@ class CloudKitService {
         op.recordZoneWithIDWasDeletedBlock = { zoneID in
             zonesDeleted.append(zoneID)
         }
-        op.fetchDatabaseChangesCompletionBlock = { token, moreComing, error in
+        op.fetchDatabaseChangesCompletionBlock = { [unowned self] token, moreComing, error in
             if let err = error { Log.error("Error fetching database changes: \(err)"); return }
             self.setDBChangeToken(token)
             if moreComing { self.fetchDatabaseChanges() }
@@ -462,14 +462,14 @@ class CloudKitService {
             Log.debug("zone change token update for: \(zoneID) - \(String(describing: changeToken))")
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
         }
-        op.recordZoneFetchCompletionBlock = { zoneID, changeToken, _, moreComing, error in
+        op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, _, moreComing, error in
             if let err = error { Log.error("Error fetching changes for zone: \(err)"); return }
             if moreComing {
                 if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
                 moreZones.append(zoneID)
             }
         }
-        op.fetchRecordZoneChangesCompletionBlock = { error in
+        op.fetchRecordZoneChangesCompletionBlock = { [unowned self] error in
             if let err = error { Log.error("Error fetching zone changes: \(err)"); completion(.failure(err)); return }
             completion(.success((savedRecords, deletedRecords)))
             if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, completion: completion) }
@@ -523,7 +523,7 @@ class CloudKitService {
         let z = CKRecordZone(zoneID: recordZoneId)
         if self.containsCachedZoneID(recordZoneId) { completion(.success(recordZoneId)); return }
         let op = CKModifyRecordZonesOperation(recordZonesToSave: [z], recordZoneIDsToDelete: [])
-        op.modifyRecordZonesCompletionBlock = { zones, _, error in
+        op.modifyRecordZonesCompletionBlock = { [unowned self] zones, _, error in
             if let err = error {
                 Log.error("Error saving zone: \(err)")
                 completion(.failure(err))
@@ -544,7 +544,7 @@ class CloudKitService {
     
     /// Create zone if not created already.
     func createZoneIfNotExist(recordZoneId: CKRecordZone.ID, completion: @escaping (Result<CKRecordZone.ID, Error>) -> Void) {
-        self.fetchZone(recordZoneIDs: [recordZoneId], completion: { result in
+        self.fetchZone(recordZoneIDs: [recordZoneId], completion: { [unowned self] result in
             switch result {
             case .success(let hm):
                 if let zone = hm[recordZoneId] {
@@ -589,7 +589,7 @@ class CloudKitService {
             saved.append(record)
             lock.unlock()
         }
-        op.modifyRecordsCompletionBlock = { _, _, error in
+        op.modifyRecordsCompletionBlock = { [unowned self] _, _, error in
             guard error == nil else {
                 guard let ckerror = error as? CKError else { completion(.failure(error!)); return }
                 if ckerror.isZoneNotFound() {  // Zone not found, create one
@@ -643,7 +643,7 @@ class CloudKitService {
         //notifInfo.alertBody = "Yay!"
         subscription.notificationInfo = notifInfo
         let op = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription], subscriptionIDsToDelete: [])
-        op.modifySubscriptionsCompletionBlock = { _, _, error in
+        op.modifySubscriptionsCompletionBlock = { [unowned self] _, _, error in
             guard error == nil else { return }
             self.addToCachedSubscriptions(subId)
             Log.debug("Subscribed to events successfully: \(recordType) with ID: \(subscription.subscriptionID.description)")
@@ -659,7 +659,7 @@ class CloudKitService {
         notifInfo.shouldSendContentAvailable = true
         sub.notificationInfo = notifInfo
         let op = CKModifySubscriptionsOperation(subscriptionsToSave: [sub], subscriptionIDsToDelete: [])
-        op.modifySubscriptionsCompletionBlock = { _, _, error in
+        op.modifySubscriptionsCompletionBlock = { [unowned self] _, _, error in
             guard error == nil else { return }
             self.addToCachedSubscriptions(subId)
             Log.debug("Subscribed to database change event: \(subId)")
@@ -673,7 +673,7 @@ class CloudKitService {
     /// Delete zone with the given zone ID.
     func deleteZone(recordZoneIds: [CKRecordZone.ID], completion: @escaping (Result<Bool, Error>) -> Void) {
         let op = CKModifyRecordZonesOperation(recordZonesToSave: [], recordZoneIDsToDelete: recordZoneIds)
-        op.modifyRecordZonesCompletionBlock = { _, _, error in
+        op.modifyRecordZonesCompletionBlock = { [unowned self] _, _, error in
             if let err = error {
                 Log.error("Error deleting zone: \(err)")
                 completion(.failure(err))

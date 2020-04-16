@@ -110,7 +110,52 @@ public class ERequestData: NSManagedObject, Entity {
         requestData["image"] = ref
     }
     
-    func updateFromCKRecord(_ record: CKRecord) {
+    static func addHeaderReference(_ requestData: CKRecord, header: CKRecord) {
+        let ref = CKRecord.Reference(record: header, action: .none)
+        requestData["header"] = ref
+    }
+    
+    static func addParamReference(_ requestData: CKRecord, param: CKRecord) {
+        let ref = CKRecord.Reference(record: param, action: .none)
+        requestData["param"] = ref
+    }
+    
+    static func getRecordType(_ record: CKRecord) -> RequestDataType? {
+        guard let x = record["type"] as? Int64, let type = RequestDataType(rawValue: x.toInt()) else { return nil }
+        return type
+    }
+    
+    static func getFormFieldFormatType(_ record: CKRecord) -> RequestBodyFormFieldFormatType {
+        guard let x = record["fieldFormat"] as? Int64, let type = RequestBodyFormFieldFormatType(rawValue: x.toInt()) else { return .text }
+        return type
+    }
+    
+    static func addBackReference(type: RequestDataType, record: CKRecord, reqData: ERequestData, ctx: NSManagedObjectContext) {
+        switch type {
+        case .header:
+            if let ref = record["header"] as? CKRecord.Reference {
+                reqData.header = CoreDataService.shared.getRequest(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            }
+        case .param:
+            if let ref = record["param"] as? CKRecord.Reference {
+                reqData.param = CoreDataService.shared.getRequest(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            }
+        case .form:
+            if let ref = record["form"] as? CKRecord.Reference {
+                reqData.form = CoreDataService.shared.getRequestBodyData(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            }
+        case .multipart:
+            if let ref = record["multipart"] as? CKRecord.Reference {
+                reqData.multipart = CoreDataService.shared.getRequestBodyData(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            }
+        case .binary:
+            if let ref = record["binary"] as? CKRecord.Reference {
+                reqData.binary = CoreDataService.shared.getRequestBodyData(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            }
+        }
+    }
+    
+    func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["desc"] as? String { self.desc = x }
@@ -121,5 +166,7 @@ public class ERequestData: NSManagedObject, Entity {
         if let x = record["type"] as? Int64 { self.type = x }
         if let x = record["value"] as? String { self.value = x }
         if let x = record["version"] as? Int64 { self.version = x }
+        guard let type = ERequestData.getRecordType(record) else { return }
+        ERequestData.addBackReference(type: type, record: record, reqData: self, ctx: ctx)
     }
 }
