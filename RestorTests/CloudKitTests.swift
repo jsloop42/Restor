@@ -135,19 +135,19 @@ class CloudKitTests: XCTestCase {
             switch result {
             case .success(let res):
                 XCTAssertTrue(!res.isEmpty)
-            case .failure(_):
-                XCTFail("Error saving record")
+            case .failure(let error):
+                XCTFail("Error saving record: \(error)")
             }
             self.ck.deleteRecords(recordIDs: [ckFileID, ckReqDataID]) { result in
                 switch result {
                 case .success(let res):
                     XCTAssertTrue(res)
-                case .failure(_):
-                    XCTFail("Error deleting record")
+                case .failure(let error):
+                    XCTFail("Error deleting record: \(error)")
                 }
                 exp.fulfill()
             }
         }
-        waitForExpectations(timeout: 10.0, handler: nil)
+        waitForExpectations(timeout: 20.0, handler: nil)
     }
 }

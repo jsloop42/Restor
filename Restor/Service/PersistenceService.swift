@@ -97,6 +97,7 @@ class PersistenceService {
     private let opqueue = EAOperationQueue()
     private var syncTimer: Timer?
     private var previousSyncTime: Int = 0
+    private var queryDefaultZoneRecordRetry: EARetryTimer!
     
     enum SubscriptionId: String {
         case fileChange = "file-change"
@@ -401,6 +402,15 @@ class PersistenceService {
             }
         case .failure(let error):
             Log.error("Error syncing from cloud: \(error)")
+            if let err = error as? CKError {
+                if err.isNetworkFailure() {
+                    self.queryDefaultZoneRecordRetry = EARetryTimer(block: { [unowned self] in
+                        // TODO: check reachability
+                        self.queryDefaultZoneRecords(completion: self.syncFromCloudHandler)
+                    }, interval: 2.0, limit: 8)
+                        
+                }
+            }
         }
     }
     
@@ -868,38 +878,42 @@ class PersistenceService {
     ///   - isContinue: Should continue from the previous cursor if exists. If set to false, the cursor will be removed from the cache.
     ///   - modified: The last sync time which is used to fetch records modified after that
     ///   - completion: The completion handler.
-    func queryRecords(zoneID: CKRecordZone.ID, type: RecordType, parentId: String, isContinue: Bool? = true, modified: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+    func queryRecords(zoneID: CKRecordZone.ID, type: RecordType, parentId: String, predicate: NSPredicate? = nil, isContinue: Bool? = true, modified: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
         Log.debug("query records: \(zoneID), type: \(type), parentId: \(parentId) modified: \(modified ?? 0)")
         let modified = modified ?? 0
-        var predicate: NSPredicate!
         let cursor: CKQueryOperation.Cursor? = self.getQueryCursor(type, zoneID: zoneID)
-        switch type {
-        case .workspace:
-            predicate = NSPredicate(format: "modified >= %ld", modified)
-        case .project:
-            predicate = NSPredicate(format: "workspace == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
-        case .request:
-            predicate = NSPredicate(format: "project == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
-        case .requestBodyData:
-            predicate = NSPredicate(format: "request == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
-        case .requestData:
-            predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
-                NSPredicate(format: "binary == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
-                NSPredicate(format: "form == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
-                NSPredicate(format: "header == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
-                NSPredicate(format: "image == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
-                NSPredicate(format: "multipart == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
-                NSPredicate(format: "param == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
-            ])
-        case .requestMethodData:
-            predicate = NSPredicate(format: "project == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
-        case .file:
-            predicate = NSPredicate(format: "requestData == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
-        case .image:
-            predicate = NSPredicate(format: "requestData == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
-        case .zone:
-            predicate = NSPredicate(format: "isSyncEnabled == %hdd AND modified >= %ld", true, modified)
-        }
+        let predicate: NSPredicate = {
+            if predicate != nil { return predicate! }
+            var pred: NSPredicate!
+            switch type {
+            case .workspace:
+                pred = NSPredicate(format: "modified >= %ld", modified)
+            case .project:
+                pred = NSPredicate(format: "workspace == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+            case .request:
+                pred = NSPredicate(format: "project == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+            case .requestBodyData:
+                pred = NSPredicate(format: "request == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+            case .requestData:
+                [NSPredicate(format: "binary == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
+                 NSPredicate(format: "form == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
+                 NSPredicate(format: "header == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
+                 NSPredicate(format: "image == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
+                 NSPredicate(format: "multipart == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)].forEach { pred in
+                    self.queryRecords(zoneID: zoneID, type: type, parentId: parentId, predicate: pred, isContinue: isContinue, completion: completion)
+                }
+                pred = NSPredicate(format: "param == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+            case .requestMethodData:
+                pred = NSPredicate(format: "project == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+            case .file:
+                pred = NSPredicate(format: "requestData == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+            case .image:
+                pred = NSPredicate(format: "requestData == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+            case .zone:
+                pred = NSPredicate(format: "isSyncEnabled == %hdd AND modified >= %ld", true, modified)
+            }
+            return pred
+        }()
         self.ck.queryRecords(zoneID: zoneID, recordType: type.rawValue, predicate: predicate,
                              cursor: cursor, limit: self.defaultZoneRecordFetchLimit) { [weak self] result in
             self?.queryRecordsHandler(zoneID: zoneID, type: type, parentId: parentId, isContinue: isContinue, result: result, completion: completion)

@@ -41,7 +41,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     var isEndEditing = false
     var isOptionFromNotif = false
     private let docPicker = DocumentPicker.shared
-    private let utils = Utils.shared
+    private let utils = EAUtils.shared
     private let db = PersistenceService.shared
     private var localdb = CoreDataService.shared
     private lazy var doneBtn: UIButton = {
@@ -1050,7 +1050,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     var selectedFieldFormat: RequestBodyFormFieldFormatType = .text
     private let app = App.shared
     private let localdb = CoreDataService.shared
-    private let utils = Utils.shared
+    private let utils = EAUtils.shared
     var reqDataId = ""  // Will be empty if there are no fields added
 
     override func awakeFromNib() {
@@ -1226,7 +1226,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     var selectedType: RequestBodyType = .form
     private let app = App.shared
     private let localdb = CoreDataService.shared
-    private let utils = Utils.shared
+    private let utils = EAUtils.shared
     
     deinit {
         Log.debug("KVBodyFieldTableView deinit")
@@ -1577,7 +1577,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     var editingIndexPath: IndexPath?
     var tableViewType: KVTableViewType = .header
     private let localdb = CoreDataService.shared
-    private let utils = Utils.shared
+    private let utils = EAUtils.shared
     private let app = App.shared
     private let nc = NotificationCenter.default
     

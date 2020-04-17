@@ -11,7 +11,7 @@ import Foundation
 public class BackgroundWorker: NSObject {
     private var thread: Thread!
     private var block: (() -> Void)!
-    private let utils = Utils.shared
+    private let utils = EAUtils.shared
     
     @objc func runBlock() { self.block() }
     

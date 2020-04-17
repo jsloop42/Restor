@@ -42,14 +42,10 @@ class EAQueueTests: XCTestCase {
     
     func testOpQueue() {
         let exp = expectation(description: "test operation queue")
-        let zoneID = self.ck.zoneID(with: "test-zone")
-        let recordID = self.ck.recordID(entityId: "test-ws", zoneID: zoneID)
-        let op = EACloudOperation(type: "Workspace", recordID: recordID, zoneID: zoneID)
-        op.completionBlock = {
-            XCTAssertNotNil(op.error)
+        let op = EACloudOperation {
             exp.fulfill()
         }
         XCTAssertTrue(self.opq.add(op))
-        waitForExpectations(timeout: 10.0, handler: nil)
+        waitForExpectations(timeout: 1.0, handler: nil)
     }
 }

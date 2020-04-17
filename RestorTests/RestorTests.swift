@@ -12,7 +12,7 @@ import CoreData
 
 class RestorTests: XCTestCase {
     private var localdb = CoreDataService.shared
-    private let utils = Utils.shared
+    private let utils = EAUtils.shared
     private let serialQueue = DispatchQueue(label: "serial-queue")
     private let app = App.shared
 
@@ -239,15 +239,15 @@ class RestorTests: XCTestCase {
         let filePrivPNG = "file:///private/var/mobile/Containers/Data/Application/0BD3B416-B9D5-4498-9781-08127199163F/tmp/60FA8CBF-2F96-464D-8DE4-C1D7FF59F698.png"
         let filePrivJPEG1 = "file:///private/var/mobile/Containers/Data/Application/33784EF2-28F4-44A3-9278-F066DACD1717/tmp/8A0D19B0-2D08-47C3-BACD-AC788CBCD33E.jpeg"  // device
         var url = URL(fileURLWithPath: filePrivJPEG)
-        var type = self.utils.getImageType(url)
+        var type = self.app.getImageType(url)
         XCTAssertNotNil(type)
         XCTAssertEqual(type!, .jpeg)
         url = URL(fileURLWithPath: filePrivPNG)
-        type = self.utils.getImageType(url)
+        type = self.app.getImageType(url)
         XCTAssertNotNil(type)
         XCTAssertEqual(type!, .png)
         url = URL(fileURLWithPath: filePrivJPEG1)
-        type = self.utils.getImageType(url)
+        type = self.app.getImageType(url)
         XCTAssertNotNil(type)
         XCTAssertEqual(type!, .jpeg)
     }
@@ -303,13 +303,13 @@ class RestorTests: XCTestCase {
                 XCTAssertNotNil(req!.body)
                 req!.body!.addToForm(reqData!)
                 let hm = self.localdb.requestToDictionary(req!)
-                XCTAssertEqual(hm.count, 12)
+                XCTAssertTrue(hm.count > 10)
                 XCTAssertNotNil(hm["body"])
-                XCTAssertEqual((hm["body"] as! [String: Any]).count, 11)
+                XCTAssertTrue((hm["body"] as! [String: Any]).count > 10)
                 XCTAssertEqual(((hm["body"] as! [String: Any])["form"] as! [[String: Any]]).count, 1)
-                XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]).count, 11)
+                XCTAssertTrue((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]).count > 10)
                 XCTAssertEqual((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]]).count, 1)
-                XCTAssertEqual(((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]])[0]).count, 8)
+                XCTAssertTrue(((((hm["body"] as! [String: Any])["form"] as! [[String: Any]])[0]["files"] as! [[String: Any]])[0]).count >= 10)
                 self.localdb.discardChanges(in: ctx)
                 exp.fulfill()
             }

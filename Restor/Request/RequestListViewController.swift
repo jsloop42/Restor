@@ -16,11 +16,12 @@ class RequestListViewController: UIViewController {
     @IBOutlet weak var filterBtn: UIBarButtonItem!
     @IBOutlet weak var windowBtn: UIBarButtonItem!
     @IBOutlet weak var addBtn: UIBarButtonItem!
-    private let utils: Utils = Utils.shared
+    private let utils = EAUtils.shared
     private let app: App = App.shared
     private let localdb = CoreDataService.shared
     private var frc: NSFetchedResultsController<ERequest>!
     private let cellReuseId = "requestCell"
+    private let db = PersistenceService.shared
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -117,22 +118,25 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
 
 extension RequestListViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-        Log.debug("requests list frc did change")    
-        switch type {
-        case .delete:
-            DispatchQueue.main.async { self.tableView.deleteRows(at: [indexPath!], with: .automatic) }
-        case .insert:
-            DispatchQueue.main.async {
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [newIndexPath!], with: .none)
-                self.tableView.endUpdates()
-                self.tableView.layoutIfNeeded()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+        Log.debug("requests list frc did change: \(anObject)")
+        DispatchQueue.main.async {
+            if self.navigationController?.topViewController == self {
+                switch type {
+                case .delete:
+                    self.tableView.deleteRows(at: [indexPath!], with: .automatic)
+                case .insert:
+                    self.tableView.beginUpdates()
+                    self.tableView.insertRows(at: [newIndexPath!], with: .none)
+                    self.tableView.endUpdates()
+                    self.tableView.layoutIfNeeded()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+                    if let x = anObject as? ERequest { self.db.saveRequestToCloud(x) }
+                case .update:
+                    self.tableView.reloadRows(at: [indexPath!], with: .none)
+                default:
+                    break
+                }
             }
-        case .update:
-            DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath!], with: .none) }
-        default:
-            break
         }
     }
 }

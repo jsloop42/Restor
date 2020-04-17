@@ -106,7 +106,7 @@ class CoreDataService {
         return ctx
     }()
     private let fetchBatchSize: Int = 50
-    private let utils = Utils.shared
+    private let utils = EAUtils.shared
     var containerName = isRunningTests ? "RestorTest" : "Restor"
     let defaultWorkspaceId = "default"
     let defaultWorkspaceName = "Default workspace"
@@ -604,9 +604,9 @@ class CoreDataService {
             let typeKey: String = {
                 switch type {
                 case .header:
-                    return "headers.id"
+                    return "header.id"
                 case .param:
-                    return "params.id"
+                    return "param.id"
                 case .form:
                     return "form.request.id"
                 case .multipart:

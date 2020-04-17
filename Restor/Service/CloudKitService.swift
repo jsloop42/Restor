@@ -720,7 +720,7 @@ class CloudKitService {
                     switch result {
                     case .success(let ids):
                         let xs = UserDefaults.standard.array(forKey: self.subscriptionsKey) as? [CKSubscription.ID] ?? []
-                        let diff = Utils.shared.subtract(lxs: xs, rxs: ids)  // not deleted subscriptions
+                        let diff = EAUtils.shared.subtract(lxs: xs, rxs: ids)  // not deleted subscriptions
                         UserDefaults.standard.set(diff, forKey: self.subscriptionsKey)
                     case .failure(let err):
                         Log.error("Error deleting subscriptions: \(err)")
@@ -754,6 +754,14 @@ extension CKError {
     
     public func isConflict() -> Bool {
         return self.isSpecificErrorCode(code: .serverRecordChanged)
+    }
+    
+    public func isNetworkFailure() -> Bool {
+        return self.isSpecificErrorCode(code: .networkFailure) || self.isSpecificErrorCode(code: .networkUnavailable)
+    }
+    
+    public func isQuotaExceeded() -> Bool {
+        return self.isSpecificErrorCode(code: .quotaExceeded)
     }
     
     public func isSpecificErrorCode(code: CKError.Code) -> Bool {

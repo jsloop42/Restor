@@ -15,7 +15,7 @@ class EACloudOperation: Operation {
     var record: CKRecord?
     var savedRecords: [CKRecord] = []
     var deletedRecordIDs: [CKRecord.ID] = []
-    var recordType: RecordType
+    var recordType: RecordType!
     var opType: OpType = .fetchRecord
     var predicate: NSPredicate = NSPredicate(value: true)
     var cursor: CKQueryOperation.Cursor?
@@ -24,6 +24,7 @@ class EACloudOperation: Operation {
     var zoneID: CKRecordZone.ID!
     var error: Error?
     var completionHandler: ((Result<[CKRecord], Error>) -> Void)!
+    var block: (() -> Void)?
     
     public enum State: String {
         case ready, executing, finished
@@ -37,6 +38,7 @@ class EACloudOperation: Operation {
         case fetchRecord
         case queryRecord
         case fetchZoneChange
+        case block
     }
     
     public var state = State.ready {
@@ -60,6 +62,11 @@ class EACloudOperation: Operation {
         self.completionHandler = completion
     }
     
+    init(block: @escaping () -> Void) {
+        self.block = block
+        self.opType = .block
+    }
+    
     override var isAsynchronous: Bool { return true }
 
     override var isExecuting: Bool { return state == .executing }
@@ -81,10 +88,17 @@ class EACloudOperation: Operation {
             self.queryRecord()
         case .fetchZoneChange:
             self.fetchZoneChanges()
+        case .block:
+            self.execBlock()
         }
     }
     
+    private func execBlock() {
+        if let block = self.block { block() }
+    }
+    
     private func fetchRecord() {
+        fatalError("not implemented")
     }
     
     private func queryRecord() {
@@ -96,6 +110,6 @@ class EACloudOperation: Operation {
     }
     
     private func fetchZoneChanges() {
-        
+        fatalError("not implemented")
     }
 }

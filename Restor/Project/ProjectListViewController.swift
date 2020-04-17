@@ -15,11 +15,10 @@ class ProjectListViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var workspaceBtn: UIButton!
     private var workspace: EWorkspace!
-    private weak var addItemPopupView: PopupView?
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
     private var keyboardHeight: CGFloat = 0.0
-    private let utils: Utils = Utils.shared
+    private let utils: EAUtils = EAUtils.shared
     private let app: App = App.shared
     private let nc = NotificationCenter.default
     private let localdb = CoreDataService.shared
@@ -154,7 +153,6 @@ class ProjectListViewController: UIViewController {
             if let proj = self.localdb.createProject(id: self.localdb.projectId(), index: projCount, name: name, desc: desc, ws: self.workspace, ctx: ctx) {
                 proj.workspace = self.workspace
                 self.localdb.saveBackgroundContext()
-                self.db.saveProjectToCloud(proj)
             }
         }
     }
@@ -228,21 +226,24 @@ extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource 
 extension ProjectListViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         Log.debug("projects list frc did change")
-        switch type {
-        case .delete:
-            DispatchQueue.main.async { self.tableView.deleteRows(at: [indexPath!], with: .automatic) }
-        case .insert:
-            DispatchQueue.main.async {
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [newIndexPath!], with: .none)
-                self.tableView.endUpdates()
-                self.tableView.layoutIfNeeded()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+        DispatchQueue.main.async {
+            if self.navigationController?.topViewController == self {
+                switch type {
+                case .delete:
+                    self.tableView.deleteRows(at: [indexPath!], with: .automatic)
+                case .insert:
+                    self.tableView.beginUpdates()
+                    self.tableView.insertRows(at: [newIndexPath!], with: .none)
+                    self.tableView.endUpdates()
+                    self.tableView.layoutIfNeeded()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+                    if let x = anObject as? EProject { self.db.saveProjectToCloud(x) }
+                case .update:
+                    self.tableView.reloadRows(at: [indexPath!], with: .none)
+                default:
+                    break
+                }
             }
-        case .update:
-            DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath!], with: .none) }
-        default:
-            break
         }
     }
 }

@@ -11,7 +11,7 @@ import Foundation
 @testable import Restor
 
 class EAUtilsTests: XCTestCase {
-    private let utils = Utils.shared
+    private let utils = EAUtils.shared
     
     override func setUp() {
         super.setUp()

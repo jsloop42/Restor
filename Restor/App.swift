@@ -12,11 +12,10 @@ import CoreData
 
 class App {
     static let shared: App = App()
-    var addItemPopupView: PopupView?
     var popupBottomContraints: NSLayoutConstraint?
     private var dbService = PersistenceService.shared
     private let localdb = CoreDataService.shared
-    private let utils = Utils.shared
+    private let utils = EAUtils.shared
     /// Entity diff rescheduler.
     var diffRescheduler = EARescheduler(interval: 0.3, repeats: false, type: .everyFn)
     /// Diff ids for `EAReschedulerFn`s
@@ -121,28 +120,6 @@ class App {
         }
     }
     
-    // MARK: - Popup
-    
-    /// Display popup view over the current view controller
-    /// - Parameters:
-    ///   - type: The popup type
-    ///   - delegate: The optional delegate
-    ///   - parentView: The view of the parent view controller
-    ///   - bottomView: The view to which the bottom contrainst will be added
-    func viewPopup(type: PopupType, delegate: PopupViewDelegate?, parentView: UIView, bottomView: UIView, vc: UIViewController) {
-        if self.addItemPopupView == nil {
-            self.addItemPopupView = PopupView.initFromNib(owner: vc) as? PopupView
-        }
-        guard let popup = self.addItemPopupView else { return }
-        popup.delegate = delegate
-        popup.type = type
-        popup.alpha = 0.0
-        parentView.addSubview(popup)
-        popup.animateSlideIn()
-        popup.initConstraints(parentView: parentView, bottomView: bottomView)
-        self.addItemPopupView = popup
-    }
-    
     func viewError(_ error: Error, vc: UIViewController) {
         UI.viewToast(self.getErrorMessage(for: error), vc: vc)
     }
@@ -222,6 +199,14 @@ class App {
     func didReceiveMemoryWarning() {
         Log.debug("app: did receive memory warning")
         PersistenceService.shared.clearCache()
+    }
+    
+    func getImageType(_ url: URL) -> ImageType? {
+        let name = url.lastPathComponent
+        if let ext = name.components(separatedBy: ".").last {
+            return ImageType(rawValue: ext)
+        }
+        return .jpeg  // default photo extension
     }
     
     /// MARK: - Entity change tracking

@@ -26,10 +26,11 @@
 		9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334872416DC20002452EB /* BackgroundWorker.swift */; };
 		9E473B04241CE74200DEC889 /* EditRequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */; };
 		9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */; };
+		9E4C30B22449F36900C1EEBA /* EARetryTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B12449F36900C1EEBA /* EARetryTimer.swift */; };
+		9E4C30B42449F5FB00C1EEBA /* EARetryTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B32449F5FB00C1EEBA /* EARetryTimerTests.swift */; };
+		9E4C30B6244A189300C1EEBA /* EANetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B5244A189300C1EEBA /* EANetwork.swift */; };
 		9E538DAC239951790025C14C /* UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAB239951790025C14C /* UI.swift */; };
 		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
-		9E538DB9239958FF0025C14C /* PopupView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E538DB8239958FF0025C14C /* PopupView.xib */; };
-		9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DBA23995B3E0025C14C /* PopupView.swift */; };
 		9E568E3C24308C67003150EC /* EAUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3B24308C67003150EC /* EAUtilsTests.swift */; };
 		9E568E3F2430B576003150EC /* Zone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3E2430B576003150EC /* Zone.swift */; };
 		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
@@ -40,7 +41,7 @@
 		9E85FE48240E9CDB002821F2 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE47240E9CDB002821F2 /* main.swift */; };
 		9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
 		9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
-		9E8759062396C6A700F949D1 /* Utils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* Utils.swift */; };
+		9E8759062396C6A700F949D1 /* EAUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E8759052396C6A700F949D1 /* EAUtils.swift */; };
 		9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9323945E79002DF561 /* AppDelegate.swift */; };
 		9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9523945E79002DF561 /* SceneDelegate.swift */; };
 		9E926F9823945E79002DF561 /* WorkspaceListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926F9723945E79002DF561 /* WorkspaceListViewController.swift */; };
@@ -107,10 +108,11 @@
 		9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditRequestTableViewController.swift; sourceTree = "<group>"; };
 		9E49EC002402FDE900DAA260 /* Restor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Restor.entitlements; sourceTree = "<group>"; };
 		9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
+		9E4C30B12449F36900C1EEBA /* EARetryTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARetryTimer.swift; sourceTree = "<group>"; };
+		9E4C30B32449F5FB00C1EEBA /* EARetryTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARetryTimerTests.swift; sourceTree = "<group>"; };
+		9E4C30B5244A189300C1EEBA /* EANetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EANetwork.swift; sourceTree = "<group>"; };
 		9E538DAB239951790025C14C /* UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI.swift; sourceTree = "<group>"; };
 		9E538DAD239953460025C14C /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
-		9E538DB8239958FF0025C14C /* PopupView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = PopupView.xib; sourceTree = "<group>"; };
-		9E538DBA23995B3E0025C14C /* PopupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupView.swift; sourceTree = "<group>"; };
 		9E568E3B24308C67003150EC /* EAUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUtilsTests.swift; sourceTree = "<group>"; };
 		9E568E3E2430B576003150EC /* Zone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone.swift; sourceTree = "<group>"; };
 		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
@@ -121,7 +123,7 @@
 		9E85FE47240E9CDB002821F2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegateMock.swift; sourceTree = "<group>"; };
 		9E85FE4E240EDB0A002821F2 /* Restor.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; name = Restor.xctestplan; path = RestorTests/Restor.xctestplan; sourceTree = SOURCE_ROOT; };
-		9E8759052396C6A700F949D1 /* Utils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utils.swift; sourceTree = "<group>"; };
+		9E8759052396C6A700F949D1 /* EAUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUtils.swift; sourceTree = "<group>"; };
 		9E926F9023945E78002DF561 /* Restor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Restor.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926F9323945E79002DF561 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		9E926F9523945E79002DF561 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -224,8 +226,6 @@
 				9EC33FB323EEBF1A006C5B37 /* EATextView.swift */,
 				9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */,
 				9E926F9923945E79002DF561 /* Main.storyboard */,
-				9E538DB8239958FF0025C14C /* PopupView.xib */,
-				9E538DBA23995B3E0025C14C /* PopupView.swift */,
 				9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */,
 				9E538DAB239951790025C14C /* UI.swift */,
 			);
@@ -277,12 +277,14 @@
 				9EFA58BC2445EBA8003C8AEA /* EAOperationQueue.swift */,
 				9EB78E72242BE6FF009663FE /* EAQueue.swift */,
 				9E145F91241BD9D200962A19 /* EARescheduler.swift */,
+				9E4C30B12449F36900C1EEBA /* EARetryTimer.swift */,
 				9EFA58BA2445E0F0003C8AEA /* EASystem.swift */,
+				9E8759052396C6A700F949D1 /* EAUtils.swift */,
 				9E85FE47240E9CDB002821F2 /* main.swift */,
 				9E926F9523945E79002DF561 /* SceneDelegate.swift */,
-				9E8759052396C6A700F949D1 /* Utils.swift */,
 				9E926F9F23945E7D002DF561 /* Assets.xcassets */,
 				9E926FA423945E7D002DF561 /* Info.plist */,
+				9E4C30B5244A189300C1EEBA /* EANetwork.swift */,
 			);
 			path = Restor;
 			sourceTree = "<group>";
@@ -300,6 +302,7 @@
 				9E145F93241C118800962A19 /* EAReschedulerTests.swift */,
 				9E568E3B24308C67003150EC /* EAUtilsTests.swift */,
 				9E926FAF23945E7D002DF561 /* Info.plist */,
+				9E4C30B32449F5FB00C1EEBA /* EARetryTimerTests.swift */,
 			);
 			path = RestorTests;
 			sourceTree = "<group>";
@@ -461,7 +464,6 @@
 			files = (
 				9E926FA323945E7D002DF561 /* LaunchScreen.storyboard in Resources */,
 				9E926FA023945E7D002DF561 /* Assets.xcassets in Resources */,
-				9E538DB9239958FF0025C14C /* PopupView.xib in Resources */,
 				9E926F9B23945E79002DF561 /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -492,10 +494,10 @@
 				9EC1F94E2426995A005BDD0A /* CloudKitService.swift in Sources */,
 				9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */,
 				9EFA58BD2445EBA8003C8AEA /* EAOperationQueue.swift in Sources */,
-				9E538DBB23995B3E0025C14C /* PopupView.swift in Sources */,
 				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,
 				9E223D532436261600229855 /* EACloudOperation.swift in Sources */,
-				9E8759062396C6A700F949D1 /* Utils.swift in Sources */,
+				9E8759062396C6A700F949D1 /* EAUtils.swift in Sources */,
+				9E4C30B6244A189300C1EEBA /* EANetwork.swift in Sources */,
 				9E1B2DE62427994000994233 /* EImage.swift in Sources */,
 				9E7B5848242A9BAB00997302 /* EALFUCache.swift in Sources */,
 				9E1B2DDE242798D700994233 /* EProject.swift in Sources */,
@@ -532,6 +534,7 @@
 				9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */,
 				9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */,
 				9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */,
+				9E4C30B22449F36900C1EEBA /* EARetryTimer.swift in Sources */,
 				9E769AFA242147AB005B18C3 /* Models.swift in Sources */,
 				9EB78E73242BE6FF009663FE /* EAQueue.swift in Sources */,
 			);
@@ -543,6 +546,7 @@
 			files = (
 				9E1B2DD9242753AA00994233 /* CloudKitTests.swift in Sources */,
 				9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */,
+				9E4C30B42449F5FB00C1EEBA /* EARetryTimerTests.swift in Sources */,
 				9EB78E71242B7AFF009663FE /* EALFUCacheTests.swift in Sources */,
 				9E568E3C24308C67003150EC /* EAUtilsTests.swift in Sources */,
 				9EB78E75242BF767009663FE /* EAQueueTests.swift in Sources */,

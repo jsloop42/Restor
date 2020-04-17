@@ -21,7 +21,7 @@ class WorkspaceListViewController: UIViewController {
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
     private var keyboardHeight: CGFloat = 0.0
-    private let utils: Utils = Utils.shared
+    private let utils = EAUtils.shared
     private let app: App = App.shared
     weak var delegate: WorkspaceVCDelegate?
     private let nc = NotificationCenter.default
@@ -150,9 +150,8 @@ class WorkspaceListViewController: UIViewController {
     
     func addWorkspace(name: String, desc: String, isSyncEnabled: Bool) {
         AppState.totalworkspaces = self.frc.numberOfRows(in: 0)
-        let ws = self.localdb.createWorkspace(id: self.localdb.workspaceId(), index: AppState.totalworkspaces, name: name, desc: desc, isSyncEnabled: isSyncEnabled)
+        _ = self.localdb.createWorkspace(id: self.localdb.workspaceId(), index: AppState.totalworkspaces, name: name, desc: desc, isSyncEnabled: isSyncEnabled)
         self.localdb.saveBackgroundContext()
-        DispatchQueue.global().async { if let aws = ws { self.db.saveWorkspaceToCloud(aws) } }
         self.reloadData()
     }
 }
@@ -192,22 +191,25 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
 
 extension WorkspaceListViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-        Log.debug("workspace list frc did change")
-        switch type {
-        case .delete:
-            DispatchQueue.main.async { self.tableView.deleteRows(at: [indexPath!], with: .automatic) }
-        case .insert:
-            DispatchQueue.main.async {
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [newIndexPath!], with: .none)
-                self.tableView.endUpdates()
-                self.tableView.layoutIfNeeded()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+        Log.debug("workspace list frc did change: \(anObject)")
+        DispatchQueue.main.async {
+            if self.navigationController?.topViewController == self {
+                switch type {
+                case .delete:
+                    self.tableView.deleteRows(at: [indexPath!], with: .automatic)
+                case .insert:
+                    self.tableView.beginUpdates()
+                    self.tableView.insertRows(at: [newIndexPath!], with: .none)
+                    self.tableView.endUpdates()
+                    self.tableView.layoutIfNeeded()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+                    if let x = anObject as? EWorkspace { self.db.saveWorkspaceToCloud(x) }
+                case .update:
+                    self.tableView.reloadRows(at: [indexPath!], with: .none)
+                default:
+                    break
+                }
             }
-        case .update:
-            DispatchQueue.main.async { self.tableView.reloadRows(at: [indexPath!], with: .none) }
-        default:
-            break
         }
     }
 }

@@ -1,5 +1,5 @@
 //
-//  Utils.swift
+//  EAUtils.swift
 //  Restor
 //
 //  Created by jsloop on 03/12/19.
@@ -10,8 +10,8 @@ import Foundation
 import UIKit
 import CommonCrypto
 
-class Utils {
-    static let shared: Utils = Utils()
+class EAUtils {
+    static let shared: EAUtils = EAUtils()
     private let userDefaults = UserDefaults.standard
     
     // MARK: - UserDefaults
@@ -170,14 +170,6 @@ class Utils {
             hex += String(format: "%02x", byte)
         }
         return hex
-    }
-    
-    func getImageType(_ url: URL) -> ImageType? {
-        let name = url.lastPathComponent
-        if let ext = name.components(separatedBy: ".").last {
-            return ImageType(rawValue: ext)
-        }
-        return .jpeg  // default photo extension
     }
     
     /// Returns elements in the first list that are not in the second list.
