@@ -17,14 +17,13 @@ public enum EAReschedulerType {
     case everyFn
 }
 
-public protocol EAReschedulable {
+public protocol EAReschedulable: class {
     var interval: TimeInterval { get set }
-    var repeats: Bool { get set }
     var type: EAReschedulerType! { get set }
     
-    init(interval: TimeInterval, repeats: Bool, type: EAReschedulerType)
-    mutating func schedule()
-    mutating func schedule(fn: EAReschedulerFn)
+    init(interval: TimeInterval, type: EAReschedulerType)
+    func schedule()
+    func schedule(fn: EAReschedulerFn)
 }
 
 public struct EAReschedulerFn: Equatable, Hashable {
@@ -53,46 +52,69 @@ public struct EAReschedulerFn: Equatable, Hashable {
 }
 
 /// A class which provides a scheduler which gets rescheduled if invoked before the schedule.
-public struct EARescheduler: EAReschedulable {
+public class EARescheduler: EAReschedulable {
     public typealias EAEquatable = String
-    public var timer: Timer?
+    private var timer: DispatchSourceTimer!
     public var interval: TimeInterval = 0.3
-    public var repeats: Bool = false
     public var type: EAReschedulerType!
     private var blocks: [EAReschedulerFn] = []
     private let queue = EACommon.userInteractiveQueue
 
-    public init(interval: TimeInterval, repeats: Bool, type: EAReschedulerType) {
-        self.interval = interval
-        self.repeats = repeats
-        self.type = type
+    private enum State {
+        case suspended
+        case resumed
     }
     
-    public mutating func destroy() {
-        self.timer?.invalidate()
+    private var state: State = .suspended
+    
+    deinit {
+        self.destroy()
         self.blocks = []
     }
     
-    public mutating func schedule() {
-        self.timer?.invalidate()
-        let this = self
-        self.timer = Timer.scheduledTimer(withTimeInterval: self.interval, repeats: self.repeats, block: { _ in
-            this.timer?.invalidate()
-            Log.debug("scheduler exec block")
-            if this.type == EAReschedulerType.everyFn {  // Invoke the callback function with the result of each block execution
-                this.queue.async {
-                    this.blocks.forEach { fn in fn.callback(fn.block()) }
-                }
-            }
-        })
+    public required init(interval: TimeInterval, type: EAReschedulerType) {
+        self.interval = interval
+        self.type = type
     }
     
-    public mutating func schedule(fn: EAReschedulerFn) {
+    private func initTimer() {
+        if self.timer != nil { self.destroy() }
+        self.timer = DispatchSource.makeTimerSource()
+        self.timer.schedule(deadline: .now() + self.interval)
+        self.timer.setEventHandler(handler: { [weak self] in self?.eventHandler() })
+        self.timer.resume()
+    }
+    
+    private func destroy() {
+        self.timer.setEventHandler {}
+        self.timer.cancel()
+    }
+    
+    public func done() {
+        self.destroy()
+    }
+    
+    public func schedule() {
+        self.initTimer()
+    }
+        
+    func eventHandler() {
+        Log.debug("scheduler exec block")
+        if self.type == EAReschedulerType.everyFn {  // Invoke the callback function with the result of each block execution
+            self.queue.async {
+                self.blocks.forEach { fn in fn.callback(fn.block()) }
+            }
+        }
+    }
+    
+    public func schedule(fn: EAReschedulerFn) {
+        Log.debug("schedule - fn")
         self.addToBlock(fn)
         self.schedule()
     }
     
-    private mutating func addToBlock(_ fn: EAReschedulerFn) {
+    private func addToBlock(_ fn: EAReschedulerFn) {
+        Log.debug("add to block - fn")
         if let idx = (self.blocks.firstIndex { afn -> Bool in afn.id == fn.id }) {
             self.blocks[idx] = fn
         } else {

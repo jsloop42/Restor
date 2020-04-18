@@ -60,7 +60,7 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
     }
     
     override func viewWillDisappear(_ animated: Bool) {
-        if self.rescheduler != nil { self.rescheduler.destroy() }
+        if self.rescheduler != nil { self.rescheduler.done() }
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -69,7 +69,7 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        if let model = self.model, model.shouldValidate { self.rescheduler = EARescheduler(interval: 0.3, repeats: false, type: .everyFn) }
+        if let model = self.model, model.shouldValidate { self.rescheduler = EARescheduler(interval: 0.3, type: .everyFn) }
         self.initUI()
         self.initEvent()
     }

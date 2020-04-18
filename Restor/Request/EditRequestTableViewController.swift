@@ -279,7 +279,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     @objc func doneDidTap(_ sender: Any) {
         Log.debug("Done did tap")
         self.endEditing()
-        self.app.diffRescheduler.timer?.invalidate()
+        self.app.diffRescheduler.done()
         if self.isDirty, let data = AppState.editRequest, let proj = AppState.currentProject {
             proj.addToRequests(data)
             if let set = proj.requestMethods, let xs = set.allObjects as? [ERequestMethodData] {

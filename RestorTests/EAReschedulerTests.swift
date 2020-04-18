@@ -22,7 +22,7 @@ class EAReschedulerTests: XCTestCase {
     
     func testRescheduler() {
         let exp = expectation(description: "execute the reschedule block with every fn callback")
-        var r = EARescheduler(interval: 1.0, repeats: false, type: .everyFn)
+        let r = EARescheduler(interval: 1.0, type: .everyFn)
         var acc: [Bool] = []
         let count = 3
         let lock = NSLock()
@@ -51,7 +51,7 @@ class EAReschedulerTests: XCTestCase {
     
     func testReschedulerMultipleFns() {
         let exp = expectation(description: "execute the reschedule block with every fn callback where fns can be different")
-        var r = EARescheduler(interval: 1.0, repeats: false, type: .everyFn)
+        let r = EARescheduler(interval: 1.0, type: .everyFn)
         var acc: [Bool] = []
         let count = 2
         let lock = NSLock()

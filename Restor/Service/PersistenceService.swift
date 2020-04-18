@@ -97,7 +97,7 @@ class PersistenceService {
     private let opqueue = EAOperationQueue()
     private var syncTimer: Timer?
     private var previousSyncTime: Int = 0
-    private var queryDefaultZoneRecordRetry: EARetryTimer!
+    private var queryDefaultZoneRecordRepeatTimer: EARepeatTimer!
     
     enum SubscriptionId: String {
         case fileChange = "file-change"
@@ -354,32 +354,7 @@ class PersistenceService {
     
     func syncFromCloud() {
         Log.debug("sync from cloud")
-        //if !self.isSyncedOnce() {
-            self.queryDefaultZoneRecords(completion: self.syncFromCloudHandler)
-        //} else {
-         //   self.fetchZoneChanges(zoneIDs: [self.ck.defaultZoneID()])
-//            let types = RecordType.allCases
-//            var key: String!
-//            var hm: [String: Any] = [:]
-//            var allKeys: [String] = []
-//            var zoneIDs: [CKRecordZone.ID] = []
-//            let len = types.count
-//            for i in 0..<len {
-//                key = CursorKey(type: types[i]).rawValue
-//                hm = self.store.dictionary(forKey: key) ?? [:]
-//                allKeys = hm.allKeys()
-//                if allKeys.count > 0 {
-//                    zoneIDs = allKeys.map { self.ck.zoneID(with: $0) }
-//                    DispatchQueue.global().asyncAfter(deadline: .now() + TimeInterval(i * 3)) {
-//                        self.fetchZoneChanges(zoneIDs: zoneIDs)
-//                    }
-//                } else {
-//                    self.removeIsSyncedOnce()
-//                    self.syncFromCloud()
-//                    break
-//                }
-//            }
-        //}
+        self.queryDefaultZoneRecords(completion: self.syncFromCloudHandler(_:))
     }
     
     func setLastSyncTime() {
@@ -395,22 +370,9 @@ class PersistenceService {
         switch result {
         case .success(let records):
             Log.debug("sync from cloud handler: records \(records.count)")
-            //let zoneIDs = records.map { record -> CKRecordZone.ID in self.ck.zoneID(workspaceId: record.id()) }
-            //self.fetchZoneChanges(zoneIDs: zoneIDs)
-            records.forEach { record in
-                _ = syncRecordFromCloudHandler(record)
-            }
+            records.forEach { record in _ = syncRecordFromCloudHandler(record) }
         case .failure(let error):
             Log.error("Error syncing from cloud: \(error)")
-            if let err = error as? CKError {
-                if err.isNetworkFailure() {
-                    self.queryDefaultZoneRecordRetry = EARetryTimer(block: { [unowned self] in
-                        // TODO: check reachability
-                        self.queryDefaultZoneRecords(completion: self.syncFromCloudHandler)
-                    }, interval: 2.0, limit: 8)
-                        
-                }
-            }
         }
     }
     

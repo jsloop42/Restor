@@ -17,7 +17,7 @@ class App {
     private let localdb = CoreDataService.shared
     private let utils = EAUtils.shared
     /// Entity diff rescheduler.
-    var diffRescheduler = EARescheduler(interval: 0.3, repeats: false, type: .everyFn)
+    var diffRescheduler = EARescheduler(interval: 0.3, type: .everyFn)
     /// Diff ids for `EAReschedulerFn`s
     private let fnIdReq = "request-fn"
     private let fnIdReqMethodIndex = "request-method-index-fn"

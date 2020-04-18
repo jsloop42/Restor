@@ -26,8 +26,8 @@
 		9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334872416DC20002452EB /* BackgroundWorker.swift */; };
 		9E473B04241CE74200DEC889 /* EditRequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */; };
 		9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */; };
-		9E4C30B22449F36900C1EEBA /* EARetryTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B12449F36900C1EEBA /* EARetryTimer.swift */; };
-		9E4C30B42449F5FB00C1EEBA /* EARetryTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B32449F5FB00C1EEBA /* EARetryTimerTests.swift */; };
+		9E4C30B22449F36900C1EEBA /* EARepeatTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B12449F36900C1EEBA /* EARepeatTimer.swift */; };
+		9E4C30B42449F5FB00C1EEBA /* EARepeatTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B32449F5FB00C1EEBA /* EARepeatTimerTests.swift */; };
 		9E4C30B6244A189300C1EEBA /* EANetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B5244A189300C1EEBA /* EANetwork.swift */; };
 		9E538DAC239951790025C14C /* UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAB239951790025C14C /* UI.swift */; };
 		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
@@ -108,8 +108,8 @@
 		9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditRequestTableViewController.swift; sourceTree = "<group>"; };
 		9E49EC002402FDE900DAA260 /* Restor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Restor.entitlements; sourceTree = "<group>"; };
 		9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
-		9E4C30B12449F36900C1EEBA /* EARetryTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARetryTimer.swift; sourceTree = "<group>"; };
-		9E4C30B32449F5FB00C1EEBA /* EARetryTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARetryTimerTests.swift; sourceTree = "<group>"; };
+		9E4C30B12449F36900C1EEBA /* EARepeatTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARepeatTimer.swift; sourceTree = "<group>"; };
+		9E4C30B32449F5FB00C1EEBA /* EARepeatTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARepeatTimerTests.swift; sourceTree = "<group>"; };
 		9E4C30B5244A189300C1EEBA /* EANetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EANetwork.swift; sourceTree = "<group>"; };
 		9E538DAB239951790025C14C /* UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI.swift; sourceTree = "<group>"; };
 		9E538DAD239953460025C14C /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
@@ -277,7 +277,7 @@
 				9EFA58BC2445EBA8003C8AEA /* EAOperationQueue.swift */,
 				9EB78E72242BE6FF009663FE /* EAQueue.swift */,
 				9E145F91241BD9D200962A19 /* EARescheduler.swift */,
-				9E4C30B12449F36900C1EEBA /* EARetryTimer.swift */,
+				9E4C30B12449F36900C1EEBA /* EARepeatTimer.swift */,
 				9EFA58BA2445E0F0003C8AEA /* EASystem.swift */,
 				9E8759052396C6A700F949D1 /* EAUtils.swift */,
 				9E85FE47240E9CDB002821F2 /* main.swift */,
@@ -299,10 +299,10 @@
 				9E926FAD23945E7D002DF561 /* RestorTests.swift */,
 				9EB78E70242B7AFF009663FE /* EALFUCacheTests.swift */,
 				9EB78E74242BF767009663FE /* EAQueueTests.swift */,
+				9E4C30B32449F5FB00C1EEBA /* EARepeatTimerTests.swift */,
 				9E145F93241C118800962A19 /* EAReschedulerTests.swift */,
 				9E568E3B24308C67003150EC /* EAUtilsTests.swift */,
 				9E926FAF23945E7D002DF561 /* Info.plist */,
-				9E4C30B32449F5FB00C1EEBA /* EARetryTimerTests.swift */,
 			);
 			path = RestorTests;
 			sourceTree = "<group>";
@@ -534,7 +534,7 @@
 				9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */,
 				9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */,
 				9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */,
-				9E4C30B22449F36900C1EEBA /* EARetryTimer.swift in Sources */,
+				9E4C30B22449F36900C1EEBA /* EARepeatTimer.swift in Sources */,
 				9E769AFA242147AB005B18C3 /* Models.swift in Sources */,
 				9EB78E73242BE6FF009663FE /* EAQueue.swift in Sources */,
 			);
@@ -546,7 +546,7 @@
 			files = (
 				9E1B2DD9242753AA00994233 /* CloudKitTests.swift in Sources */,
 				9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */,
-				9E4C30B42449F5FB00C1EEBA /* EARetryTimerTests.swift in Sources */,
+				9E4C30B42449F5FB00C1EEBA /* EARepeatTimerTests.swift in Sources */,
 				9EB78E71242B7AFF009663FE /* EALFUCacheTests.swift in Sources */,
 				9E568E3C24308C67003150EC /* EAUtilsTests.swift in Sources */,
 				9EB78E75242BF767009663FE /* EAQueueTests.swift in Sources */,
