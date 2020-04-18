@@ -313,11 +313,15 @@ class CoreDataService {
     ///   - ctx: The managed object context
     func getFetchResultsController(obj: Entity.Type, predicate: NSPredicate? = nil, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
         let moc = self.getMOC(ctx: ctx)
-        let fr = obj.fetchRequest()
-        fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
-        if let x = predicate { fr.predicate = x }
-        fr.fetchBatchSize = self.fetchBatchSize
-        return NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
+        var frc: NSFetchedResultsController<NSFetchRequestResult>!
+        moc.performAndWait {
+            let fr = obj.fetchRequest()
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            if let x = predicate { fr.predicate = x }
+            fr.fetchBatchSize = self.fetchBatchSize
+            frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
+        }
+        return frc
     }
         
     /// Updates the given fetch results controller predicate
@@ -326,7 +330,7 @@ class CoreDataService {
     ///   - predicate: A fetch predicate
     ///   - ctx: The managed object context
     func updateFetchResultsController(_ frc: NSFetchedResultsController<NSFetchRequestResult>, predicate: NSPredicate, ctx: NSManagedObjectContext = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
-        frc.fetchRequest.predicate = predicate
+        ctx.performAndWait { frc.fetchRequest.predicate = predicate }
         return frc
     }
     
@@ -656,9 +660,9 @@ class CoreDataService {
             let typeKey: String = {
                 switch type {
                 case .header:
-                    return "headers.id"
+                    return "header.id"
                 case .param:
-                    return "params.id"
+                    return "param.id"
                 case .form:
                     return "form.request.id"
                 case .multipart:
@@ -738,7 +742,7 @@ class CoreDataService {
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "headers.id == %@", reqId)
+            fr.predicate = NSPredicate(format: "header.id == %@", reqId)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -759,7 +763,7 @@ class CoreDataService {
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "params.id == %@", reqId)
+            fr.predicate = NSPredicate(format: "param.id == %@", reqId)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {

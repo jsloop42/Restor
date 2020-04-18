@@ -1085,11 +1085,65 @@ class PersistenceService {
     
     /// Saves the given request and corresponding project to the cloud.
     func saveRequestToCloudImp(ckreq: CKRecord, req: ERequest, ckproj: CKRecord, proj: EProject) {
+        var acc: [DeferredSaveModel] = []
+        let zoneID = ckreq.zoneID()
         req.updateCKRecord(ckreq, project: ckproj)
         //EProject.addRequestReference(to: ckproj, request: ckreq)
         let projModel = DeferredSaveModel(record: ckproj, entity: proj, id: proj.getId())
         let reqModel = DeferredSaveModel(record: ckreq, entity: req, id: req.getId())
-        self.saveToCloud([reqModel, projModel])  // we need to save this in the same request so that the deps are created and referrenced properly.
+        acc.append(contentsOf: [projModel, reqModel])
+        if let set = req.headers, let xs = set.allObjects as? [ERequestData] {
+            xs.forEach { reqData in
+                if !reqData.isSynced {
+                    let hdrecord = self.ck.createRecord(recordID: self.ck.recordID(entityId: reqData.getId(), zoneID: zoneID), recordType: RecordType.requestData.rawValue)
+                    reqData.updateCKRecord(hdrecord)
+                    ERequestData.addRequestReference(ckreq, toheader: hdrecord)
+                    acc.append(DeferredSaveModel(record: hdrecord, id: reqData.getId()))
+                }
+            }
+        }
+        if let set = req.params, let xs = set.allObjects as? [ERequestData] {
+            xs.forEach { reqData in
+                if !reqData.isSynced {
+                    let paramrecord = self.ck.createRecord(recordID: self.ck.recordID(entityId: reqData.getId(), zoneID: zoneID), recordType: RecordType.requestData.rawValue)
+                    reqData.updateCKRecord(paramrecord)
+                    ERequestData.addRequestReference(ckreq, toParam: paramrecord)
+                    acc.append(DeferredSaveModel(record: paramrecord, id: reqData.getId()))
+                }
+            }
+        }
+        if let body = req.body, !body.isSynced {
+            let ckbody = self.ck.createRecord(recordID: self.ck.recordID(entityId: body.getId(), zoneID: zoneID), recordType: RecordType.requestBodyData.rawValue)
+            body.updateCKRecord(ckbody, request: ckreq)
+            acc.append(DeferredSaveModel(record: ckbody, id: ckbody.id()))
+            if let binary = body.binary, !binary.isSynced {
+                let ckbin = self.ck.createRecord(recordID: self.ck.recordID(entityId: binary.getId(), zoneID: zoneID), recordType: RecordType.requestData.rawValue)
+                binary.updateCKRecord(ckbin)
+                ERequestData.addRequestBodyDataReference(ckbody, toBinary: ckbin)
+                acc.append(DeferredSaveModel(record: ckbin, id: ckbin.id()))
+            }
+            if let forms = body.form?.allObjects as? [ERequestData] {
+                forms.forEach { reqData in
+                    if !reqData.isSynced {
+                        let ckform = self.ck.createRecord(recordID: self.ck.recordID(entityId: reqData.getId(), zoneID: zoneID), recordType: RecordType.requestData.rawValue)
+                        reqData.updateCKRecord(ckform)
+                        ERequestData.addRequestReference(ckreq, toForm: ckform, type: .form)
+                        acc.append(DeferredSaveModel(record: ckform, id: ckform.id()))
+                    }
+                }
+            }
+            if let multipart = body.multipart?.allObjects as? [ERequestData] {
+                multipart.forEach { reqData in
+                    if !reqData.isSynced {
+                        let ckmpart = self.ck.createRecord(recordID: self.ck.recordID(entityId: reqData.getId(), zoneID: zoneID), recordType: RecordType.requestData.rawValue)
+                        reqData.updateCKRecord(ckmpart)
+                        ERequestData.addRequestReference(ckreq, toForm: ckmpart, type: .multipart)
+                        acc.append(DeferredSaveModel(record: ckmpart, id: ckmpart.id()))
+                    }
+                }
+            }
+        }
+        self.saveToCloud(acc)  // we need to save this in the same request so that the deps are created and referrenced properly.
         // TODO: subscribe to request change
     }
     

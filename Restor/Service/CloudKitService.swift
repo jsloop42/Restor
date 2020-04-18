@@ -856,7 +856,9 @@ class CloudKitService {
                     // Merge in the changes, save the new record
                     let (local, server) = ckerror.getMergeRecords()
                     if let merged = PersistenceService.shared.mergeRecords(local: local, server: server, recordType: local?.recordType ?? "") {
-                        self.saveRecords([merged], count: count! + 1, isForce: true, completion: completion)
+                        var xs: [CKRecord] = records.filter { record -> Bool in record.recordID != merged.recordID }
+                        xs.append(merged)
+                        self.saveRecords(xs, count: count! + 1, isForce: true, completion: completion)
                     } else {
                         completion(.failure(ckerror))
                     }

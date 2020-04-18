@@ -76,48 +76,32 @@ public class ERequestData: NSManagedObject, Entity {
         record["version"] = self.version as CKRecordValue
     }
     
-    /// Adds a to-one reference to the `binary` field.
-    static func addBinaryReference(_ requestData: CKRecord, binary: CKRecord) {
-        let ref = CKRecord.Reference(record: binary, action: .none)
-        requestData["binary"] = ref
-    }
-    
-    /// Adds a to-many reference to `file` field.
-    static func addFileReference(_ requestData: CKRecord, file: CKRecord) {
-        var xs = requestData["file"] as? [CKRecord.Reference] ?? [CKRecord.Reference]()
-        let ref = CKRecord.Reference(record: file, action: .deleteSelf)
-        if !xs.contains(ref) {
-            xs.append(ref)
-            requestData["files"] = xs
-        }
+    /// Adds binary (ERequestBodyData) back reference to ERequestData.
+    static func addRequestBodyDataReference(_ reqBodyData: CKRecord, toBinary reqData: CKRecord) {
+        let ref = CKRecord.Reference(record: reqBodyData, action: .none)
+        reqData["binary"] = ref
     }
     
     /// Adds a to-one reference to `form` field.
-    static func addFormReference(_ requestData: CKRecord, form: CKRecord, type: RequestDataType) {
-        let ref = CKRecord.Reference(record: form, action: .deleteSelf)
+    static func addRequestReference(_ request: CKRecord, toForm reqData: CKRecord, type: RequestDataType) {
+        let ref = CKRecord.Reference(record: request, action: .deleteSelf)
         let key: String = {
             if type == .form { return "form" }
             if type == .multipart { return "multipart" }
             return ""
         }()
         guard !key.isEmpty else { Log.error("Wrong type passed: \(type.rawValue)"); return }
-        requestData[key] = ref
+        reqData[key] = ref
     }
     
-    /// Adds a to-one reference to `image` field.
-    static func addImageReference(_ requestData: CKRecord, image: CKRecord) {
-        let ref = CKRecord.Reference(record: image, action: .deleteSelf)
-        requestData["image"] = ref
+    static func addRequestReference(_ request: CKRecord, toheader reqData: CKRecord) {
+        let ref = CKRecord.Reference(record: request, action: .none)
+        reqData["header"] = ref
     }
     
-    static func addHeaderReference(_ requestData: CKRecord, header: CKRecord) {
-        let ref = CKRecord.Reference(record: header, action: .none)
-        requestData["header"] = ref
-    }
-    
-    static func addParamReference(_ requestData: CKRecord, param: CKRecord) {
-        let ref = CKRecord.Reference(record: param, action: .none)
-        requestData["param"] = ref
+    static func addRequestReference(_ request: CKRecord, toParam reqData: CKRecord) {
+        let ref = CKRecord.Reference(record: request, action: .none)
+        reqData["param"] = ref
     }
     
     static func getRecordType(_ record: CKRecord) -> RequestDataType? {
@@ -130,6 +114,7 @@ public class ERequestData: NSManagedObject, Entity {
         return type
     }
     
+    /// Adds back reference to CoreData entity.
     static func addBackReference(type: RequestDataType, record: CKRecord, reqData: ERequestData, ctx: NSManagedObjectContext) {
         switch type {
         case .header:
