@@ -133,6 +133,7 @@ extension RequestListViewController: NSFetchedResultsControllerDelegate {
                     if let x = anObject as? ERequest { self.db.saveRequestToCloud(x) }
                 case .update:
                     self.tableView.reloadRows(at: [indexPath!], with: .none)
+                    if let x = anObject as? ERequest { self.db.saveRequestToCloud(x) }
                 default:
                     break
                 }

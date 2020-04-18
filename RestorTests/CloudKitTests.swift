@@ -31,13 +31,14 @@ class CloudKitTests: XCTestCase {
     
     func deleteZones() -> Bool {
         let sema = DispatchSemaphore(value: 0)
+        self.zoneIDs.insert(self.ck.zoneID(with: "workspace-id-1"))
+        self.zoneIDs.insert(self.ck.zoneID(with: "default-workspace"))
         self.ck.deleteZone(recordZoneIds: self.zoneIDs.toArray()) { _ in sema.signal() }
         sema.wait()
         return true
     }
     
     func testDeleteZone() {
-        self.zoneIDs.insert(self.ck.zoneID(with: "workspace-id-1"))
         self.zoneIDs.insert(self.ck.zoneID(with: "ws-default-workspace"))
         XCTAssertTrue(self.deleteZones())
     }
