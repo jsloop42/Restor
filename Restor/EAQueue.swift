@@ -11,46 +11,76 @@ import Foundation
 /// A queue implementation which dequeues based on time elapsed since enqueue.
 public class EAQueue<T> {
     var queue: [T] = []
-    var timer: Timer?  // timer
+    var timer: DispatchSourceTimer?  // timer
     public var interval: TimeInterval = 4.0  // seconds
     public var completion: ([T]) -> Void
     private let accessq = EACommon.userInteractiveQueue
     
+    private enum State {
+        case suspended
+        case resumed
+    }
+    
+    private var state: State = .suspended
+    
+    deinit {
+        Log.debug("EAQueue deinit")
+        self.timer?.cancel()
+        self.timer?.resume()
+        self.timer?.setEventHandler(handler: {})
+        self.queue.removeAll()
+    }
+    
     init(interval: TimeInterval, completion: @escaping ([T]) -> Void) {
         self.interval = interval
         self.completion = completion
+        self.initTimer()
     }
     
-    public func updateTimer() {
-        if self.queue.isEmpty && self.timer == nil {
-            self.timer = Timer(timeInterval: self.interval, repeats: true, block: { [weak self] _ in
-                guard let this = self else { return }
-                Log.debug("in timer queue len: \(this.queue.count)")
-                if this.isEmpty() {
-                    this.timer?.invalidate()
-                    this.timer = nil
-                    return
-                }
-                this.accessq.sync {
-                    this.completion(this.queue)
-                    this.queue.removeAll()
-                }
-            })
-            if let x = self.timer { RunLoop.main.add(x, forMode: .common) }
+    private func initTimer() {
+        self.timer = DispatchSource.makeTimerSource()
+        self.timer?.schedule(deadline: .now() + self.interval, repeating: self.interval)
+        self.timer?.setEventHandler(handler: { [weak self] in self?.eventHandler() })
+    }
+    
+    private func eventHandler() {
+        Log.debug("in timer queue len: \(self.queue.count)")
+        if self.isEmpty() && self.state == .resumed {
+            self.timer?.suspend()
+            self.state = .suspended
+            return
         }
+        self.accessq.sync {
+            self.completion(self.queue)
+            Log.debug("EAQueue processed \(self.queue.count) items")
+            self.queue.removeAll()
+        }
+    }
+        
+    public func updateTimer() {
+        if !self.isEmpty() && self.state == .suspended {
+            self.timer?.resume()
+            self.state = .resumed
+        }
+        Log.debug("Queue state \(self.state) - count: \(self.queue.count)")
     }
     
     /// Enqueues the given list in one operation.
     public func enqueue(_ xs: [T]) {
-        self.updateTimer()
-        self.accessq.sync { self.queue.append(contentsOf: xs); Log.debug("enqueued: \(xs)") }
+        self.accessq.sync {
+            self.queue.append(contentsOf: xs); Log.debug("enqueued: \(xs)")
+            self.updateTimer()
+        }
     }
     
     /// Enqueues the given element.
     public func enqueue(_ x: T) {
         Log.debug("enqueue: \(x)")
-        self.updateTimer()
-        self.accessq.sync { self.queue.append(x); Log.debug("enqueued: \(x)") }
+        self.accessq.sync {
+            self.queue.append(x);
+            Log.debug("enqueued: \(x)")
+            self.updateTimer()
+        }
     }
     
     public func dequeue() -> T? {

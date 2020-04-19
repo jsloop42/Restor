@@ -69,6 +69,11 @@ public class EImage: NSManagedObject, Entity {
         record["version"] = self.version as CKRecordValue
     }
     
+    static func addRequestDataReference(_ reqData: CKRecord, image: CKRecord) {
+        let ref = CKRecord.Reference(record: reqData, action: .none)
+        image["requestData"] = ref
+    }
+    
     static func getRequestData(_ record: CKRecord, ctx: NSManagedObjectContext) -> ERequestData? {
         if let ref = record["requestData"] as? CKRecord.Reference {
             return CoreDataService.shared.getRequestData(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)

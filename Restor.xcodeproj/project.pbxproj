@@ -25,7 +25,7 @@
 		9E4334862416D1ED002452EB /* IMG_6109.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 9E4334852416D1DE002452EB /* IMG_6109.jpeg */; };
 		9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334872416DC20002452EB /* BackgroundWorker.swift */; };
 		9E473B04241CE74200DEC889 /* EditRequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */; };
-		9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */; };
+		9E49EC022402FF1F00DAA260 /* EADocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E49EC012402FF1F00DAA260 /* EADocumentPicker.swift */; };
 		9E4C30B22449F36900C1EEBA /* EARepeatTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B12449F36900C1EEBA /* EARepeatTimer.swift */; };
 		9E4C30B42449F5FB00C1EEBA /* EARepeatTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B32449F5FB00C1EEBA /* EARepeatTimerTests.swift */; };
 		9E4C30B6244A189300C1EEBA /* EANetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B5244A189300C1EEBA /* EANetwork.swift */; };
@@ -107,7 +107,7 @@
 		9E4334872416DC20002452EB /* BackgroundWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundWorker.swift; sourceTree = "<group>"; };
 		9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditRequestTableViewController.swift; sourceTree = "<group>"; };
 		9E49EC002402FDE900DAA260 /* Restor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Restor.entitlements; sourceTree = "<group>"; };
-		9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DocumentPicker.swift; sourceTree = "<group>"; };
+		9E49EC012402FF1F00DAA260 /* EADocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EADocumentPicker.swift; sourceTree = "<group>"; };
 		9E4C30B12449F36900C1EEBA /* EARepeatTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARepeatTimer.swift; sourceTree = "<group>"; };
 		9E4C30B32449F5FB00C1EEBA /* EARepeatTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARepeatTimerTests.swift; sourceTree = "<group>"; };
 		9E4C30B5244A189300C1EEBA /* EANetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EANetwork.swift; sourceTree = "<group>"; };
@@ -268,7 +268,7 @@
 				9E538DAD239953460025C14C /* AppState.swift */,
 				9E4334872416DC20002452EB /* BackgroundWorker.swift */,
 				9EEA7A91239EA4AA00A1CA68 /* Const.swift */,
-				9E49EC012402FF1F00DAA260 /* DocumentPicker.swift */,
+				9E49EC012402FF1F00DAA260 /* EADocumentPicker.swift */,
 				9E223D54243626E000229855 /* EACommon.swift */,
 				9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */,
 				9E4334832416C4AA002452EB /* EAFileManager.swift */,
@@ -531,7 +531,7 @@
 				9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */,
 				9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */,
 				9E1B2DE42427992B00994233 /* EFile.swift in Sources */,
-				9E49EC022402FF1F00DAA260 /* DocumentPicker.swift in Sources */,
+				9E49EC022402FF1F00DAA260 /* EADocumentPicker.swift in Sources */,
 				9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */,
 				9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */,
 				9E4C30B22449F36900C1EEBA /* EARepeatTimer.swift in Sources */,

@@ -10,13 +10,15 @@ import Foundation
 import CloudKit
 
 /// A class to work with CloudKit record fetch using Operation.
-class EACloudOperation: Operation {
+class EACloudOperation: Operation, NSSecureCoding {
     var parentId: String!
     var record: CKRecord?
     var savedRecords: [CKRecord] = []
     var deletedRecordIDs: [CKRecord.ID] = []
     var recordType: RecordType!
+    private var _recordType: String!
     var opType: OpType = .fetchRecord
+    private var _opType: String!
     var predicate: NSPredicate = NSPredicate(value: true)
     var cursor: CKQueryOperation.Cursor?
     var modified: Int!
@@ -34,7 +36,7 @@ class EACloudOperation: Operation {
         }
     }
     
-    public enum OpType {
+    public enum OpType: String {
         case fetchRecord
         case queryRecord
         case fetchZoneChange
@@ -54,7 +56,9 @@ class EACloudOperation: Operation {
     
     init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String, predicate: NSPredicate? = nil, modified: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
         self.recordType = recordType
+        self._recordType = self.recordType.rawValue
         self.opType = opType
+        self._opType = self.opType.rawValue
         self.zoneID = zoneID
         self.parentId = parentId
         if predicate != nil { self.predicate = predicate! }
@@ -66,6 +70,42 @@ class EACloudOperation: Operation {
         self.block = block
         self.opType = .block
     }
+    
+    func getKey() -> String {
+        return "\(self.recordType.rawValue)-\(self.opType)-\(self.parentId ?? "")"
+    }
+    
+    func encode(with coder: NSCoder) {
+        coder.encode(self._recordType, forKey: "_recordType")
+        coder.encode(self._opType, forKey: "_opType")
+        coder.encode(self.zoneID.encode(), forKey: "zoneID")
+        coder.encode(self.parentId, forKey: "parentId")
+        coder.encode(self.predicate, forKey: "predicate")
+        coder.encode(self.modified, forKey: "modified")
+    }
+    
+    required init?(coder: NSCoder) {
+        if let x = coder.decodeObject(forKey: "_recordType") as? String { self.recordType = RecordType(rawValue: x)! }
+        if let x = coder.decodeObject(forKey: "_opType") as? String { self.opType = OpType(rawValue: x)! }
+        if let data = coder.decodeObject(forKey: "zoneID") as? Data, let x = CKRecordZone.ID.decode(data) { self.zoneID = x }
+        if let x = coder.decodeObject(forKey: "parentId") as? String { self.parentId = x }
+        if let x = coder.decodeObject(forKey: "predicate") as? NSPredicate { self.predicate = x }
+        if let x = coder.decodeObject(forKey: "modified") as? Int { self.modified = x }
+    }
+    
+    static func encode(_ op: EACloudOperation) -> Data? {
+        return try? NSKeyedArchiver.archivedData(withRootObject: op, requiringSecureCoding: true)
+    }
+    
+    func encode() -> Data? {
+        return EACloudOperation.encode(self)
+    }
+    
+    static func decode(_ data: Data) -> EACloudOperation? {
+        return try? NSKeyedUnarchiver.unarchivedObject(ofClass: EACloudOperation.self, from: data)
+    }
+    
+    static var supportsSecureCoding: Bool = true
     
     override var isAsynchronous: Bool { return true }
 

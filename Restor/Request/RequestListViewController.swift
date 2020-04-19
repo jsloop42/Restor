@@ -120,7 +120,7 @@ extension RequestListViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         Log.debug("requests list frc did change: \(anObject)")
         DispatchQueue.main.async {
-            if self.navigationController?.topViewController == self {
+            //if self.navigationController?.topViewController == self {
                 switch type {
                 case .delete:
                     self.tableView.deleteRows(at: [indexPath!], with: .automatic)
@@ -130,14 +130,12 @@ extension RequestListViewController: NSFetchedResultsControllerDelegate {
                     self.tableView.endUpdates()
                     self.tableView.layoutIfNeeded()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
-                    if let x = anObject as? ERequest { self.db.saveRequestToCloud(x) }
                 case .update:
                     self.tableView.reloadRows(at: [indexPath!], with: .none)
-                    if let x = anObject as? ERequest { self.db.saveRequestToCloud(x) }
                 default:
                     break
                 }
-            }
+            //}
         }
     }
 }

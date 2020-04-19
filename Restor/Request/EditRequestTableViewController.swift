@@ -40,7 +40,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     let app = App.shared
     var isEndEditing = false
     var isOptionFromNotif = false
-    private let docPicker = DocumentPicker.shared
+    private let docPicker = EADocumentPicker.shared
     private let utils = EAUtils.shared
     private let db = PersistenceService.shared
     private var localdb = CoreDataService.shared
@@ -285,13 +285,17 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             if let set = proj.requestMethods, let xs = set.allObjects as? [ERequestMethodData] {
                 xs.forEach { method in if method.shouldDelete { self.localdb.deleteEntity(method) } }
             }
-            Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { t in
+            let timer = DispatchSource.makeTimerSource()
+            timer.schedule(deadline: .now() + .milliseconds(300))
+            timer.setEventHandler {
                 Log.debug("edit req in save timer")
-                t.invalidate()
                 self.localdb.saveBackgroundContext()
                 self.isDirty = false
+                self.db.saveRequestToCloud(data)
                 self.close()
+                timer.cancel()
             }
+            timer.resume()
         }
     }
     
@@ -1278,10 +1282,10 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             let row = DocumentPickerState.modelIndex
             if let data = AppState.editRequest, let ctx = data.managedObjectContext,
                 let form = self.localdb.getRequestData(id: DocumentPickerState.reqDataId, ctx: ctx) {
-                form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt64()
+                form.type = RequestDataType.form.rawValue.toInt64()
                 if let image = DocumentPickerState.image {
                     if let imageData = DocumentPickerState.imageType == ImageType.png.rawValue ? image.pngData() : image.jpegData(compressionQuality: 1.0) {
-                        let eimage = self.localdb.createImage(data: imageData, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
+                        let eimage = self.localdb.createImage(data: imageData, name: DocumentPickerState.imageName, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
                         eimage?.requestData = form
                         eimage?.isCameraMode = DocumentPickerState.isCameraMode
                         form.files?.forEach { file in self.localdb.deleteEntity(file as! Entity) }
@@ -1302,7 +1306,8 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             let row = DocumentPickerState.modelIndex
             if let data = AppState.editRequest, let ctx = data.managedObjectContext,
                 let form = self.localdb.getRequestData(id: DocumentPickerState.reqDataId, ctx: ctx) {
-                form.type = RequestBodyFormFieldFormatType.file.rawValue.toInt64()
+                form.type = RequestDataType.form.rawValue.toInt64()
+                form.fieldFormat = RequestBodyFormFieldFormatType.file.rawValue.toInt64()
                 form.files = NSSet()  // clear the set, but it does not delete the data
                 DocumentPickerState.docs.enumerated().forEach { args in
                     let (offset, element) = args
@@ -1674,7 +1679,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 Log.debug("binary field - image attachment")
                 if let binary = body.binary {
                     if binary.image?.data != imageData {
-                        let eimage = self.localdb.createImage(data: imageData, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
+                        let eimage = self.localdb.createImage(data: imageData, name: DocumentPickerState.imageName, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
                         eimage?.requestData = binary
                         eimage?.isCameraMode = DocumentPickerState.isCameraMode
                         binary.files?.forEach { file in self.localdb.deleteEntity(file as! Entity) }

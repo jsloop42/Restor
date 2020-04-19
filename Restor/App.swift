@@ -491,13 +491,14 @@ class App {
     /// Checks if the request body changed
     func didRequestBodyChangeImp(_ x: ERequestBodyData?, request: [String: Any]) -> Bool {
         self.addEditRequestManagedObjectId(x?.objectID)
-        if (x == nil && request["body"] != nil) || (x != nil && request["body"] == nil) { return true }
+        if (x == nil && request["body"] != nil) || (x != nil && request["body"] == nil) { x?.isSynced = false; return true }
         if let body = request["body"] as? [String: Any] {
             if x?.index != body["index"] as? Int64 ||
                 x?.json != body["json"] as? String ||
                 x?.raw != body["raw"] as? String ||
                 x?.selected != body["selected"] as? Int64 ||
                 x?.xml != body["xml"] as? String {
+                x?.isSynced = false
                 return true
             }
             // TODO: handle binary
@@ -516,10 +517,10 @@ class App {
     
     /// Checks if the any of the request body form elements changed.
     func didAnyRequestBodyFormChangeImp(_ x: ERequestBodyData, request: [String: Any]) -> Bool {
-        if request["body"] == nil { return true }
+        if request["body"] == nil { x.isSynced = false; return true }
         if let body = request["body"] as? [String: Any] {
-            if (x.form != nil && body["form"] == nil) || (x.form == nil && body["form"] != nil) { return true }
-            if (x.multipart != nil && body["multipart"] == nil) || (x.multipart == nil && body["multipart"] != nil) { return true }
+            if (x.form != nil && body["form"] == nil) || (x.form == nil && body["form"] != nil) { x.isSynced = false; return true }
+            if (x.multipart != nil && body["multipart"] == nil) || (x.multipart == nil && body["multipart"] != nil) { x.isSynced = false; return true }
             var formxsa: [Entity] = []
             var formxsb: [[String: Any]] = []
             let selectedType = RequestBodyType(rawValue: x.selected.toInt()) ?? .form
@@ -536,7 +537,7 @@ class App {
                 return self.didRequestBodyBinaryChangeImp(x.binary, body: body)
             }
             formxsa.forEach { e in self.addEditRequestManagedObjectId(e.objectID) }
-            if formxsa.count != formxsb.count { return true }
+            if formxsa.count != formxsb.count { x.isSynced = false; return true }
             self.localdb.sortByCreated(&formxsa)
             
             let len = formxsa.count
@@ -549,10 +550,10 @@ class App {
     
     func didRequestBodyBinaryChangeImp(_ reqData: ERequestData?, body: [String: Any]) -> Bool {
         let obin = body["binary"] as? [String: Any]
-        if (obin == nil && reqData != nil) || (obin != nil && reqData == nil) { return true }
-        guard let lbin = reqData, let rbin = obin else { return true }
-        if lbin.created != rbin["created"] as? Int64 { return true }
-        if self.didRequestBodyFormAttachmentChangeImp(lbin, y: rbin) { return true }
+        if (obin == nil && reqData != nil) || (obin != nil && reqData == nil) { reqData?.isSynced = false; return true }
+        guard let lbin = reqData, let rbin = obin else { reqData?.isSynced = false; return true }
+        if lbin.created != rbin["created"] as? Int64 { reqData?.isSynced = false; return true }
+        if self.didRequestBodyFormAttachmentChangeImp(lbin, y: rbin) { reqData?.isSynced = false; return true }
         return false
     }
     
@@ -571,7 +572,7 @@ class App {
         }) {
             // Check if form and request data are the same
             if let type = RequestDataType(rawValue: reqData.type.toInt()) {
-                if self.didRequestDataChangeImp(x: reqData, y: request, type: type) { return true }
+                if self.didRequestDataChangeImp(x: reqData, y: request, type: type) { body.isSynced = false; return true }
             }
         } else {  // No request data found in forms => added
             return true
@@ -590,19 +591,19 @@ class App {
     /// Checks if the given form's attachments changed.
     func didRequestBodyFormAttachmentChangeImp(_ x: ERequestData, y: [String: Any]) -> Bool {
         self.addEditRequestManagedObjectId(x.image?.objectID)
-        if (x.image != nil && y["image"] == nil) || (x.image == nil && y["image"] != nil) { return true }
+        if (x.image != nil && y["image"] == nil) || (x.image == nil && y["image"] != nil) { x.isSynced = false; return true }
         if let ximage = x.image, let yimage = y["image"] as? [String: Any]  {
             if self.didRequestImageChangeImp(x: ximage, y: yimage) { return true }
         }
-        if (x.files != nil && y["files"] == nil) || (x.files == nil && y["file"] != nil) { return true }
+        if (x.files != nil && y["files"] == nil) || (x.files == nil && y["file"] != nil) { x.isSynced = false; return true }
         let yfiles = y["files"] as! [[String: Any]]
-        if x.files!.count != yfiles.count { return true }
+        if x.files!.count != yfiles.count { x.isSynced = false; return true }
         if let set = x.files, var xs = set.allObjects as? [Entity] {
             xs.forEach { x in self.addEditRequestManagedObjectId(x.objectID) }
             self.localdb.sortByCreated(&xs)
             let len = xs.count
             for i in 0..<len {
-                if self.didRequestFileChangeImp(x: xs[i] as! EFile, y: yfiles[i]) { return true }
+                if self.didRequestFileChangeImp(x: xs[i] as! EFile, y: yfiles[i]) { x.isSynced = false; return true }
             }
         }
         return false
@@ -623,6 +624,7 @@ class App {
             x.key != y["key"] as? String ||
             x.type != y["type"] as? Int64 ||
             x.value != y["value"] as? String {
+            x.isSynced = false
             return true
         }
         if type == .form {
@@ -644,10 +646,11 @@ class App {
             x.index != y["index"] as? Int64 ||
             x.name != y["name"] as? String ||
             x.type != y["type"] as? Int64  {
+            x.isSynced = false
             return true
         }
         if let id = x.id, let xdata = x.data, let file = self.localdb.getFileData(id: id), let ydata = file.data {
-            if xdata != ydata { return true }
+            if xdata != ydata { x.isSynced = false; return true }
         }
         return false
     }
@@ -666,10 +669,11 @@ class App {
             x.name != y["name"] as? String ||
             x.isCameraMode != y["isCameraMode"] as? Bool ||
             x.type != y["type"] as? String  {
+            x.isSynced = false
             return true
         }
         if let id = x.id, let xdata = x.data, let image = self.localdb.getImageData(id: id), let ydata = image.data {
-            if xdata != ydata { return true }
+            if xdata != ydata { x.isSynced = false; return true }
         }
         return false
     }

@@ -39,6 +39,8 @@ class CloudKitTests: XCTestCase {
     }
     
     func testDeleteZone() {
+        self.zoneIDs.insert(self.ck.zoneID(with: "workspace-id-1"))
+        self.zoneIDs.insert(self.ck.zoneID(with: "default-workspace"))
         self.zoneIDs.insert(self.ck.zoneID(with: "ws-default-workspace"))
         XCTAssertTrue(self.deleteZones())
     }
@@ -129,7 +131,6 @@ class CloudKitTests: XCTestCase {
         let ckReqData = self.ck.createRecord(recordID: ckReqDataID, recordType: "RequestData")
         let ckFile = self.ck.createRecord(recordID: ckFileID, recordType: "File")
         reqData.updateCKRecord(ckReqData)
-        ERequestData.addFileReference(ckReqData, file: ckFile)
         file.updateCKRecord(ckFile)
         EFile.addRequestDataReference(ckFile, reqData: ckReqData)
         self.ck.saveRecords([ckFile, ckReqData]) { result in

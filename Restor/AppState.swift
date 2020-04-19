@@ -58,6 +58,8 @@ struct DocumentPickerState {
     static var docs: [URL] = []
     /// Photo or camera attachment
     static var image: UIImage?
+    /// The image name with extension
+    static var imageName: String = ""
     /// kUTTypeImage
     static var imageType: String = "png"
     /// If camera is chosen
@@ -74,5 +76,19 @@ struct DocumentPickerState {
         DocumentPickerState.isCameraMode = false
         DocumentPickerState.modelIndex = 0
         DocumentPickerState.reqDataId = ""
+    }
+
+    static var debugDescription: String {
+        return
+            """
+            DocumentPickerState
+            docs: \(DocumentPickerState.docs)
+            image: \(String(describing: DocumentPickerState.image))
+            imageName: \(DocumentPickerState.imageName)
+            imageType: \(DocumentPickerState.imageType)
+            isCameraMode: \(DocumentPickerState.isCameraMode)
+            modelIndex: \(DocumentPickerState.modelIndex)
+            reqDataId: \(DocumentPickerState.reqDataId)
+            """
     }
 }

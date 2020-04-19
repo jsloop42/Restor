@@ -179,6 +179,16 @@ class EAUtils {
         lset.subtract(rset)
         return lset.toArray()
     }
+    
+    /// Get address of any value type.
+    func address(o: UnsafeRawPointer) -> Int {
+        return Int(bitPattern: o)
+    }
+
+    /// Get address of any reference type.
+    func addressHeap<T: AnyObject>(o: T) -> Int {
+        return unsafeBitCast(o, to: Int.self)
+    }
 }
 
 class Log {

@@ -59,24 +59,13 @@ public class ERequestBodyData: NSManagedObject, Entity {
         record["selected"] = self.selected as CKRecordValue
         record["version"] = self.version as CKRecordValue
         record["xml"] = (self.xml ?? "") as CKRecordValue
-        let ref = CKRecord.Reference(record: record, action: .none)
+        let ref = CKRecord.Reference(record: request, action: .none)
         record["request"] = ref as CKRecordValue
     }
     
     static func addBinaryToRequestBodyData(_ reqBodyData: CKRecord, binary: CKRecord) {
         let ref = CKRecord.Reference(record: binary, action: .deleteSelf)
         reqBodyData["binary"] = ref
-    }
-    
-    static func addFormToRequestBodyData(_ reqBodyData: CKRecord, form: CKRecord, type: RequestDataType) {
-        let key: String = {
-            if type == .form { return "form" }
-            if type == .multipart { return "multipart" }
-            return ""
-        }()
-        guard !key.isEmpty else { Log.error("Wrong type passed: \(type.rawValue)"); return }
-        let ref = CKRecord.Reference(record: form, action: .deleteSelf)
-        reqBodyData[key] = ref as CKRecordValue
     }
     
     static func getRequest(_ record: CKRecord, ctx: NSManagedObjectContext) -> ERequest? {

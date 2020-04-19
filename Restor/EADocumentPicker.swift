@@ -1,5 +1,5 @@
 //
-//  DocumentPicker.swift
+//  EADocumentPicker.swift
 //  Restor
 //
 //  Created by jsloop on 24/02/20.
@@ -12,8 +12,8 @@ import MobileCoreServices
 import AVFoundation
 import Photos
 
-class DocumentPicker: NSObject {
-    static let shared = DocumentPicker()
+class EADocumentPicker: NSObject {
+    static let shared = EADocumentPicker()
     let docTypes = ["com.apple.iwork.pages.pages", "com.apple.iwork.numbers.numbers",
                     "com.apple.iwork.keynote.key", "public.image", "com.apple.application", "public.item",
                     "public.content", "public.audiovisual-content", "public.movie",
@@ -161,8 +161,9 @@ class DocumentPicker: NSObject {
         if let image = info[.originalImage] as? UIImage {
             Log.debug("media info: \(info)")
             DocumentPickerState.image = image
-            if let type = info[.mediaType] as? String {
-                DocumentPickerState.imageType = type
+            if let url = info[.imageURL] as? URL {
+                DocumentPickerState.imageName = url.lastPathComponent
+                DocumentPickerState.imageType = DocumentPickerState.imageName.components(separatedBy: ".").last ?? "jpeg"
             }
             Log.debug("image obtained")
             self.nc.post(Notification(name: NotificationKey.documentPickerImageIsAvailable))

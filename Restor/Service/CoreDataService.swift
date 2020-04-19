@@ -22,7 +22,7 @@ enum RecordType: String {
     case zone = "Zone"
     
     static func from(id: String) -> RecordType? {
-        switch id.components(separatedBy: "-").first {
+        switch id.prefix(2) {
         case "ws":
             return self.workspace
         case "pj":
@@ -197,12 +197,24 @@ class CoreDataService {
         return "\(RecordType.prefix(for: .requestMethodData))\(self.utils.genRandomString())"
     }
     
+    func requestMethodDataId(_ projId: String, methodName: String) -> String {
+        return "\(RecordType.prefix(for: .requestMethodData))\(projId)-\(methodName)"
+    }
+    
     func fileId() -> String {
         return "\(RecordType.prefix(for: .file))\(self.utils.genRandomString())"
     }
     
+    func fileId(_ data: Data) -> String {
+        return  "\(RecordType.prefix(for: .file))\(self.utils.md5(data: data))"
+    }
+    
     func imageId() -> String {
         return "\(RecordType.prefix(for: .image))\(self.utils.genRandomString())"
+    }
+    
+    func imageId(_ data: Data) -> String {
+        return "\(RecordType.prefix(for: .image))\(self.utils.md5(data: data))"
     }
     
     // MARK: - Sort
@@ -885,7 +897,7 @@ class CoreDataService {
         guard let projId = proj.id else { return [] }
         return names.enumerated().compactMap { arg -> ERequestMethodData? in
             let (offset, element) = arg
-            if let x = self.createRequestMethodData(id: self.genRequestMethodDataId(projId, methodName: element), index: offset, name: element, isCustom: false, ctx: ctx) {
+            if let x = self.createRequestMethodData(id: self.requestMethodDataId(projId, methodName: element), index: offset, name: element, isCustom: false, ctx: ctx) {
                 x.project = proj
                 return x
             }
@@ -1200,20 +1212,22 @@ class CoreDataService {
     /// Create an image object with the given image data.
     /// - Parameters:
     ///   - data: The image data
+    ///   - name: The image name
     ///   - index: The image index
     ///   - type: The image type (png, jpg, etc.)
     ///   - checkExists: Check if the image exists already before creating
     ///   - ctx: The managed object context
-    func createImage(data: Data, index: Int, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
+    func createImage(data: Data, name: String, index: Int, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
         var x: EImage?
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
-            let imageId = self.genImageId(data)
+            let imageId = self.imageId(data)
             if let isExists = checkExists, isExists, let data = self.getImageData(id: imageId, ctx: ctx) { x = data }
             let image = x != nil ? x! : EImage(context: moc)
             image.id = imageId
             image.data = data
+            image.name = name
             image.type = type
             image.created = x == nil ? ts : x!.created
             image.modified = ts
@@ -1234,7 +1248,7 @@ class CoreDataService {
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
-            let fileId = self.genFileId(data)
+            let fileId = self.fileId(data)
             if let isExists = checkExists, isExists, let data = self.getFileData(id: fileId, ctx: ctx) { x = data }
             let file = x != nil ? x! : EFile(context: moc)
             file.id = fileId
@@ -1249,24 +1263,6 @@ class CoreDataService {
             x = file
         }
         return x
-    }
-    
-    // MARK: - Generate Id
-    
-    func genRequestMethodDataId(_ projId: String, methodName: String) -> String {
-        return "\(projId)-\(methodName)"
-    }
-    
-    /// Generates the image id for the given image data.
-    /// - Parameter data: The image data
-    func genImageId(_ data: Data) -> String {
-        return self.utils.md5(data: data)
-    }
-    
-    /// Generates the file id for the given file data.
-    /// - Parameter data: The file data
-    func genFileId(_ data: Data) -> String {
-        return self.utils.md5(data: data)
     }
     
     // MARK: - Save

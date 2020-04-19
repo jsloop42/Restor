@@ -95,7 +95,7 @@ class PersistenceService {
     private let syncRecordKey = "sync-record-key"
     private let defaultZoneRecordFetchLimit = 50
     private let opqueue = EAOperationQueue()
-    private var syncTimer: Timer?
+    private var syncTimer: DispatchSourceTimer?
     private var previousSyncTime: Int = 0
     private var queryDefaultZoneRecordRepeatTimer: EARepeatTimer!
     
@@ -309,43 +309,42 @@ class PersistenceService {
         }
     }
     
-    func addSyncRecordToLocal(_ record: CKRecord) {
+    func addSyncOpToLocal(_ op: EACloudOperation) {
         if self.syncTimer == nil {
-            self.syncTimer = Timer(timeInterval: 1.5, repeats: true, block: { [weak self] timer in
-                guard let self = self else { timer.invalidate(); return }
-                var hm = self.getSyncRecordsFromLocal()
+            self.syncTimer = DispatchSource.makeTimerSource()
+            self.syncTimer?.schedule(deadline: .now() + .milliseconds(1500))
+            self.syncTimer?.setEventHandler(handler: {
+                var hm = self.getSyncOpFromLocal()
                 let xs = hm.allValues()
-                xs.forEach { record in
-                    if self.syncRecordFromCloudHandler(record) {
-                        hm.removeValue(forKey: record.recordID.recordName)
+                xs.forEach { data in
+                    if let op = EACloudOperation.decode(data) {
+                        op.completionHandler = self.syncFromCloudHandler(_:)
+                        if self.opqueue.add(op) { hm.removeValue(forKey: op.getKey()) }
                     }
                 }
                 self.store.set(hm, forKey: self.syncRecordKey)
-                if hm.count == 0 { self.syncTimer?.invalidate() }
+                if hm.count == 0 { self.syncTimer?.cancel(); self.syncTimer = nil }
             })
+            self.syncTimer?.resume()
         }
         if var hm = self.store.dictionary(forKey: self.syncRecordKey) {
-            if hm[record.recordID.recordName] == nil {
-                hm[record.recordID.recordName] = record
+            let key = op.getKey()
+            if hm[key] == nil, let data = op.encode() {
+                hm[key] = data
                 self.store.set(hm, forKey: self.syncRecordKey)
             }
         } else {
-            self.store.set([record.recordID.recordName: record], forKey: self.syncRecordKey)
+            self.store.set([op.getKey(): op.encode()], forKey: self.syncRecordKey)
         }
     }
     
-    func getSyncRecordFromLocal(_ recordID: CKRecord.ID) -> CKRecord? {
-        guard let hm = self.store.dictionary(forKey: self.syncRecordKey) else { return nil }
-        return hm[recordID.recordName] as? CKRecord
+    func getSyncOpFromLocal() -> [String: Data] {
+        return self.store.dictionary(forKey: self.syncRecordKey) as? [String: Data] ?? [:]
     }
     
-    func getSyncRecordsFromLocal() -> [String: CKRecord] {
-        return self.store.dictionary(forKey: self.syncRecordKey) as? [String: CKRecord] ?? [:]
-    }
-    
-    func removeSyncRecordFromLocal(_ recordID: CKRecord.ID) {
+    func removeSyncRecordFromLocal(_ op: EACloudOperation) {
         if var hm = self.store.dictionary(forKey: self.syncRecordKey) {
-            hm.removeValue(forKey: recordID.recordName)
+            hm.removeValue(forKey: op.getKey())
             self.store.set(hm, forKey: self.syncRecordKey)
         }
     }
@@ -386,7 +385,7 @@ class PersistenceService {
             let wsId = record.id()
             let op = EACloudOperation(recordType: .project, opType: .queryRecord, zoneID: self.ck.zoneID(workspaceId: wsId), parentId: wsId, modified: modified, completion: self.syncFromCloudHandler(_:))
             op.completionBlock = { Log.debug("op completion: - query project") }
-            if !self.opqueue.add(op) { self.addSyncRecordToLocal(record); return false }
+            if !self.opqueue.add(op) { self.addSyncOpToLocal(op); return false }
             return true
         case .project:
             self.updateProjectFromCloud(record)
@@ -395,10 +394,10 @@ class PersistenceService {
             var status = true
             let opreq = EACloudOperation(recordType: .request, opType: .queryRecord, zoneID: zoneID, parentId: projId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreq.completionBlock = { Log.debug("op completion: - query request") }
-            if !self.opqueue.add(opreq) { self.addSyncRecordToLocal(record); status = false }
+            if !self.opqueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
             let opreqmeth = EACloudOperation(recordType: .requestMethodData, opType: .queryRecord, zoneID: zoneID, parentId: projId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreqmeth.completionBlock = { Log.debug("op completion: - query request method") }
-            if !self.opqueue.add(opreqmeth) { self.addSyncRecordToLocal(record); status = false }
+            if !self.opqueue.add(opreqmeth) { self.addSyncOpToLocal(opreqmeth); status = false }
             return status
         case .request:
             self.updateRequestFromCloud(record)
@@ -407,16 +406,16 @@ class PersistenceService {
             var status = false
             let opreq = EACloudOperation(recordType: .requestData, opType: .queryRecord, zoneID: zoneID, parentId: reqId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreq.completionBlock = { Log.debug("op completion: - query request") }
-            if !self.opqueue.add(opreq) { self.addSyncRecordToLocal(record); status = false }
+            if !self.opqueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
             let opreqbody = EACloudOperation(recordType: .requestBodyData, opType: .queryRecord, zoneID: zoneID, parentId: reqId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreqbody.completionBlock = { Log.debug("op completion: - query request method") }
-            if !self.opqueue.add(opreqbody) { self.addSyncRecordToLocal(record); status = false }
+            if !self.opqueue.add(opreqbody) { self.addSyncOpToLocal(opreqbody); status = false }
             return status
         case .requestBodyData:
             self.updateRequestBodyDataFromCloud(record)
             let op = EACloudOperation(recordType: .requestData, opType: .queryRecord, zoneID: record.zoneID(), parentId: record.id(), modified: modified, completion: self.syncFromCloudHandler(_:))
             op.completionBlock = { Log.debug("op completion: - query request data") }
-            if !self.opqueue.add(op) { self.addSyncRecordToLocal(record); return false }
+            if !self.opqueue.add(op) { self.addSyncOpToLocal(op); return false }
             return true
         case .requestData:
             self.updateRequestDataFromCloud(record)
@@ -425,10 +424,10 @@ class PersistenceService {
             var status = false
             let opreq = EACloudOperation(recordType: .file, opType: .queryRecord, zoneID: zoneID, parentId: reqDataId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreq.completionBlock = { Log.debug("op completion: - query file") }
-            if !self.opqueue.add(opreq) { self.addSyncRecordToLocal(record); status = false }
+            if !self.opqueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
             let opreqbody = EACloudOperation(recordType: .image, opType: .queryRecord, zoneID: zoneID, parentId: reqDataId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreqbody.completionBlock = { Log.debug("op completion: - query image") }
-            if !self.opqueue.add(opreqbody) { self.addSyncRecordToLocal(record); status = false }
+            if !self.opqueue.add(opreqbody) { self.addSyncOpToLocal(opreqbody); status = false }
             return status
         case .requestMethodData:
             self.updateRequestMethodDataFromCloud(record)
@@ -687,7 +686,7 @@ class PersistenceService {
         var aImageData = self.localdb.getImageData(id: fileId, ctx: ctx)
         var isNew = false
         if aImageData == nil {
-            aImageData = self.localdb.createImage(data: Data(), index: record.index().toInt(), type: ImageType.jpeg.rawValue, checkExists: false, ctx: ctx)
+            aImageData = self.localdb.createImage(data: Data(), name: record.name(), index: record.index().toInt(), type: ImageType.jpeg.rawValue, checkExists: false, ctx: ctx)
             isNew = true
         }
         guard let imageData = aImageData else { return }
@@ -778,7 +777,7 @@ class PersistenceService {
     
     func cloudRecordDidDelete(_ recordID: CKRecord.ID) {
         Log.debug("cloud record did delete: \(recordID)")
-        let id = recordID.recordName
+        let id = self.ck.entityID(recordID: recordID)
         let type = RecordType.from(id: id)
         switch type {
         case .workspace:
@@ -1112,23 +1111,59 @@ class PersistenceService {
                 }
             }
         }
-        if let body = req.body, !body.isSynced {
+        if let body = req.body {
             let ckbody = self.ck.createRecord(recordID: self.ck.recordID(entityId: body.getId(), zoneID: zoneID), recordType: RecordType.requestBodyData.rawValue)
-            body.updateCKRecord(ckbody, request: ckreq)
-            acc.append(DeferredSaveModel(record: ckbody, id: ckbody.id()))
-            if let binary = body.binary, !binary.isSynced {
+            if !body.isSynced {
+                body.updateCKRecord(ckbody, request: ckreq)
+                acc.append(DeferredSaveModel(record: ckbody, id: ckbody.id()))
+            }
+            if let binary = body.binary {
                 let ckbin = self.ck.createRecord(recordID: self.ck.recordID(entityId: binary.getId(), zoneID: zoneID), recordType: RecordType.requestData.rawValue)
-                binary.updateCKRecord(ckbin)
-                ERequestData.addRequestBodyDataReference(ckbody, toBinary: ckbin)
-                acc.append(DeferredSaveModel(record: ckbin, id: ckbin.id()))
+                if let files = binary.files?.allObjects as? [EFile] {
+                    files.forEach { file in
+                        if !file.isSynced {
+                            let ckfile = self.ck.createRecord(recordID: self.ck.recordID(entityId: file.getId(), zoneID: zoneID), recordType: RecordType.file.rawValue)
+                            file.updateCKRecord(ckfile)
+                            EFile.addRequestDataReference(ckfile, reqData: ckbin)
+                            acc.append(DeferredSaveModel(record: ckfile, id: ckfile.id()))
+                        }
+                    }
+                }
+                if let image = binary.image, !image.isSynced {
+                    let ckimage = self.ck.createRecord(recordID: self.ck.recordID(entityId: image.getId(), zoneID: zoneID), recordType: RecordType.image.rawValue)
+                    image.updateCKRecord(ckimage)
+                    EImage.addRequestDataReference(ckbin, image: ckimage)
+                    acc.append(DeferredSaveModel(record: ckimage, id: ckimage.id()))
+                }
+                if !binary.isSynced {
+                    binary.updateCKRecord(ckbin)
+                    ERequestData.addRequestBodyDataReference(ckbody, toBinary: ckbin)
+                    acc.append(DeferredSaveModel(record: ckbin, id: ckbin.id()))
+                }
             }
             if let forms = body.form?.allObjects as? [ERequestData] {
                 forms.forEach { reqData in
+                    let ckform = self.ck.createRecord(recordID: self.ck.recordID(entityId: reqData.getId(), zoneID: zoneID), recordType: RecordType.requestData.rawValue)
                     if !reqData.isSynced {
-                        let ckform = self.ck.createRecord(recordID: self.ck.recordID(entityId: reqData.getId(), zoneID: zoneID), recordType: RecordType.requestData.rawValue)
                         reqData.updateCKRecord(ckform)
-                        ERequestData.addRequestReference(ckreq, toForm: ckform, type: .form)
+                        ERequestData.addRequestBodyDataReference(ckbody, toForm: ckform, type: .form)
                         acc.append(DeferredSaveModel(record: ckform, id: ckform.id()))
+                    }
+                    if let files = reqData.files?.allObjects as? [EFile] {
+                        files.forEach { file in
+                            if !file.isSynced {
+                                let ckfile = self.ck.createRecord(recordID: self.ck.recordID(entityId: file.getId(), zoneID: zoneID), recordType: RecordType.file.rawValue)
+                                file.updateCKRecord(ckfile)
+                                EFile.addRequestDataReference(ckfile, reqData: ckform)
+                                acc.append(DeferredSaveModel(record: ckfile, id: ckfile.id()))
+                            }
+                        }
+                    }
+                    if let image = reqData.image, !image.isSynced {
+                        let ckimage = self.ck.createRecord(recordID: self.ck.recordID(entityId: image.getId(), zoneID: zoneID), recordType: RecordType.image.rawValue)
+                        image.updateCKRecord(ckimage)
+                        EImage.addRequestDataReference(ckform, image: ckimage)
+                        acc.append(DeferredSaveModel(record: ckimage, id: ckimage.id()))
                     }
                 }
             }
@@ -1137,7 +1172,7 @@ class PersistenceService {
                     if !reqData.isSynced {
                         let ckmpart = self.ck.createRecord(recordID: self.ck.recordID(entityId: reqData.getId(), zoneID: zoneID), recordType: RecordType.requestData.rawValue)
                         reqData.updateCKRecord(ckmpart)
-                        ERequestData.addRequestReference(ckreq, toForm: ckmpart, type: .multipart)
+                        ERequestData.addRequestBodyDataReference(ckbody, toForm: ckmpart, type: .multipart)
                         acc.append(DeferredSaveModel(record: ckmpart, id: ckmpart.id()))
                     }
                 }

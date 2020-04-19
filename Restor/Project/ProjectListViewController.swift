@@ -153,6 +153,7 @@ class ProjectListViewController: UIViewController {
             if let proj = self.localdb.createProject(id: self.localdb.projectId(), index: projCount, name: name, desc: desc, ws: self.workspace, ctx: ctx) {
                 proj.workspace = self.workspace
                 self.localdb.saveBackgroundContext()
+                self.db.saveProjectToCloud(proj)
             }
         }
     }
@@ -237,7 +238,6 @@ extension ProjectListViewController: NSFetchedResultsControllerDelegate {
                     self.tableView.endUpdates()
                     self.tableView.layoutIfNeeded()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
-                    if let x = anObject as? EProject { self.db.saveProjectToCloud(x) }
                 case .update:
                     self.tableView.reloadRows(at: [indexPath!], with: .none)
                 default:
