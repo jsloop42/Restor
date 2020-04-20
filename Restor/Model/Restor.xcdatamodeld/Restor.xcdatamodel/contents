@@ -180,6 +180,7 @@
         <attribute name="markForDelete" optional="YES" attributeType="Boolean" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="syncDisabled" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="version" attributeType="Integer 64" defaultValueString="0.0" usesScalarValueType="YES"/>
         <relationship name="projects" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="EProject" inverseName="workspace" inverseEntity="EProject"/>
         <fetchIndex name="byCreatedAsc">
@@ -198,6 +199,6 @@
         <element name="ERequestData" positionX="18" positionY="63" width="128" height="328"/>
         <element name="ERequestMethodData" positionX="-18" positionY="27" width="128" height="223"/>
         <element name="ETag" positionX="0" positionY="99" width="128" height="178"/>
-        <element name="EWorkspace" positionX="-63" positionY="-18" width="128" height="223"/>
+        <element name="EWorkspace" positionX="-63" positionY="-18" width="128" height="238"/>
     </elements>
 </model>

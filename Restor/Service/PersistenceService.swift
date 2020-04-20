@@ -831,7 +831,6 @@ class PersistenceService {
         }
     }
     
-    
     /// Fetch records belonging to the given record type with id in the given zone.
     /// - Parameters:
     ///   - zoneID: The zone in which the record exists
@@ -1001,6 +1000,7 @@ class PersistenceService {
     
     /// Saves the given workspace to the cloud
     func saveWorkspaceToCloud(_ ws: EWorkspace) {
+        if !ws.isSyncEnabled { return }
         let wsId = ws.getId()
         let zoneID = ws.getZoneID()
         let recordID = self.ck.recordID(entityId: wsId, zoneID: zoneID)
@@ -1013,11 +1013,12 @@ class PersistenceService {
     
     /// Save the given project and updates the associated workspace to the cloud.
     func saveProjectToCloud(_ proj: EProject) {
+        guard let ws = proj.workspace else { Log.error("Workspace is empty for project"); return }
+        if !ws.isSyncEnabled { return }
         let projId = proj.getId()
         let zoneID = proj.getZoneID()
         let recordID = self.ck.recordID(entityId: projId, zoneID: zoneID)
         let ckproj = self.ck.createRecord(recordID: recordID, recordType: RecordType.project.rawValue)
-        guard let ws = proj.workspace else { Log.error("Workspace is empty for project"); return }
         self.fetchRecord(ws, type: .workspace) { [weak self] result in
             guard let self = self else { return }
             switch result {
@@ -1051,6 +1052,7 @@ class PersistenceService {
     
     /// Save the given request and updates the associated project to the cloud.
     func saveRequestToCloud(_ req: ERequest) {
+        if let ws = req.project?.workspace, !ws.isSyncEnabled { return }
         guard let reqId = req.id else { Log.error("ERequest id is nil"); return }
         guard let wsId = req.project?.workspace?.id else { Log.error("Error getting workspace id"); return }
         guard let projId = req.project?.id else { Log.error("Error getting project id"); return }

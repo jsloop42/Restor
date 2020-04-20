@@ -437,6 +437,22 @@ class CoreDataService {
         return x
     }
     
+    func getWorkspacesToSync(_ ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EWorkspace] {
+        var xs: [EWorkspace] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
+            fr.predicate = NSPredicate(format: "isSynced == %hhd", false)
+            fr.fetchBatchSize = 4
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error fetching workspaces yet to sync: \(error)")
+            }
+        }
+        return xs
+    }
+    
     // MARK: EProject
     
     func getProject(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
@@ -514,6 +530,22 @@ class CoreDataService {
             x = self.createProject(id: "default", index: 0, name: "default", desc: "The default project")
         }
         return x
+    }
+    
+    func getProjectsToSync(wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EProject] {
+        var xs: [EProject] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EProject>(entityName: "EProject")
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND workspace.id == %@ ", false, wsId)
+            fr.fetchBatchSize = 4
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error fetching projects yet to sync: \(error)")
+            }
+        }
+        return xs
     }
     
     // MARK: ERequest
@@ -594,6 +626,22 @@ class CoreDataService {
             }
         }
         return x
+    }
+    
+    func getRequestsToSync(projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequest] {
+        var xs: [ERequest] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND project.id == %@", false, projId)
+            fr.fetchBatchSize = 8
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error fetching requests yet to sync: \(error)")
+            }
+        }
+        return xs
     }
     
     // MARK: ERequestData
@@ -787,6 +835,35 @@ class CoreDataService {
         return xs
     }
     
+    func getRequestDataToSync(type: RequestDataType, id : String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
+        var xs: [ERequestData] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
+            var pred: NSPredicate!
+            switch type {
+            case .header:
+                pred = NSPredicate(format: "isSynced == %hhd AND header.id == %@", false, id)  // req.id
+            case .param:
+                pred = NSPredicate(format: "isSynced == %hhd AND param.id == %@", false, id)  // req.id
+            case .form:
+                pred = NSPredicate(format: "isSynced == %hhd AND form.id == %@", false, id)  // reqBodyData.id
+            case .multipart:
+                pred = NSPredicate(format: "isSynced == %hhd AND multipart.id == %@", false, id)  // reqBodyData.id
+            case .binary:
+                pred = NSPredicate(format: "isSynced == %hhd AND binary.id == %@", false, id)  // reqBodyData.id
+            }
+            fr.predicate = pred
+            fr.fetchBatchSize = 16
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error fetching request data yet to sync: \(error)")
+            }
+        }
+        return xs
+    }
+    
     // MARK: ERequestMethodData
     
     /// Retrieve the request method data for the given id.
@@ -905,6 +982,22 @@ class CoreDataService {
         }
     }
     
+    func getRequestMethodDataToSync(projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+        var xs: [ERequestMethodData] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND project.id == %@", false, projId)
+            fr.fetchBatchSize = 4
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error fetching request method data yet to sync: \(error)")
+            }
+        }
+        return xs
+    }
+    
     // MARK: ERequestBodyData
     
     func getRequestBodyData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
@@ -920,6 +1013,22 @@ class CoreDataService {
             }
         }
         return x
+    }
+    
+    func getRequestBodyDataToSync(reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestBodyData] {
+        var xs: [ERequestBodyData] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestBodyData>(entityName: "ERequestBodyData")
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND request.id == %@", false, reqId)
+            fr.fetchBatchSize = 8
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error fetching request body data yet to sync: \(error)")
+            }
+        }
+        return xs
     }
     
     // MARK: EFile
@@ -1008,6 +1117,22 @@ class CoreDataService {
         return x
     }
     
+    func getFilesToSync(reqDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EFile] {
+        var xs: [EFile] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EFile>(entityName: "EFile")
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND requestData.id == %@", false, reqDataId)
+            fr.fetchBatchSize = 8
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error fetching files yet to sync: \(error)")
+            }
+        }
+        return xs
+    }
+    
     // MARK: EImage
     
     /// Retrieve image object for the given image id.
@@ -1027,6 +1152,22 @@ class CoreDataService {
             }
         }
         return x
+    }
+    
+    func getImagesToSync(reqDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EImage] {
+        var xs: [EImage] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EImage>(entityName: "EImage")
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND requestData.id == %@", false, reqDataId)
+            fr.fetchBatchSize = 8
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error fetching images yet to sync: \(error)")
+            }
+        }
+        return xs
     }
     
     // MARK: - Create
@@ -1051,6 +1192,7 @@ class CoreDataService {
             ws.desc = desc
             ws.isActive = isActive!
             ws.isSyncEnabled = isSyncEnabled
+            if !isSyncEnabled { ws.syncDisabled = ts }
             ws.created = x == nil ? ts : x!.created
             ws.modified = ts
             ws.version = x == nil ? 0 : x!.version + 1
@@ -1065,7 +1207,22 @@ class CoreDataService {
             let ws = self.getWorkspace(id: wsId, ctx: ctx)
             ws?.isActive = true
             do {
-                try moc.save()
+                if !AppState.isRequestEdit { try moc.save() }
+            } catch let error {
+                Log.error("Error saving workspace with active flag set: \(error)")
+            }
+        }
+    }
+    
+    func setWorkspaceSyncEnabled(_ state: Bool, ws: EWorkspace, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        let moc = self.getMOC(ctx: ctx)
+        let ts = Date().currentTimeNanos()
+        moc.performAndWait {
+            if !state { ws.syncDisabled = ts }
+            ws.modified = ts
+            ws.isSyncEnabled = state
+            do {
+                if !AppState.isRequestEdit {  try moc.save() }
             } catch let error {
                 Log.error("Error saving workspace with active flag set: \(error)")
             }
@@ -1102,7 +1259,6 @@ class CoreDataService {
         }
         return x
     }
-    
     
     /// Create a request
     /// - Parameters:
@@ -1401,45 +1557,6 @@ class CoreDataService {
         let moc = self.getMOC(ctx: ctx)
         self.deleteEntity(self.getImageData(id: id, ctx: moc))
     }
-    
-//    func deleteRequestData(at index: Int, req: ERequest, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
-//        guard let reqId = req.id else { return }
-//        Log.debug("delete request data: \(index) reqBodyId \(reqId)")
-//        let moc: NSManagedObjectContext = {
-//            if ctx != nil { return ctx! }
-//            return self.bgMOC
-//        }()
-//        moc.performAndWait {
-//            var x: ERequestData?
-//            // Since deleting in-between elems can change the table count, we cannot fetch by index. Instead we fetch the whole list and get the element at the
-//            // given index and removes it
-//            switch type {
-//            case .header:
-//                let xs = self.getHeadersRequestData(reqId, ctx: ctx)
-//                if xs.count > index { x = xs[index] }
-//                if x != nil { req.removeFromHeaders(x!) }
-//            case .param:
-//                let xs = self.getParamsRequestData(reqId, ctx: ctx)
-//                if xs.count > index { x = xs[index] }
-//                if x != nil { req.removeFromParams(x!) }
-//            case .form:
-//                if let bodyId = req.body?.id {
-//                    let xs = self.getFormRequestData(bodyId, type: .form, ctx: ctx)
-//                    if xs.count > index { x = xs[index] }
-//                    if x != nil { req.body?.removeFromForm(x!) }
-//                }
-//            case .multipart:
-//                if let bodyId = req.body?.id {
-//                    let xs = self.getFormRequestData(bodyId, type: .multipart, ctx: ctx)
-//                    if xs.count > index { x = xs[index] }
-//                    if x != nil { req.body?.removeFromMultipart(x!) }
-//                }
-//            case .binary:
-//                break
-//            }
-//            if x != nil { moc.delete(x!) }
-//        }
-//    }
     
     /// Delete the entity with the given id.
     /// - Parameters:

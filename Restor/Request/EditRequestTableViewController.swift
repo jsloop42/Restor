@@ -93,6 +93,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             //self.localdb.discardChanges(in: ctx)
             self.localdb.discardChanges(for: self.app.editReqManIds, inContext: ctx)
             self.app.clearEditRequestManagedObjectIds()
+            if ctx.hasChanges { self.localdb.saveBackgroundContext() }
         }
     }
     
