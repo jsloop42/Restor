@@ -29,7 +29,7 @@ public protocol EAReschedulable: class {
 public struct EAReschedulerFn: Equatable, Hashable {
     /// The block identifier
     var id: String
-    /// The block which needs to be executed
+    /// The block which needs to be executed returning a status which is passed to the callback function
     var block: () -> Bool
     /// The callback function after executing the block
     var callback: (Bool) -> Void
@@ -59,6 +59,9 @@ public class EARescheduler: EAReschedulable {
     public var type: EAReschedulerType!
     private var blocks: [EAReschedulerFn] = []
     private let queue = EACommon.userInteractiveQueue
+    private var limit: Int = 4
+    private var isLimitEnabled = false
+    private var counter = 0
 
     private enum State {
         case suspended
@@ -75,6 +78,13 @@ public class EARescheduler: EAReschedulable {
     public required init(interval: TimeInterval, type: EAReschedulerType) {
         self.interval = interval
         self.type = type
+    }
+    
+    init(interval: TimeInterval, type: EAReschedulerType, limit: Int) {
+        self.interval = interval
+        self.type = type
+        self.limit = limit
+        self.isLimitEnabled = true
     }
     
     private func initTimer() {
@@ -96,6 +106,11 @@ public class EARescheduler: EAReschedulable {
     
     public func schedule() {
         self.initTimer()
+        self.counter += 1
+        if self.counter >= self.limit {
+            self.eventHandler()
+            self.done()
+        }
     }
         
     func eventHandler() {

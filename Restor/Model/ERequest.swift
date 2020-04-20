@@ -94,6 +94,7 @@ public class ERequest: NSManagedObject, Entity {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["id"] as? String { self.id = x }
+        if let x = record["desc"] as? String { self.desc = x }
         if let x = record["index"] as? Int64 { self.index = x }
         if let x = record["name"] as? String { self.name = x }
         if let x = record["selectedMethodIndex"] as? Int64 { self.selectedMethodIndex = x }

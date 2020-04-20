@@ -98,6 +98,7 @@ class PersistenceService {
     private var syncTimer: DispatchSourceTimer?
     private var previousSyncTime: Int = 0
     private var queryDefaultZoneRecordRepeatTimer: EARepeatTimer!
+    private var fetchZoneChangesDelayTimer: EARescheduler!
     
     enum SubscriptionId: String {
         case fileChange = "file-change"
@@ -902,9 +903,25 @@ class PersistenceService {
     
     // MARK: - Fetch
     
-    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID]) {
-        Log.debug("fetching zone changes for zoneIDs: \(zoneIDs)")
-        self.ck.fetchZoneChanges(zoneIDs: zoneIDs, completion: self.zoneChangeHandler(_:))
+    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], isDelayedFetch: Bool? = false) {
+        Log.debug("fetching zone changes for zoneIDs: \(zoneIDs) - isDelayedFetch: \(isDelayedFetch ?? false)")
+        if isDelayedFetch != nil, isDelayedFetch! {
+            if self.fetchZoneChangesDelayTimer == nil {
+                self.fetchZoneChangesDelayTimer = EARescheduler(interval: 4.0, type: .everyFn, limit: 4)
+                Log.debug("Delayed fetch of zones initialised")
+            }
+            self.fetchZoneChangesDelayTimer.schedule(fn: EAReschedulerFn(id: "fetch-zone-changes", block: { [weak self] in
+                guard let self = self else { return false }
+                self.ck.fetchZoneChanges(zoneIDs: zoneIDs, completion: self.zoneChangeHandler(_:))
+                Log.debug("Delayed exec - fetch zones")
+                return true
+            }, callback: { _ in
+                self.fetchZoneChangesDelayTimer = nil
+                Log.debug("Delayed fetch exec - done")
+            }, args: []))
+        } else {
+            self.ck.fetchZoneChanges(zoneIDs: zoneIDs, completion: self.zoneChangeHandler(_:))
+        }
     }
     
     func zoneChangeHandler(_ result: Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) {

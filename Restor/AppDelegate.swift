@@ -53,7 +53,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
             if let subID = notif.subscriptionID, self.ck.isSubscribed(to: subID) {
                 if let ckhm = userInfo["ck"] as? [String: Any], let meta = ckhm["met"] as? [String: Any], let zid = meta["zid"] as? String {
                     let zoneID = self.ck.zoneID(with: zid)
-                    self.db.fetchZoneChanges(zoneIDs: [zoneID])
+                    self.db.fetchZoneChanges(zoneIDs: [zoneID], isDelayedFetch: true)
                     completionHandler(.newData)
                     return
                 }
