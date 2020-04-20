@@ -538,7 +538,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         // self.updateDoneButton(self.app.didRequestDescriptionChange(textView.text ?? "", request: self.entityDict))
     }
     
-    func textViewDidEndEditing(_ textView: UITextView) {
+    func textViewDidChange(_ textView: UITextView) {
         if textView == self.descTextView {
             AppState.editRequest!.desc = textView.text ?? ""
             self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
@@ -676,6 +676,8 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
         self.deleteBtn.addGestureRecognizer(deleteBtnTap)
         let deleteViewTap = UITapGestureRecognizer(target: self, action: #selector(self.deleteViewDidTap))
         self.deleteView.addGestureRecognizer(deleteViewTap)
+        self.keyTextField.addTarget(self, action: #selector(self.updateState(_:)), for: .editingChanged)
+        self.valueTextField.addTarget(self, action: #selector(self.updateState(_:)), for: .editingChanged)
     }
     
     @objc func deleteBtnDidTap() {
@@ -709,7 +711,7 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
         RequestVC.shared?.clearEditing()
     }
     
-    func textFieldDidEndEditing(_ textField: UITextField) {
+    @objc func updateState(_ textField: UITextField) {
         let key = self.keyTextField.text ?? ""
         let value = self.valueTextField.text ?? ""
         self.delegate?.dataDidChange(key: key, value: value, reqDataId: reqDataId, row: self.tag)
