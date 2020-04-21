@@ -33,6 +33,10 @@ public class ETag: NSManagedObject, Entity {
         return self.modified
     }
     
+    public func getChangeTag() -> Int64 {
+        return self.changeTag
+    }
+    
     public func getVersion() -> Int64 {
         return self.version
     }
@@ -47,6 +51,22 @@ public class ETag: NSManagedObject, Entity {
     
     public func getZoneID() -> CKRecordZone.ID {
         return CloudKitService.shared.zoneID(workspaceId: self.request!.project!.workspace!.id!)
+    }
+    
+    public func setMarkedForDelete(_ status: Bool) {
+        self.markForDelete = status
+    }
+    
+    public func setModified(_ ts: Int64? = nil) {
+        self.modified = ts ?? Date().currentTimeNanos()
+    }
+    
+    public func setChangeTag(_ ts: Int64? = nil) {
+        self.changeTag = ts ?? Date().currentTimeNanos()
+    }
+    
+    public override func willSave() {
+        if self.modified < AppState.editRequestSaveTs { self.modified = AppState.editRequestSaveTs }
     }
     
     func updateCKRecord(_ record: CKRecord) {

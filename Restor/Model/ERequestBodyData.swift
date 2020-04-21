@@ -33,6 +33,10 @@ public class ERequestBodyData: NSManagedObject, Entity {
         return self.modified
     }
     
+    public func getChangeTag() -> Int64 {
+        return self.changeTag
+    }
+    
     public func getVersion() -> Int64 {
         return self.version
     }
@@ -49,9 +53,26 @@ public class ERequestBodyData: NSManagedObject, Entity {
         return CloudKitService.shared.zoneID(workspaceId: self.request!.project!.workspace!.id!)
     }
     
+    public func setMarkedForDelete(_ status: Bool) {
+        self.markForDelete = status
+    }
+    
+    public func setModified(_ ts: Int64? = nil) {
+        self.modified = ts ?? Date().currentTimeNanos()
+    }
+    
+    public func setChangeTag(_ ts: Int64? = nil) {
+        self.changeTag = ts ?? Date().currentTimeNanos()
+    }
+    
+    public override func willSave() {
+        if self.modified < AppState.editRequestSaveTs { self.modified = AppState.editRequestSaveTs }
+    }
+    
     func updateCKRecord(_ record: CKRecord, request: CKRecord) {
         record["created"] = self.created as CKRecordValue
         record["modified"] = self.modified as CKRecordValue
+        record["changeTag"] = self.changeTag as CKRecordValue
         record["id"] = self.id! as CKRecordValue
         record["index"] = self.index as CKRecordValue
         record["json"] = (self.json ?? "") as CKRecordValue
@@ -78,6 +99,7 @@ public class ERequestBodyData: NSManagedObject, Entity {
     func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
+        if let x = record["changeTag"] as? Int64 { self.changeTag = x }
         if let x = record["id"] as? String { self.id = x }
         if let x = record["index"] as? Int64 { self.index = x }
         if let x = record["json"] as? String { self.json = x }

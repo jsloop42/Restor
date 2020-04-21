@@ -71,8 +71,30 @@ public protocol Entity: NSManagedObject {
     func getName() -> String
     func getCreated() -> Int64
     func getModified() -> Int64
+    func getChangeTag() -> Int64
     func getVersion() -> Int64
     func getZoneID() -> CKRecordZone.ID
     func setIndex(_ i: Int)
     func setIsSynced(_ status: Bool)
+    func setMarkedForDelete(_ status: Bool)
+    /// The modified fields get update on changing any property or relation. But for syncing with cloud, we need to use the change tag value as we we do not
+    /// take into account relation changes for the given entity for syncing.
+    func setModified(_ ts: Int64?)
+    /// If any property changes, the change tag value will be updated.
+    func setChangeTag(_ ts: Int64?)
+    func willSave()
+}
+
+extension Entity {
+    func setModified(_ ts: Int64? = nil) {
+        return setModified(Date().currentTimeNanos())
+    }
+    
+    func setChangeTag(_ ts: Int64? = nil) {
+        return setChangeTag(Date().currentTimeNanos())
+    }
+    
+    func setChangeTagWithEditTs() {
+        return setChangeTag(AppState.editRequestSaveTs)
+    }
 }

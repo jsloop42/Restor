@@ -247,9 +247,9 @@ class App {
     func didRequestChangeImp(_ x: ERequest, request: [String: Any]) -> Bool {
         self.addEditRequestManagedObjectId(x.objectID)
         if x.url == nil || x.url!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
-        if self.didRequestURLChangeImp(x.url ?? "", request: request) { return true }
-        if self.didRequestMetaChangeImp(name: x.name ?? "", desc: x.desc ?? "", request: request) { return true }
-        if self.didRequestMethodIndexChangeImp(x.selectedMethodIndex, request: request) { return true }
+        if self.didRequestURLChangeImp(x.url ?? "", request: request) { x.setChangeTagWithEditTs(); return true }
+        if self.didRequestMetaChangeImp(name: x.name ?? "", desc: x.desc ?? "", request: request) { x.setChangeTagWithEditTs(); return true }
+        if self.didRequestMethodIndexChangeImp(x.selectedMethodIndex, request: request) { x.setChangeTagWithEditTs(); return true }
         self.addEditRequestManagedObjectId(x.method?.objectID)
         if (x.method == nil && request["method"] != nil) || (x.method != nil && (x.method!.isInserted || x.method!.isDeleted) && request["method"] == nil) { return true }
         if let hm = request["method"] as? [String: Any], let ida = x.id, let idb = hm["id"] as? String, ida != idb { return true }
@@ -314,6 +314,7 @@ class App {
             x.index != y["index"] as? Int64 ||
             x.isCustom != y["isCustom"] as? Bool ||
             x.name != y["name"] as? String {
+            x.setChangeTagWithEditTs();
             return true
         }
         return false
@@ -332,7 +333,7 @@ class App {
         }, args: xs))
     }
     
-    /// Checks if any request method changed.
+    /// Checks if any custom request method changed.
     /// - Parameters:
     ///   - xs: The list of request methods.
     ///   - request: The initial request dictionary.
@@ -499,6 +500,7 @@ class App {
                 x?.selected != body["selected"] as? Int64 ||
                 x?.xml != body["xml"] as? String {
                 x?.isSynced = false
+                x?.setChangeTagWithEditTs()
                 return true
             }
             // TODO: handle binary
@@ -519,8 +521,8 @@ class App {
     func didAnyRequestBodyFormChangeImp(_ x: ERequestBodyData, request: [String: Any]) -> Bool {
         if request["body"] == nil { x.isSynced = false; return true }
         if let body = request["body"] as? [String: Any] {
-            if (x.form != nil && body["form"] == nil) || (x.form == nil && body["form"] != nil) { x.isSynced = false; return true }
-            if (x.multipart != nil && body["multipart"] == nil) || (x.multipart == nil && body["multipart"] != nil) { x.isSynced = false; return true }
+            if (x.form != nil && body["form"] == nil) || (x.form == nil && body["form"] != nil) { return true }
+            if (x.multipart != nil && body["multipart"] == nil) || (x.multipart == nil && body["multipart"] != nil) { return true }
             var formxsa: [Entity] = []
             var formxsb: [[String: Any]] = []
             let selectedType = RequestBodyType(rawValue: x.selected.toInt()) ?? .form
@@ -537,7 +539,7 @@ class App {
                 return self.didRequestBodyBinaryChangeImp(x.binary, body: body)
             }
             formxsa.forEach { e in self.addEditRequestManagedObjectId(e.objectID) }
-            if formxsa.count != formxsb.count { x.isSynced = false; return true }
+            if formxsa.count != formxsb.count { return true }
             self.localdb.sortByCreated(&formxsa)
             
             let len = formxsa.count
@@ -550,10 +552,10 @@ class App {
     
     func didRequestBodyBinaryChangeImp(_ reqData: ERequestData?, body: [String: Any]) -> Bool {
         let obin = body["binary"] as? [String: Any]
-        if (obin == nil && reqData != nil) || (obin != nil && reqData == nil) { reqData?.isSynced = false; return true }
-        guard let lbin = reqData, let rbin = obin else { reqData?.isSynced = false; return true }
-        if lbin.created != rbin["created"] as? Int64 { reqData?.isSynced = false; return true }
-        if self.didRequestBodyFormAttachmentChangeImp(lbin, y: rbin) { reqData?.isSynced = false; return true }
+        if (obin == nil && reqData != nil) || (obin != nil && reqData == nil) { reqData?.isSynced = false; reqData?.setChangeTagWithEditTs(); return true }
+        guard let lbin = reqData, let rbin = obin else { reqData?.isSynced = false; reqData?.setChangeTagWithEditTs(); return true }
+        if lbin.created != rbin["created"] as? Int64 { reqData?.isSynced = false; reqData?.setChangeTagWithEditTs(); return true }
+        if self.didRequestBodyFormAttachmentChangeImp(lbin, y: rbin) { reqData?.isSynced = false; reqData?.setChangeTagWithEditTs(); return true }
         return false
     }
     
@@ -591,11 +593,11 @@ class App {
     /// Checks if the given form's attachments changed.
     func didRequestBodyFormAttachmentChangeImp(_ x: ERequestData, y: [String: Any]) -> Bool {
         self.addEditRequestManagedObjectId(x.image?.objectID)
-        if (x.image != nil && y["image"] == nil) || (x.image == nil && y["image"] != nil) { x.isSynced = false; return true }
+        if (x.image != nil && y["image"] == nil) || (x.image == nil && y["image"] != nil) { x.isSynced = false; x.setChangeTagWithEditTs(); return true }
         if let ximage = x.image, let yimage = y["image"] as? [String: Any]  {
-            if self.didRequestImageChangeImp(x: ximage, y: yimage) { return true }
+            if self.didRequestImageChangeImp(x: ximage, y: yimage) { x.isSynced = false; x.setChangeTagWithEditTs(); return true }
         }
-        if (x.files != nil && y["files"] == nil) || (x.files == nil && y["file"] != nil) { x.isSynced = false; return true }
+        if (x.files != nil && y["files"] == nil) || (x.files == nil && y["file"] != nil) { return true }
         let yfiles = y["files"] as! [[String: Any]]
         if x.files!.count != yfiles.count { x.isSynced = false; return true }
         if let set = x.files, var xs = set.allObjects as? [Entity] {
@@ -603,7 +605,7 @@ class App {
             self.localdb.sortByCreated(&xs)
             let len = xs.count
             for i in 0..<len {
-                if self.didRequestFileChangeImp(x: xs[i] as! EFile, y: yfiles[i]) { x.isSynced = false; return true }
+                if self.didRequestFileChangeImp(x: xs[i] as! EFile, y: yfiles[i]) { return true }
             }
         }
         return false
@@ -625,6 +627,7 @@ class App {
             x.type != y["type"] as? Int64 ||
             x.value != y["value"] as? String {
             x.isSynced = false
+            x.setChangeTagWithEditTs()
             return true
         }
         if type == .form {
@@ -647,10 +650,11 @@ class App {
             x.name != y["name"] as? String ||
             x.type != y["type"] as? Int64  {
             x.isSynced = false
+            x.setChangeTagWithEditTs();
             return true
         }
         if let id = x.id, let xdata = x.data, let file = self.localdb.getFileData(id: id), let ydata = file.data {
-            if xdata != ydata { x.isSynced = false; return true }
+            if xdata != ydata { x.isSynced = false; x.setChangeTagWithEditTs(); return true }
         }
         return false
     }
@@ -670,10 +674,11 @@ class App {
             x.isCameraMode != y["isCameraMode"] as? Bool ||
             x.type != y["type"] as? String  {
             x.isSynced = false
+            x.setChangeTagWithEditTs()
             return true
         }
         if let id = x.id, let xdata = x.data, let image = self.localdb.getImageData(id: id), let ydata = image.data {
-            if xdata != ydata { x.isSynced = false; return true }
+            if xdata != ydata { x.isSynced = false; x.setChangeTagWithEditTs(); return true }
         }
         return false
     }

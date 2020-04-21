@@ -147,6 +147,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         }
         self.updateData()
         self.reloadAllTableViews()
+        AppState.updateEditRequestSaveTs()
     }
         
     func initUI() {

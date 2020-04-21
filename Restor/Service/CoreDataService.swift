@@ -348,12 +348,12 @@ class CoreDataService {
     
     // MARK: EWorkspace
     
-    func getWorkspace(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EWorkspace? {
+    func getWorkspace(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EWorkspace? {
         var x: EWorkspace?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
-            fr.predicate = NSPredicate(format: "id == %@", id)
+            fr.predicate = NSPredicate(format: "id == %@ AND markForDelete == %hdd", id, includeMarkForDelete ?? false)
             do {
                 let xs = try moc.fetch(fr)
                 x = xs.first
@@ -368,13 +368,15 @@ class CoreDataService {
     /// - Parameters:
     ///   - offset: The start index to begin with
     ///   - limit: The maximum number of results to fetch
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context
-    func getAllWorkspaces(offset: Int? = 0, limit: Int? = 0, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EWorkspace] {
+    func getAllWorkspaces(offset: Int? = 0, limit: Int? = 0, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EWorkspace] {
         var xs: [EWorkspace] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            fr.predicate = NSPredicate(format: "markForDelete == %hdd", includeMarkForDelete ?? false)
             var shouldFetchInBatch = true
             if let _offset = offset { fr.fetchOffset = _offset; shouldFetchInBatch = false }
             if let _limit = limit { fr.fetchLimit = _limit; shouldFetchInBatch = false }
@@ -388,12 +390,13 @@ class CoreDataService {
         return xs
     }
     
-    func getWorkspaces(offset: Int? = 0, limit: Int? = 0, completion: @escaping (Result<[EWorkspace], Error>) -> Void, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+    func getWorkspaces(offset: Int? = 0, limit: Int? = 0, includeMarkForDelete: Bool? = false, completion: @escaping (Result<[EWorkspace], Error>) -> Void, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         var xs: [EWorkspace] = []
         let moc = self.getMOC(ctx: ctx)
         moc.perform {
             let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            fr.predicate = NSPredicate(format: "markForDelete == %hdd", includeMarkForDelete ?? false)
             if let _offset = offset { fr.fetchOffset = _offset }
             if let _limit = limit { fr.fetchLimit = _limit }
             do {
@@ -407,11 +410,15 @@ class CoreDataService {
     }
     
     /// Returns the total count of workspaces
-    func getWorkspaceCount(ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
+    /// - Parameters:
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
+    ///   - ctx: The managed object context
+    func getWorkspaceCount(includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
         var x: Int = 0
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
+            fr.predicate = NSPredicate(format: "markForDelete == %hdd", includeMarkForDelete ?? false)
             do {
                 x = try moc.count(for: fr)
             } catch let error {
@@ -437,12 +444,12 @@ class CoreDataService {
         return x
     }
     
-    func getWorkspacesToSync(_ ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EWorkspace] {
+    func getWorkspacesToSync(includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EWorkspace] {
         var xs: [EWorkspace] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
-            fr.predicate = NSPredicate(format: "isSynced == %hhd", false)
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND markForDelete == %hhd", false, includeMarkForDelete ?? false)
             fr.fetchBatchSize = 4
             do {
                 xs = try moc.fetch(fr)
@@ -455,12 +462,12 @@ class CoreDataService {
     
     // MARK: EProject
     
-    func getProject(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
+    func getProject(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
         var x: EProject?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
-            fr.predicate = NSPredicate(format: "id == %@", id)
+            fr.predicate = NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete ?? false)
             do {
                 let xs = try moc.fetch(fr)
                 x = xs.first
@@ -475,13 +482,14 @@ class CoreDataService {
     /// - Parameters:
     ///   - index: The project index.
     ///   - wsId: The workspace id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getProject(at index: Int, wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
+    func getProject(at index: Int, wsId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
         var x: EProject?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
-            fr.predicate = NSPredicate(format: "workspace.id == %@", wsId)
+            fr.predicate = NSPredicate(format: "workspace.id == %@ AND markForDelete == %hhd", wsId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -505,13 +513,14 @@ class CoreDataService {
     /// Retrieves the projects belonging to the given workspace.
     /// - Parameters:
     ///   - wsId: The workspace id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getProjects(wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EProject] {
+    func getProjects(wsId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EProject] {
         var xs: [EProject] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
-            fr.predicate = NSPredicate(format: "workspace.id == %@", wsId)
+            fr.predicate = NSPredicate(format: "workspace.id == %@ AND markForDelete = %hhd", wsId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -532,12 +541,12 @@ class CoreDataService {
         return x
     }
     
-    func getProjectsToSync(wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EProject] {
+    func getProjectsToSync(wsId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EProject] {
         var xs: [EProject] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EProject>(entityName: "EProject")
-            fr.predicate = NSPredicate(format: "isSynced == %hhd AND workspace.id == %@ ", false, wsId)
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND workspace.id == %@ AND markForDelete == %hhd", false, wsId, includeMarkForDelete ?? false)
             fr.fetchBatchSize = 4
             do {
                 xs = try moc.fetch(fr)
@@ -550,12 +559,12 @@ class CoreDataService {
     
     // MARK: ERequest
     
-    func getRequest(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
+    func getRequest(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
         var x: ERequest?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
-            fr.predicate = NSPredicate(format: "id == %@", id)
+            fr.predicate = NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete ?? false)
             do {
                 let xs = try moc.fetch(fr)
                 x = xs.first
@@ -570,12 +579,12 @@ class CoreDataService {
     /// - Parameters:
     ///   - projectId: The project id.
     ///   - ctx: The managed object context.
-    func getRequests(projectId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequest] {
+    func getRequests(projectId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequest] {
         var xs: [ERequest] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
-            fr.predicate = NSPredicate(format: "project.id == %@", projectId)
+            fr.predicate = NSPredicate(format: "project.id == %@ AND markForDelete == %hhd", projectId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -591,13 +600,14 @@ class CoreDataService {
     /// - Parameters:
     ///   - index: The order index.
     ///   - projectId: The project id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getRequest(at index: Int, projectId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
+    func getRequest(at index: Int, projectId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
         var x: ERequest?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
-            fr.predicate = NSPredicate(format: "project.id == %@", projectId)
+            fr.predicate = NSPredicate(format: "project.id == %@ AND markForDelete == %hhd", projectId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
                 let xs = try moc.fetch(fr)
@@ -612,13 +622,14 @@ class CoreDataService {
     /// Retrieve the total requests count in the given project
     /// - Parameters:
     ///   - projectId: The project id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getRequestsCount(projectId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
+    func getRequestsCount(projectId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
         var x: Int = 0
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
-            fr.predicate = NSPredicate(format: "project.id == %@", projectId)
+            fr.predicate = NSPredicate(format: "project.id == %@ AND markForDelete == %hhd", projectId, includeMarkForDelete ?? false)
             do {
                 x = try moc.count(for: fr)
             } catch let error {
@@ -628,12 +639,12 @@ class CoreDataService {
         return x
     }
     
-    func getRequestsToSync(projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequest] {
+    func getRequestsToSync(projId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequest] {
         var xs: [ERequest] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
-            fr.predicate = NSPredicate(format: "isSynced == %hhd AND project.id == %@", false, projId)
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND project.id == %@ AND markForDelete == %hhd", false, projId, includeMarkForDelete ?? false)
             fr.fetchBatchSize = 8
             do {
                 xs = try moc.fetch(fr)
@@ -646,12 +657,12 @@ class CoreDataService {
     
     // MARK: ERequestData
     
-    func getRequestData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
+    func getRequestData(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "id == %@", id)
+            fr.predicate = NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete ?? false)
             do {
                 x = try moc.fetch(fr).first
             } catch let error {
@@ -661,7 +672,7 @@ class CoreDataService {
         return x
     }
     
-    func getRequestData(at index: Int, reqId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
+    func getRequestData(at index: Int, reqId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
@@ -680,7 +691,7 @@ class CoreDataService {
                 }
             }()
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "%K == %@", typeKey, reqId)
+            fr.predicate = NSPredicate(format: "%K == %@ AND markForDelete == %hhd", typeKey, reqId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
                 let xs = try moc.fetch(fr)
@@ -692,12 +703,12 @@ class CoreDataService {
         return x
     }
     
-    func getLastRequestData(type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
+    func getLastRequestData(type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "type == %d", type.rawValue.toInt32())
+            fr.predicate = NSPredicate(format: "type == %d AND markForDelete == %hhd", type.rawValue.toInt32(), includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: false)]
             do {
                 x = try moc.fetch(fr).first
@@ -712,8 +723,9 @@ class CoreDataService {
     /// - Parameters:
     ///   - reqId: The request id.
     ///   - type: The request data type.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getRequestDataCount(reqId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
+    func getRequestDataCount(reqId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
         var x: Int = 0
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
@@ -732,7 +744,7 @@ class CoreDataService {
                 }
             }()
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "%K == %@", typeKey, reqId)
+            fr.predicate = NSPredicate(format: "%K == %@ AND markForDelete == %hhd", typeKey, reqId, includeMarkForDelete ?? false)
             do {
                 x = try moc.count(for: fr)
             } catch let error {
@@ -745,13 +757,14 @@ class CoreDataService {
     /// Retrieve form data for the given request body.
     /// - Parameters:
     ///   - bodyDataId: The request body data id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context of the request body data object.
-    func getFormRequestData(_ bodyDataId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
+    func getFormRequestData(_ bodyDataId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "form.id == %@ AND type == %d", bodyDataId, type.rawValue.toInt32())  // ERequestBodyData.id
+            fr.predicate = NSPredicate(format: "form.id == %@ AND type == %d AND markForDelete == %hhd", bodyDataId, type.rawValue.toInt32(), includeMarkForDelete ?? false)  // ERequestBodyData.id
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -768,8 +781,9 @@ class CoreDataService {
     ///   - index: The index of the form.
     ///   - bodyDataId: The request body data id.
     ///   - type: The request data type (form, multipart)
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getFormRequestData(at index: Int, bodyDataId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
+    func getFormRequestData(at index: Int, bodyDataId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)
         -> ERequestData? {
         var x: ERequestData?
         let moc = self.getMOC(ctx: ctx)
@@ -781,7 +795,7 @@ class CoreDataService {
                 return "multipart.id"
             }()
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "%K == %@ AND type == %d", typeKey, bodyDataId, type.rawValue.toInt32())
+            fr.predicate = NSPredicate(format: "%K == %@ AND type == %d AND markForDelete == %hhd", typeKey, bodyDataId, type.rawValue.toInt32(), includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
                 let xs = try moc.fetch(fr)
@@ -796,13 +810,14 @@ class CoreDataService {
     /// Retrieves the headers belonging to the given request.
     /// - Parameters:
     ///   - reqId: The request id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getHeadersRequestData(_ reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
+    func getHeadersRequestData(_ reqId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "header.id == %@", reqId)
+            fr.predicate = NSPredicate(format: "header.id == %@ AND markForDelete == %hhd", reqId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -817,13 +832,14 @@ class CoreDataService {
     /// Retrieves the params belonging to the given request.
     /// - Parameters:
     ///   - reqId: The request id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getParamsRequestData(_ reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
+    func getParamsRequestData(_ reqId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
-            fr.predicate = NSPredicate(format: "param.id == %@", reqId)
+            fr.predicate = NSPredicate(format: "param.id == %@ AND markForDelete == %hhd", reqId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -835,7 +851,7 @@ class CoreDataService {
         return xs
     }
     
-    func getRequestDataToSync(type: RequestDataType, id : String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
+    func getRequestDataToSync(type: RequestDataType, id : String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
@@ -843,15 +859,15 @@ class CoreDataService {
             var pred: NSPredicate!
             switch type {
             case .header:
-                pred = NSPredicate(format: "isSynced == %hhd AND header.id == %@", false, id)  // req.id
+                pred = NSPredicate(format: "isSynced == %hhd AND header.id == %@ AND markForDelete == %hhd", false, id, includeMarkForDelete ?? false)  // req.id
             case .param:
-                pred = NSPredicate(format: "isSynced == %hhd AND param.id == %@", false, id)  // req.id
+                pred = NSPredicate(format: "isSynced == %hhd AND param.id == %@ AND markForDelete == %hhd", false, id, includeMarkForDelete ?? false)  // req.id
             case .form:
-                pred = NSPredicate(format: "isSynced == %hhd AND form.id == %@", false, id)  // reqBodyData.id
+                pred = NSPredicate(format: "isSynced == %hhd AND form.id == %@ AND markForDelete == %hhd", false, id, includeMarkForDelete ?? false)  // reqBodyData.id
             case .multipart:
-                pred = NSPredicate(format: "isSynced == %hhd AND multipart.id == %@", false, id)  // reqBodyData.id
+                pred = NSPredicate(format: "isSynced == %hhd AND multipart.id == %@ AND markForDelete == %hhd", false, id, includeMarkForDelete ?? false)  // reqBodyData.id
             case .binary:
-                pred = NSPredicate(format: "isSynced == %hhd AND binary.id == %@", false, id)  // reqBodyData.id
+                pred = NSPredicate(format: "isSynced == %hhd AND binary.id == %@ AND markForDelete == %hhd", false, id, includeMarkForDelete ?? false)  // reqBodyData.id
             }
             fr.predicate = pred
             fr.fetchBatchSize = 16
@@ -869,13 +885,14 @@ class CoreDataService {
     /// Retrieve the request method data for the given id.
     /// - Parameters:
     ///   - id: The request method data id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getRequestMethodData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
+    func getRequestMethodData(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
-            fr.predicate = NSPredicate(format: "id == %@", id)
+            fr.predicate = NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete ?? false)
             do {
                 x = try moc.fetch(fr).first
             } catch let error {
@@ -888,13 +905,14 @@ class CoreDataService {
     /// Retrieves request method data belonging to the given request.
     /// - Parameters:
     ///   - reqId: The request id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getRequestMethodData(reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+    func getRequestMethodData(reqId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
         var xs: [ERequestMethodData] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
-            fr.predicate = NSPredicate(format: "request.id == %@", reqId)
+            fr.predicate = NSPredicate(format: "request.id == %@ AND markForDelete == %hhd", reqId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -909,13 +927,14 @@ class CoreDataService {
     /// Retrieves request method data belonging to the given project.
     /// - Parameters:
     ///   - projId: The project id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getRequestMethodData(projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+    func getRequestMethodData(projId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
         var xs: [ERequestMethodData] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
-            fr.predicate = NSPredicate(format: "project.id == %@", projId)
+            fr.predicate = NSPredicate(format: "project.id == %@ AND markForDelete == %hhd", projId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -931,13 +950,14 @@ class CoreDataService {
     /// - Parameters:
     ///   - index: The index of the method.
     ///   - projId: The project id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getRequestMethodData(at index: Int, projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
+    func getRequestMethodData(at index: Int, projId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
-            fr.predicate = NSPredicate(format: "project.id == %@", projId)
+            fr.predicate = NSPredicate(format: "project.id == %@ AND markForDelete == %hhd", projId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
                 let xs = try moc.fetch(fr)
@@ -953,13 +973,14 @@ class CoreDataService {
     /// - Parameters:
     ///   - methodDataId: The request method data id.
     ///   - index: The method index which will be the selected method index in the request.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getRequestsCountForRequestMethodData(index: Int64? = Const.defaultRequestMethodsCount.toInt64(), ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
+    func getRequestsCountForRequestMethodData(index: Int64? = Const.defaultRequestMethodsCount.toInt64(), includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
         var x: Int = 0
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
-            fr.predicate = NSPredicate(format: "selectedMethodIndex == %ld", index!)
+            fr.predicate = NSPredicate(format: "selectedMethodIndex == %ld AND markForDelete == %hhd", index!, includeMarkForDelete ?? false)
             do {
                 x = try moc.count(for: fr)
             } catch let error {
@@ -982,12 +1003,12 @@ class CoreDataService {
         }
     }
     
-    func getRequestMethodDataToSync(projId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
+    func getRequestMethodDataToSync(projId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
         var xs: [ERequestMethodData] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestMethodData>(entityName: "ERequestMethodData")
-            fr.predicate = NSPredicate(format: "isSynced == %hhd AND project.id == %@", false, projId)
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND project.id == %@ AND markToDelete == %hhd", false, projId, includeMarkForDelete ?? false)
             fr.fetchBatchSize = 4
             do {
                 xs = try moc.fetch(fr)
@@ -1000,12 +1021,12 @@ class CoreDataService {
     
     // MARK: ERequestBodyData
     
-    func getRequestBodyData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
+    func getRequestBodyData(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
         var x: ERequestBodyData?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestBodyData>(entityName: "ERequestBodyData")
-            fr.predicate = NSPredicate(format: "id == %@", id)
+            fr.predicate = NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete ?? false)
             do {
                 x = try moc.fetch(fr).first
             } catch let error {
@@ -1015,12 +1036,12 @@ class CoreDataService {
         return x
     }
     
-    func getRequestBodyDataToSync(reqId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestBodyData] {
+    func getRequestBodyDataToSync(reqId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestBodyData] {
         var xs: [ERequestBodyData] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestBodyData>(entityName: "ERequestBodyData")
-            fr.predicate = NSPredicate(format: "isSynced == %hhd AND request.id == %@", false, reqId)
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND request.id == %@ AND markForDelete == %hhd", false, reqId, includeMarkForDelete ?? false)
             fr.fetchBatchSize = 8
             do {
                 xs = try moc.fetch(fr)
@@ -1037,13 +1058,14 @@ class CoreDataService {
     /// - Parameters:
     ///   - reqDataId: The request data id.
     ///   - type: The `RequestDataType` indicating whether it is a `file` or a `multipart`
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context of the request data.
-    func getFilesCount(_ reqDataId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
+    func getFilesCount(_ reqDataId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> Int {
         var x: Int = 0
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
-            fr.predicate = NSPredicate(format: "requestData.id == %@ AND type == %d", reqDataId, type.rawValue.toInt32())
+            fr.predicate = NSPredicate(format: "requestData.id == %@ AND type == %d AND markForDelete == %hdd", reqDataId, type.rawValue.toInt32(), includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
                 x = try moc.count(for: fr)
@@ -1058,13 +1080,14 @@ class CoreDataService {
     /// - Parameters:
     ///   - reqDataId: The request data id.
     ///   - type: The `RequestDataType` indicating whether it is a `file` or a `multipart`
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context of the request data.
-    func getFiles(_ reqDataId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EFile] {
+    func getFiles(_ reqDataId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EFile] {
         var xs: [EFile] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
-            fr.predicate = NSPredicate(format: "requestData.id == %@ AND type == %d", reqDataId, type.rawValue.toInt32())
+            fr.predicate = NSPredicate(format: "requestData.id == %@ AND type == %d AND markForDelete == %hhd", reqDataId, type.rawValue.toInt32(), includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
@@ -1080,13 +1103,14 @@ class CoreDataService {
     /// - Parameters:
     ///   - index: The index of the file in the request data list.
     ///   - reqDataId: The request data id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getFile(at index: Int, reqDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
+    func getFile(at index: Int, reqDataId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
         var x: EFile?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
-            fr.predicate = NSPredicate(format: "requestData.id == %@", reqDataId)
+            fr.predicate = NSPredicate(format: "requestData.id == %@ AND markForDelete == %hhd", reqDataId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
                 let xs = try moc.fetch(fr)
@@ -1101,13 +1125,14 @@ class CoreDataService {
     /// Retrieve file object for the given file id.
     /// - Parameters:
     ///   - id: The file object id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getFileData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
+    func getFileData(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
         var x: EFile?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
-            fr.predicate = NSPredicate(format: "id == %@", id)
+            fr.predicate = NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete ?? false)
             do {
                 x = try moc.fetch(fr).first
             } catch let error {
@@ -1117,12 +1142,12 @@ class CoreDataService {
         return x
     }
     
-    func getFilesToSync(reqDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EFile] {
+    func getFilesToSync(reqDataId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EFile] {
         var xs: [EFile] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EFile>(entityName: "EFile")
-            fr.predicate = NSPredicate(format: "isSynced == %hhd AND requestData.id == %@", false, reqDataId)
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND requestData.id == %@ AND markForDelete == %hhd", false, reqDataId, includeMarkForDelete ?? false)
             fr.fetchBatchSize = 8
             do {
                 xs = try moc.fetch(fr)
@@ -1138,13 +1163,14 @@ class CoreDataService {
     /// Retrieve image object for the given image id.
     /// - Parameters:
     ///   - id: The image object id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getImageData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
+    func getImageData(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
         var x: EImage?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EImage>(entityName: "EImage")
-            fr.predicate = NSPredicate(format: "id == %@", id)
+            fr.predicate = NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete ?? false)
             do {
                 x = try moc.fetch(fr).first
             } catch let error {
@@ -1154,12 +1180,12 @@ class CoreDataService {
         return x
     }
     
-    func getImagesToSync(reqDataId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EImage] {
+    func getImagesToSync(reqDataId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [EImage] {
         var xs: [EImage] = []
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EImage>(entityName: "EImage")
-            fr.predicate = NSPredicate(format: "isSynced == %hhd AND requestData.id == %@", false, reqDataId)
+            fr.predicate = NSPredicate(format: "isSynced == %hhd AND requestData.id == %@ AND markForDelete == %hhd", false, reqDataId, includeMarkForDelete ?? false)
             fr.fetchBatchSize = 8
             do {
                 xs = try moc.fetch(fr)
@@ -1195,6 +1221,7 @@ class CoreDataService {
             if !isSyncEnabled { ws.syncDisabled = ts }
             ws.created = x == nil ? ts : x!.created
             ws.modified = ts
+            ws.changeTag = ts
             ws.version = x == nil ? 0 : x!.version + 1
             x = ws
         }
@@ -1220,6 +1247,7 @@ class CoreDataService {
         moc.performAndWait {
             if !state { ws.syncDisabled = ts }
             ws.modified = ts
+            ws.changeTag = ts
             ws.isSyncEnabled = state
             do {
                 if !AppState.isRequestEdit {  try moc.save() }
@@ -1251,6 +1279,7 @@ class CoreDataService {
             proj.desc = desc
             proj.created = x == nil ? ts : x!.created
             proj.modified = ts
+            proj.changeTag = ts
             proj.version = x == nil ? 0 : x!.version + 1
             _ = self.genDefaultRequestMethods(proj, ctx: moc)
             ws?.addToProjects(proj)
@@ -1280,6 +1309,7 @@ class CoreDataService {
             req.name = name
             req.created = x == nil ? ts : x!.created
             req.modified = ts
+            req.changeTag = ts
             req.version = x == nil ? 0 : x!.version + 1
             project?.addToRequests(req)
             x = req
@@ -1306,6 +1336,7 @@ class CoreDataService {
             data.index = index.toInt64()
             data.created = x == nil ? ts : x!.created
             data.modified = ts
+            data.changeTag = ts
             data.version = x == nil ? 0 : x!.version + 1
             data.fieldFormat = fieldFormat.rawValue.toInt64()
             data.type = type.rawValue.toInt64()
@@ -1336,6 +1367,7 @@ class CoreDataService {
             data.name = name
             data.created = x == nil ? ts : x!.created
             data.modified = ts
+            data.changeTag = ts
             data.version = x == nil ? 0 : x!.version + 1
             x = data
         }
@@ -1359,6 +1391,7 @@ class CoreDataService {
             data.index = index.toInt64()
             data.created = x == nil ? ts : x!.created
             data.modified = ts
+            data.changeTag = ts
             data.version = x == nil ? 0 : x!.version + 1
             x = data
         }
@@ -1387,6 +1420,7 @@ class CoreDataService {
             image.type = type
             image.created = x == nil ? ts : x!.created
             image.modified = ts
+            image.changeTag = ts
             image.version = x == nil ? 0 : x!.version + 1
             image.index = index.toInt64()
             x = image
@@ -1411,6 +1445,7 @@ class CoreDataService {
             file.data = data
             file.created = x == nil ? ts : x!.created
             file.modified = ts
+            file.changeTag = ts
             file.index = index.toInt64()
             file.name = name
             file.path = path
@@ -1493,6 +1528,13 @@ class CoreDataService {
     }
         
     // MARK: - Delete
+    
+    func markEntityForDelete(_ entity: Entity, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        entity.setMarkedForDelete(true)
+        let ts = Date().currentTimeNanos()
+        entity.setModified(ts)
+        entity.setChangeTag(ts)
+    }
     
     /// Resets the context to its base state if there are any changes.
     func discardChanges(in context: NSManagedObjectContext) {

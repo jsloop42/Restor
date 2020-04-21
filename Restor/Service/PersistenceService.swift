@@ -482,7 +482,7 @@ class PersistenceService {
     /// Check if server record is latest. Cases were a record is created locally, but failed to sync, new record gets added from another device, and then the
     /// former record gets saved, in which case the server copy is latest.
     func isServerLatest(local: CKRecord, server: CKRecord) -> Bool {
-        if let lts = local["modified"] as? Int64, let rts = server["modified"] as? Int64 { return rts > lts }
+        if let lts = local["changeTag"] as? Int64, let rts = server["changeTag"] as? Int64 { return rts > lts }
         return false
     }
     
@@ -491,31 +491,31 @@ class PersistenceService {
     }
     
     func mergeProject(local: CKRecord, server: CKRecord) -> CKRecord {
-        return local
+        return self.isServerLatest(local: local, server: server) ? server : local
     }
     
     func mergeRequest(local: CKRecord, server: CKRecord) -> CKRecord {
-        return local
+        return self.isServerLatest(local: local, server: server) ? server : local
     }
     
     func mergeRequestBodyData(local: CKRecord, server: CKRecord) -> CKRecord {
-        return local
+        return self.isServerLatest(local: local, server: server) ? server : local
     }
 
     func mergeRequestData(local: CKRecord, server: CKRecord) -> CKRecord {
-        return local
+        return self.isServerLatest(local: local, server: server) ? server : local
     }
     
     func mergeRequestMethodData(local: CKRecord, server: CKRecord) -> CKRecord {
-        return local
+        return self.isServerLatest(local: local, server: server) ? server : local
     }
     
     func mergeFileData(local: CKRecord, server: CKRecord) -> CKRecord {
-        return local
+        return self.isServerLatest(local: local, server: server) ? server : local
     }
     
     func mergeImageData(local: CKRecord, server: CKRecord) -> CKRecord {
-        return local
+        return self.isServerLatest(local: local, server: server) ? server : local
     }
     
     func mergeRecords(local: CKRecord?, server: CKRecord?, recordType: String) -> CKRecord? {
@@ -554,7 +554,7 @@ class PersistenceService {
             isNew = true
         }
         guard let ws = aws else { return }
-        if isNew || (ws.isSyncEnabled && (!ws.isActive || ws.modified <= record.modified())) {  // => server has new copy
+        if isNew || (ws.isSyncEnabled && (!ws.isActive || ws.changeTag < record.changeTag)) {  // => server has new copy
             ws.updateFromCKRecord(record)
             ws.isSynced = true
             ws.isActive = true
@@ -574,7 +574,7 @@ class PersistenceService {
             isNew = true
         }
         guard let proj = aproj else { return }
-        if isNew || proj.modified <= record.modified() {  // => server has new copy
+        if isNew || proj.changeTag < record.changeTag {  // => server has new copy
             proj.updateFromCKRecord(record, ctx: ctx)
             proj.isSynced = true
             self.localdb.saveChildContext(ctx)
@@ -594,7 +594,7 @@ class PersistenceService {
             isNew = true
         }
         guard let req = areq else { return }
-        if isNew || req.modified <= record.modified() {  // => server has new copy
+        if isNew || req.changeTag < record.changeTag {  // => server has new copy
             req.updateFromCKRecord(record, ctx: ctx)
             req.isSynced = true
             self.localdb.saveChildContext(ctx)
@@ -613,11 +613,11 @@ class PersistenceService {
             isNew = true
         }
         guard let reqBodyData = aReqBodyData else { return }
-        if isNew || reqBodyData.modified <= record.modified() {  // => server has new copy
+        if isNew || reqBodyData.changeTag < record.changeTag {  // => server has new copy
             reqBodyData.updateFromCKRecord(record, ctx: ctx)
             reqBodyData.isSynced = true
             self.localdb.saveChildContext(ctx)
-            Log.debug("Request synced")
+            Log.debug("Request body synced")
             self.nc.post(Notification(name: NotificationKey.requestBodyDataDidSync))
         }
     }
@@ -634,7 +634,7 @@ class PersistenceService {
             isNew = true
         }
         guard let reqData = aData else { return }
-        if isNew || reqData.modified <= record.modified() {  // => server has new copy
+        if isNew || reqData.changeTag < record.changeTag {  // => server has new copy
             reqData.updateFromCKRecord(record, ctx: ctx)
             reqData.isSynced = true
             self.localdb.saveChildContext(ctx)
@@ -653,7 +653,7 @@ class PersistenceService {
             isNew = true
         }
         guard let reqMethodData = aReqMethodData else { return }
-        if isNew || reqMethodData.modified <= record.modified() {  // => server has new copy
+        if isNew || reqMethodData.changeTag < record.changeTag {  // => server has new copy
             reqMethodData.updateFromCKRecord(record, ctx: ctx)
             reqMethodData.isSynced = true
             self.localdb.saveChildContext(ctx)
@@ -672,7 +672,7 @@ class PersistenceService {
             isNew = true
         }
         guard let fileData = aFileData else { return }
-        if isNew || fileData.modified <= record.modified() {  // => server has new copy
+        if isNew || fileData.changeTag < record.changeTag {  // => server has new copy
             fileData.updateFromCKRecord(record, ctx: ctx)
             fileData.isSynced = true
             self.localdb.saveChildContext(ctx)
@@ -691,7 +691,7 @@ class PersistenceService {
             isNew = true
         }
         guard let imageData = aImageData else { return }
-        if isNew || imageData.modified <= record.modified() {  // => server has new copy
+        if isNew || imageData.changeTag < record.changeTag {  // => server has new copy
             imageData.updateFromCKRecord(record, ctx: ctx)
             imageData.isSynced = true
             self.localdb.saveChildContext(ctx)
