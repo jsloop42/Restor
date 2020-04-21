@@ -1110,6 +1110,15 @@ class PersistenceService {
         let projModel = DeferredSaveModel(record: ckproj, entity: proj, id: proj.getId())
         let reqModel = DeferredSaveModel(record: ckreq, entity: req, id: req.getId())
         acc.append(contentsOf: [projModel, reqModel])
+        if let methods = proj.requestMethods?.allObjects as? [ERequestMethodData], methods.count > 0 {
+            methods.forEach { method in
+                if method.isCustom && !method.isSynced {
+                    let ckmeth = self.ck.createRecord(recordID: self.ck.recordID(entityId: method.getId(), zoneID: zoneID), recordType: RecordType.requestMethodData.rawValue)
+                    method.updateCKRecord(ckmeth, project: ckproj)
+                    acc.append(DeferredSaveModel(record: ckmeth, id: ckmeth.id()))
+                }
+            }
+        }
         if let set = req.headers, let xs = set.allObjects as? [ERequestData] {
             xs.forEach { reqData in
                 if !reqData.isSynced {
