@@ -109,7 +109,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             return false
         } else {
             if let data = AppState.editRequest, let url = data.url, url.isEmpty {  // New request and user taps back button without any change, so we discard.
-                self.localdb.deleteEntity(data)
+                self.localdb.markEntityForDelete(data, ctx: data.managedObjectContext)
             }
         }
         self.destroy()
@@ -285,7 +285,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         if self.isDirty, let data = AppState.editRequest, let proj = AppState.currentProject {
             proj.addToRequests(data)
             if let set = proj.requestMethods, let xs = set.allObjects as? [ERequestMethodData] {
-                xs.forEach { method in if method.shouldDelete { self.localdb.deleteEntity(method) } }
+                xs.forEach { method in if method.shouldDelete { self.localdb.markEntityForDelete(method, ctx: method.managedObjectContext) } }
             }
             let timer = DispatchSource.makeTimerSource()
             timer.schedule(deadline: .now() + .milliseconds(300))
@@ -294,6 +294,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
                 self.localdb.saveBackgroundContext()
                 self.isDirty = false
                 self.db.saveRequestToCloud(data)
+                self.db.deleteDataMarkedForDelete(data)
                 self.close()
                 timer.cancel()
             }
@@ -561,16 +562,16 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     static func bodyFormCellHeight() -> CGFloat {
-        if let body = AppState.editRequest!.body {
-            var xs: [Any] = []
+        if let request = AppState.editRequest, let body = request.body, let ctx = request.managedObjectContext {
+            var n = 0
             if body.selected == RequestBodyType.form.rawValue {
-                xs = body.form?.allObjects ?? []
+                n = CoreDataService.shared.getRequestDataCount(reqId: request.getId(), type: .form, ctx: ctx)
             } else if body.selected == RequestBodyType.multipart.rawValue {
-                xs = body.multipart?.allObjects ?? []
+                n = CoreDataService.shared.getRequestDataCount(reqId: request.getId(), type: .multipart, ctx: ctx)
             } else if body.selected == RequestBodyType.binary.rawValue {
                 return 60  // TODO: remove
             }
-            let count: Double = xs.count == 0 ? 1 : Double(xs.count)
+            let count: Double = n == 0 ? 1 : Double(n)
             return CGFloat(count * 92.5) + 57  // field cell + title cell
         }
         return 92.5 + 57  // 84 + 77
@@ -1292,7 +1293,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                         let eimage = self.localdb.createImage(data: imageData, name: DocumentPickerState.imageName, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
                         eimage?.requestData = form
                         eimage?.isCameraMode = DocumentPickerState.isCameraMode
-                        form.files?.forEach { file in self.localdb.deleteEntity(file as! Entity) }
+                        form.files?.forEach { file in self.localdb.markEntityForDelete(file as? Entity, ctx: ctx) }
                         if let vc = RequestVC.shared {
                             self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
                         }
@@ -1323,7 +1324,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                             if let file = self.localdb.createFile(data: x, index: offset, name: name, path: element,
                                                                   type: self.selectedType == .form ? .form : .multipart, checkExists: true, ctx: ctx) {
                                 file.requestData = form
-                                self.localdb.deleteEntity(form.image)
+                                self.localdb.markEntityForDelete(form.image, ctx: form.image?.managedObjectContext)
                                 DispatchQueue.main.async {
                                     if let vc = RequestVC.shared {
                                         self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
@@ -1518,7 +1519,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             var shouldReload = false
             if let cell = tableView.cellForRow(at: indexPath) as? KVBodyFieldTableViewCell  {
                 if !cell.reqDataId.isEmpty {
-                    self.localdb.deleteRequestData(id: cell.reqDataId, ctx: ctx)
+                    self.localdb.markEntityForDelete(self.localdb.getRequestData(id: cell.reqDataId, ctx: ctx), ctx: ctx)
                     shouldReload = true
                 }
             }
@@ -1666,7 +1667,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func removeRequestDataFromModel(_ id: String, type: RequestCellType) {
         guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
-        self.localdb.deleteRequestData(dataId: id, req: AppState.editRequest!, type: type, ctx: ctx)
+        self.localdb.markEntityForDelete(self.localdb.getRequestData(id: id, ctx: ctx), ctx: ctx)
         if let vc = RequestVC.shared {
             self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
         }
@@ -1686,7 +1687,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                         let eimage = self.localdb.createImage(data: imageData, name: DocumentPickerState.imageName, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
                         eimage?.requestData = binary
                         eimage?.isCameraMode = DocumentPickerState.isCameraMode
-                        binary.files?.forEach { file in self.localdb.deleteEntity(file as! Entity) }
+                        binary.files?.forEach { file in self.localdb.markEntityForDelete(file as? Entity, ctx: ctx) }
                     }
                     DispatchQueue.main.async {
                         if let vc = RequestVC.shared {
@@ -1715,13 +1716,13 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                             switch result {
                             case .success(let fileData):
                                 Log.debug("bin: file read")
-                                binary.files?.forEach { file in self.localdb.deleteEntity(file as! Entity) }
+                                binary.files?.forEach { file in self.localdb.markEntityForDelete(file as? Entity, ctx: ctx) }
                                 let name = self.app.getFileName(fileURL)
                                 if let file = self.localdb.createFile(data: fileData, index: 0, name: name, path: fileURL,
                                                                       type: .binary, checkExists: true, ctx: ctx) {
                                     file.requestData = binary
                                     binary.image = nil
-                                    self.localdb.deleteEntity(binary.image)
+                                    self.localdb.markEntityForDelete(binary.image, ctx: ctx)
                                     Log.debug("bin: entity deleted")
                                     DispatchQueue.main.async {
                                         if let vc = RequestVC.shared {
@@ -1758,22 +1759,22 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func getHeight() -> CGFloat {
         var height: CGFloat = 44
+        var count = 0
+        guard let request = AppState.editRequest, let ctx = request.managedObjectContext else { return height }
         switch self.tableViewType {
         case .header:
-            if let headers = AppState.editRequest?.headers {
-                if headers.allObjects.count == 0 {
-                    height = 48
-                } else {
-                    height = CGFloat(Double(headers.count) * 92.5 + 50)
-                }
+            count = self.localdb.getRequestDataCount(reqId: request.getId(), type: .header, ctx: ctx)
+            if count == 0 {
+                height = 48
+            } else {
+                height = CGFloat(Double(count) * 92.5 + 50)
             }
         case .params:
-            if let params = AppState.editRequest?.params {
-                if params.count == 0 {
-                    height = 48
-                } else {
-                    height = CGFloat(Double(params.count) * 92.5 + 50)
-                }
+            count = self.localdb.getRequestDataCount(reqId: request.getId(), type: .param, ctx: ctx)
+            if count == 0 {
+                height = 48
+            } else {
+                height = CGFloat(Double(count) * 92.5 + 50)
             }
         case .body:
             if let body = AppState.editRequest?.body {
@@ -1814,20 +1815,20 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let state = AppState.editRequest else { return 0 }
+        guard let state = AppState.editRequest, let ctx = state.managedObjectContext else { return 0 }
         if section == 0 {
             switch self.tableViewType {
             case .header:
-                return state.headers?.count ?? 0
+                return self.localdb.getRequestDataCount(reqId: state.getId(), type: .header, ctx: ctx)
             case .params:
-                return state.params?.count ?? 0
+                return self.localdb.getRequestDataCount(reqId: state.getId(), type: .param, ctx: ctx)
             case .body:
-                if state.body == nil { return 0 }
+                if state.body == nil || state.body!.markForDelete { return 0 }
                 return 1
             }
         }
         // section 1 (header)
-        if self.tableViewType == .body && AppState.editRequest!.body != nil {
+        if self.tableViewType == .body && AppState.editRequest!.body != nil && !AppState.editRequest!.body!.markForDelete {
             return 0
         }
         return 1

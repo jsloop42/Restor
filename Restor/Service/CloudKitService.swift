@@ -272,6 +272,10 @@ class CloudKitService {
             info.serverChangeToken = token
             zones[key] = info.encode()
             self.setCachedZones(zones)
+        } else {
+            let info = ZoneInfo(zoneID: zoneID)
+            info.serverChangeToken = token
+            self.setCachedZones([key: info.encode()])
         }
     }
     
@@ -533,7 +537,6 @@ class CloudKitService {
     
     func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], completion: @escaping (Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) -> Void) {
         Log.debug("CK: fetch zone changes: \(zoneIDs)")
-        var zoneOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneOptions] = [:]
         var savedRecords: [CKRecord] = []
         var deletedRecords: [CKRecord.ID] = []
         var moreZones: [CKRecordZone.ID] = []
@@ -560,14 +563,27 @@ class CloudKitService {
                 }
             }
         }
-        zoneIDs.forEach { zID in
-            let token: CKServerChangeToken? = self.getCachedServerChangeToken(zID)
-            let opt = CKFetchRecordZoneChangesOperation.ZoneOptions()
-            opt.previousServerChangeToken = token
-            zoneOptions[zID] = opt
+        let op: CKFetchRecordZoneChangesOperation!
+        if #available(iOS 12.0, *) {
+            var zoneOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneConfiguration] = [:]
+            zoneIDs.forEach { zID in
+                let token: CKServerChangeToken? = self.getCachedServerChangeToken(zID)
+                let opt = CKFetchRecordZoneChangesOperation.ZoneConfiguration()
+                opt.previousServerChangeToken = token
+                zoneOptions[zID] = opt
+            }
+            op = CKFetchRecordZoneChangesOperation(recordZoneIDs: zoneIDs, configurationsByRecordZoneID: zoneOptions)
+        } else {
+            var zoneOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneOptions] = [:]
+            zoneIDs.forEach { zID in
+                let token: CKServerChangeToken? = self.getCachedServerChangeToken(zID)
+                let opt = CKFetchRecordZoneChangesOperation.ZoneOptions()
+                opt.previousServerChangeToken = token
+                zoneOptions[zID] = opt
+            }
+            op = CKFetchRecordZoneChangesOperation(recordZoneIDs: zoneIDs, optionsByRecordZoneID: zoneOptions)
         }
-        Log.debug("zone options: \(zoneOptions)")
-        let op = CKFetchRecordZoneChangesOperation(recordZoneIDs: zoneIDs, optionsByRecordZoneID: zoneOptions)
+        op.recordZoneIDs = zoneIDs
         op.qualityOfService = .utility
         op.recordChangedBlock = { record in
             Log.debug("zone change: record obtained: \(record)")
@@ -587,8 +603,8 @@ class CloudKitService {
                 handleError(err)
                 return;
             }
+            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
             if moreComing {
-                if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
                 moreZones.append(zoneID)
             }
         }

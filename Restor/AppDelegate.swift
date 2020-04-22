@@ -31,9 +31,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 //        }
 //        UNUserNotificationCenter.current().delegate = self
         application.registerForRemoteNotifications()
-        //self.ck.deleteAllSubscriptions()
-        self.db.subscribeToCloudKitEvents()
-        self.db.syncFromCloud()
         return true
     }
     

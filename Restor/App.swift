@@ -246,6 +246,7 @@ class App {
     ///   - request: The initial request dictionary.
     func didRequestChangeImp(_ x: ERequest, request: [String: Any]) -> Bool {
         self.addEditRequestManagedObjectId(x.objectID)
+        if x.markForDelete != request["markForDelete"] as? Bool { x.isSynced = false; x.setChangeTagWithEditTs(); return true }
         if x.url == nil || x.url!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
         if self.didRequestURLChangeImp(x.url ?? "", request: request) { x.setChangeTagWithEditTs(); return true }
         if self.didRequestMetaChangeImp(name: x.name ?? "", desc: x.desc ?? "", request: request) { x.setChangeTagWithEditTs(); return true }
@@ -313,7 +314,8 @@ class App {
         if x.created != y["created"] as? Int64 ||
             x.index != y["index"] as? Int64 ||
             x.isCustom != y["isCustom"] as? Bool ||
-            x.name != y["name"] as? String {
+            x.name != y["name"] as? String ||
+            x.markForDelete != y["markForDelete"] as? Bool {
             x.setChangeTagWithEditTs();
             return true
         }
@@ -498,7 +500,8 @@ class App {
                 x?.json != body["json"] as? String ||
                 x?.raw != body["raw"] as? String ||
                 x?.selected != body["selected"] as? Int64 ||
-                x?.xml != body["xml"] as? String {
+                x?.xml != body["xml"] as? String ||
+                x?.markForDelete != request["markForDelete"] as? Bool {
                 x?.isSynced = false
                 x?.setChangeTagWithEditTs()
                 return true
@@ -554,7 +557,7 @@ class App {
         let obin = body["binary"] as? [String: Any]
         if (obin == nil && reqData != nil) || (obin != nil && reqData == nil) { reqData?.isSynced = false; reqData?.setChangeTagWithEditTs(); return true }
         guard let lbin = reqData, let rbin = obin else { reqData?.isSynced = false; reqData?.setChangeTagWithEditTs(); return true }
-        if lbin.created != rbin["created"] as? Int64 { reqData?.isSynced = false; reqData?.setChangeTagWithEditTs(); return true }
+        if lbin.created != rbin["created"] as? Int64 || lbin.markForDelete != rbin["markForDelete"] as? Bool { reqData?.isSynced = false; reqData?.setChangeTagWithEditTs(); return true }
         if self.didRequestBodyFormAttachmentChangeImp(lbin, y: rbin) { reqData?.isSynced = false; reqData?.setChangeTagWithEditTs(); return true }
         return false
     }
@@ -625,7 +628,8 @@ class App {
             x.index != y["index"] as? Int64 ||
             x.key != y["key"] as? String ||
             x.type != y["type"] as? Int64 ||
-            x.value != y["value"] as? String {
+            x.value != y["value"] as? String ||
+            x.markForDelete != y["markForDelete"] as? Bool {
             x.isSynced = false
             x.setChangeTagWithEditTs()
             return true
@@ -648,7 +652,8 @@ class App {
         if x.created != y["created"] as? Int64 ||
             x.index != y["index"] as? Int64 ||
             x.name != y["name"] as? String ||
-            x.type != y["type"] as? Int64  {
+            x.type != y["type"] as? Int64 ||
+            x.markForDelete != y["markForDelete"] as? Bool {
             x.isSynced = false
             x.setChangeTagWithEditTs();
             return true
@@ -672,7 +677,8 @@ class App {
             x.index != y["index"] as? Int64 ||
             x.name != y["name"] as? String ||
             x.isCameraMode != y["isCameraMode"] as? Bool ||
-            x.type != y["type"] as? String  {
+            x.type != y["type"] as? String ||
+            x.markForDelete != y["markForDelete"] as? Bool {
             x.isSynced = false
             x.setChangeTagWithEditTs()
             return true

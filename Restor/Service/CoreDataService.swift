@@ -329,7 +329,11 @@ class CoreDataService {
         moc.performAndWait {
             let fr = obj.fetchRequest()
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
-            if let x = predicate { fr.predicate = x }
+            if let x = predicate {
+                fr.predicate = x
+            } else {
+                fr.predicate = NSPredicate(format: "markForDelete == %hhd", false)
+            }
             fr.fetchBatchSize = self.fetchBatchSize
             frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
         }
@@ -672,25 +676,28 @@ class CoreDataService {
         return x
     }
     
+    func getRequestReferenceKey(_ reqDataType: RequestDataType) -> String {
+        switch reqDataType {
+        case .header:
+            return "header.id"
+        case .param:
+            return "param.id"
+        case .form:
+            return "form.request.id"
+        case .multipart:
+            return "multipart.request.id"
+        case .binary:
+            return "binary.request.id"
+        }
+    }
+    
     func getRequestData(at index: Int, reqId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
-            let typeKey: String = {
-                switch type {
-                case .header:
-                    return "header.id"
-                case .param:
-                    return "param.id"
-                case .form:
-                    return "form.request.id"
-                case .multipart:
-                    return "multipart.request.id"
-                case .binary:
-                    return "binary.request.id"
-                }
-            }()
+            let typeKey = self.getRequestReferenceKey(type)
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
+            // TODO: fetch with not markForDelete if nil
             fr.predicate = NSPredicate(format: "%K == %@ AND markForDelete == %hhd", typeKey, reqId, includeMarkForDelete ?? false)
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             do {
@@ -729,20 +736,7 @@ class CoreDataService {
         var x: Int = 0
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
-            let typeKey: String = {
-                switch type {
-                case .header:
-                    return "header.id"
-                case .param:
-                    return "param.id"
-                case .form:
-                    return "form.request.id"
-                case .multipart:
-                    return "multipart.request.id"
-                case .binary:
-                    return "binary.request.id"
-                }
-            }()
+            let typeKey = self.getRequestReferenceKey(type)
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             fr.predicate = NSPredicate(format: "%K == %@ AND markForDelete == %hhd", typeKey, reqId, includeMarkForDelete ?? false)
             do {
@@ -875,6 +869,39 @@ class CoreDataService {
                 xs = try moc.fetch(fr)
             } catch let error {
                 Log.error("Error fetching request data yet to sync: \(error)")
+            }
+        }
+        return xs
+    }
+    
+    func getRequestData(reqId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
+        var x: ERequestData?
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let typeKey = self.getRequestReferenceKey(type)
+            let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
+            fr.predicate = NSPredicate(format: "%K == %@ AND markForDelete == %hhd", typeKey, reqId, includeMarkForDelete ?? false)
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error getting entity: \(error)")
+            }
+        }
+        return x
+    }
+    
+    func getRequestDataMarkedForDelete(reqId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestData] {
+        var xs: [ERequestData] = []
+        let moc = self.getMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
+            let type = self.getRequestReferenceKey(type)
+            fr.predicate = NSPredicate(format: "%K == %@ AND markForDelete == %hhd", type, reqId, true)
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error getting markForDelete entites: \(error)")
             }
         }
         return xs
@@ -1493,11 +1520,12 @@ class CoreDataService {
                     Log.debug("bg context saved")
                     if isForceSave {
                         self.saveMainContext()
+                        callback?(true)
                     } else {
                         Log.debug("scheduling main context save")
-                        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { t in
+                        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] t in
                             t.invalidate()
-                            self.saveMainContext()
+                            self?.saveMainContext(callback)
                         }
                     }
                 } catch {
@@ -1517,20 +1545,20 @@ class CoreDataService {
     func saveChildContext(_ ctx: NSManagedObjectContext) {
         if ctx.hasChanges {
             ctx.performAndWait {
-                do { try ctx.save() } catch let error { Log.error("Error saving child context: \(error)") }
-            }
-            ctx.parent?.performAndWait {
-                if !AppState.isRequestEdit {
-                    do { try ctx.parent?.save() } catch let error { Log.error("Error saving background context: \(error)") }
-                }
+                do {
+                    try ctx.save()
+                    if !AppState.isRequestEdit { self.saveBackgroundContext(isForce: true) }
+                } catch let error { Log.error("Error saving child context: \(error)") }
             }
         }
     }
         
     // MARK: - Delete
     
-    func markEntityForDelete(_ entity: Entity, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+    func markEntityForDelete(_ entity: Entity?, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
+        guard let entity = entity else { return }
         entity.setMarkedForDelete(true)
+        if entity.getChangeTag() > AppState.editRequestSaveTs { self.deleteEntity(entity); return }
         let ts = Date().currentTimeNanos()
         entity.setModified(ts)
         entity.setChangeTag(ts)
@@ -1562,42 +1590,42 @@ class CoreDataService {
     
     func deleteWorkspace(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc = self.getMOC(ctx: ctx)
-        self.deleteEntity(self.getWorkspace(id: id, ctx: moc))
+        self.deleteEntity(self.getWorkspace(id: id, includeMarkForDelete: true, ctx: moc))
     }
     
     func deleteProject(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc = self.getMOC(ctx: ctx)
-        self.deleteEntity(self.getProject(id: id, ctx: moc))
+        self.deleteEntity(self.getProject(id: id, includeMarkForDelete: true, ctx: moc))
     }
     
     func deleteRequest(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc = self.getMOC(ctx: ctx)
-        self.deleteEntity(self.getRequest(id: id, ctx: moc))
+        self.deleteEntity(self.getRequest(id: id, includeMarkForDelete: true, ctx: moc))
     }
     
     func deleteRequestBodyData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc = self.getMOC(ctx: ctx)
-        self.deleteEntity(self.getRequestBodyData(id: id, ctx: moc))
+        self.deleteEntity(self.getRequestBodyData(id: id, includeMarkForDelete: true, ctx: moc))
     }
     
     func deleteRequestData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc = self.getMOC(ctx: ctx)
-        self.deleteEntity(self.getRequestData(id: id, ctx: moc))
+        self.deleteEntity(self.getRequestData(id: id, includeMarkForDelete: true, ctx: moc))
     }
     
     func deleteRequestMethodData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc = self.getMOC(ctx: ctx)
-        self.deleteEntity(self.getRequestMethodData(id: id, ctx: moc))
+        self.deleteEntity(self.getRequestMethodData(id: id, includeMarkForDelete: true, ctx: moc))
     }
     
     func deleteFileData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc = self.getMOC(ctx: ctx)
-        self.deleteEntity(self.getFileData(id: id, ctx: moc))
+        self.deleteEntity(self.getFileData(id: id, includeMarkForDelete: true, ctx: moc))
     }
     
     func deleteImageData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
         let moc = self.getMOC(ctx: ctx)
-        self.deleteEntity(self.getImageData(id: id, ctx: moc))
+        self.deleteEntity(self.getImageData(id: id, includeMarkForDelete: true, ctx: moc))
     }
     
     /// Delete the entity with the given id.
@@ -1612,13 +1640,13 @@ class CoreDataService {
             var x: Entity?
             switch type {
             case .header:
-                x = self.getRequestData(id: dataId, ctx: moc)
+                x = self.getRequestData(id: dataId, includeMarkForDelete: true, ctx: moc)
                 if let y = x as? ERequestData { req.removeFromHeaders(y) }
             case .param:
-                x = self.getRequestData(id: dataId, ctx: ctx)
+                x = self.getRequestData(id: dataId, includeMarkForDelete: true, ctx: ctx)
                 if let y = x as? ERequestData { req.removeFromParams(y) }
             case .body:
-                x = self.getRequestBodyData(id: dataId, ctx: moc)
+                x = self.getRequestBodyData(id: dataId, includeMarkForDelete: true, ctx: moc)
                 if x != nil { req.body = nil }
             default:
                 break

@@ -66,7 +66,7 @@ public class ERequestBodyData: NSManagedObject, Entity {
     }
     
     public override func willSave() {
-        if self.modified < AppState.editRequestSaveTs { self.modified = AppState.editRequestSaveTs }
+        //if self.modified < AppState.editRequestSaveTs { self.modified = AppState.editRequestSaveTs }
     }
     
     func updateCKRecord(_ record: CKRecord, request: CKRecord) {

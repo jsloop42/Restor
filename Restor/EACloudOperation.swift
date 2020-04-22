@@ -54,6 +54,7 @@ class EACloudOperation: Operation, NSSecureCoding {
         }
     }
     
+    /// Query record changes
     init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String, predicate: NSPredicate? = nil, modified: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
         self.recordType = recordType
         self._recordType = self.recordType.rawValue
@@ -64,6 +65,17 @@ class EACloudOperation: Operation, NSSecureCoding {
         if predicate != nil { self.predicate = predicate! }
         self.modified = modified ?? 0
         self.completionHandler = completion
+    }
+    
+    /// Fetch zone changes
+    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID) {
+        self.recordType = recordType
+        self._recordType = self.recordType.rawValue
+        self.opType = opType
+        self._opType = self.opType.rawValue
+        self.zoneID = zoneID
+        self.parentId = ""
+        self.modified = modified ?? 0
     }
     
     init(block: @escaping () -> Void) {
@@ -150,6 +162,6 @@ class EACloudOperation: Operation, NSSecureCoding {
     }
     
     private func fetchZoneChanges() {
-        fatalError("not implemented")
+        PersistenceService.shared.fetchZoneChanges(zoneIDs: [self.zoneID], isDeleteOnly: true)
     }
 }

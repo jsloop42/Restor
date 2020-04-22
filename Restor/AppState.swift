@@ -25,7 +25,7 @@ struct AppState {
     static var binaryAttachmentInfo = AttachmentInfo()
     /// If any request is begin currently edited, in which case, we delay saving context, until done.
     static var isRequestEdit = false
-    static var editRequestSaveTs: Int64 = Date().currentTimeNanos()
+    static var editRequestSaveTs: Int64 = 0
     
     static func workspace(forIndex index: Int) -> EWorkspace? {
         if index < self.workspaces.count {
