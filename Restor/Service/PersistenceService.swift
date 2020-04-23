@@ -94,7 +94,7 @@ class PersistenceService {
     private let defaultQueryCursorKey = "default-query-cursor-key"
     private let syncRecordKey = "sync-record-key"
     private let defaultZoneRecordFetchLimit = 50
-    private let opqueue = EAOperationQueue()
+    private let opQueue = EAOperationQueue()
     private var syncTimer: DispatchSourceTimer?
     private var previousSyncTime: Int = 0
     private var queryDefaultZoneRecordRepeatTimer: EARepeatTimer!
@@ -324,8 +324,10 @@ class PersistenceService {
                 let xs = hm.allValues()
                 xs.forEach { data in
                     if let op = EACloudOperation.decode(data) {
-                        op.completionHandler = self.syncFromCloudHandler(_:)
-                        if self.opqueue.add(op) { hm.removeValue(forKey: op.getKey()) }
+                        if op.opType == .queryRecord {
+                            op.completionHandler = self.syncFromCloudHandler(_:)
+                        }
+                        if self.opQueue.add(op) { hm.removeValue(forKey: op.getKey()) }
                     }
                 }
                 self.store.set(hm, forKey: self.syncRecordKey)
@@ -386,14 +388,14 @@ class PersistenceService {
         switch RecordType(rawValue: record.type()) {
         case .zone:
             let op = EACloudOperation(recordType: .zone, opType: .fetchZoneChange, zoneID: self.ck.zoneID(workspaceId: record.id()))
-            if !self.opqueue.add(op) { self.addSyncOpToLocal(op); return false }
+            if !self.opQueue.add(op) { self.addSyncOpToLocal(op) }
             fallthrough
         case .workspace:
             self.updateWorkspaceFromCloud(record)
             let wsId = record.id()
             let op = EACloudOperation(recordType: .project, opType: .queryRecord, zoneID: self.ck.zoneID(workspaceId: wsId), parentId: wsId, modified: modified, completion: self.syncFromCloudHandler(_:))
             op.completionBlock = { Log.debug("op completion: - query project") }
-            if !self.opqueue.add(op) { self.addSyncOpToLocal(op); return false }
+            if !self.opQueue.add(op) { self.addSyncOpToLocal(op); return false }
             return true
         case .project:
             self.updateProjectFromCloud(record)
@@ -402,10 +404,10 @@ class PersistenceService {
             var status = true
             let opreq = EACloudOperation(recordType: .request, opType: .queryRecord, zoneID: zoneID, parentId: projId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreq.completionBlock = { Log.debug("op completion: - query request") }
-            if !self.opqueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
+            if !self.opQueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
             let opreqmeth = EACloudOperation(recordType: .requestMethodData, opType: .queryRecord, zoneID: zoneID, parentId: projId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreqmeth.completionBlock = { Log.debug("op completion: - query request method") }
-            if !self.opqueue.add(opreqmeth) { self.addSyncOpToLocal(opreqmeth); status = false }
+            if !self.opQueue.add(opreqmeth) { self.addSyncOpToLocal(opreqmeth); status = false }
             return status
         case .request:
             self.updateRequestFromCloud(record)
@@ -414,16 +416,16 @@ class PersistenceService {
             var status = false
             let opreq = EACloudOperation(recordType: .requestData, opType: .queryRecord, zoneID: zoneID, parentId: reqId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreq.completionBlock = { Log.debug("op completion: - query request") }
-            if !self.opqueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
+            if !self.opQueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
             let opreqbody = EACloudOperation(recordType: .requestBodyData, opType: .queryRecord, zoneID: zoneID, parentId: reqId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreqbody.completionBlock = { Log.debug("op completion: - query request method") }
-            if !self.opqueue.add(opreqbody) { self.addSyncOpToLocal(opreqbody); status = false }
+            if !self.opQueue.add(opreqbody) { self.addSyncOpToLocal(opreqbody); status = false }
             return status
         case .requestBodyData:
             self.updateRequestBodyDataFromCloud(record)
             let op = EACloudOperation(recordType: .requestData, opType: .queryRecord, zoneID: record.zoneID(), parentId: record.id(), modified: modified, completion: self.syncFromCloudHandler(_:))
             op.completionBlock = { Log.debug("op completion: - query request data") }
-            if !self.opqueue.add(op) { self.addSyncOpToLocal(op); return false }
+            if !self.opQueue.add(op) { self.addSyncOpToLocal(op); return false }
             return true
         case .requestData:
             self.updateRequestDataFromCloud(record)
@@ -432,10 +434,10 @@ class PersistenceService {
             var status = false
             let opreq = EACloudOperation(recordType: .file, opType: .queryRecord, zoneID: zoneID, parentId: reqDataId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreq.completionBlock = { Log.debug("op completion: - query file") }
-            if !self.opqueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
+            if !self.opQueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
             let opreqbody = EACloudOperation(recordType: .image, opType: .queryRecord, zoneID: zoneID, parentId: reqDataId, modified: modified, completion: self.syncFromCloudHandler(_:))
             opreqbody.completionBlock = { Log.debug("op completion: - query image") }
-            if !self.opqueue.add(opreqbody) { self.addSyncOpToLocal(opreqbody); status = false }
+            if !self.opQueue.add(opreqbody) { self.addSyncOpToLocal(opreqbody); status = false }
             return status
         case .requestMethodData:
             self.updateRequestMethodDataFromCloud(record)
@@ -817,38 +819,107 @@ class PersistenceService {
     
     // MARK: - Local record deleted
     
+    func deleteDataMarkedForDelete(_ set: Set<NSManagedObject>, request: ERequest) {
+        Log.debug("delete data marked for delete - set: \(set.count) for req: \(request)")
+        guard set.count > 0 else { return }
+        guard let ws = request.project?.workspace else { return }
+        let zoneID = self.ck.zoneID(workspaceId: ws.getId())
+        self.deleteEntitesFromCloud(set.toArray() as! [Entity], zoneID: zoneID)
+        App.shared.clearEditRequestDeleteObjects()
+    }
+    
     func deleteDataMarkedForDelete(_ request: ERequest) {
         Log.debug("delete data marked for delete")
         guard let ws = request.project?.workspace else { return }
-        self.deleteRequestDataMarkedForDelete(reqId: request.getId(), wsId: ws.getId(), req: request)
+        let zoneID = self.ck.zoneID(workspaceId: ws.getId())
+        if request.markForDelete {
+            var acc: [Entity] = []
+            if let xs = request.headers?.allObjects as? [ERequestData] { acc.append(contentsOf: xs) }
+            if let xs = request.params?.allObjects as? [ERequestData] { acc.append(contentsOf: xs) }
+            if let body = request.body {
+                if let xs = body.form?.allObjects as? [ERequestData] {
+                    xs.forEach { reqData in
+                        if let files = reqData.files?.allObjects as? [EFile] { acc.append(contentsOf: files) }
+                        if let image = reqData.image { acc.append(image) }
+                        acc.append(reqData)
+                    }
+                }
+                if let xs = body.multipart?.allObjects as? [ERequestData] { acc.append(contentsOf: xs) }
+                if let bin = body.binary {
+                    if let xs = bin.files?.allObjects as? [EFile] { acc.append(contentsOf: xs) }
+                    if let image = bin.image { acc.append(image) }
+                    acc.append(bin)
+                }
+                acc.append(body)
+            }
+            self.deleteEntitesFromCloud([request], zoneID: zoneID)
+        } else {
+            self.deleteRequestDataMarkedForDelete(reqId: request.getId(), zoneID: zoneID)
+            self.deleteRequestBodyDataMarkedForDelete(request, zoneID: zoneID)
+        }
+        self.deleteRequestMethodDataMarkedForDelete(request, zoneID: zoneID)
     }
     
-    func deleteRequestDataMarkedForDelete(reqId: String, wsId: String, req: ERequest) {
-        Log.debug("delete request data marked for delete: reqId: \(reqId) wsId: \(wsId)")
+    func deleteRequestDataMarkedForDelete(reqId: String, zoneID: CKRecordZone.ID) {
+        Log.debug("delete request data marked for delete: reqId: \(reqId) zoneID: \(zoneID)")
         let ctx = self.localdb.getChildMOC()
         var xs = self.localdb.getRequestDataMarkedForDelete(reqId: reqId, type: .header, ctx: ctx)
         xs.append(contentsOf: self.localdb.getRequestDataMarkedForDelete(reqId: reqId, type: .param, ctx: ctx))
         xs.append(contentsOf: self.localdb.getRequestDataMarkedForDelete(reqId: reqId, type: .form, ctx: ctx))
         xs.append(contentsOf: self.localdb.getRequestDataMarkedForDelete(reqId: reqId, type: .multipart, ctx: ctx))
         xs.append(contentsOf: self.localdb.getRequestDataMarkedForDelete(reqId: reqId, type: .binary, ctx: ctx))
+        var files: [EFile] = []
+        var images: [EImage] = []
+        xs.forEach { reqData in
+            files.append(contentsOf: self.localdb.getFilesMarkedForDelete(reqDataId: reqData.getId(), ctx: ctx))
+            if let img = reqData.image, img.markForDelete { images.append(img) }
+        }
+        self.deleteEntitesFromCloud(files, zoneID: zoneID)
+        self.deleteEntitesFromCloud(images, zoneID: zoneID)
+        self.deleteEntitesFromCloud(xs, zoneID: zoneID)
+    }
+    
+    func deleteRequestBodyDataMarkedForDelete(_ req: ERequest, zoneID: CKRecordZone.ID) {
+        if let body = req.body, body.markForDelete {
+            self.deleteEntitesFromCloud([body], zoneID: zoneID)
+        }
+    }
+    
+    func deleteRequestMethodDataMarkedForDelete(_ req: ERequest, zoneID: CKRecordZone.ID) {
+        if let proj = req.project {
+            self.deleteEntitesFromCloud(self.localdb.getRequestMethodDataMarkedForDelete(projId: proj.getId(), ctx: self.localdb.getChildMOC()), zoneID: zoneID)
+        }
+    }
+    
+    private func deleteEntitesFromCloud(_ xs: [Entity], zoneID: CKRecordZone.ID) {
+        var xs = xs
         if xs.count > 0 {
             Log.debug("delete data count: \(xs.count)")
-            let zoneID = self.ck.zoneID(workspaceId: wsId)
-            let recordIDs = xs.map { reqData -> CKRecord.ID in
-                return self.ck.recordID(entityId: reqData.getId(), zoneID: zoneID)
+            var recordIDs = xs.map { elem -> CKRecord.ID in
+                return self.ck.recordID(entityId: elem.getId(), zoneID: zoneID)
             }
-            self.ck.deleteRecords(recordIDs: recordIDs) { result in
+            let op = EACloudOperation(deleteRecordIDs: recordIDs, zoneID: zoneID) { result in
                 switch result {
-                case .success(let status):
-                    Log.debug("Delete status: \(status)")
-                    xs.forEach { reqData in self.localdb.deleteEntity(reqData) }
+                case .success(let deleted):
+                    Log.debug("Delete records: \(deleted)")
+                    deleted.forEach { recordID in
+                        if let idx = (recordIDs.firstIndex { oRecordID -> Bool in oRecordID == recordID }) {
+                            let elem = xs[idx]
+                            xs.remove(at: idx)
+                            recordIDs.remove(at: idx)
+                            self.localdb.deleteEntity(elem)
+                        }
+                    }
+                    Log.debug("Remaining entities to delete: \(xs.count)")
+                    // if xs.count > 0 { self.deleteEntitesFromCloud(xs, zoneID: zoneID) }
                 case .failure(let error):
                     Log.error("Error deleting records: \(error)")
                 }
             }
+            if !self.opQueue.add(op) { self.addSyncOpToLocal(op) }
         }
     }
-    
+ 
     // MARK: - Query
     
     func queryDefaultZoneRecords(completion: @escaping (Result<[CKRecord], Error>) -> Void) {

@@ -1022,12 +1022,12 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
-    /// Delete records with the given record IDs.
-    func deleteRecords(recordIDs: [CKRecord.ID], completion: @escaping (Result<Bool, Error>) -> Void) {
+    /// Delete records with the given record IDs. Invokes the callback with the deleted record IDs.
+    func deleteRecords(recordIDs: [CKRecord.ID], completion: @escaping (Result<[CKRecord.ID], Error>) -> Void) {
         Log.debug("CK: Delete records: \(recordIDs)")
         let op = CKModifyRecordsOperation(recordsToSave: [], recordIDsToDelete: recordIDs)
         op.qualityOfService = .utility
-        op.modifyRecordsCompletionBlock = { _, _, error in
+        op.modifyRecordsCompletionBlock = { _, deleted, error in
             if let err = error as? CKError {
                 Log.error("Error deleteing records: \(err)")
                 if err.isNetworkFailure() {
@@ -1052,7 +1052,7 @@ class CloudKitService {
                 }
             }
             Log.debug("Records deleted successfully: \(recordIDs.map { r -> String in r.recordName })")
-            completion(.success(true))
+            completion(.success(deleted ?? []))
         }
         self.privateDatabase().add(op)
     }

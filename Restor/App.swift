@@ -38,6 +38,7 @@ class App {
     private let fnIdReqImage = "request-image-fn"
     /// List of managed objects modified so that in case of discard, these entities can be reset.
     var editReqManIds: Set<NSManagedObjectID> = Set()
+    var editReqDelete: Set<NSManagedObject> = Set()
     
     func bootstrap() {
         self.initDB()
@@ -209,10 +210,119 @@ class App {
         return .jpeg  // default photo extension
     }
     
+    // MARK: - Mark entity for delete
+    
+    func addEditRequestDeleteObject(_ obj: NSManagedObject?) {
+        if let x = obj {
+            if x.objectID.isTemporaryID {
+                CoreDataService.shared.deleteEntity(obj)
+                return
+            }
+            self.editReqDelete.insert(x)
+        }
+    }
+    
+    func removeEditRequestDeleteObject(_ x: NSManagedObject) {
+        self.editReqDelete.remove(x)
+    }
+    
+    func clearEditRequestDeleteObjects() {
+        self.editReqDelete.removeAll()
+    }
+    
+    func markEntityForDelete(file: EFile?, ctx: NSManagedObjectContext? = nil) {
+        guard let file = file else { return }
+        file.requestData = nil
+        self.localdb.markEntityForDelete(file, ctx: ctx)
+        self.addEditRequestDeleteObject(file)
+    }
+    
+    func markForDelete(image: EImage?, ctx: NSManagedObjectContext? = nil) {
+        guard let image = image else { return }
+        image.requestData = nil
+        self.localdb.markEntityForDelete(image, ctx: ctx)
+        self.addEditRequestDeleteObject(image)
+    }
+    
+    func markEntityForDelete(reqData: ERequestData?, ctx: NSManagedObjectContext? = nil) {
+        guard let reqData = reqData else { return }
+        if let xs = reqData.files?.allObjects as? [EFile] {
+            xs.forEach { file in self.markEntityForDelete(file: file, ctx: ctx) }
+        }
+        if let img = reqData.image { self.markForDelete(image: img, ctx: ctx) }
+        reqData.header = nil
+        reqData.param = nil
+        reqData.form = nil
+        reqData.multipart = nil
+        reqData.binary = nil
+        reqData.image = nil
+        self.addEditRequestDeleteObject(reqData)
+    }
+    
+    func markEntityForDelete(body: ERequestBodyData?, ctx: NSManagedObjectContext? = nil) {
+        guard let body = body else { return }
+        if let xs = body.form?.allObjects as? [ERequestData] {
+            xs.forEach { reqData in self.markEntityForDelete(reqData: reqData, ctx: ctx) }
+        }
+        if let xs = body.multipart?.allObjects as? [ERequestData] {
+            xs.forEach { reqData in self.markEntityForDelete(reqData: reqData, ctx: ctx) }
+        }
+        if let bin = body.binary { self.markEntityForDelete(reqData: bin, ctx: ctx) }
+        body.request = nil
+        self.localdb.markEntityForDelete(body, ctx: ctx)
+        AppState.editRequest?.body = nil
+        self.addEditRequestDeleteObject(body)
+    }
+    
+    func markEntityForDelete(reqMethodData: ERequestMethodData?, ctx: NSManagedObjectContext? = nil) {
+        guard let reqMethodData = reqMethodData else { return }
+        self.localdb.markEntityForDelete(reqMethodData)
+        reqMethodData.project = nil
+        self.addEditRequestDeleteObject(reqMethodData)
+    }
+    
+    func markEntityForDelete(req: ERequest?, ctx: NSManagedObjectContext? = nil) {
+        guard let req = req else { return }
+        self.localdb.markEntityForDelete(req)
+        guard let projId = req.project?.getId() else { return }
+        req.project = nil
+        self.markEntityForDelete(body: req.body)
+        if let xs = req.headers?.allObjects as? [ERequestData] {
+            xs.forEach { reqData in self.markEntityForDelete(reqData: reqData) }
+        }
+        if let xs = req.params?.allObjects as? [ERequestData] {
+            xs.forEach { reqData in self.markEntityForDelete(reqData: reqData) }
+        }
+        let reqMethods = self.localdb.getRequestMethodDataMarkedForDelete(projId: projId, ctx: ctx)
+        reqMethods.forEach { method in self.markEntityForDelete(reqMethodData: method, ctx: ctx) }
+        self.addEditRequestDeleteObject(req)
+    }
+    
+    func markEntityForDelete(proj: EProject?, ctx: NSManagedObjectContext? = nil) {
+        guard let proj = proj else { return }
+        self.localdb.markEntityForDelete(proj)
+        proj.workspace = nil
+        if let xs = proj.requests?.allObjects as? [ERequest] {
+            xs.forEach { req in self.markEntityForDelete(req: req, ctx: ctx) }
+        }
+        self.addEditRequestDeleteObject(proj)
+    }
+    
+    func markEntityForDelete(ws: EWorkspace?, ctx: NSManagedObjectContext? = nil) {
+        guard let ws = ws else { return }
+        self.localdb.markEntityForDelete(ws)
+        if let xs = ws.projects?.allObjects as? [EProject] {
+            xs.forEach { proj in self.markEntityForDelete(proj: proj, ctx: ctx) }
+        }
+        self.addEditRequestDeleteObject(ws)
+    }
+    
     /// MARK: - Entity change tracking
     
     func addEditRequestManagedObjectId(_ id: NSManagedObjectID?) {
-        if id != nil { self.editReqManIds.insert(id!) }
+        DispatchQueue.main.sync {
+            if id != nil { self.editReqManIds.insert(id!) }
+        }
     }
     
     func removeEditRequestManagedObjectId(_ id: NSManagedObjectID) {
