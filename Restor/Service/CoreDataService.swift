@@ -1493,7 +1493,7 @@ class CoreDataService {
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
-            let imageId = self.imageId(data)
+            let imageId = self.imageId()
             if let isExists = checkExists, isExists, let data = self.getImageData(id: imageId, ctx: ctx) { x = data }
             let image = x != nil ? x! : EImage(context: moc)
             image.id = imageId
@@ -1520,7 +1520,7 @@ class CoreDataService {
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
         moc.performAndWait {
-            let fileId = self.fileId(data)
+            let fileId = self.fileId()
             if let isExists = checkExists, isExists, let data = self.getFileData(id: fileId, ctx: ctx) { x = data }
             let file = x != nil ? x! : EFile(context: moc)
             file.id = fileId
