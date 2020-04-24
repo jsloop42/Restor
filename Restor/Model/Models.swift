@@ -93,6 +93,7 @@ extension Entity {
     }
     
     func setChangeTagWithEditTs() {
+        self.setModified(AppState.editRequestSaveTs)
         return setChangeTag(AppState.editRequestSaveTs)
     }
 }
