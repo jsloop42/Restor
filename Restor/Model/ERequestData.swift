@@ -17,10 +17,6 @@ public class ERequestData: NSManagedObject, Entity {
         return self.id ?? ""
     }
     
-    public func getIndex() -> Int {
-        return self.index.toInt()
-    }
-    
     public func getName() -> String {
         return self.id ?? ""
     }
@@ -39,10 +35,6 @@ public class ERequestData: NSManagedObject, Entity {
     
     public func getVersion() -> Int64 {
         return self.version
-    }
-    
-    public func setIndex(_ i: Int) {
-        self.index = i.toInt64()
     }
     
     public func setIsSynced(_ status: Bool) {
@@ -90,7 +82,6 @@ public class ERequestData: NSManagedObject, Entity {
         record["desc"] = (self.desc ?? "") as CKRecordValue
         record["fieldFormat"] = self.fieldFormat as CKRecordValue
         record["id"] = self.id! as CKRecordValue
-        record["index"] = self.index as CKRecordValue
         record["key"] = (self.key ?? "") as CKRecordValue
         record["type"] = self.type as CKRecordValue
         record["value"] = (self.value ?? "") as CKRecordValue
@@ -171,7 +162,6 @@ public class ERequestData: NSManagedObject, Entity {
         if let x = record["desc"] as? String { self.desc = x }
         if let x = record["fieldFormat"] as? Int64 { self.fieldFormat = x }
         if let x = record["id"] as? String { self.id = x }
-        if let x = record["index"] as? Int64 { self.index = x }
         if let x = record["key"] as? String { self.key = x }
         if let x = record["type"] as? Int64 { self.type = x }
         if let x = record["value"] as? String { self.value = x }

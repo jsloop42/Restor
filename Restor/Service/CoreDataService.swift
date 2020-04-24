@@ -225,14 +225,11 @@ class CoreDataService {
             if let c1 = hma["created"] as? Int64, let c2 = hmb["created"] as? Int64 { return c1 < c2 }
             return false
         }
-        let len = hm.count
-        for i in 0..<len { hm[i]["index"] = i.toInt64() }
     }
     
     /// Sort the given list of entities in the order of created and update the index property.
     func sortByCreated(_ xs: inout [Entity]) {
         xs.sort { (a, b) -> Bool in a.getCreated() < b.getCreated() }
-        xs.enumerated().forEach { arg in arg.element.setIndex(arg.offset) }
     }
     
     func sortedByCreated(_ xs: [[String: Any]]) -> [[String: Any]] {
@@ -438,7 +435,7 @@ class CoreDataService {
         self.bgMOC.performAndWait {
             if let ws = self.getWorkspace(id: self.defaultWorkspaceId) { x = ws; return }
             // We create the default workspace with active flag as false. Only if any change by the user gets made, the flag is enabled. This helps in syncing from cloud.
-            let ws: EWorkspace! = self.createWorkspace(id: self.defaultWorkspaceId, index: 0, name: self.defaultWorkspaceName, desc: self.defaultWorkspaceDesc, isSyncEnabled: true, isActive: false)
+            let ws: EWorkspace! = self.createWorkspace(id: self.defaultWorkspaceId, name: self.defaultWorkspaceName, desc: self.defaultWorkspaceDesc, isSyncEnabled: true, isActive: false)
             if let isProj = project, isProj {
                 ws.projects = NSSet()
                 ws.projects!.adding(self.getDefaultProject() as Any)
@@ -540,7 +537,7 @@ class CoreDataService {
         var x: EProject!
         self.bgMOC.performAndWait {
             if let proj = self.getProject(id: "default") { x = proj; return }
-            x = self.createProject(id: "default", index: 0, name: "default", desc: "The default project")
+            x = self.createProject(id: "default", name: "default", desc: "The default project")
         }
         return x
     }
@@ -1032,9 +1029,8 @@ class CoreDataService {
     func genDefaultRequestMethods(_ proj: EProject, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
         let names = ["GET", "POST", "PUT", "PATCH", "DELETE"]
         guard let projId = proj.id else { return [] }
-        return names.enumerated().compactMap { arg -> ERequestMethodData? in
-            let (offset, element) = arg
-            if let x = self.createRequestMethodData(id: self.requestMethodDataId(projId, methodName: element), index: offset, name: element, isCustom: false, ctx: ctx) {
+        return names.compactMap { elem -> ERequestMethodData? in
+            if let x = self.createRequestMethodData(id: self.requestMethodDataId(projId, methodName: elem), name: elem, isCustom: false, ctx: ctx) {
                 x.project = proj
                 return x
             }
@@ -1283,11 +1279,10 @@ class CoreDataService {
     /// Create workspace.
     /// - Parameters:
     ///   - id: The workspace id.
-    ///   - index: The order of the workspace.
     ///   - name: The workspace name.
     ///   - name: The workspace description.
     ///   - checkExists: Check whether the workspace exists before creating.
-    func createWorkspace(id: String, index: Int, name: String, desc: String, isSyncEnabled: Bool, isActive: Bool? = true, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)  -> EWorkspace? {
+    func createWorkspace(id: String, name: String, desc: String, isSyncEnabled: Bool, isActive: Bool? = true, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)  -> EWorkspace? {
         var x: EWorkspace?
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
@@ -1295,7 +1290,6 @@ class CoreDataService {
             if let isExist = checkExists, isExist, let ws = self.getWorkspace(id: id, ctx: ctx) { x = ws }
             let ws = x != nil ? x! : EWorkspace(context: moc)
             ws.id = id
-            ws.index = index.toInt64()
             ws.name = name
             ws.desc = desc
             ws.isActive = isActive!
@@ -1342,12 +1336,11 @@ class CoreDataService {
     /// Create project.
     /// - Parameters:
     ///   - id: The project id.
-    ///   - index: The order of the project.
     ///   - name: The project name.
     ///   - desc: The project description.
     ///   - ws: The workspace to which the project belongs.
     ///   - checkExists: Check if the given project exists before creating.
-    func createProject(id: String, index: Int, name: String, desc: String, ws: EWorkspace? = nil, checkExists: Bool? = true,
+    func createProject(id: String, name: String, desc: String, ws: EWorkspace? = nil, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
         var x: EProject?
         let ts = Date().currentTimeNanos()
@@ -1356,7 +1349,6 @@ class CoreDataService {
             if let isExist = checkExists, isExist, let proj = self.getProject(id: id, ctx: ctx) { x = proj }
             let proj = x != nil ? x! : EProject(context: moc)
             proj.id = id
-            proj.index = index.toInt64()
             proj.name = name
             proj.desc = desc
             proj.created = x == nil ? ts : x!.created
@@ -1378,7 +1370,7 @@ class CoreDataService {
     ///   - project: The project to which the request belongs to.
     ///   - checkExists: Check if the request exists before creating one.
     ///   - ctx: The managed object context
-    func createRequest(id: String, index: Int, name: String, project: EProject? = nil, checkExists: Bool? = true,
+    func createRequest(id: String, name: String, project: EProject? = nil, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
         var x: ERequest?
         let ts = Date().currentTimeNanos()
@@ -1387,7 +1379,6 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let req = self.getRequest(id: id, ctx: ctx) { x = req }
             let req = x != nil ? x! : ERequest(context: moc)
             req.id = id
-            req.index = index.toInt64()
             req.name = name
             req.created = x == nil ? ts : x!.created
             req.modified = ts
@@ -1406,7 +1397,7 @@ class CoreDataService {
     ///   - type: The request data type.
     ///   - checkExists: Check for existing request data object.
     ///   - ctx: The managed object context.
-    func createRequestData(id: String, index: Int, type: RequestDataType, fieldFormat: RequestBodyFormFieldFormatType, checkExists: Bool? = true,
+    func createRequestData(id: String, type: RequestDataType, fieldFormat: RequestBodyFormFieldFormatType, checkExists: Bool? = true,
                            ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
         let ts = Date().currentTimeNanos()
@@ -1415,7 +1406,6 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getRequestData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestData(context: moc)
             data.id = id
-            data.index = index.toInt64()
             data.created = x == nil ? ts : x!.created
             data.modified = ts
             data.changeTag = ts
@@ -1431,11 +1421,10 @@ class CoreDataService {
     /// Crate request method data
     /// - Parameters:
     ///   - id: The request method data id.
-    ///   - index: The order of the request method data.
     ///   - name: The name of the request method data.
     ///   - checkExists: Check if the request method data exists
     ///   - ctx: The managed object context
-    func createRequestMethodData(id: String, index: Int, name: String, isCustom: Bool? = true, checkExists: Bool? = true,
+    func createRequestMethodData(id: String, name: String, isCustom: Bool? = true, checkExists: Bool? = true,
                                  ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let ts = Date().currentTimeNanos()
@@ -1445,7 +1434,6 @@ class CoreDataService {
             let data = x != nil ? x! : ERequestMethodData(context: moc)
             data.id = id
             data.isCustom = isCustom ?? true
-            data.index = index.toInt64()
             data.name = name
             data.created = x == nil ? ts : x!.created
             data.modified = ts
@@ -1459,10 +1447,9 @@ class CoreDataService {
     /// Create request body data.
     /// - Parameters:
     ///   - id: The request body data id.
-    ///   - index: The order of the request body data.
     ///   - checkExists: Check if the request body data exists before creating.
     ///   - ctx: The managed object context.
-    func createRequestBodyData(id: String, index: Int, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
+    func createRequestBodyData(id: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
         var x: ERequestBodyData?
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
@@ -1470,7 +1457,6 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getRequestBodyData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestBodyData(context: moc)
             data.id = id
-            data.index = index.toInt64()
             data.created = x == nil ? ts : x!.created
             data.modified = ts
             data.changeTag = ts
@@ -1484,11 +1470,10 @@ class CoreDataService {
     /// - Parameters:
     ///   - data: The image data
     ///   - name: The image name
-    ///   - index: The image index
     ///   - type: The image type (png, jpg, etc.)
     ///   - checkExists: Check if the image exists already before creating
     ///   - ctx: The managed object context
-    func createImage(data: Data, name: String, index: Int, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
+    func createImage(data: Data, name: String, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
         var x: EImage?
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
@@ -1504,17 +1489,16 @@ class CoreDataService {
             image.modified = ts
             image.changeTag = ts
             image.version = x == nil ? 0 : x!.version + 1
-            image.index = index.toInt64()
             x = image
         }
         return x
     }
     
     func createFile(data: Data, index: Int, name: String, path: URL, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
-        return self.createFile(data: data, index: index, name: name, path: path, type: .form, checkExists: checkExists, ctx: ctx)
+        return self.createFile(data: data, name: name, path: path, type: .form, checkExists: checkExists, ctx: ctx)
     }
     
-    func createFile(data: Data, index: Int, name: String, path: URL, type: RequestDataType, checkExists: Bool? = true,
+    func createFile(data: Data, name: String, path: URL, type: RequestDataType, checkExists: Bool? = true,
                     ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
         var x: EFile?
         let ts = Date().currentTimeNanos()
@@ -1528,7 +1512,6 @@ class CoreDataService {
             file.created = x == nil ? ts : x!.created
             file.modified = ts
             file.changeTag = ts
-            file.index = index.toInt64()
             file.name = name
             file.path = path
             file.type = type.rawValue.toInt64()

@@ -75,9 +75,9 @@ class RequestListViewController: UIViewController {
             AppState.editRequest = self.frc.object(at: idxPath)
         } else {
             if AppState.editRequest == nil {
-                let (name, idx) = self.app.getNewRequestNameWithIndex()
+                let name = self.app.getNewRequestName()
                 if let ctx = AppState.currentProject?.managedObjectContext,
-                    let req = self.localdb.createRequest(id: self.localdb.requestId(), index: idx, name: name, ctx: ctx) {
+                    let req = self.localdb.createRequest(id: self.localdb.requestId(), name: name, ctx: ctx) {
                     AppState.editRequest = req
                     AppState.currentProject?.addToRequests(req)
                 } else {

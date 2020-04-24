@@ -17,10 +17,6 @@ public class ETag: NSManagedObject, Entity {
         return self.id ?? ""
     }
     
-    public func getIndex() -> Int {
-        return self.index.toInt()
-    }
-    
     public func getName() -> String {
         return self.name ?? ""
     }
@@ -39,10 +35,6 @@ public class ETag: NSManagedObject, Entity {
     
     public func getVersion() -> Int64 {
         return self.version
-    }
-    
-    public func setIndex(_ i: Int) {
-        self.index = i.toInt64()
     }
     
     public func setIsSynced(_ status: Bool) {

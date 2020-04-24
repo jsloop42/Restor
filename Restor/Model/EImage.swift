@@ -17,10 +17,6 @@ public class EImage: NSManagedObject, Entity {
         return self.id ?? ""
     }
     
-    public func getIndex() -> Int {
-        return self.index.toInt()
-    }
-    
     public func getName() -> String {
         return self.name ?? ""
     }
@@ -39,10 +35,6 @@ public class EImage: NSManagedObject, Entity {
     
     public func getVersion() -> Int64 {
         return self.version
-    }
-    
-    public func setIndex(_ i: Int) {
-        self.index = i.toInt64()
     }
     
     public func setIsSynced(_ status: Bool) {
@@ -83,7 +75,6 @@ public class EImage: NSManagedObject, Entity {
             }
         }
         record["id"] = self.id! as CKRecordValue
-        record["index"] = self.index as CKRecordValue
         record["isCameraMode"] = self.isCameraMode as CKRecordValue
         record["name"] = (self.name ?? "") as CKRecordValue
         record["type"] = (self.type ?? "") as CKRecordValue
@@ -110,7 +101,6 @@ public class EImage: NSManagedObject, Entity {
             do { self.data = try Data(contentsOf: url) } catch let error { Log.error("Error getting data from file url: \(error)") }
         }
         if let x = record["id"] as? String { self.id = x }
-        if let x = record["index"] as? Int64 { self.index = x }
         if let x = record["isCameraMode"] as? Bool { self.isCameraMode = x }
         if let x = record["name"] as? String { self.name = x }
         if let x = record["type"] as? String { self.type = x }

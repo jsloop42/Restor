@@ -67,14 +67,12 @@ struct AttachmentInfo {
 public protocol Entity: NSManagedObject {
     var recordType: String { get }
     func getId() -> String
-    func getIndex() -> Int
     func getName() -> String
     func getCreated() -> Int64
     func getModified() -> Int64
     func getChangeTag() -> Int64
     func getVersion() -> Int64
     func getZoneID() -> CKRecordZone.ID
-    func setIndex(_ i: Int)
     func setIsSynced(_ status: Bool)
     func setMarkedForDelete(_ status: Bool)
     /// The modified fields get update on changing any property or relation. But for syncing with cloud, we need to use the change tag value as we we do not

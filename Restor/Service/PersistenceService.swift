@@ -559,7 +559,7 @@ class PersistenceService {
         var aws = self.localdb.getWorkspace(id: wsId, ctx: ctx)
         var isNew = false
         if aws == nil {
-            aws = self.localdb.createWorkspace(id: wsId, index: record.index().toInt(), name: record.name(), desc: record.desc(), isSyncEnabled: record.isSyncEnabled(), ctx: ctx)
+            aws = self.localdb.createWorkspace(id: wsId, name: record.name(), desc: record.desc(), isSyncEnabled: record.isSyncEnabled(), ctx: ctx)
             isNew = true
         }
         guard let ws = aws else { return }
@@ -579,7 +579,7 @@ class PersistenceService {
         var aproj = self.localdb.getProject(id: projId, ctx: ctx)
         var isNew = false
         if aproj == nil {
-            aproj = self.localdb.createProject(id: record.id(), index: record.index().toInt(), name: record.name(), desc: record.desc(), checkExists: false, ctx: ctx)
+            aproj = self.localdb.createProject(id: record.id(), name: record.name(), desc: record.desc(), checkExists: false, ctx: ctx)
             isNew = true
         }
         guard let proj = aproj else { return }
@@ -599,7 +599,7 @@ class PersistenceService {
         var areq = self.localdb.getRequest(id: reqId, ctx: ctx)
         var isNew = false
         if areq == nil {
-            areq = self.localdb.createRequest(id: record.id(), index: record.index().toInt(), name: record.name(), project: proj, checkExists: false, ctx: ctx)
+            areq = self.localdb.createRequest(id: record.id(), name: record.name(), project: proj, checkExists: false, ctx: ctx)
             isNew = true
         }
         guard let req = areq else { return }
@@ -618,7 +618,7 @@ class PersistenceService {
         var aReqBodyData = self.localdb.getRequestBodyData(id: reqId, ctx: ctx)
         var isNew = false
         if aReqBodyData == nil {
-            aReqBodyData = self.localdb.createRequestBodyData(id: record.id(), index: record.index().toInt(), checkExists: false, ctx: ctx)
+            aReqBodyData = self.localdb.createRequestBodyData(id: record.id(), checkExists: false, ctx: ctx)
             isNew = true
         }
         guard let reqBodyData = aReqBodyData else { return }
@@ -639,7 +639,7 @@ class PersistenceService {
         var aData = self.localdb.getRequestData(id: reqId, ctx: ctx)
         var isNew = false
         if aData == nil {
-            aData = self.localdb.createRequestData(id: reqId, index: record.index().toInt(), type: type, fieldFormat: fieldType, checkExists: false, ctx: ctx)
+            aData = self.localdb.createRequestData(id: reqId, type: type, fieldFormat: fieldType, checkExists: false, ctx: ctx)
             isNew = true
         }
         guard let reqData = aData else { return }
@@ -658,7 +658,7 @@ class PersistenceService {
         var aReqMethodData = self.localdb.getRequestMethodData(id: reqMethodDataId, ctx: ctx)
         var isNew = false
         if aReqMethodData == nil {
-            aReqMethodData = self.localdb.createRequestMethodData(id: reqMethodDataId, index: record.index().toInt(), name: record.name(), isCustom: true, checkExists: false, ctx: ctx)
+            aReqMethodData = self.localdb.createRequestMethodData(id: reqMethodDataId, name: record.name(), isCustom: true, checkExists: false, ctx: ctx)
             isNew = true
         }
         guard let reqMethodData = aReqMethodData else { return }
@@ -696,7 +696,7 @@ class PersistenceService {
         var aImageData = self.localdb.getImageData(id: fileId, ctx: ctx)
         var isNew = false
         if aImageData == nil {
-            aImageData = self.localdb.createImage(data: Data(), name: record.name(), index: record.index().toInt(), type: ImageType.jpeg.rawValue, checkExists: false, ctx: ctx)
+            aImageData = self.localdb.createImage(data: Data(), name: record.name(), type: ImageType.jpeg.rawValue, checkExists: false, ctx: ctx)
             isNew = true
         }
         guard let imageData = aImageData else { return }

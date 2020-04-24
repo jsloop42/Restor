@@ -17,10 +17,6 @@ public class ERequestBodyData: NSManagedObject, Entity {
         return self.id ?? ""
     }
     
-    public func getIndex() -> Int {
-        return self.index.toInt()
-    }
-    
     public func getName() -> String {
         return self.id ?? ""
     }
@@ -39,10 +35,6 @@ public class ERequestBodyData: NSManagedObject, Entity {
     
     public func getVersion() -> Int64 {
         return self.version
-    }
-    
-    public func setIndex(_ i: Int) {
-        self.index = i.toInt64()
     }
     
     public func setIsSynced(_ status: Bool) {
@@ -74,7 +66,6 @@ public class ERequestBodyData: NSManagedObject, Entity {
         record["modified"] = self.modified as CKRecordValue
         record["changeTag"] = self.changeTag as CKRecordValue
         record["id"] = self.id! as CKRecordValue
-        record["index"] = self.index as CKRecordValue
         record["json"] = (self.json ?? "") as CKRecordValue
         record["raw"] = (self.raw ?? "") as CKRecordValue
         record["selected"] = self.selected as CKRecordValue
@@ -101,7 +92,6 @@ public class ERequestBodyData: NSManagedObject, Entity {
         if let x = record["modified"] as? Int64 { self.modified = x }
         if let x = record["changeTag"] as? Int64 { self.changeTag = x }
         if let x = record["id"] as? String { self.id = x }
-        if let x = record["index"] as? Int64 { self.index = x }
         if let x = record["json"] as? String { self.json = x }
         if let x = record["raw"] as? String { self.raw = x }
         if let x = record["selected"] as? Int64 { self.selected = x }

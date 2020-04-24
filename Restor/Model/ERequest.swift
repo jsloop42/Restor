@@ -17,10 +17,6 @@ public class ERequest: NSManagedObject, Entity {
         return self.id ?? ""
     }
     
-    public func getIndex() -> Int {
-        return self.index.toInt()
-    }
-    
     public func getName() -> String {
         return self.name ?? ""
     }
@@ -39,10 +35,6 @@ public class ERequest: NSManagedObject, Entity {
     
     public func getVersion() -> Int64 {
         return self.version
-    }
-    
-    public func setIndex(_ i: Int) {
-        self.index = i.toInt64()
     }
     
     public func setIsSynced(_ status: Bool) {
@@ -75,7 +67,6 @@ public class ERequest: NSManagedObject, Entity {
         record["changeTag"] = self.changeTag as CKRecordValue
         record["desc"] = (self.desc ?? "") as CKRecordValue
         record["id"] = self.id! as CKRecordValue
-        record["index"] = self.index as CKRecordValue
         record["name"] = self.name! as CKRecordValue
         record["selectedMethodIndex"] = self.selectedMethodIndex as CKRecordValue
         record["url"] = (self.url ?? "") as CKRecordValue
@@ -117,7 +108,6 @@ public class ERequest: NSManagedObject, Entity {
         if let x = record["changeTag"] as? Int64 { self.changeTag = x }
         if let x = record["id"] as? String { self.id = x }
         if let x = record["desc"] as? String { self.desc = x }
-        if let x = record["index"] as? Int64 { self.index = x }
         if let x = record["name"] as? String { self.name = x }
         if let x = record["selectedMethodIndex"] as? Int64 { self.selectedMethodIndex = x }
         if let x = record["url"] as? String { self.url = x }

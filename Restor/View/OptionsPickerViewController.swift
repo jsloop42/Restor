@@ -243,7 +243,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let row = indexPath.row
         let elem = self.modelxs[row] as? ERequestMethodData
-        let count = self.localdb.getRequestsCountForRequestMethodData(index: elem?.index, ctx: elem?.managedObjectContext)
+        let count = self.localdb.getRequestsCountForRequestMethodData(ctx: elem?.managedObjectContext)
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             if count > 0, let name = elem?.name {
                 UI.viewAlert(vc: self, title: "Delete \"HEAD\"?",

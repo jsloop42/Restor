@@ -328,8 +328,8 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     
     @objc func customRequestMethodDidAdd(_ notif: Notification) {
         if let info = notif.userInfo as? [String: Any], let name = info[Const.requestMethodNameKey] as? String,
-            let idx = info[Const.modelIndexKey] as? Int, let data = AppState.editRequest, let ctx = data.managedObjectContext {
-            if let method = self.localdb.createRequestMethodData(id: self.localdb.requestMethodDataId(), index: idx, name: name, checkExists: true, ctx: ctx) {
+            let data = AppState.editRequest, let ctx = data.managedObjectContext {
+            if let method = self.localdb.createRequestMethodData(id: self.localdb.requestMethodDataId(), name: name, checkExists: true, ctx: ctx) {
                 data.method = method
                 self.methods.append(method)
                 method.project = AppState.currentProject
@@ -359,19 +359,19 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         if let info = notif.userInfo as? [String: Any], let idx = info[Const.optionSelectedIndexKey] as? Int {
             // If form is selected and there are no fields add one
             if idx == RequestBodyType.form.rawValue && AppState.editRequest?.body?.form?.count == 0 {
-                if let req = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: 0, type: .form, fieldFormat: .text,
+                if let req = self.localdb.createRequestData(id: self.localdb.requestDataId(), type: .form, fieldFormat: .text,
                                                             ctx: AppState.editRequest?.managedObjectContext) {
                     AppState.editRequest?.body?.addToForm(req)
                 }
             } else if idx == RequestBodyType.multipart.rawValue && AppState.editRequest?.body?.multipart?.count == 0 {
-                if let req = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: 0, type: .multipart, fieldFormat: .text,
+                if let req = self.localdb.createRequestData(id: self.localdb.requestDataId(), type: .multipart, fieldFormat: .text,
                                                             ctx: AppState.editRequest?.managedObjectContext) {
                     AppState.editRequest?.body?.addToMultipart(req)
                 }
             } else if idx == RequestBodyType.binary.rawValue {
                 if let data = AppState.editRequest, let body = data.body {
                     if body.binary == nil {
-                        if let req = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: 0, type: .binary, fieldFormat: .file,
+                        if let req = self.localdb.createRequestData(id: self.localdb.requestDataId(), type: .binary, fieldFormat: .file,
                                                                     ctx: AppState.editRequest?.managedObjectContext) {
                             body.binary = req
                         }
@@ -555,7 +555,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         let localdb = CoreDataService.shared
         if let req = AppState.editRequest, let ctx = req.managedObjectContext {
             if req.body == nil {
-                req.body = localdb.createRequestBodyData(id: localdb.requestBodyDataId(), index: 0, ctx: ctx)
+                req.body = localdb.createRequestBodyData(id: localdb.requestBodyDataId(), ctx: ctx)
                 AppState.editRequest!.body?.request = AppState.editRequest
             }
         }
@@ -1294,7 +1294,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 form.type = RequestDataType.form.rawValue.toInt64()
                 if let image = DocumentPickerState.image {
                     if let imageData = DocumentPickerState.imageType == ImageType.png.rawValue ? image.pngData() : image.jpegData(compressionQuality: 1.0) {
-                        let eimage = self.localdb.createImage(data: imageData, name: DocumentPickerState.imageName, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
+                        let eimage = self.localdb.createImage(data: imageData, name: DocumentPickerState.imageName, type: DocumentPickerState.imageType, ctx: ctx)
                         eimage?.requestData = form
                         eimage?.isCameraMode = DocumentPickerState.isCameraMode
                         if let files = form.files?.allObjects as? [EFile] {
@@ -1320,14 +1320,13 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                 form.type = RequestDataType.form.rawValue.toInt64()
                 form.fieldFormat = RequestBodyFormFieldFormatType.file.rawValue.toInt64()
                 form.files = NSSet()  // clear the set, but it does not delete the data
-                DocumentPickerState.docs.enumerated().forEach { args in
-                    let (offset, element) = args
+                DocumentPickerState.docs.forEach { element in
                     self.app.getDataForURL(element) { result in
                         switch result {
                         case .success(let x):
                             Log.debug("body form field creating file attachment")
                             let name = self.app.getFileName(element)
-                            if let file = self.localdb.createFile(data: x, index: offset, name: name, path: element,
+                            if let file = self.localdb.createFile(data: x, name: name, path: element,
                                                                   type: self.selectedType == .form ? .form : .multipart, checkExists: true, ctx: ctx) {
                                 file.requestData = form
                                 self.app.markForDelete(image: form.image, ctx: form.image?.managedObjectContext)
@@ -1352,8 +1351,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     func addFields() {
         if let data = AppState.editRequest, let body = data.body, let ctx = data.managedObjectContext {
             if body.selected == RequestBodyType.form.rawValue {
-                let count = body.form?.allObjects.count ?? 0
-                let data = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: count, type: .form, fieldFormat: .text, ctx: ctx)
+                let data = self.localdb.createRequestData(id: self.localdb.requestDataId(), type: .form, fieldFormat: .text, ctx: ctx)
                 if let x = data {
                     body.addToForm(x)
                     if let vc = RequestVC.shared {
@@ -1361,8 +1359,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                     }
                 }
             } else if body.selected == RequestBodyType.multipart.rawValue {
-                let count = body.multipart?.allObjects.count ?? 0
-                let data = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: count, type: .multipart, fieldFormat: .text, ctx: ctx)
+                let data = self.localdb.createRequestData(id: self.localdb.requestDataId(), type: .multipart, fieldFormat: .text, ctx: ctx)
                 if let x = data {
                     body.addToMultipart(x)
                     if let vc = RequestVC.shared {
@@ -1430,7 +1427,6 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             }
         }
         if let x = elem, let body = reqBodyData {
-            x.index = row.toInt64()  // update the index
             cell.reqDataId = x.id ?? ""
             cell.keyTextField.text = x.key
             cell.valueTextField.text = x.value
@@ -1625,13 +1621,11 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     func addRequestDataToModel() {
         guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
-        var index = 0
         var x: ERequestData?
         switch self.tableViewType {
         case .header:
             if data.headers == nil { AppState.editRequest!.headers = NSSet() }
-            if let last = self.localdb.getLastRequestData(type: .header, ctx: ctx) { index = (last.index + 1).toInt() }
-            x = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: index, type: .header, fieldFormat: .text, ctx: ctx)
+            x = self.localdb.createRequestData(id: self.localdb.requestDataId(), type: .header, fieldFormat: .text, ctx: ctx)
             if let y = x {
                 AppState.editRequest!.addToHeaders(y)
                 if let vc = RequestVC.shared {
@@ -1640,8 +1634,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             }
         case .params:
             if AppState.editRequest!.params == nil { AppState.editRequest!.params = NSSet() }
-            if let last = self.localdb.getLastRequestData(type: .param, ctx: ctx) { index = (last.index + 1).toInt() }
-            x = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: index, type: .param, fieldFormat: .text, ctx: ctx)
+            x = self.localdb.createRequestData(id: self.localdb.requestDataId(), type: .param, fieldFormat: .text, ctx: ctx)
             if let y = x {
                 AppState.editRequest!.addToParams(y)
                 if let vc = RequestVC.shared {
@@ -1653,8 +1646,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             if AppState.editRequest!.body == nil { return }
             if AppState.editRequest!.body!.selected == RequestBodyType.form.rawValue {
                 if AppState.editRequest!.body!.form == nil { AppState.editRequest!.body!.form = NSSet() }
-                if let last = self.localdb.getLastRequestData(type: .form, ctx: ctx) { index = (last.index + 1).toInt() }
-                x = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: index, type: .form, fieldFormat: .text, ctx: ctx)
+                x = self.localdb.createRequestData(id: self.localdb.requestDataId(), type: .form, fieldFormat: .text, ctx: ctx)
                 if let y = x {
                     AppState.editRequest!.body!.addToForm(y)
                     if let vc = RequestVC.shared {
@@ -1663,8 +1655,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 }
             } else if AppState.editRequest!.body!.selected == RequestBodyType.multipart.rawValue {
                 if AppState.editRequest!.body!.multipart == nil { AppState.editRequest!.body!.multipart = NSSet() }
-                if let last = self.localdb.getLastRequestData(type: .multipart, ctx: ctx) { index = (last.index + 1).toInt() }
-                x = self.localdb.createRequestData(id: self.localdb.requestDataId(), index: index, type: .multipart, fieldFormat: .text, ctx: ctx)
+                x = self.localdb.createRequestData(id: self.localdb.requestDataId(), type: .multipart, fieldFormat: .text, ctx: ctx)
                 if let y = x {
                     AppState.editRequest!.body!.addToMultipart(y)
                     if let vc = RequestVC.shared {
@@ -1703,7 +1694,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 Log.debug("binary field - image attachment")
                 if let binary = body.binary {
                     if binary.image?.data != imageData {
-                        let eimage = self.localdb.createImage(data: imageData, name: DocumentPickerState.imageName, index: 0, type: DocumentPickerState.imageType, ctx: ctx)
+                        let eimage = self.localdb.createImage(data: imageData, name: DocumentPickerState.imageName, type: DocumentPickerState.imageType, ctx: ctx)
                         eimage?.requestData = binary
                         eimage?.isCameraMode = DocumentPickerState.isCameraMode
                         if let xs = binary.files?.allObjects as? [EFile] {
@@ -1741,7 +1732,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                                     xs.forEach { file in self.app.markEntityForDelete(file: file, ctx: ctx) }
                                 }
                                 let name = self.app.getFileName(fileURL)
-                                if let file = self.localdb.createFile(data: fileData, index: 0, name: name, path: fileURL,
+                                if let file = self.localdb.createFile(data: fileData, name: name, path: fileURL,
                                                                       type: .binary, checkExists: true, ctx: ctx) {
                                     file.requestData = binary
                                     if let img = binary.image { self.app.markForDelete(image: img, ctx: ctx) }

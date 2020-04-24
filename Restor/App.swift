@@ -153,7 +153,10 @@ class App {
     
     /// Return a request name based on the current project's request count.
     func getNewRequestName() -> String {
-        if let proj = AppState.currentProject { return "Request \(proj.requests?.count ?? 0)" }
+        if let proj = AppState.currentProject {
+            let idx = proj.requests?.count ?? 0
+            return idx == 0 ? "Request" : "Request (\(idx + 1))"
+        }
         return "Request"
     }
     
@@ -377,9 +380,9 @@ class App {
         self.addEditRequestManagedObjectId(x.method?.objectID)
         if (x.method == nil && request["method"] != nil) || (x.method != nil && (x.method!.isInserted || x.method!.isDeleted) && request["method"] == nil) { return true }
         if let hm = request["method"] as? [String: Any], let ida = x.id, let idb = hm["id"] as? String, ida != idb { return true }
-        if let methods = x.project?.requestMethods?.allObjects as? [ERequestMethodData] {
-            if self.didAnyRequestMethodChangeImp(methods, request: request) { return true }
-        }
+        guard let projId = x.project?.getId() else { return true }
+        let methods = self.localdb.getRequestMethodData(projId: projId, ctx: x.managedObjectContext)
+        if self.didAnyRequestMethodChangeImp(methods, request: request) { return true }
         if self.didRequestBodyChangeImp(x.body, request: request) { return true }
         if let headers = x.headers?.allObjects as? [ERequestData] {
             if self.didAnyRequestHeaderChangeImp(headers, request: request) { return true }
@@ -435,7 +438,6 @@ class App {
     ///   - y: The initial request method dictionary.
     func didRequestMethodChangeImp(_ x: ERequestMethodData, y: [String: Any]) -> Bool {
         if x.created != y["created"] as? Int64 ||
-            x.index != y["index"] as? Int64 ||
             x.isCustom != y["isCustom"] as? Bool ||
             x.name != y["name"] as? String ||
             x.markForDelete != y["markForDelete"] as? Bool {
@@ -619,8 +621,7 @@ class App {
         self.addEditRequestManagedObjectId(x?.objectID)
         if (x == nil && request["body"] != nil) || (x != nil && request["body"] == nil) { x?.isSynced = false; return true }
         if let body = request["body"] as? [String: Any] {
-            if x?.index != body["index"] as? Int64 ||
-                x?.json != body["json"] as? String ||
+            if x?.json != body["json"] as? String ||
                 x?.raw != body["raw"] as? String ||
                 x?.selected != body["selected"] as? Int64 ||
                 x?.xml != body["xml"] as? String ||
@@ -748,7 +749,6 @@ class App {
     func didRequestDataChangeImp(x: ERequestData, y: [String: Any], type: RequestDataType) -> Bool {
         if x.created != y["created"] as? Int64 ||
             x.fieldFormat != y["fieldFormat"] as? Int64 ||
-            x.index != y["index"] as? Int64 ||
             x.key != y["key"] as? String ||
             x.type != y["type"] as? Int64 ||
             x.value != y["value"] as? String ||
@@ -773,7 +773,6 @@ class App {
     
     func didRequestFileChangeImp(x: EFile, y: [String: Any]) -> Bool {
         if x.created != y["created"] as? Int64 ||
-            x.index != y["index"] as? Int64 ||
             x.name != y["name"] as? String ||
             x.type != y["type"] as? Int64 ||
             x.markForDelete != y["markForDelete"] as? Bool {
@@ -797,7 +796,6 @@ class App {
     
     func didRequestImageChangeImp(x: EImage, y: [String: Any]) -> Bool {
         if x.created != y["created"] as? Int64 ||
-            x.index != y["index"] as? Int64 ||
             x.name != y["name"] as? String ||
             x.isCameraMode != y["isCameraMode"] as? Bool ||
             x.type != y["type"] as? String ||
