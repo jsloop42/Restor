@@ -25,7 +25,7 @@ class RequestListViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        AppState.activeScreen = .requestListing
+        AppState.setCurrentScreen(.requestList)
         self.navigationItem.title = "Requests"
         self.reloadData()
     }
@@ -51,13 +51,13 @@ class RequestListViewController: UIViewController {
             }
         }
         self.reloadData()
-        self.tableView.reloadData()
     }
     
     func reloadData() {
         if self.frc == nil { return }
         do {
             try self.frc.performFetch()
+            self.tableView.reloadData()
         } catch let error {
             Log.error("Error fetching: \(error)")
         }
@@ -119,23 +119,22 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
 extension RequestListViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         Log.debug("requests list frc did change: \(anObject)")
+        if AppState.currentScreen != .requestList { return }
         DispatchQueue.main.async {
-            //if self.navigationController?.topViewController == self {
-                switch type {
-                case .delete:
-                    self.tableView.deleteRows(at: [indexPath!], with: .automatic)
-                case .insert:
-                    self.tableView.beginUpdates()
-                    self.tableView.insertRows(at: [newIndexPath!], with: .none)
-                    self.tableView.endUpdates()
-                    self.tableView.layoutIfNeeded()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
-                case .update:
-                    self.tableView.reloadRows(at: [indexPath!], with: .none)
-                default:
-                    break
-                }
-            //}
+            switch type {
+            case .delete:
+                self.tableView.deleteRows(at: [indexPath!], with: .automatic)
+            case .insert:
+                self.tableView.beginUpdates()
+                self.tableView.insertRows(at: [newIndexPath!], with: .none)
+                self.tableView.endUpdates()
+                self.tableView.layoutIfNeeded()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+            case .update:
+                self.tableView.reloadRows(at: [indexPath!], with: .none)
+            default:
+                break
+            }
         }
     }
 }

@@ -12,6 +12,11 @@ import UIKit
 class EnvironmentGroupViewController: UIViewController {
     private let app = App.shared
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        AppState.setCurrentScreen(.envGroup)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.initUI()

@@ -132,7 +132,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        AppState.activeScreen = .requestEdit
+        AppState.setCurrentScreen(.editRequest)
         RequestVC.shared = self
     }
     

@@ -40,6 +40,19 @@ class App {
     var editReqManIds: Set<NSManagedObjectID> = Set()
     var editReqDelete: Set<NSManagedObject> = Set()
     
+    enum Screen {
+        case workspaceList
+        case projectList
+        case requestList
+        case editRequest
+        case settings
+        case envGroup
+        case requestMethodList
+        case requestBodyTypeList  // json, xml ..
+        case requestBodyFormTypeList  // text, file
+        case popup
+    }
+    
     func bootstrap() {
         self.initDB()
         self.initState()
@@ -873,15 +886,6 @@ enum RequestCellType: Int {
     case body
     case auth
     case option
-}
-
-enum Screen {
-    case workspaceListing
-    case projectListing
-    case requestListing
-    case request
-    case requestEdit
-    case optionListing
 }
 
 enum RequestMethod: String, Codable {

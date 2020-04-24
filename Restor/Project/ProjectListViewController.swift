@@ -32,7 +32,7 @@ class ProjectListViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        AppState.activeScreen = .projectListing
+        AppState.setCurrentScreen(.projectList)
         self.navigationItem.title = "Projects"
         self.navigationItem.leftBarButtonItem = self.addSettingsBarButton()
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
@@ -84,13 +84,13 @@ class ProjectListViewController: UIViewController {
             }
         }
         self.reloadData()
-        self.tableView.reloadData()
     }
     
     func reloadData() {
         if self.frc == nil { return }
         do {
             try self.frc.performFetch()
+            self.tableView.reloadData()
         } catch let error {
             Log.error("Error fetching: \(error)")
         }
@@ -167,12 +167,10 @@ class ProjectListViewController: UIViewController {
         Log.debug("workspace did tap")
     }
     
-    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "workspaceSegue" {
-            if let vc = segue.destination as? WorkspaceListViewController {
-                vc.delegate = self
-            }
-        }
+    @IBSegueAction func workspaceSegue(_ coder: NSCoder) -> WorkspaceListViewController? {
+        let ws = WorkspaceListViewController(coder: coder)
+        ws?.delegate = self
+        return ws
     }
     
     func viewPopup() {
@@ -227,6 +225,7 @@ extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource 
 extension ProjectListViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         Log.debug("projects list frc did change")
+        if AppState.currentScreen != .projectList { return }
         DispatchQueue.main.async {
             if self.navigationController?.topViewController == self {
                 switch type {

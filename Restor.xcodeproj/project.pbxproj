@@ -206,17 +206,9 @@
 		9E538DB6239958A10025C14C /* Workspace */ = {
 			isa = PBXGroup;
 			children = (
-				9E538DB7239958B20025C14C /* View */,
 				9E926F9723945E79002DF561 /* WorkspaceListViewController.swift */,
 			);
 			path = Workspace;
-			sourceTree = "<group>";
-		};
-		9E538DB7239958B20025C14C /* View */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = View;
 			sourceTree = "<group>";
 		};
 		9E7585F023A2B24300AD6E8B /* View */ = {
@@ -274,6 +266,7 @@
 				9E4334832416C4AA002452EB /* EAFileManager.swift */,
 				9E7B5847242A9BAB00997302 /* EALFUCache.swift */,
 				9E223D522436261600229855 /* EACloudOperation.swift */,
+				9E4C30B5244A189300C1EEBA /* EANetwork.swift */,
 				9EFA58BC2445EBA8003C8AEA /* EAOperationQueue.swift */,
 				9EB78E72242BE6FF009663FE /* EAQueue.swift */,
 				9E145F91241BD9D200962A19 /* EARescheduler.swift */,
@@ -284,7 +277,6 @@
 				9E926F9523945E79002DF561 /* SceneDelegate.swift */,
 				9E926F9F23945E7D002DF561 /* Assets.xcassets */,
 				9E926FA423945E7D002DF561 /* Info.plist */,
-				9E4C30B5244A189300C1EEBA /* EANetwork.swift */,
 			);
 			path = Restor;
 			sourceTree = "<group>";

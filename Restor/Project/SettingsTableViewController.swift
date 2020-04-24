@@ -23,6 +23,11 @@ class SettingsTableViewController: UITableViewController {
         case spacerAfterTools
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        AppState.setCurrentScreen(.settings)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("settings tv view did load")

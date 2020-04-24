@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15705" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="0VT-ys-k4S">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="16096" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="0VT-ys-k4S">
     <device id="retina6_1" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15706"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="16087"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="collection view cell content view" minToolsVersion="11.0"/>
@@ -2016,7 +2016,7 @@
                                                                                                                     <rect key="frame" x="238" y="8" width="21" height="32"/>
                                                                                                                     <subviews>
                                                                                                                         <button opaque="NO" userInteractionEnabled="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="jnn-kB-WIr" userLabel="Field Type Button">
-                                                                                                                            <rect key="frame" x="-1" y="-3" width="19" height="38"/>
+                                                                                                                            <rect key="frame" x="-1" y="5" width="19" height="22"/>
                                                                                                                             <constraints>
                                                                                                                                 <constraint firstAttribute="width" constant="19" id="LKo-Bf-DRh"/>
                                                                                                                             </constraints>
@@ -2431,12 +2431,12 @@
         </scene>
     </scenes>
     <resources>
-        <image name="greaterthan" catalog="system" width="64" height="54"/>
-        <image name="line.horizontal.3.decrease.circle" catalog="system" width="64" height="60"/>
-        <image name="minus.circle.fill" catalog="system" width="64" height="60"/>
-        <image name="plus.circle.fill" catalog="system" width="64" height="60"/>
+        <image name="greaterthan" catalog="system" width="128" height="111"/>
+        <image name="line.horizontal.3.decrease.circle" catalog="system" width="128" height="121"/>
+        <image name="minus.circle.fill" catalog="system" width="128" height="121"/>
+        <image name="plus.circle.fill" catalog="system" width="128" height="121"/>
         <image name="right-arrow" width="30" height="47"/>
-        <image name="square.grid.2x2" catalog="system" width="64" height="56"/>
+        <image name="square.grid.2x2" catalog="system" width="128" height="114"/>
         <image name="text" width="19" height="19"/>
         <namedColor name="cell-separator-bg">
             <color red="0.80400002002716064" green="0.80400002002716064" blue="0.81999999284744263" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>

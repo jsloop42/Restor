@@ -14,7 +14,6 @@ struct AppState {
     static var selectedWorkspace: Int = 0
     static var totalworkspaces = 0
     static var selectedProject: Int? = nil
-    static var activeScreen: Screen = .projectListing
     static var isKeyboardActive = false
     static var keyboardHeight: CGFloat = 0.0
     static var currentWorkspace: EWorkspace?
@@ -26,6 +25,14 @@ struct AppState {
     /// If any request is begin currently edited, in which case, we delay saving context, until done.
     static var isRequestEdit = false
     static var editRequestSaveTs: Int64 = 0
+    static private (set) var previousScreen: App.Screen = .projectList
+    static private (set) var currentScreen: App.Screen = .projectList
+    
+    static func setCurrentScreen(_ screen: App.Screen) {
+        if self.currentScreen == screen { return }
+        self.previousScreen = self.currentScreen
+        self.currentScreen = screen
+    }
     
     static func workspace(forIndex index: Int) -> EWorkspace? {
         if index < self.workspaces.count {

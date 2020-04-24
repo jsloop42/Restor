@@ -48,7 +48,14 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        AppState.activeScreen = .optionListing
+        switch self.pickerType {
+        case .requestBodyForm:
+            AppState.setCurrentScreen(.requestBodyFormTypeList)
+        case .requestBodyFormField:
+            AppState.setCurrentScreen(.requestBodyFormTypeList)
+        case .requestMethod:
+            AppState.setCurrentScreen(.requestMethodList)
+        }
         self.isPopupActive = false
     }
     

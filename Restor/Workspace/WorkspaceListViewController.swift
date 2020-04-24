@@ -28,6 +28,7 @@ class WorkspaceListViewController: UIViewController {
     private let localdb = CoreDataService.shared
     private var frc: NSFetchedResultsController<EWorkspace>!
     private let db = PersistenceService.shared
+    private var wsSelected: EWorkspace!
     
     deinit {
         self.nc.removeObserver(self)
@@ -40,7 +41,7 @@ class WorkspaceListViewController: UIViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         WorkspaceListViewController.shared = self
-        AppState.activeScreen = .workspaceListing
+        AppState.setCurrentScreen(.workspaceList)
         self.navigationItem.title = "Workspaces"
         self.reloadData()
         self.tableView.reloadData()
@@ -77,13 +78,14 @@ class WorkspaceListViewController: UIViewController {
             }
         }
         self.reloadData()
-        self.tableView.reloadData()
     }
     
     func reloadData() {
+        self.wsSelected = self.app.getSelectedWorkspace()
         if self.frc == nil { return }
         do {
             try self.frc.performFetch()
+            self.tableView.reloadData()
         } catch let error {
             Log.error("Error fetching: \(error)")
         }
@@ -150,9 +152,11 @@ class WorkspaceListViewController: UIViewController {
     
     func addWorkspace(name: String, desc: String, isSyncEnabled: Bool) {
         AppState.totalworkspaces = self.frc.numberOfRows(in: 0)
-        _ = self.localdb.createWorkspace(id: self.localdb.workspaceId(), index: AppState.totalworkspaces, name: name, desc: desc, isSyncEnabled: isSyncEnabled)
-        self.localdb.saveBackgroundContext()
-        self.reloadData()
+        if let ws = self.localdb.createWorkspace(id: self.localdb.workspaceId(), index: AppState.totalworkspaces, name: name, desc: desc, isSyncEnabled: isSyncEnabled) {
+            self.localdb.saveBackgroundContext()
+            self.db.saveWorkspaceToCloud(ws)
+            self.reloadData()
+        }
     }
 }
 
@@ -169,9 +173,8 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: TableCellId.workspaceCell.rawValue, for: indexPath) as! WorkspaceCell
         let ws = self.frc.object(at: indexPath)
-        let wsSelected = self.app.getSelectedWorkspace()
         cell.accessoryType = .none
-        if ws.id == wsSelected.id { cell.accessoryType = .checkmark }
+        if ws.id == self.wsSelected.id { cell.accessoryType = .checkmark }
         cell.nameLbl.text = ws.name
         cell.descLbl.text = ws.desc
         return cell
@@ -192,23 +195,21 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
 extension WorkspaceListViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         Log.debug("workspace list frc did change: \(anObject)")
+        if AppState.currentScreen != .workspaceList { return }
         DispatchQueue.main.async {
-            if self.navigationController?.topViewController == self {
-                switch type {
-                case .delete:
-                    self.tableView.deleteRows(at: [indexPath!], with: .automatic)
-                case .insert:
-                    self.tableView.beginUpdates()
-                    self.tableView.insertRows(at: [newIndexPath!], with: .none)
-                    self.tableView.endUpdates()
-                    self.tableView.layoutIfNeeded()
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
-                    if let x = anObject as? EWorkspace { self.db.saveWorkspaceToCloud(x) }
-                case .update:
-                    self.tableView.reloadRows(at: [indexPath!], with: .none)
-                default:
-                    break
-                }
+            switch type {
+            case .delete:
+                self.tableView.deleteRows(at: [indexPath!], with: .automatic)
+            case .insert:
+                self.tableView.beginUpdates()
+                self.tableView.insertRows(at: [newIndexPath!], with: .none)
+                self.tableView.endUpdates()
+                self.tableView.layoutIfNeeded()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
+            case .update:
+                self.tableView.reloadRows(at: [indexPath!], with: .none)
+            default:
+                break
             }
         }
     }
