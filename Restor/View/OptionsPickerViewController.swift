@@ -111,6 +111,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     }
     
     @objc func optionPickerShouldReload(_ notif: Notification) {
+        Log.debug("option picker should reload")
         if let info = notif.userInfo as? [String: Any], let action = info[Const.optionDataActionKey] as? OptionDataAction {
             if action == .add, let data = info[Const.optionModelKey] as? ERequestMethodData, let name = data.name {
                 if !self.data.contains(name) {
@@ -137,6 +138,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     @objc func footerDidTap() {
         Log.debug("footer did tap")
         if !self.isPopupActive {
+            self.isPopupActive = true
             self.app.viewPopupScreen(self, model: PopupModel(title: "New Method", helpText: Const.helpTextForAddNewRequestMethod, descFieldEnabled: false,
                                                              shouldValidate: true, shouldDisplayHelp: true, doneHandler: { model in
                 Log.debug("model: \(model)")
@@ -146,7 +148,9 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
             }, validateHandler: { model in
                 if model.name.trim().isEmpty { return false }
                 return self.data.first { x -> Bool in x == model.name } == nil
-            }))
+            }), completion: {
+                self.isPopupActive = false
+            })
             self.isPopupActive = true
         }
     }

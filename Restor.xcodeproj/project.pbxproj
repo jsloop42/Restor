@@ -218,6 +218,7 @@
 				9EC33FB323EEBF1A006C5B37 /* EATextView.swift */,
 				9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */,
 				9E926F9923945E79002DF561 /* Main.storyboard */,
+				9EEAAEC823EE81410022A72F /* OptionsPickerViewController.swift */,
 				9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */,
 				9E538DAB239951790025C14C /* UI.swift */,
 			);
@@ -323,7 +324,6 @@
 			children = (
 				9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */,
 				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
-				9EEAAEC823EE81410022A72F /* OptionsPickerViewController.swift */,
 			);
 			path = Request;
 			sourceTree = "<group>";

@@ -166,11 +166,8 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
             if !model.iCloudSyncFieldEnabled { height -= 50 }
             if !model.descFieldEnabled { height -= 50 }
         } else if indexPath.section == CellId.popupHelpCell.rawValue {
-            if let cell = tableView.cellForRow(at: indexPath) as? PopupHelpCell {
-                height = cell.helpLabel.frame.size.height + 8
-            } else {
-                height = 44
-            }
+            height = UI.getTextHeight(model.helpText, width: self.view.frame.size.width, font: UIFont.systemFont(ofSize: 14)) + 8
+            Log.debug("height: \(height)")
         }
         return height
     }

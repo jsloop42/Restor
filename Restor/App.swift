@@ -186,10 +186,10 @@ class App {
     }
     
     /// Display popup view controller with the given model
-    func viewPopupScreen(_ vc: UIViewController, model: PopupModel) {
+    func viewPopupScreen(_ vc: UIViewController, model: PopupModel, completion: (() -> Void)? = nil) {
         let screen = vc.storyboard!.instantiateViewController(withIdentifier: StoryboardId.popupVC.rawValue) as! PopupViewController
         screen.model = model
-        vc.present(screen, animated: true, completion: nil)
+        vc.present(screen, animated: true, completion: completion)
     }
     
     func getSelectedWorkspace() -> EWorkspace {

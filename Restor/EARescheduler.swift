@@ -96,8 +96,10 @@ public class EARescheduler: EAReschedulable {
     }
     
     private func destroy() {
-        self.timer.setEventHandler {}
-        self.timer.cancel()
+        if self.timer != nil {
+            self.timer.setEventHandler {}
+            self.timer.cancel()
+        }
     }
     
     public func done() {
