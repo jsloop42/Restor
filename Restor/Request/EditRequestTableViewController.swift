@@ -155,6 +155,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         self.app.updateViewBackground(self.view)
         self.app.updateNavigationControllerBackground(self.navigationController)
         self.view.backgroundColor = App.Color.tableViewBg
+        if #available(iOS 13.0, *) { self.isModalInPresentation = true }
         self.initHeadersTableViewManager()
         self.initParamsTableViewManager()
         self.initBodyTableViewManager()

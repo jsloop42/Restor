@@ -918,7 +918,6 @@ class CloudKitService {
                                                          CKQuerySubscription.Options.firesOnRecordUpdate])
         let notifInfo = CKSubscription.NotificationInfo()
         notifInfo.shouldSendContentAvailable = true
-        //notifInfo.alertBody = "Yay!"
         subscription.notificationInfo = notifInfo
         let op = CKModifySubscriptionsOperation(subscriptionsToSave: [subscription], subscriptionIDsToDelete: [])
         op.modifySubscriptionsCompletionBlock = { [unowned self] _, _, error in
@@ -1163,6 +1162,10 @@ extension CKError {
     
     public func isQuotaExceeded() -> Bool {
         return self.isSpecificErrorCode(code: .quotaExceeded)
+    }
+    
+    public func isSameRecord() -> Bool {
+        return self.isSpecificErrorCode(code: .invalidArguments)
     }
     
     public func isSpecificErrorCode(code: CKError.Code) -> Bool {

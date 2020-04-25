@@ -30,7 +30,7 @@ struct AppState {
     
     static func setCurrentScreen(_ screen: App.Screen) {
         if self.currentScreen == screen { return }
-        self.previousScreen = self.currentScreen
+        if screen != .popup { self.previousScreen = self.currentScreen }
         self.currentScreen = screen
     }
     

@@ -10,11 +10,12 @@ import Foundation
 
 /// A queue implementation which dequeues based on time elapsed since enqueue.
 public class EAQueue<T> {
-    var queue: [T] = []
-    var timer: DispatchSourceTimer?  // timer
-    public var interval: TimeInterval = 4.0  // seconds
+    private var queue: [T] = []
+    private var timer: DispatchSourceTimer?  // timer
+    private var interval: TimeInterval = 4.0  // seconds
     public var completion: ([T]) -> Void
     private let accessq = EACommon.userInteractiveQueue
+    public var count: Int = 0
     
     private enum State {
         case suspended
@@ -44,6 +45,7 @@ public class EAQueue<T> {
     }
     
     private func eventHandler() {
+        self.count = self.queue.count
         Log.debug("in timer queue len: \(self.queue.count)")
         if self.isEmpty() && self.state == .resumed {
             self.timer?.suspend()
@@ -69,6 +71,7 @@ public class EAQueue<T> {
     public func enqueue(_ xs: [T]) {
         self.accessq.sync {
             self.queue.append(contentsOf: xs); Log.debug("enqueued: \(xs)")
+            self.count = self.queue.count
             self.updateTimer()
         }
     }
@@ -78,6 +81,7 @@ public class EAQueue<T> {
         Log.debug("enqueue: \(x)")
         self.accessq.sync {
             self.queue.append(x);
+            self.count = self.queue.count
             Log.debug("enqueued: \(x)")
             self.updateTimer()
         }
@@ -85,7 +89,10 @@ public class EAQueue<T> {
     
     public func dequeue() -> T? {
         var x: T?
-        self.accessq.sync { x = self.queue.popLast() }
+        self.accessq.sync {
+            x = self.queue.popLast()
+            self.count = self.queue.count
+        }
         Log.debug("dequeued: \(String(describing: x))")
         return x
     }

@@ -122,6 +122,7 @@ class WorkspaceListViewController: UIViewController {
     func viewPopup() {
         self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", iCloudSyncFieldEnabled: true, doneHandler: { model in
             Log.debug("model value: \(model.name) - \(model.desc)")
+            AppState.setCurrentScreen(.workspaceList)
             self.addWorkspace(name: model.name, desc: model.desc, isSyncEnabled: model.iCloudSyncFieldEnabled)
         }))
     }

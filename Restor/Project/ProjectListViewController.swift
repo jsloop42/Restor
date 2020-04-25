@@ -149,7 +149,6 @@ class ProjectListViewController: UIViewController {
     
     func addProject(name: String, desc: String) {
         if let ctx = self.workspace.managedObjectContext {
-            let projCount = self.frc.numberOfRows(in: 0)
             if let proj = self.localdb.createProject(id: self.localdb.projectId(), name: name, desc: desc, ws: self.workspace, ctx: ctx) {
                 proj.workspace = self.workspace
                 self.localdb.saveBackgroundContext()
@@ -176,6 +175,7 @@ class ProjectListViewController: UIViewController {
     func viewPopup() {
         self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", doneHandler: { model in
             Log.debug("model value: \(model.name) - \(model.desc)")
+            AppState.setCurrentScreen(.projectList)
             self.addProject(name: model.name, desc: model.desc)
         }))
     }
