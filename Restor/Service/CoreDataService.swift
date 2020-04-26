@@ -521,7 +521,7 @@ class CoreDataService {
         var x: EProject!
         self.bgMOC.performAndWait {
             if let proj = self.getProject(id: "default") { x = proj; return }
-            x = self.createProject(id: "default", name: "default", desc: "The default project")
+            x = self.createProject(id: "default", wsId: self.defaultWorkspaceId, name: "default", desc: "The default project")
         }
         return x
     }
@@ -967,9 +967,9 @@ class CoreDataService {
     
     func genDefaultRequestMethods(_ proj: EProject, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> [ERequestMethodData] {
         let names = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-        guard let projId = proj.id else { return [] }
+        guard let projId = proj.id, let wsId = proj.workspace?.getId() else { return [] }
         return names.compactMap { elem -> ERequestMethodData? in
-            if let x = self.createRequestMethodData(id: self.requestMethodDataId(projId, methodName: elem), name: elem, isCustom: false, ctx: ctx) {
+            if let x = self.createRequestMethodData(id: self.requestMethodDataId(projId, methodName: elem), wsId: wsId, name: elem, isCustom: false, ctx: ctx) {
                 x.project = proj
                 return x
             }
@@ -1152,6 +1152,7 @@ class CoreDataService {
         let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
         fr.predicate = NSPredicate(format: "isSynced == %hhd", false)
         fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+        fr.fetchBatchSize = self.fetchBatchSize
         let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
         do {
             try frc.performFetch()
@@ -1164,8 +1165,9 @@ class CoreDataService {
     func getProjectsToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<EProject> {
         let moc = self.getMOC(ctx: ctx)
         let fr = NSFetchRequest<EProject>(entityName: "EProject")
-        fr.predicate = NSPredicate(format: "isSynced == %hhd", false)
+        fr.predicate = NSPredicate(format: "isSynced == %hhd AND markForDelete == %hhd", false, false)  // Deleted items will be fetched separately
         fr.sortDescriptors = [NSSortDescriptor(key: "workspace.created", ascending: true)]
+        fr.fetchBatchSize = self.fetchBatchSize
         let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: "workspace.created", cacheName: nil)
         do {
             try frc.performFetch()
@@ -1178,13 +1180,32 @@ class CoreDataService {
     func getRequestsToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<ERequest> {
         let moc = self.getMOC(ctx: ctx)
         let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
-        fr.predicate = NSPredicate(format: "isSynced == %hhd", false)
+        fr.predicate = NSPredicate(format: "isSynced == %hhd AND markForDelete == %hhd", false, false)
         fr.sortDescriptors = [NSSortDescriptor(key: "project.created", ascending: true)]
+        fr.fetchBatchSize = self.fetchBatchSize
         let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: "project.created", cacheName: nil)
         do {
             try frc.performFetch()
         } catch let error {
             Log.error("Error performing fetch: \(error)")
+        }
+        return frc
+    }
+    
+    func getDataMarkedForDelete(obj: Entity.Type, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
+        let moc = self.getMOC(ctx: ctx)
+        var frc: NSFetchedResultsController<NSFetchRequestResult>!
+        moc.performAndWait {
+            let fr = obj.fetchRequest()
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            fr.predicate = NSPredicate(format: "markForDelete == %hhd", true)
+            fr.fetchBatchSize = self.fetchBatchSize
+            frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
+            do {
+                try frc.performFetch()
+            } catch let error {
+                Log.error("Error performing fetch: \(error)")
+            }
         }
         return frc
     }
@@ -1255,7 +1276,7 @@ class CoreDataService {
     ///   - desc: The project description.
     ///   - ws: The workspace to which the project belongs.
     ///   - checkExists: Check if the given project exists before creating.
-    func createProject(id: String, name: String, desc: String, ws: EWorkspace? = nil, checkExists: Bool? = true,
+    func createProject(id: String, wsId: String, name: String, desc: String, ws: EWorkspace? = nil, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
         var x: EProject?
         let ts = Date().currentTimeNanos()
@@ -1264,6 +1285,7 @@ class CoreDataService {
             if let isExist = checkExists, isExist, let proj = self.getProject(id: id, ctx: ctx) { x = proj }
             let proj = x != nil ? x! : EProject(context: moc)
             proj.id = id
+            proj.wsId = wsId
             proj.name = name
             proj.desc = desc
             proj.created = x == nil ? ts : x!.created
@@ -1285,7 +1307,7 @@ class CoreDataService {
     ///   - project: The project to which the request belongs to.
     ///   - checkExists: Check if the request exists before creating one.
     ///   - ctx: The managed object context
-    func createRequest(id: String, name: String, project: EProject? = nil, checkExists: Bool? = true,
+    func createRequest(id: String, wsId: String, name: String, project: EProject? = nil, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
         var x: ERequest?
         let ts = Date().currentTimeNanos()
@@ -1294,6 +1316,7 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let req = self.getRequest(id: id, ctx: ctx) { x = req }
             let req = x != nil ? x! : ERequest(context: moc)
             req.id = id
+            req.wsId = wsId
             req.name = name
             req.created = x == nil ? ts : x!.created
             req.modified = ts
@@ -1312,7 +1335,7 @@ class CoreDataService {
     ///   - type: The request data type.
     ///   - checkExists: Check for existing request data object.
     ///   - ctx: The managed object context.
-    func createRequestData(id: String, type: RequestDataType, fieldFormat: RequestBodyFormFieldFormatType, checkExists: Bool? = true,
+    func createRequestData(id: String, wsId: String, type: RequestDataType, fieldFormat: RequestBodyFormFieldFormatType, checkExists: Bool? = true,
                            ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
         var x: ERequestData?
         let ts = Date().currentTimeNanos()
@@ -1321,6 +1344,7 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getRequestData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestData(context: moc)
             data.id = id
+            data.wsId = wsId
             data.created = x == nil ? ts : x!.created
             data.modified = ts
             data.changeTag = ts
@@ -1339,7 +1363,7 @@ class CoreDataService {
     ///   - name: The name of the request method data.
     ///   - checkExists: Check if the request method data exists
     ///   - ctx: The managed object context
-    func createRequestMethodData(id: String, name: String, isCustom: Bool? = true, checkExists: Bool? = true,
+    func createRequestMethodData(id: String, wsId: String, name: String, isCustom: Bool? = true, checkExists: Bool? = true,
                                  ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let ts = Date().currentTimeNanos()
@@ -1348,6 +1372,7 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getRequestMethodData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestMethodData(context: moc)
             data.id = id
+            data.wsId = wsId
             data.isCustom = isCustom ?? true
             data.name = name
             data.created = x == nil ? ts : x!.created
@@ -1364,7 +1389,7 @@ class CoreDataService {
     ///   - id: The request body data id.
     ///   - checkExists: Check if the request body data exists before creating.
     ///   - ctx: The managed object context.
-    func createRequestBodyData(id: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
+    func createRequestBodyData(id: String, wsId: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
         var x: ERequestBodyData?
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
@@ -1372,6 +1397,7 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getRequestBodyData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestBodyData(context: moc)
             data.id = id
+            data.wsId = wsId
             data.created = x == nil ? ts : x!.created
             data.modified = ts
             data.changeTag = ts
@@ -1388,7 +1414,7 @@ class CoreDataService {
     ///   - type: The image type (png, jpg, etc.)
     ///   - checkExists: Check if the image exists already before creating
     ///   - ctx: The managed object context
-    func createImage(data: Data, name: String, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
+    func createImage(data: Data, wsId: String, name: String, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
         var x: EImage?
         let ts = Date().currentTimeNanos()
         let moc = self.getMOC(ctx: ctx)
@@ -1397,6 +1423,7 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getImageData(id: imageId, ctx: ctx) { x = data }
             let image = x != nil ? x! : EImage(context: moc)
             image.id = imageId
+            image.wsId = wsId
             image.data = data
             image.name = name
             image.type = type
@@ -1409,11 +1436,11 @@ class CoreDataService {
         return x
     }
     
-    func createFile(data: Data, index: Int, name: String, path: URL, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
-        return self.createFile(data: data, name: name, path: path, type: .form, checkExists: checkExists, ctx: ctx)
+    func createFile(data: Data, wsId: String, name: String, path: URL, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
+        return self.createFile(data: data, wsId: wsId, name: name, path: path, type: .form, checkExists: checkExists, ctx: ctx)
     }
     
-    func createFile(data: Data, name: String, path: URL, type: RequestDataType, checkExists: Bool? = true,
+    func createFile(data: Data, wsId: String, name: String, path: URL, type: RequestDataType, checkExists: Bool? = true,
                     ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
         var x: EFile?
         let ts = Date().currentTimeNanos()
@@ -1423,6 +1450,7 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getFileData(id: fileId, ctx: ctx) { x = data }
             let file = x != nil ? x! : EFile(context: moc)
             file.id = fileId
+            file.wsId = wsId
             file.data = data
             file.created = x == nil ? ts : x!.created
             file.modified = ts

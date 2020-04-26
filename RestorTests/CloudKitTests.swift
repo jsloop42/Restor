@@ -86,8 +86,8 @@ class CloudKitTests: XCTestCase {
         let wsRecordID = self.ck.recordID(entityId: wsId, zoneID: zoneID)
         let projRecordID = self.ck.recordID(entityId: projId, zoneID: zoneID)
         let reqRecordID = self.ck.recordID(entityId: reqId, zoneID: zoneID)
-        guard let ws = self.localdb.createWorkspace(id: wsId, index: 0, name: wsId, desc: "test workspace", isSyncEnabled: true) else { XCTFail(); return }
-        guard let proj = self.localdb.createProject(id: projId, index: 0, name: projId, desc: "test project description") else { XCTFail(); return }
+        guard let ws = self.localdb.createWorkspace(id: wsId, name: wsId, desc: "test workspace", isSyncEnabled: true) else { XCTFail(); return }
+        guard let proj = self.localdb.createProject(id: projId, name: projId, desc: "test project description") else { XCTFail(); return }
         proj.workspace = ws
         guard let req = self.localdb.createRequest(id: reqId, index: 0, name: reqId) else { XCTFail(); exp.fulfill(); return }
         req.project = proj

@@ -15,7 +15,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
     private var record: CKRecord?
     private var savedRecords: [CKRecord] = []
     private var deletedRecordIDs: [CKRecord.ID] = []
-    private var recordType: RecordType!
+    private var recordType: RecordType! = .none
     private var _recordType: String!
     public var opType: OpType = .fetchRecord
     private var _opType: String!
@@ -26,7 +26,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
     private var zoneID: CKRecordZone.ID!
     private var error: Error?
     public var completionHandler: ((Result<[CKRecord], Error>) -> Void)!
-    private var block: (() -> Void)?
+    private var block: ((EACloudOperation?) -> Void)?
     private var recordIDs: [CKRecord.ID] = []
     private var deleteRecordBlock: ((Result<[CKRecord.ID], Error>) -> Void)?
     
@@ -78,6 +78,18 @@ public class EACloudOperation: Operation, NSSecureCoding {
         self.completionHandler = completion
     }
     
+    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String? = nil, predicate: NSPredicate? = nil, modified: Int? = 0, block: ((EACloudOperation?) -> Void)? = nil) {
+        self.recordType = recordType
+        self._recordType = self.recordType.rawValue
+        self.opType = opType
+        self._opType = self.opType.rawValue
+        self.zoneID = zoneID
+        self.parentId = parentId ?? ""
+        if predicate != nil { self.predicate = predicate! }
+        self.modified = modified ?? 0
+        //self.completionHandler = completion
+        self.block = block
+    }
     
     /// Initialise with fetch zone changes.
     /// - Parameters:
@@ -97,18 +109,16 @@ public class EACloudOperation: Operation, NSSecureCoding {
     ///   - deleteRecordIDs: The ID of the records.
     ///   - zoneID: The zone ID for the records.
     ///   - completion: The completion callback function.
-    init(deleteRecordIDs: [CKRecord.ID], zoneID: CKRecordZone.ID, completion: ((Result<[CKRecord.ID], Error>) -> Void)? = nil) {
+    init(deleteRecordIDs: [CKRecord.ID], block: ((EACloudOperation?) -> Void)? = nil) {
         self.recordIDs = deleteRecordIDs
-        self.zoneID = zoneID
         self.opType = .deleteRecord
         self._opType = self.opType.rawValue
-        self.deleteRecordBlock = completion
+        self.block = block
     }
-    
     
     /// Initialises in block opertion mode.
     /// - Parameter block: The block to be executed.
-    init(block: @escaping () -> Void) {
+    init(block: @escaping (EACloudOperation?) -> Void) {
         self.block = block
         self.opType = .block
     }
@@ -120,10 +130,11 @@ public class EACloudOperation: Operation, NSSecureCoding {
     public func encode(with coder: NSCoder) {
         coder.encode(self._recordType, forKey: "_recordType")
         coder.encode(self._opType, forKey: "_opType")
-        coder.encode(self.zoneID.encode(), forKey: "zoneID")
+        if self.zoneID != nil { coder.encode(self.zoneID.encode(), forKey: "zoneID") }
         coder.encode(self.parentId, forKey: "parentId")
         coder.encode(self.predicate, forKey: "predicate")
         coder.encode(self.modified, forKey: "modified")
+        coder.encode(self.recordIDs, forKey: "recordIDs")
     }
     
     required public init?(coder: NSCoder) {
@@ -133,6 +144,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
         if let x = coder.decodeObject(forKey: "parentId") as? String { self.parentId = x }
         if let x = coder.decodeObject(forKey: "predicate") as? NSPredicate { self.predicate = x }
         if let x = coder.decodeObject(forKey: "modified") as? Int { self.modified = x }
+        if let xs = coder.decodeObject(forKey: "recordIDs") as? [CKRecord.ID] { self.recordIDs = xs }
     }
     
     static func encode(_ op: EACloudOperation) -> Data? {
@@ -163,42 +175,6 @@ public class EACloudOperation: Operation, NSSecureCoding {
     
     override public func main() {
         if self.isCancelled { return }
-        switch self.opType {
-        case .fetchRecord:
-            self.fetchRecord()
-        case .queryRecord:
-            self.queryRecord()
-        case .deleteRecord:
-            self.deleteRecords()
-        case .fetchZoneChange:
-            self.fetchZoneChanges()
-        case .block:
-            self.execBlock()
-        }
-    }
-    
-    private func execBlock() {
-        if let block = self.block { block() }
-    }
-    
-    private func fetchRecord() {
-        fatalError("not implemented")
-    }
-    
-    private func queryRecord() {
-        PersistenceService.shared.queryRecords(zoneID: self.zoneID, type: self.recordType, parentId: self.parentId, modified: self.modified) { [weak self] result in
-            guard let self = self else { return }
-            if self.isCancelled { return }
-            self.state = .finished
-            self.completionHandler(result)
-        }
-    }
-    
-    private func deleteRecords() {
-        CloudKitService.shared.deleteRecords(recordIDs: self.recordIDs) { [weak self] result in self?.deleteRecordBlock?(result) }
-    }
-    
-    private func fetchZoneChanges() {
-        PersistenceService.shared.fetchZoneChanges(zoneIDs: [self.zoneID], isDeleteOnly: true)
+        self.block?(self)
     }
 }

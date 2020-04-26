@@ -17,6 +17,14 @@ public class ETag: NSManagedObject, Entity {
         return self.id ?? ""
     }
     
+    public func getWsId() -> String {
+        return self.wsId ?? ""
+    }
+    
+    public func setWsId(_ id: String) {
+        self.wsId = id
+    }
+    
     public func getName() -> String {
         return self.name ?? ""
     }
@@ -29,8 +37,16 @@ public class ETag: NSManagedObject, Entity {
         return self.modified
     }
     
+    public func setModified(_ ts: Int64? = nil) {
+        self.modified = ts ?? Date().currentTimeNanos()
+    }
+    
     public func getChangeTag() -> Int64 {
         return self.changeTag
+    }
+    
+    public func setChangeTag(_ ts: Int64? = nil) {
+        self.changeTag = ts ?? Date().currentTimeNanos()
     }
     
     public func getVersion() -> Int64 {
@@ -41,20 +57,8 @@ public class ETag: NSManagedObject, Entity {
         self.isSynced = status
     }
     
-    public func getZoneID() -> CKRecordZone.ID {
-        return CloudKitService.shared.zoneID(workspaceId: self.request!.project!.workspace!.id!)
-    }
-    
     public func setMarkedForDelete(_ status: Bool) {
         self.markForDelete = status
-    }
-    
-    public func setModified(_ ts: Int64? = nil) {
-        self.modified = ts ?? Date().currentTimeNanos()
-    }
-    
-    public func setChangeTag(_ ts: Int64? = nil) {
-        self.changeTag = ts ?? Date().currentTimeNanos()
     }
     
     public override func willSave() {

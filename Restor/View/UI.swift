@@ -438,9 +438,9 @@ extension UILabel {
 }
 
 extension UITableView {
-    func reloadData(completion: @escaping () -> ()) {
-        UIView.animate(withDuration: 0, animations: { self.reloadData() }, completion: { _ in
-            completion()
-        })
-    }
+//    func reloadData(completion: @escaping () -> ()) {
+//        UIView.animate(withDuration: 0, animations: { self.reloadData() }, completion: { _ in
+//            completion()
+//        })
+//    }
 }

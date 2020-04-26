@@ -69,8 +69,6 @@ class ProjectListViewController: UIViewController {
     }
     
     func initEvent() {
-        self.nc.addObserver(self, selector: #selector(self.keyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
         self.nc.addObserver(self, selector: #selector(self.workspaceDidSync(_:)), name: NotificationKey.workspaceDidSync, object: nil)
     }
     
@@ -101,6 +99,7 @@ class ProjectListViewController: UIViewController {
     }
     
     func updateListingWorkspace(_ ws: EWorkspace) {
+        if self.workspace == ws { return }
         self.workspace = ws
         if let wsId = ws.id {
             if let _frc = self.localdb.updateFetchResultsController(self.frc as! NSFetchedResultsController<NSFetchRequestResult>, predicate: NSPredicate(format: "workspace.id == %@", wsId)) as? NSFetchedResultsController<EProject> {
@@ -128,28 +127,14 @@ class ProjectListViewController: UIViewController {
         Log.debug("settings btn did tap")
         UI.pushScreen(self.navigationController!, storyboard: self.storyboard!, storyboardId: StoryboardId.settingsVC.rawValue)
     }
-    
-    @objc func keyboardWillShow(notif: Notification) {
-        if let userInfo = notif.userInfo, let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
-            AppState.keyboardHeight = keyboardSize.cgRectValue.height
-            if self.view.frame.origin.y == 0 {
-                // We need to offset in this case because the popup is contrained to the bottom of the view
-                self.view.frame.origin.y -=  AppState.keyboardHeight
-            }
-        }
-    }
-    
-    @objc func keyboardWillHide(notif: Notification) {
-        self.view.frame.origin.y = 0
-    }
-    
+        
     @objc func workspaceDidTap() {
         Log.debug("workspace did tap")
     }
     
     func addProject(name: String, desc: String) {
         if let ctx = self.workspace.managedObjectContext {
-            if let proj = self.localdb.createProject(id: self.localdb.projectId(), name: name, desc: desc, ws: self.workspace, ctx: ctx) {
+            if let proj = self.localdb.createProject(id: self.localdb.projectId(), wsId: self.workspace.getId(), name: name, desc: desc, ws: self.workspace, ctx: ctx) {
                 proj.workspace = self.workspace
                 self.localdb.saveBackgroundContext()
                 self.db.saveProjectToCloud(proj)
@@ -232,10 +217,7 @@ extension ProjectListViewController: NSFetchedResultsControllerDelegate {
                 case .delete:
                     self.tableView.deleteRows(at: [indexPath!], with: .automatic)
                 case .insert:
-                    self.tableView.beginUpdates()
-                    self.tableView.insertRows(at: [newIndexPath!], with: .none)
-                    self.tableView.endUpdates()
-                    self.tableView.layoutIfNeeded()
+                    self.tableView.reloadData()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
                 case .update:
                     self.tableView.reloadRows(at: [indexPath!], with: .none)

@@ -29,7 +29,7 @@ public class EAQueue<T> {
         self.timer?.cancel()
         self.timer?.resume()
         self.timer?.setEventHandler(handler: {})
-        self.queue.removeAll()
+        self.queue = []
     }
     
     init(interval: TimeInterval, completion: @escaping ([T]) -> Void) {
@@ -55,7 +55,7 @@ public class EAQueue<T> {
         self.accessq.sync {
             self.completion(self.queue)
             Log.debug("EAQueue processed \(self.queue.count) items")
-            self.queue.removeAll()
+            self.queue = []
         }
     }
         

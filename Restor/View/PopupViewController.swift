@@ -109,6 +109,7 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
         if var model = self.model, let cell = self.tableView.cellForRow(at: IndexPath(row: 0, section: 0)) as? PopupCell {
             model.name = cell.nameTextField.text ?? ""
             model.desc = cell.descTextField.text ?? ""
+            model.iCloudSyncFieldEnabled = cell.iCloudSyncSwitch.isOn
             model.doneHandler(model)
         }
         self.close()

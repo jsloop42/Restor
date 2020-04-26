@@ -64,10 +64,6 @@ class WorkspaceListViewController: UIViewController {
     }
     
     func initEvents() {
-        //let tap = UITapGestureRecognizer(target: self, action: #selector(viewDidTap(_:)))
-        //self.view.addGestureRecognizer(tap)
-        self.nc.addObserver(self, selector: #selector(self.keyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
     func initData() {
@@ -91,25 +87,6 @@ class WorkspaceListViewController: UIViewController {
         }
     }
     
-    @objc func viewDidTap(_ recognizer: UITapGestureRecognizer) {
-        Log.debug("view did tap")
-        self.view.endEditing(true)
-    }
-    
-    @objc func keyboardWillShow(notif: Notification) {
-        if let userInfo = notif.userInfo, let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
-            AppState.keyboardHeight = keyboardSize.cgRectValue.height
-            if self.view.frame.origin.y == 0 {
-                // We need to offset in this case because the popup is contrained to the bottom of the view
-                self.view.frame.origin.y -=  AppState.keyboardHeight
-            }
-        }
-    }
-       
-    @objc func keyboardWillHide(notif: Notification) {
-        self.view.frame.origin.y = 0
-    }
-    
     @IBAction func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
         self.viewAlert(vc: self, storyboard: self.storyboard!)
@@ -120,7 +97,7 @@ class WorkspaceListViewController: UIViewController {
     }
     
     func viewPopup() {
-        self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", iCloudSyncFieldEnabled: true, doneHandler: { model in
+        self.app.viewPopupScreen(self, model: PopupModel(title: "New Workspace", iCloudSyncFieldEnabled: true, doneHandler: { model in
             Log.debug("model value: \(model.name) - \(model.desc)")
             AppState.setCurrentScreen(.workspaceList)
             self.addWorkspace(name: model.name, desc: model.desc, isSyncEnabled: model.iCloudSyncFieldEnabled)
@@ -184,28 +161,22 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         Log.debug("workspace cell did select \(indexPath.row)")
         let ws = self.frc.object(at: indexPath)
-        let wsSelected = self.app.getSelectedWorkspace()
-        if ws.id != wsSelected.id {
-            self.app.setSelectedWorkspace(ws)
-            self.delegate?.workspaceDidChange(ws: ws)
-        }
+        self.app.setSelectedWorkspace(ws)
+        self.delegate?.workspaceDidChange(ws: ws)        
         self.dismiss(animated: true, completion: nil)
     }
 }
 
-extension WorkspaceListViewController: NSFetchedResultsControllerDelegate {
+extension WorkspaceListViewController: NSFetchedResultsControllerDelegate {    
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-        Log.debug("workspace list frc did change: \(anObject)")
+        Log.debug("workspace list frc did change object: \(anObject)")
         if AppState.currentScreen != .workspaceList { return }
         DispatchQueue.main.async {
             switch type {
             case .delete:
                 self.tableView.deleteRows(at: [indexPath!], with: .automatic)
             case .insert:
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [newIndexPath!], with: .none)
-                self.tableView.endUpdates()
-                self.tableView.layoutIfNeeded()
+                self.tableView.reloadData()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
             case .update:
                 self.tableView.reloadRows(at: [indexPath!], with: .none)

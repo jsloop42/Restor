@@ -76,8 +76,8 @@ class RequestListViewController: UIViewController {
         } else {
             if AppState.editRequest == nil {
                 let name = self.app.getNewRequestName()
-                if let ctx = AppState.currentProject?.managedObjectContext,
-                    let req = self.localdb.createRequest(id: self.localdb.requestId(), name: name, ctx: ctx) {
+                if let proj = AppState.currentProject, let wsId = proj.workspace?.getId(), let ctx = AppState.currentProject?.managedObjectContext,
+                    let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: ctx) {
                     AppState.editRequest = req
                     AppState.currentProject?.addToRequests(req)
                 } else {
@@ -125,10 +125,7 @@ extension RequestListViewController: NSFetchedResultsControllerDelegate {
             case .delete:
                 self.tableView.deleteRows(at: [indexPath!], with: .automatic)
             case .insert:
-                self.tableView.beginUpdates()
-                self.tableView.insertRows(at: [newIndexPath!], with: .none)
-                self.tableView.endUpdates()
-                self.tableView.layoutIfNeeded()
+                self.tableView.reloadData()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
             case .update:
                 self.tableView.reloadRows(at: [indexPath!], with: .none)

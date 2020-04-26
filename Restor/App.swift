@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 import CoreData
+import CloudKit
 
 class App {
     static let shared: App = App()
@@ -962,4 +963,10 @@ enum AppError: Error {
     case offline
     case server
     case fetch
+}
+
+extension CKRecord {
+    func getWsId() -> String {
+        return self["wsId"] ?? ""
+    }
 }

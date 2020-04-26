@@ -144,6 +144,12 @@ public extension Int {
     func toDouble() -> Double {
         return Double(self)
     }
+    
+    /// Calls the given block n number of times.
+    func times(block: () -> Void) {
+        if self <= 0 { return }
+        for _ in 0..<self { block() }
+    }
 }
 
 public extension Int64 {
@@ -233,9 +239,15 @@ public extension Float {
 }
 
 public extension Set {
+    var isEmpty: Bool { self.first == nil }
+    
     func toArray() -> [Element] {
         return Array(self)
     }
+}
+
+public extension NSSet {
+    var isEmpty: Bool { self.anyObject() == nil }
 }
 
 public extension Dictionary {

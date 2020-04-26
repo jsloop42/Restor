@@ -71,9 +71,7 @@ class EAUtils {
     /// - Returns: The decrypted string.
     func xorDecrypt(_ cipherText: [UInt8], withKey: String) -> String {
         var decrypted: [UInt8] = []
-        if cipherText.count == 0 {
-            return ""
-        }
+        if cipherText.isEmpty { return "" }
         let key: [UInt8] = Array(withKey.utf8)
         let len = key.count
         cipherText.enumerated().forEach { idx, elem in

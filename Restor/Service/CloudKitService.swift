@@ -1226,10 +1226,6 @@ extension CKRecord {
         return self["isSyncEnabled"] ?? false
     }
     
-    func index() -> Int64 {
-        return self["index"] ?? 0
-    }
-    
     func name() -> String {
         return self["name"] ?? ""
     }

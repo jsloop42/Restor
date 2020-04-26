@@ -43,7 +43,7 @@ struct AttachmentInfo {
         if DocumentPickerState.image != nil {
             return self.image == DocumentPickerState.image
         } else {
-            if self.image == nil && DocumentPickerState.docs.count == 0 { return true }
+            if self.image == nil && DocumentPickerState.docs.isEmpty { return true }
         }
         let len = DocumentPickerState.docs.count
         if self.docs.count != len { return false }
@@ -67,33 +67,44 @@ struct AttachmentInfo {
 public protocol Entity: NSManagedObject {
     var recordType: String { get }
     func getId() -> String
+    func getWsId() -> String
+    func setWsId(_ id: String)
     func getName() -> String
     func getCreated() -> Int64
     func getModified() -> Int64
-    func getChangeTag() -> Int64
-    func getVersion() -> Int64
-    func getZoneID() -> CKRecordZone.ID
-    func setIsSynced(_ status: Bool)
-    func setMarkedForDelete(_ status: Bool)
     /// The modified fields get update on changing any property or relation. But for syncing with cloud, we need to use the change tag value as we we do not
     /// take into account relation changes for the given entity for syncing.
     func setModified(_ ts: Int64?)
+    func getChangeTag() -> Int64
     /// If any property changes, the change tag value will be updated.
     func setChangeTag(_ ts: Int64?)
+    func getVersion() -> Int64
+    func getZoneID() -> CKRecordZone.ID
+    func getRecordID() -> CKRecord.ID
+    func setIsSynced(_ status: Bool)
+    func setMarkedForDelete(_ status: Bool)
     func willSave()
 }
 
 extension Entity {
-    func setModified(_ ts: Int64? = nil) {
+    public func setModified(_ ts: Int64? = nil) {
         return setModified(Date().currentTimeNanos())
     }
     
-    func setChangeTag(_ ts: Int64? = nil) {
+    public func setChangeTag(_ ts: Int64? = nil) {
         return setChangeTag(Date().currentTimeNanos())
     }
     
-    func setChangeTagWithEditTs() {
+    public func setChangeTagWithEditTs() {
         self.setModified(AppState.editRequestSaveTs)
         return setChangeTag(AppState.editRequestSaveTs)
+    }
+    
+    public func getZoneID() -> CKRecordZone.ID {
+        return CloudKitService.shared.zoneID(workspaceId: self.getWsId())
+    }
+    
+    public func getRecordID() -> CKRecord.ID {
+        return CloudKitService.shared.recordID(entityId: self.getId(), zoneID: self.getZoneID())
     }
 }
