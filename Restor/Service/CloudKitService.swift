@@ -88,7 +88,7 @@ class CloudKitService {
         static var deleteSubscriptions: EARepeatTimer!
         static var deleteAllSubscriptions: EARepeatTimer!
         static let limit = 3
-        static let interval = 2.0
+        static let interval = 4.0
     }
     
     enum PropKey: String {

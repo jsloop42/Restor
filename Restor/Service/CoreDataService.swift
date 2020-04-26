@@ -1166,7 +1166,7 @@ class CoreDataService {
         let fr = NSFetchRequest<EProject>(entityName: "EProject")
         fr.predicate = NSPredicate(format: "isSynced == %hhd", false)
         fr.sortDescriptors = [NSSortDescriptor(key: "workspace.created", ascending: true)]
-        let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: "workspace.modified", cacheName: nil)
+        let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: "workspace.created", cacheName: nil)
         do {
             try frc.performFetch()
         } catch let error {
@@ -1180,7 +1180,7 @@ class CoreDataService {
         let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
         fr.predicate = NSPredicate(format: "isSynced == %hhd", false)
         fr.sortDescriptors = [NSSortDescriptor(key: "project.created", ascending: true)]
-        let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: "workspace.modified", cacheName: nil)
+        let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: "project.created", cacheName: nil)
         do {
             try frc.performFetch()
         } catch let error {

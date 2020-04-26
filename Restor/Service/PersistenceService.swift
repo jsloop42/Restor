@@ -364,7 +364,7 @@ class PersistenceService {
         }
     }
     
-    // MARK: - Sync from cloud
+    // MARK: - Sync to cloud
     
     func initSyncToCloudState() {
         if self.isSyncToCloudTriggered { return }
@@ -374,7 +374,7 @@ class PersistenceService {
         }
         self.syncToCloudTimer = DispatchSource.makeTimerSource()
         self.syncToCloudTimer.setEventHandler(handler: { [weak self] in self?.syncToCloud() })
-        self.syncToCloudTimer.schedule(deadline: .now() + 4.5)  // seconds
+        self.syncToCloudTimer.schedule(deadline: .now() + 4.5, repeating: 4.5)  // seconds
         if self.syncToCloudCtx != nil {
             if self.syncToCloudCtx.hasChanges { self.localdb.saveChildContext(self.syncToCloudCtx) }
             self.syncToCloudCtx = self.localdb.getChildMOC()
@@ -439,7 +439,7 @@ class PersistenceService {
         if done { self.destroySyncToCloudState() }
     }
     
-    // MARK: - Sync to cloud
+    // MARK: - Sync from cloud
     
     func syncFromCloud() {
         Log.debug("sync from cloud")
@@ -477,6 +477,8 @@ class PersistenceService {
     
     func syncRecordFromCloudHandler(_ record: CKRecord) -> Bool {
         let modified = self.isSyncedOnce() ? self.previousSyncTime : 0
+        Log.debug("sync from cloud op count: \(self.syncFromCloudOpCount)")
+        if self.syncFromCloudOpCount == 0 && !self.isSyncToCloudTriggered { self.syncToCloud() }
         switch RecordType(rawValue: record.type()) {
         case .zone:
             let op = EACloudOperation(recordType: .zone, opType: .fetchZoneChange, zoneID: self.ck.zoneID(workspaceId: record.id()))
@@ -556,10 +558,6 @@ class PersistenceService {
             self.decSyncFromCloudOp()
         case .none:
             Log.error("Unknown record: \(record)")
-        }
-        Log.debug("sync from cloud op count: \(self.syncFromCloudOpCount)")
-        if self.syncFromCloudOpCount == 0 && !self.isSyncToCloudTriggered {
-            self.syncToCloud()
         }
         return true
     }
@@ -1048,7 +1046,6 @@ class PersistenceService {
     private func deleteEntitesFromCloud(_ xs: [Entity], zoneID: CKRecordZone.ID, ctx: NSManagedObjectContext? = nil) {
         var xs = xs
         if xs.count > 0 {
-            let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
             Log.debug("delete data count: \(xs.count)")
             var recordIDs = xs.map { elem -> CKRecord.ID in
                 return self.ck.recordID(entityId: elem.getId(), zoneID: zoneID)
@@ -1062,7 +1059,7 @@ class PersistenceService {
                             let elem = xs[idx]
                             xs.remove(at: idx)
                             recordIDs.remove(at: idx)
-                            self.localdb.deleteEntity(elem, ctx: ctx)
+                            self.localdb.deleteEntity(elem)
                         }
                     }
                     Log.debug("Remaining entities to delete: \(xs.count)")
@@ -1326,7 +1323,7 @@ class PersistenceService {
     
     /// Save the given request and updates the associated project to the cloud.
     func saveRequestToCloud(_ req: ERequest) {
-        guard let proj = req.project, let ws = proj.workspace, !ws.isSyncEnabled else { return }
+        guard let proj = req.project, let ws = proj.workspace, ws.isSyncEnabled else { return }
         if proj.markForDelete { self.deleteDataMakedForDelete(proj); return }
         if req.markForDelete { self.deleteDataMarkedForDelete(req); return }
         guard let reqId = req.id else { Log.error("ERequest id is nil"); return }
