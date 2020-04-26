@@ -78,7 +78,8 @@ public class EFile: NSManagedObject, Entity {
                 Log.error("Error: \(error)")
             }
         }
-        record["id"] = self.id! as CKRecordValue
+        record["id"] = self.getId() as CKRecordValue
+        record["wsId"] = self.getWsId() as CKRecordValue
         record["name"] = (self.name ?? "") as CKRecordValue
         record["type"] = self.type as CKRecordValue
         record["version"] = self.version as CKRecordValue

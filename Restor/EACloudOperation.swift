@@ -21,7 +21,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
     private var _opType: String!
     private var predicate: NSPredicate = NSPredicate(value: true)
     private var cursor: CKQueryOperation.Cursor?
-    private var modified: Int = 0
+    private var changeTag: Int = 0
     private var limit = 50
     private var zoneID: CKRecordZone.ID!
     private var error: Error?
@@ -64,9 +64,9 @@ public class EACloudOperation: Operation, NSSecureCoding {
     ///   - zoneID: The zone ID for the records.
     ///   - parentId: The parent id for the record.
     ///   - predicate: An optional predicate statement.
-    ///   - modified: Modified timestamp value when given will fetch record changes starting from that point. If none specified or 0, all changes will be fetched.
+    ///   - changeTag: Modified timestamp value when given will fetch record changes starting from that point. If none specified or 0, all changes will be fetched.
     ///   - completion: The callback function on completion.
-    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String, predicate: NSPredicate? = nil, modified: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String, predicate: NSPredicate? = nil, changeTag: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
         self.recordType = recordType
         self._recordType = self.recordType.rawValue
         self.opType = opType
@@ -74,11 +74,11 @@ public class EACloudOperation: Operation, NSSecureCoding {
         self.zoneID = zoneID
         self.parentId = parentId
         if predicate != nil { self.predicate = predicate! }
-        self.modified = modified ?? 0
+        self.changeTag = changeTag ?? 0
         self.completionHandler = completion
     }
     
-    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String? = nil, predicate: NSPredicate? = nil, modified: Int? = 0, block: ((EACloudOperation?) -> Void)? = nil) {
+    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String? = nil, predicate: NSPredicate? = nil, changeTag: Int? = 0, block: ((EACloudOperation?) -> Void)? = nil) {
         self.recordType = recordType
         self._recordType = self.recordType.rawValue
         self.opType = opType
@@ -86,7 +86,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
         self.zoneID = zoneID
         self.parentId = parentId ?? ""
         if predicate != nil { self.predicate = predicate! }
-        self.modified = modified ?? 0
+        self.changeTag = changeTag ?? 0
         //self.completionHandler = completion
         self.block = block
     }
@@ -133,7 +133,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
         if self.zoneID != nil { coder.encode(self.zoneID.encode(), forKey: "zoneID") }
         coder.encode(self.parentId, forKey: "parentId")
         coder.encode(self.predicate, forKey: "predicate")
-        coder.encode(self.modified, forKey: "modified")
+        coder.encode(self.changeTag, forKey: "changeTag")
         coder.encode(self.recordIDs, forKey: "recordIDs")
     }
     
@@ -143,7 +143,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
         if let data = coder.decodeObject(forKey: "zoneID") as? Data, let x = CKRecordZone.ID.decode(data) { self.zoneID = x }
         if let x = coder.decodeObject(forKey: "parentId") as? String { self.parentId = x }
         if let x = coder.decodeObject(forKey: "predicate") as? NSPredicate { self.predicate = x }
-        if let x = coder.decodeObject(forKey: "modified") as? Int { self.modified = x }
+        if let x = coder.decodeObject(forKey: "changeTag") as? Int { self.changeTag = x }
         if let xs = coder.decodeObject(forKey: "recordIDs") as? [CKRecord.ID] { self.recordIDs = xs }
     }
     

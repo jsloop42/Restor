@@ -267,6 +267,7 @@ class App {
             xs.forEach { file in self.markEntityForDelete(file: file, ctx: ctx) }
         }
         if let img = reqData.image { self.markForDelete(image: img, ctx: ctx) }
+        self.localdb.markEntityForDelete(reqData, ctx: ctx)
         reqData.header = nil
         reqData.param = nil
         reqData.form = nil

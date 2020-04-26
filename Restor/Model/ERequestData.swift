@@ -71,7 +71,8 @@ public class ERequestData: NSManagedObject, Entity {
         record["changeTag"] = self.changeTag as CKRecordValue
         record["desc"] = (self.desc ?? "") as CKRecordValue
         record["fieldFormat"] = self.fieldFormat as CKRecordValue
-        record["id"] = self.id! as CKRecordValue
+        record["id"] = self.getId() as CKRecordValue
+        record["wsId"] = self.getWsId() as CKRecordValue
         record["key"] = (self.key ?? "") as CKRecordValue
         record["type"] = self.type as CKRecordValue
         record["value"] = (self.value ?? "") as CKRecordValue

@@ -604,9 +604,7 @@ class CloudKitService {
                 return;
             }
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
-            if moreComing {
-                moreZones.append(zoneID)
-            }
+            if moreComing { moreZones.append(zoneID) }
         }
         op.fetchRecordZoneChangesCompletionBlock = { [unowned self] error in
             if let err = error {

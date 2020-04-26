@@ -1150,7 +1150,7 @@ class CoreDataService {
     func getWorkspacesToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<EWorkspace> {
         let moc = self.getMOC(ctx: ctx)
         let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
-        fr.predicate = NSPredicate(format: "isSynced == %hhd", false)
+        fr.predicate = NSPredicate(format: "isSynced == %hhd AND isActive == %hhd", false, true)
         fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
         fr.fetchBatchSize = self.fetchBatchSize
         let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)

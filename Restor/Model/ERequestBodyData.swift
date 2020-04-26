@@ -69,7 +69,8 @@ public class ERequestBodyData: NSManagedObject, Entity {
         record["created"] = self.created as CKRecordValue
         record["modified"] = self.modified as CKRecordValue
         record["changeTag"] = self.changeTag as CKRecordValue
-        record["id"] = self.id! as CKRecordValue
+        record["id"] = self.getId() as CKRecordValue
+        record["wsId"] = self.getWsId() as CKRecordValue
         record["json"] = (self.json ?? "") as CKRecordValue
         record["raw"] = (self.raw ?? "") as CKRecordValue
         record["selected"] = self.selected as CKRecordValue

@@ -78,7 +78,8 @@ public class EImage: NSManagedObject, Entity {
                 Log.error("Error: \(error)")
             }
         }
-        record["id"] = self.id! as CKRecordValue
+        record["id"] = self.getId() as CKRecordValue
+        record["wsId"] = self.getWsId() as CKRecordValue
         record["isCameraMode"] = self.isCameraMode as CKRecordValue
         record["name"] = (self.name ?? "") as CKRecordValue
         record["type"] = (self.type ?? "") as CKRecordValue

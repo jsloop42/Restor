@@ -69,7 +69,8 @@ public class ERequestMethodData: NSManagedObject, Entity {
         record["created"] = self.created as CKRecordValue
         record["modified"] = self.modified as CKRecordValue
         record["changeTag"] = self.changeTag as CKRecordValue
-        record["id"] = self.id! as CKRecordValue
+        record["id"] = self.getId() as CKRecordValue
+        record["wsId"] = self.getWsId() as CKRecordValue
         record["isCustom"] = self.isCustom as CKRecordValue
         record["name"] = (self.name ?? "") as CKRecordValue
         record["shouldDelete"] = self.shouldDelete as CKRecordValue

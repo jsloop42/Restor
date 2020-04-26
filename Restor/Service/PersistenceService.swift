@@ -97,6 +97,9 @@ class PersistenceService {
     private let opQueue = EAOperationQueue()
     private var syncTimer: DispatchSourceTimer?
     private var previousSyncTime: Int = 0
+    private var isSyncFromCloudSuccess = false
+    private var isSyncToCloudSuccess = false
+    private var isSyncTimeSet = false
     private var queryDefaultZoneRecordRepeatTimer: EARepeatTimer!
     private var fetchZoneChangesDelayTimer: EARescheduler!
     private var syncFromCloudOpCount = 0
@@ -179,6 +182,7 @@ class PersistenceService {
     }
     
     init() {
+        self.previousSyncTime = self.getLastSyncTime()
         self.initSaveQueue()
         self.subscribeToCloudKitEvents()
         self.syncFromCloud()
@@ -407,6 +411,16 @@ class PersistenceService {
     
     func syncToCloud() {
         Log.debug("sync to cloud")
+        if !self.isSyncTimeSet && self.isSyncFromCloudSuccess {
+            Log.debug("setting sync time")
+            self.setIsSyncedOnce()
+            self.setLastSyncTime()
+            self.isSyncTimeSet = true
+        }
+        if self.syncFromCloudOpCount == 0 && self.isSyncToCloudTriggered && self.isSyncTimeSet {  // => not initial sync - could be from notifications
+            Log.debug("updating last sync time")
+            self.setLastSyncTime()
+        }
         if self.syncFromCloudOpCount > 0 && self.isSyncToCloudTriggered { return }
         if self.saveQueue.count > 16 { return }
         self.initSyncToCloudState()
@@ -595,10 +609,10 @@ class PersistenceService {
         self.syncToCloud()
     }
     
-    func getQueryRecordCloudOp(recordType: RecordType, zoneID: CKRecordZone.ID, parentId: String? = nil, modified: Int? = 0) -> EACloudOperation {
-        return EACloudOperation(recordType: .request, opType: .queryRecord, zoneID: zoneID, parentId: parentId, modified: modified, block: { [weak self] _ in
+    func getQueryRecordCloudOp(recordType: RecordType, zoneID: CKRecordZone.ID, parentId: String? = nil, changeTag: Int? = 0) -> EACloudOperation {
+        return EACloudOperation(recordType: recordType, opType: .queryRecord, zoneID: zoneID, parentId: parentId, changeTag: changeTag, block: { [weak self] _ in
             self?.incSyncFromCloudOp()
-            self?.queryRecords(zoneID: zoneID, type: .zone, parentId: parentId ?? "", modified: modified) { result in
+            self?.queryRecords(zoneID: zoneID, type: recordType, parentId: parentId ?? "", changeTag: changeTag) { result in
                 self?.decSyncFromCloudOp()
                 self?.syncFromCloudHandler(result)
             }
@@ -606,7 +620,7 @@ class PersistenceService {
     }
     
     func syncRecordFromCloudHandler(_ record: CKRecord) -> Bool {
-        let modified = self.isSyncedOnce() ? self.previousSyncTime : 0
+        let changeTag = self.isSyncedOnce() ? self.previousSyncTime : 0
         switch RecordType(rawValue: record.type()) {
         case .zone:
             let zoneID = self.ck.zoneID(workspaceId: record.id())
@@ -619,7 +633,7 @@ class PersistenceService {
             self.updateWorkspaceFromCloud(record)
             let wsId = record.id()
             let zoneID = self.ck.zoneID(workspaceId: wsId)
-            let op = self.getQueryRecordCloudOp(recordType: .project, zoneID: zoneID, parentId: wsId, modified: modified)
+            let op = self.getQueryRecordCloudOp(recordType: .project, zoneID: zoneID, parentId: wsId, changeTag: changeTag)
             op.completionBlock = { Log.debug("op completion: - query project") }
             if !self.opQueue.add(op) { self.addSyncOpToLocal(op); return false }
             return true
@@ -628,10 +642,10 @@ class PersistenceService {
             let zoneID = record.zoneID()
             let projId = record.id()
             var status = true
-            let opreq = self.getQueryRecordCloudOp(recordType: .request, zoneID: zoneID, parentId: projId, modified: modified)
+            let opreq = self.getQueryRecordCloudOp(recordType: .request, zoneID: zoneID, parentId: projId, changeTag: changeTag)
             opreq.completionBlock = { Log.debug("op completion: - query request") }
             if !self.opQueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
-            let opreqmeth = self.getQueryRecordCloudOp(recordType: .requestMethodData, zoneID: zoneID, parentId: projId, modified: modified)
+            let opreqmeth = self.getQueryRecordCloudOp(recordType: .requestMethodData, zoneID: zoneID, parentId: projId, changeTag: changeTag)
             opreqmeth.completionBlock = { Log.debug("op completion: - query request method") }
             if !self.opQueue.add(opreqmeth) { self.addSyncOpToLocal(opreqmeth); status = false }
             return status
@@ -640,16 +654,16 @@ class PersistenceService {
             let zoneID = record.zoneID()
             let reqId = record.id()
             var status = false
-            let opreqdata = self.getQueryRecordCloudOp(recordType: .requestData, zoneID: zoneID, parentId: reqId, modified: modified)
+            let opreqdata = self.getQueryRecordCloudOp(recordType: .requestData, zoneID: zoneID, parentId: reqId, changeTag: changeTag)
             opreqdata.completionBlock = { Log.debug("op completion: - query request") }
             if !self.opQueue.add(opreqdata) { self.addSyncOpToLocal(opreqdata); status = false }
-            let opreqbody = self.getQueryRecordCloudOp(recordType: .requestBodyData, zoneID: zoneID, parentId: reqId, modified: modified)
+            let opreqbody = self.getQueryRecordCloudOp(recordType: .requestBodyData, zoneID: zoneID, parentId: reqId, changeTag: changeTag)
             opreqbody.completionBlock = { Log.debug("op completion: - query request method") }
             if !self.opQueue.add(opreqbody) { self.addSyncOpToLocal(opreqbody); status = false }
             return status
         case .requestBodyData:
             self.updateRequestBodyDataFromCloud(record)
-            let op = self.getQueryRecordCloudOp(recordType: .requestData, zoneID: record.zoneID(), parentId: record.id(), modified: modified)
+            let op = self.getQueryRecordCloudOp(recordType: .requestData, zoneID: record.zoneID(), parentId: record.id(), changeTag: changeTag)
             op.completionBlock = { Log.debug("op completion: - query request data") }
             if !self.opQueue.add(op) { self.addSyncOpToLocal(op); return false }
             return true
@@ -658,10 +672,10 @@ class PersistenceService {
             let zoneID = record.zoneID()
             let reqDataId = record.id()
             var status = false
-            let opreq = self.getQueryRecordCloudOp(recordType: .file, zoneID: zoneID, parentId: reqDataId, modified: modified)
+            let opreq = self.getQueryRecordCloudOp(recordType: .file, zoneID: zoneID, parentId: reqDataId, changeTag: changeTag)
             opreq.completionBlock = { Log.debug("op completion: - query file") }
             if !self.opQueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
-            let opreqbody = self.getQueryRecordCloudOp(recordType: .image, zoneID: zoneID, parentId: reqDataId, modified: modified)
+            let opreqbody = self.getQueryRecordCloudOp(recordType: .image, zoneID: zoneID, parentId: reqDataId, changeTag: changeTag)
             opreqbody.completionBlock = { Log.debug("op completion: - query image") }
             if !self.opQueue.add(opreqbody) { self.addSyncOpToLocal(opreqbody); status = false }
             return status
@@ -1183,13 +1197,12 @@ class PersistenceService {
             guard let self = self else { return }
             switch result {
             case .success(let (records, cursor)):
-                self.setIsSyncedOnce()
+                self.isSyncFromCloudSuccess = true
                 if let cursor = cursor { self.setDefaultZoneQueryCursorToCache(cursor) }
-                self.previousSyncTime = self.getLastSyncTime()
-                self.setLastSyncTime()
                 completion(.success(records))
             case .failure(let error):
                 Log.error("Error querying default zone record: \(error)")
+                self.isSyncFromCloudSuccess = false
                 completion(.failure(error))
                 break
             }
@@ -1202,41 +1215,41 @@ class PersistenceService {
     ///   - type: The record type
     ///   - parentId: The parent Id of the record which is used in predicate
     ///   - isContinue: Should continue from the previous cursor if exists. If set to false, the cursor will be removed from the cache.
-    ///   - modified: The last sync time which is used to fetch records modified after that
+    ///   - changeTag: The last sync time which is used to fetch records modified after that
     ///   - completion: The completion handler.
-    func queryRecords(zoneID: CKRecordZone.ID, type: RecordType, parentId: String, predicate: NSPredicate? = nil, isContinue: Bool? = true, modified: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
-        Log.debug("query records: \(zoneID), type: \(type), parentId: \(parentId) modified: \(modified ?? 0)")
-        let modified = modified ?? 0
+    func queryRecords(zoneID: CKRecordZone.ID, type: RecordType, parentId: String, predicate: NSPredicate? = nil, isContinue: Bool? = true, changeTag: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        Log.debug("query records: \(zoneID), type: \(type), parentId: \(parentId) modified: \(changeTag ?? 0)")
+        let changeTag = changeTag ?? 0
         let cursor: CKQueryOperation.Cursor? = self.getQueryCursor(type, zoneID: zoneID)
         let predicate: NSPredicate = {
             if predicate != nil { return predicate! }
             var pred: NSPredicate!
             switch type {
             case .workspace:
-                pred = NSPredicate(format: "modified >= %ld", modified)
+                pred = NSPredicate(format: "changeTag >= %ld", changeTag)
             case .project:
-                pred = NSPredicate(format: "workspace == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+                pred = NSPredicate(format: "workspace == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
             case .request:
-                pred = NSPredicate(format: "project == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+                pred = NSPredicate(format: "project == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
             case .requestBodyData:
-                pred = NSPredicate(format: "request == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+                pred = NSPredicate(format: "request == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
             case .requestData:
-                [NSPredicate(format: "binary == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
-                 NSPredicate(format: "form == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
-                 NSPredicate(format: "header == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
-                 NSPredicate(format: "image == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified),
-                 NSPredicate(format: "multipart == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)].forEach { pred in
+                [NSPredicate(format: "binary == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag),
+                 NSPredicate(format: "form == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag),
+                 NSPredicate(format: "header == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag),
+                 NSPredicate(format: "image == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag),
+                 NSPredicate(format: "multipart == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)].forEach { pred in
                     self.queryRecords(zoneID: zoneID, type: type, parentId: parentId, predicate: pred, isContinue: isContinue, completion: completion)
                 }
-                pred = NSPredicate(format: "param == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+                pred = NSPredicate(format: "param == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
             case .requestMethodData:
-                pred = NSPredicate(format: "project == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+                pred = NSPredicate(format: "project == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
             case .file:
-                pred = NSPredicate(format: "requestData == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+                pred = NSPredicate(format: "requestData == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
             case .image:
-                pred = NSPredicate(format: "requestData == %@ AND modified >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), modified)
+                pred = NSPredicate(format: "requestData == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
             case .zone:
-                pred = NSPredicate(format: "isSyncEnabled == %hdd AND modified >= %ld", true, modified)
+                pred = NSPredicate(format: "isSyncEnabled == %hdd AND changeTag >= %ld", true, changeTag)
             }
             return pred
         }()
@@ -1459,7 +1472,7 @@ class PersistenceService {
     
     func zoneDeferredSaveModel(ws: EWorkspace) -> DeferredSaveModel {
         let wsId = ws.getId()
-        let zone = Zone(id: wsId, name: ws.getName(), desc: ws.desc ?? "", isSyncEnabled: ws.isSyncEnabled, created: ws.created, modified: ws.modified, version: ws.version)
+        let zone = Zone(id: wsId, name: ws.getName(), desc: ws.desc ?? "", isSyncEnabled: ws.isSyncEnabled, created: ws.created, modified: ws.modified, changeTag: ws.changeTag, version: ws.version)
         let recordID = self.ck.recordID(entityId: wsId, zoneID: self.ck.defaultZoneID())
         let ckzn = self.ck.createRecord(recordID: recordID, recordType: RecordType.zone.rawValue)
         zone.updateCKRecord(ckzn)

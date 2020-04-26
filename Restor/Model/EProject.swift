@@ -70,7 +70,8 @@ public class EProject: NSManagedObject, Entity {
         record["modified"] = self.modified as CKRecordValue
         record["changeTag"] = self.changeTag as CKRecordValue
         record["desc"] = (self.desc ?? "") as CKRecordValue
-        record["id"] = self.id! as CKRecordValue
+        record["id"] = self.getId() as CKRecordValue
+        record["wsId"] = self.getWsId() as CKRecordValue
         record["name"] = (self.name ?? "") as CKRecordValue
         record["version"] = self.version as CKRecordValue
         let ref = CKRecord.Reference(record: workspace, action: .none)

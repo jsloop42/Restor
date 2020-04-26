@@ -20,12 +20,14 @@ struct Zone {
     var isSyncEnabled: Bool
     var created: Int64 = Date().currentTimeNanos()
     var modified: Int64 = Date().currentTimeNanos()
+    var changeTag: Int64 = Date().currentTimeNanos()
     var version: Int64 = 0
     
     func updateCKRecord(_ record: CKRecord) {
         record["id"] = self.id as CKRecordValue
         record["created"] = self.created as CKRecordValue
         record["modified"] = self.modified as CKRecordValue
+        record["changeTag"] = self.changeTag as CKRecordValue
         record["name"] = self.name as CKRecordValue
         record["desc"] = self.desc as CKRecordValue
         record["isSyncEnabled"] = self.isSyncEnabled as CKRecordValue
@@ -36,6 +38,7 @@ struct Zone {
         if let x = record["id"] as? String { self.id = x }
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
+        if let x = record["changeTag"] as? Int64 { self.changeTag = x }
         if let x = record["name"] as? String { self.name = x }
         if let x = record["desc"] as? String { self.desc = x }
         if let x = record["isSyncEnabled"] as? Bool { self.isSyncEnabled = x }

@@ -70,7 +70,8 @@ public class ERequest: NSManagedObject, Entity {
         record["modified"] = self.modified as CKRecordValue
         record["changeTag"] = self.changeTag as CKRecordValue
         record["desc"] = (self.desc ?? "") as CKRecordValue
-        record["id"] = self.id! as CKRecordValue
+        record["id"] = self.getId() as CKRecordValue
+        record["wsId"] = self.getWsId() as CKRecordValue
         record["name"] = self.name! as CKRecordValue
         record["selectedMethodIndex"] = self.selectedMethodIndex as CKRecordValue
         record["url"] = (self.url ?? "") as CKRecordValue

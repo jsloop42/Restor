@@ -70,7 +70,8 @@ public class EWorkspace: NSManagedObject, Entity {
         record["modified"] = self.modified as CKRecordValue
         record["changeTag"] = self.changeTag as CKRecordValue
         record["desc"] = (self.desc ?? "") as CKRecordValue
-        record["id"] = self.id! as CKRecordValue
+        record["id"] = self.getId() as CKRecordValue
+        record["wsId"] = self.getWsId() as CKRecordValue
         record["isActive"] = self.isActive as CKRecordValue
         record["isSyncEnabled"] = self.isSyncEnabled as CKRecordValue
         record["name"] = self.name! as CKRecordValue
