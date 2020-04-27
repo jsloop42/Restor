@@ -85,11 +85,12 @@ public class ERequestBodyData: NSManagedObject, Entity {
         reqBodyData["binary"] = ref
     }
     
-    static func getRequest(_ record: CKRecord, ctx: NSManagedObjectContext) -> ERequest? {
-        if let ref = record["request"] as? CKRecord.Reference {
-            return CoreDataService.shared.getRequest(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
-        }
-        return nil
+    static func getRequestBodyDataFromReference(_ ref: CKRecord.Reference, record: CKRecord, ctx: NSManagedObjectContext) -> ERequestBodyData? {
+        let reqBodyDataId = CloudKitService.shared.entityID(recordID: ref.recordID)
+        if let bodyData = CoreDataService.shared.getRequestBodyData(id: reqBodyDataId, ctx: ctx) { return bodyData }
+        let bodyData = CoreDataService.shared.createRequestBodyData(id: reqBodyDataId, wsId: record.getWsId(), checkExists: false, ctx: ctx)
+        bodyData?.changeTag = 0
+        return bodyData
     }
     
     func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
@@ -102,6 +103,6 @@ public class ERequestBodyData: NSManagedObject, Entity {
         if let x = record["selected"] as? Int64 { self.selected = x }
         if let x = record["version"] as? Int64 { self.version = x }
         if let x = record["xml"] as? String { self.xml = x }
-        if let req = ERequestBodyData.getRequest(record, ctx: ctx) { self.request = req }
+        if let ref = record["request"] as? CKRecord.Reference, let req = ERequest.getRequestFromReference(ref, record: record, ctx: ctx) { self.request = req }
     }
 }

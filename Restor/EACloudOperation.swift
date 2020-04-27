@@ -31,11 +31,11 @@ public class EACloudOperation: Operation, NSSecureCoding {
     private var deleteRecordBlock: ((Result<[CKRecord.ID], Error>) -> Void)?
     
     public enum State: String {
-        case ready, executing, finished
+        case ready = "Ready"
+        case executing = "Executing"
+        case finished = "Finished"
 
-        fileprivate var keyPath: String {
-            return "is" + rawValue.capitalized
-        }
+        fileprivate var keyPath: String { return "is" + rawValue }
     }
     
     public enum OpType: String {
@@ -168,7 +168,8 @@ public class EACloudOperation: Operation, NSSecureCoding {
     override public var isFinished: Bool { return state == .finished }
 
     override public func start() {
-        if self.isCancelled { return }
+        super.start()
+        if self.isCancelled { self.state = .finished; return }
         main()
         state = .executing
     }
@@ -176,5 +177,10 @@ public class EACloudOperation: Operation, NSSecureCoding {
     override public func main() {
         if self.isCancelled { return }
         self.block?(self)
+    }
+    
+    public func finish() {
+        Log.debug("op finished")
+        self.state = .finished
     }
 }

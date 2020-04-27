@@ -91,7 +91,6 @@ class EADocumentPicker: NSObject {
         if navVC != nil { self.navVC = navVC }
         guard let aVC = self.navVC else { return }
         let alert = UIAlertController()
-        alert.popoverPresentationController?.sourceView = aVC.view
         let docAction = UIAlertAction(title: "Document", style: .default) { action in
             self.presentDocumentPicker(navVC: navVC, vc: documentPickerDelegate, completion: nil)
         }
@@ -138,7 +137,13 @@ class EADocumentPicker: NSObject {
         alert.addAction(cameraAction)
         alert.addAction(photoAction)
         alert.addAction(cancelAction)
-        aVC.present(alert, animated: true, completion: nil)
+        alert.modalPresentationStyle = .popover
+        if let popoverPresentationController = alert.popoverPresentationController {
+            popoverPresentationController.sourceView = aVC.view
+            popoverPresentationController.sourceRect = aVC.view.bounds
+            popoverPresentationController.permittedArrowDirections = []
+        }
+        DispatchQueue.main.async { aVC.present(alert, animated: true, completion: nil) }
     }
         
     // MARK: - Document Picker

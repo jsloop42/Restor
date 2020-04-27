@@ -1498,17 +1498,18 @@ class CoreDataService {
                     Log.debug("bg context has changes")
                     try self.bgMOC.save()
                     self.bgMOC.processPendingChanges()
-                    Log.debug("bg context saved")
-                    if isForceSave {
-                        self.saveMainContext()
-                        callback?(true)
-                    } else {
-                        Log.debug("scheduling main context save")
-                        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] t in
-                            t.invalidate()
-                            self?.saveMainContext(callback)
-                        }
-                    }
+                    self.saveMainContext(callback)
+//                    Log.debug("bg context saved")
+//                    if isForceSave {
+//                        self.saveMainContext()
+//                        callback?(true)
+//                    } else {
+//                        Log.debug("scheduling main context save")
+//                        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: false) { [weak self] t in
+//                            t.invalidate()
+//                            self?.saveMainContext(callback)
+//                        }
+//                    }
                 } catch {
                     status = false
                     let nserror = error as NSError
@@ -1528,7 +1529,7 @@ class CoreDataService {
             ctx.performAndWait {
                 do {
                     try ctx.save()
-                    if !AppState.isRequestEdit { self.saveBackgroundContext(isForce: true) }
+                    //if !AppState.isRequestEdit { self.saveBackgroundContext(isForce: true) }
                 } catch let error { Log.error("Error saving child context: \(error)") }
             }
         }

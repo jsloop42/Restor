@@ -100,11 +100,13 @@ public class ERequest: NSManagedObject, Entity {
         request["body"] = ref as CKRecordValue
     }
     
-    static func getProject(_ record: CKRecord, ctx: NSManagedObjectContext) -> EProject? {
-        if let ref = record["project"] as? CKRecord.Reference {
-            return CoreDataService.shared.getProject(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
-        }
-        return nil
+    static func getRequestFromReference(_ ref: CKRecord.Reference, record: CKRecord, ctx: NSManagedObjectContext) -> ERequest? {
+        let reqId = CloudKitService.shared.entityID(recordID: ref.recordID)
+        let wsId = record.getWsId()
+        if let req = CoreDataService.shared.getRequest(id: reqId, ctx: ctx) { return req }
+        let req = CoreDataService.shared.createRequest(id: reqId, wsId: wsId, name: "", checkExists: false, ctx: ctx)
+        req?.changeTag = 0
+        return req
     }
     
     func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
@@ -117,6 +119,6 @@ public class ERequest: NSManagedObject, Entity {
         if let x = record["selectedMethodIndex"] as? Int64 { self.selectedMethodIndex = x }
         if let x = record["url"] as? String { self.url = x }
         if let x = record["version"] as? Int64 { self.version = x }
-        if let proj = ERequest.getProject(record, ctx: ctx) { self.project = proj }
+        if let ref = record["project"] as? CKRecord.Reference, let proj = EProject.getProjectFromReference(ref, record: record, ctx: ctx) { self.project = proj }
     }
 }

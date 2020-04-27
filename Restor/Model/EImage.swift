@@ -110,6 +110,8 @@ public class EImage: NSManagedObject, Entity {
         if let x = record["name"] as? String { self.name = x }
         if let x = record["type"] as? String { self.type = x }
         if let x = record["version"] as? Int64 { self.version = x }
-        if let reqData = EImage.getRequestData(record, ctx: ctx) { self.requestData = reqData }
+        if let ref = record["requestData"] as? CKRecord.Reference, let reqData = ERequestData.getRequestDataFromReference(ref, record: record, ctx: ctx) {
+            self.requestData = reqData
+        }
     }
 }

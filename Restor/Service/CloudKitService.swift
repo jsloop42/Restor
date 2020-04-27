@@ -58,11 +58,11 @@ class CloudKitService {
     private let kvstore = NSUbiquitousKeyValueStore.default
     private let store = UserDefaults.standard
     /// Cloudkit user defaults subscriptions key
-    let subscriptionsKey = "ck-subscriptions"
+    private let subscriptionsKey = "ck-subscriptions"
     /// A dictionary of all zones [String: Data]  // [zone-name: zone-info]
-    let zonesKey = "zones-key"
-    let dbChangeTokenKey = "db-change-token"
-    let defaultZoneName = "_defaultZone"
+    private let zonesKey = "zones-key"
+    private let dbChangeTokenKey = "db-change-token"
+    private let defaultZoneName = "_defaultZone"
     private var _defaultZoneID: CKRecordZone.ID!
     /// Number of retry operations currently active. This is used for circuit breaking.
     private var networkRetryOpsCount = 0
@@ -90,6 +90,12 @@ class CloudKitService {
         static let limit = 3
         static let interval = 4.0
     }
+    /// Keeps the current server change token for the zone until the changes have synced locally, after which it's persisted in User Defaults.
+    private var zoneChangeTokens: [CKRecordZone.ID: CKServerChangeToken] = [:]
+    struct NotificationKey {
+        static let zoneChangesDidSave = Notification.Name("zone-changes-did-save")
+        static let zoneIDKey = "zoneID"  // used in notification on save success
+    }
     
     enum PropKey: String {
         case isZoneCreated
@@ -101,7 +107,9 @@ class CloudKitService {
     }
     
     init() {
-        if !isRunningTests { self.loadSubscriptions() }
+        if isRunningTests { return }
+        self.loadSubscriptions()
+        self.nc.addObserver(self, selector: #selector(self.zoneChangesDidSave(_:)), name: NotificationKey.zoneChangesDidSave, object: nil)
     }
 
     // MARK: - KV Store
@@ -123,7 +131,7 @@ class CloudKitService {
     }
     
     @objc func kvStoreDidChange(_ notif: Notification) {
-        Log.debug("kv store did change")
+        Log.debug("CK: kv store did change")
     }
     
     // MARK: - CloudKit setup
@@ -265,17 +273,30 @@ class CloudKitService {
         }
     }
     
-    func addServerChangeTokenToCache(_ token: CKServerChangeToken, zoneID: CKRecordZone.ID) {
-        var zones = self.getCachedZones()
-        let key = zoneID.zoneName
-        if let data = zones[key], let info = ZoneInfo.decode(data) {
-            info.serverChangeToken = token
-            zones[key] = info.encode()
-            self.setCachedZones(zones)
-        } else {
-            let info = ZoneInfo(zoneID: zoneID)
-            info.serverChangeToken = token
-            self.setCachedZones([key: info.encode()])
+    func addServerChangeTokenToCache(_ token: CKServerChangeToken, zoneID: CKRecordZone.ID, persist: Bool? = false) {
+        if persist == nil || persist! {
+            var zones = self.getCachedZones()
+            let key = zoneID.zoneName
+            if let data = zones[key], let info = ZoneInfo.decode(data) {
+                info.serverChangeToken = token
+                zones[key] = info.encode()
+                self.setCachedZones(zones)
+            } else {
+                let info = ZoneInfo(zoneID: zoneID)
+                info.serverChangeToken = token
+                self.setCachedZones([key: info.encode()])
+            }
+        } else {  // keep in mem
+            self.zoneChangeTokens[zoneID] = token
+        }
+    }
+    
+    @objc func zoneChangesDidSave(_ notif: Notification) {
+        Log.debug("CK: zone changes did save notif.")
+        if let info = notif.userInfo, let zoneID = info[NotificationKey.zoneIDKey] as? CKRecordZone.ID, let token = self.zoneChangeTokens[zoneID] {
+            self.addServerChangeTokenToCache(token, zoneID: zoneID, persist: true)
+            self.zoneChangeTokens.removeValue(forKey: zoneID)
+            Log.debug("CK: zone change token persisted: \(zoneID.zoneName) - \(token)")
         }
     }
     
@@ -351,41 +372,41 @@ class CloudKitService {
     }
     
     /// Handles remote iCloud notifications
-    func handleNotification(zoneID: CKRecordZone.ID) {
-        Log.debug("CK: handle notification: \(zoneID)")
-        var changeToken: CKServerChangeToken? = nil
-        if let changeTokenData = self.store.data(forKey: PropKey.serverChangeToken.rawValue) {
-            changeToken = NSKeyedUnarchiver.unarchiveObject(with: changeTokenData) as? CKServerChangeToken
-        }
-        let options = CKFetchRecordZoneChangesOperation.ZoneOptions()
-        options.previousServerChangeToken = changeToken
-        let optionsMap = [zoneID: options]
-        let op = CKFetchRecordZoneChangesOperation(recordZoneIDs: [zoneID], optionsByRecordZoneID: optionsMap)
-        op.fetchAllChanges = true
-        op.qualityOfService = .utility
-        op.recordChangedBlock = { record in
-            Log.debug("record changed: \(record)")
-            PersistenceService.shared.cloudRecordDidChange(record)
-        }
-        op.recordZoneChangeTokensUpdatedBlock = { [unowned self] zoneID, changeToken, data in
-            guard let changeToken = changeToken else { return }
-            Log.debug("record zone change tokens updated")
-            let changeTokenData = NSKeyedArchiver.archivedData(withRootObject: changeToken)
-            self.store.set(changeTokenData, forKey: PropKey.serverChangeToken.rawValue)
-        }
-        op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, data, more, error in
-            guard error == nil else { return }
-            guard let changeToken = changeToken else { return }
-            Log.debug("record zone fetch completion")
-            let changeTokenData = NSKeyedArchiver.archivedData(withRootObject: changeToken)
-            self.store.set(changeTokenData, forKey: PropKey.serverChangeToken.rawValue)
-        }
-        op.fetchRecordZoneChangesCompletionBlock = {error in
-            guard error == nil else { return }
-            Log.debug("fetch record zone changes completion")
-        }
-        self.privateDatabase().add(op)
-    }
+//    func handleNotification(zoneID: CKRecordZone.ID) {
+//        Log.debug("CK: handle notification: \(zoneID)")
+//        var changeToken: CKServerChangeToken? = nil
+//        if let changeTokenData = self.store.data(forKey: PropKey.serverChangeToken.rawValue) {
+//            changeToken = NSKeyedUnarchiver.unarchiveObject(with: changeTokenData) as? CKServerChangeToken
+//        }
+//        let options = CKFetchRecordZoneChangesOperation.ZoneOptions()
+//        options.previousServerChangeToken = changeToken
+//        let optionsMap = [zoneID: options]
+//        let op = CKFetchRecordZoneChangesOperation(recordZoneIDs: [zoneID], optionsByRecordZoneID: optionsMap)
+//        op.fetchAllChanges = true
+//        op.qualityOfService = .utility
+//        op.recordChangedBlock = { record in
+//            Log.debug("CK: record changed: \(record)")
+//            PersistenceService.shared.cloudRecordDidChange(record)
+//        }
+//        op.recordZoneChangeTokensUpdatedBlock = { [unowned self] zoneID, changeToken, data in
+//            guard let changeToken = changeToken else { return }
+//            Log.debug("CK: record zone change tokens updated")
+//            let changeTokenData = NSKeyedArchiver.archivedData(withRootObject: changeToken)
+//            self.store.set(changeTokenData, forKey: PropKey.serverChangeToken.rawValue)
+//        }
+//        op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, data, more, error in
+//            guard error == nil else { return }
+//            guard let changeToken = changeToken else { return }
+//            Log.debug("CK: record zone fetch completion")
+//            let changeTokenData = NSKeyedArchiver.archivedData(withRootObject: changeToken)
+//            self.store.set(changeTokenData, forKey: PropKey.serverChangeToken.rawValue)
+//        }
+//        op.fetchRecordZoneChangesCompletionBlock = {error in
+//            guard error == nil else { return }
+//            Log.debug("CK: fetch record zone changes completion")
+//        }
+//        self.privateDatabase().add(op)
+//    }
     
     /// Fetches all subscriptions from cloud and updates user defaults.
     func loadSubscriptions() {
@@ -395,7 +416,7 @@ class CloudKitService {
                 let subIds: [CKSubscription.ID] = xs.map { $0.subscriptionID }
                 self.addToCachedSubscriptions(subIds)
             case .failure(let err):
-                Log.error("Error fetching subscriptions: \(err)")
+                Log.error("CK: Error fetching subscriptions: \(err)")
                 break
             }
         }
@@ -422,7 +443,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchAllZones.resume()
                         RetryTimer.fetchAllZones.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -445,7 +466,7 @@ class CloudKitService {
                         hme[key] = zinfo.encode()
                     }
                 }
-                Log.debug("fetched zone: \(hm.count)")
+                Log.debug("CK: fetched zone: \(hm.count)")
                 if hm.count > 0 {
                     let new = self.getZonesIDNotInLocal(hm)
                     self.setCachedZones(hme)
@@ -475,7 +496,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchZone.resume()
                         RetryTimer.fetchZone.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -510,7 +531,7 @@ class CloudKitService {
         }
         op.fetchDatabaseChangesCompletionBlock = { [unowned self] token, moreComing, error in
             if let err = error as? CKError {
-                Log.error("Error fetching database changes: \(err)")
+                Log.error("CK: Error fetching database changes: \(err)")
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchDatabaseChanges == nil && self.canRetry() {
                         RetryTimer.fetchDatabaseChanges = EARepeatTimer(block: {
@@ -521,7 +542,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchDatabaseChanges.resume()
                         RetryTimer.fetchDatabaseChanges.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                         }
                     } else {
                         RetryTimer.fetchDatabaseChanges.resume()
@@ -552,7 +573,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchZoneChanges.resume()
                         RetryTimer.fetchZoneChanges.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -568,6 +589,7 @@ class CloudKitService {
             var zoneOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneConfiguration] = [:]
             zoneIDs.forEach { zID in
                 let token: CKServerChangeToken? = self.getCachedServerChangeToken(zID)
+                Log.debug("CK: zone change token for zone: \(zID.zoneName) - \(String(describing: token))")
                 let opt = CKFetchRecordZoneChangesOperation.ZoneConfiguration()
                 opt.previousServerChangeToken = token
                 zoneOptions[zID] = opt
@@ -586,20 +608,20 @@ class CloudKitService {
         op.recordZoneIDs = zoneIDs
         op.qualityOfService = .utility
         op.recordChangedBlock = { record in
-            Log.debug("zone change: record obtained: \(record)")
+            Log.debug("CK: zone change: record obtained: \(record)")
             savedRecords.append(record)
         }
         op.recordWithIDWasDeletedBlock = { recordID, _ in
-            Log.debug("zone change: record ID deleted: \(recordID)")
+            Log.debug("CK: zone change: record ID deleted: \(recordID)")
             deletedRecords.append(recordID)
         }
         op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, _ in
-            Log.debug("zone change token update for: \(zoneID) - \(String(describing: changeToken))")
+            Log.debug("CK: zone change token update for: \(zoneID) - \(String(describing: changeToken))")
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
         }
         op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, _, moreComing, error in
             if let err = error {
-                Log.error("Error fetching changes for zone: \(err)")
+                Log.error("CK: Error fetching changes for zone: \(err)")
                 handleError(err)
                 return;
             }
@@ -608,10 +630,11 @@ class CloudKitService {
         }
         op.fetchRecordZoneChangesCompletionBlock = { [unowned self] error in
             if let err = error {
-                Log.error("Error fetching zone changes: \(err)");
+                Log.error("CK: Error fetching zone changes: \(err)");
                 handleError(err)
                 return;
             }
+            Log.debug("CK: Fetch zone changes complete - saved: \(savedRecords.count), deleted: \(deletedRecords.count)")
             completion(.success((savedRecords, deletedRecords)))
             if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, completion: completion) }
         }
@@ -635,7 +658,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchRecords.resume()
                         RetryTimer.fetchRecords.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -665,7 +688,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchSubscriptions.resume()
                         RetryTimer.fetchSubscriptions.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -706,7 +729,7 @@ class CloudKitService {
                                 }
                             }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                             RetryTimer.queryRecords.done = {
-                                Log.error("Error reaching CloudKit server")
+                                Log.error("CK: Error reaching CloudKit server")
                                 completion(.failure(err)); return
                             }
                             RetryTimer.queryRecords.resume()
@@ -733,7 +756,7 @@ class CloudKitService {
         let op = CKModifyRecordZonesOperation(recordZonesToSave: [z], recordZoneIDsToDelete: [])
         op.modifyRecordZonesCompletionBlock = { [unowned self] zones, _, error in
             if let err = error as? CKError {
-                Log.error("Error saving zone: \(err)")
+                Log.error("CK: Error saving zone: \(err)")
                 if err.isNetworkFailure() {
                     if RetryTimer.createZone == nil && self.canRetry() {
                         RetryTimer.createZone = EARepeatTimer(block: {
@@ -744,7 +767,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.createZone.resume()
                         RetryTimer.createZone.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -755,11 +778,11 @@ class CloudKitService {
                 }
             }
             if let x = zones?.first {
-                Log.debug("Zone created successfully: \(x.zoneID.zoneName)")
+                Log.debug("CK: Zone created successfully: \(x.zoneID.zoneName)")
                 self.addToCachedZones(x)
                 completion(.success(recordZoneId))
             } else {
-                Log.error("Error creating zone. Zone is empty.")
+                Log.error("CK: Error creating zone. Zone is empty.")
                 completion(.failure(AppError.create))
             }
         }
@@ -800,7 +823,7 @@ class CloudKitService {
                             }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                             RetryTimer.createZoneIfNotExist.resume()
                             RetryTimer.createZoneIfNotExist.done = {
-                                Log.error("Error reaching CloudKit server")
+                                Log.error("CK: Error reaching CloudKit server")
                                 completion(.failure(err)); return
                             }
                         } else {
@@ -842,7 +865,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.saveRecords.resume()
                         RetryTimer.saveRecords.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -873,7 +896,7 @@ class CloudKitService {
                         }
                     }
                 } else if ckerror.isRecordExists() {
-                    Log.error("Error saving record. Record already exists.")
+                    Log.error("CK: Error saving record. Record already exists.")
                     if count! >= 2 { completion(.failure(ckerror)); return }  // Tried three time.
                     // Merge in the changes, save the new record
                     let (local, server) = ckerror.getMergeRecords()
@@ -889,7 +912,7 @@ class CloudKitService {
                 }
                 return
             }
-            Log.debug("Records saved successfully: \(records.map { r -> String in r.recordID.recordName })")
+            Log.debug("CK: Records saved successfully: \(records.map { r -> String in r.recordID.recordName })")
             completion(.success(saved))
         }
         self.privateDatabase().add(op)
@@ -930,7 +953,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchAllZones.resume()
                         RetryTimer.fetchAllZones.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                         }
                     } else {
                         RetryTimer.fetchAllZones.resume()
@@ -939,7 +962,7 @@ class CloudKitService {
                 return
             }
             self.addToCachedSubscriptions(subId)
-            Log.debug("Subscribed to events successfully: \(recordType) with ID: \(subscription.subscriptionID.description)")
+            Log.debug("CK: Subscribed to events successfully: \(recordType) with ID: \(subscription.subscriptionID.description)")
         }
         op.qualityOfService = .utility
         self.privateDatabase().add(op)
@@ -965,7 +988,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.subscribeToDBChanges.resume()
                         RetryTimer.subscribeToDBChanges.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                         }
                     } else {
                         RetryTimer.subscribeToDBChanges.resume()
@@ -975,7 +998,7 @@ class CloudKitService {
                 return
             }
             self.addToCachedSubscriptions(subId)
-            Log.debug("Subscribed to database change event: \(subId)")
+            Log.debug("CK: Subscribed to database change event: \(subId)")
         }
         op.qualityOfService = .utility
         self.privateDatabase().add(op)
@@ -1000,7 +1023,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.deleteZone.resume()
                         RetryTimer.deleteZone.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -1011,7 +1034,7 @@ class CloudKitService {
                     completion(.failure(err)); return
                 }
             }
-            Log.debug("Zone deleted successfully: \(recordZoneIds.map { r -> String in r.zoneName })")
+            Log.debug("CK: Zone deleted successfully: \(recordZoneIds.map { r -> String in r.zoneName })")
             self.removeFromCachesZones(recordZoneIds)
             completion(.success(true))
         }
@@ -1026,7 +1049,7 @@ class CloudKitService {
         op.qualityOfService = .utility
         op.modifyRecordsCompletionBlock = { _, deleted, error in
             if let err = error as? CKError {
-                Log.error("Error deleteing records: \(err)")
+                Log.error("CK: Error deleteing records: \(err)")
                 if err.isNetworkFailure() {
                     if RetryTimer.deleteRecords == nil && self.canRetry() {
                         RetryTimer.deleteRecords = EARepeatTimer(block: {
@@ -1037,7 +1060,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.deleteRecords.resume()
                         RetryTimer.deleteRecords.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -1048,7 +1071,7 @@ class CloudKitService {
                     completion(.failure(err)); return
                 }
             }
-            Log.debug("Records deleted successfully: \(recordIDs.map { r -> String in r.recordName })")
+            Log.debug("CK: Records deleted successfully: \(recordIDs.map { r -> String in r.recordName })")
             completion(.success(deleted ?? []))
         }
         self.privateDatabase().add(op)
@@ -1061,7 +1084,7 @@ class CloudKitService {
         op.qualityOfService = .utility
         op.modifySubscriptionsCompletionBlock = { _, ids, error in
             if let err = error as? CKError {
-                Log.error("Error deleting subscriptions: \(err)")
+                Log.error("CK: Error deleting subscriptions: \(err)")
                 if err.isNetworkFailure() {
                     if RetryTimer.deleteSubscriptions == nil && self.canRetry() {
                         RetryTimer.deleteSubscriptions = EARepeatTimer(block: {
@@ -1072,7 +1095,7 @@ class CloudKitService {
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.deleteSubscriptions.resume()
                         RetryTimer.deleteSubscriptions.done = {
-                            Log.error("Error reaching CloudKit server")
+                            Log.error("CK: Error reaching CloudKit server")
                             completion(.failure(err)); return
                         }
                     } else {
@@ -1084,7 +1107,7 @@ class CloudKitService {
                 }
             }
             guard let xs = ids else { completion(.failure(AppError.delete)); return }
-            Log.debug("Subscriptions deleted successfully: \(xs)")
+            Log.debug("CK: Subscriptions deleted successfully: \(xs)")
             completion(.success(xs))
         }
         self.privateDatabase().add(op)
@@ -1102,7 +1125,7 @@ class CloudKitService {
                         let diff = EAUtils.shared.subtract(lxs: xs, rxs: ids)  // not deleted subscriptions
                         UserDefaults.standard.set(diff, forKey: self.subscriptionsKey)
                     case .failure(let error):
-                        Log.error("Error deleting subscriptions: \(error)")
+                        Log.error("CK: Error deleting subscriptions: \(error)")
                         if let err = error as? CKError {
                             if err.isNetworkFailure() {
                                 if RetryTimer.deleteAllSubscriptions == nil && self.canRetry() {
@@ -1114,7 +1137,7 @@ class CloudKitService {
                                     }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                                     RetryTimer.deleteAllSubscriptions.resume()
                                     RetryTimer.deleteAllSubscriptions.done = {
-                                        Log.error("Error reaching CloudKit server")
+                                        Log.error("CK: Error reaching CloudKit server")
                                     }
                                 } else {
                                     RetryTimer.deleteAllSubscriptions.resume()
@@ -1125,7 +1148,7 @@ class CloudKitService {
                     }
                 }
             case .failure(let err):
-                Log.error("Error fetching subscriptions: \(err)")
+                Log.error("CK: Error fetching subscriptions: \(err)")
                 break
             }
         }

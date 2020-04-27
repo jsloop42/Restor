@@ -117,30 +117,39 @@ public class ERequestData: NSManagedObject, Entity {
         return type
     }
     
+    static func getRequestDataFromReference(_ ref: CKRecord.Reference, record: CKRecord, ctx: NSManagedObjectContext) -> ERequestData? {
+        let reqDataId = CloudKitService.shared.entityID(recordID: ref.recordID)
+        let wsId = record.getWsId()
+        if let reqData = CoreDataService.shared.getRequestData(id: reqDataId, ctx: ctx) { return reqData }
+        let reqData = CoreDataService.shared.createRequestData(id: reqDataId, wsId: wsId, type: .form, fieldFormat: .file, checkExists: false, ctx: ctx)
+        reqData?.changeTag = 0
+        return reqData
+    }
+    
     /// Adds back reference to CoreData entity.
     static func addBackReference(record: CKRecord, reqData: ERequestData, ctx: NSManagedObjectContext) {
         if let ref = record["header"] as? CKRecord.Reference {
-            reqData.header = CoreDataService.shared.getRequest(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            reqData.header = ERequest.getRequestFromReference(ref, record: record, ctx: ctx)
             reqData.type = RequestDataType.header.rawValue.toInt64()
             return
         }
         if let ref = record["param"] as? CKRecord.Reference {
-            reqData.param = CoreDataService.shared.getRequest(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            reqData.param = ERequest.getRequestFromReference(ref, record: record, ctx: ctx)
             reqData.type = RequestDataType.param.rawValue.toInt64()
             return
         }
         if let ref = record["form"] as? CKRecord.Reference {
-            reqData.form = CoreDataService.shared.getRequestBodyData(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            reqData.form = ERequestBodyData.getRequestBodyDataFromReference(ref, record: record, ctx: ctx)
             reqData.type = RequestDataType.form.rawValue.toInt64()
             return
         }
         if let ref = record["multipart"] as? CKRecord.Reference {
-            reqData.multipart = CoreDataService.shared.getRequestBodyData(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            reqData.multipart = ERequestBodyData.getRequestBodyDataFromReference(ref, record: record, ctx: ctx)
             reqData.type = RequestDataType.multipart.rawValue.toInt64()
             return
         }
         if let ref = record["binary"] as? CKRecord.Reference {
-            reqData.binary = CoreDataService.shared.getRequestBodyData(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            reqData.binary = ERequestBodyData.getRequestBodyDataFromReference(ref, record: record, ctx: ctx)
             reqData.type = RequestDataType.binary.rawValue.toInt64()
             return
         }

@@ -14,11 +14,14 @@
         <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="wsId" attributeType="String" defaultValueString=""/>
         <relationship name="requestData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestData" inverseName="files" inverseEntity="ERequestData"/>
-        <fetchIndex name="byIdAsc">
+        <fetchIndex name="byId">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
         </fetchIndex>
-        <fetchIndex name="byTypeAsc">
+        <fetchIndex name="byType">
             <fetchIndexElement property="type" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byMarkForDelete">
+            <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -40,11 +43,14 @@
         <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="wsId" attributeType="String" defaultValueString=""/>
         <relationship name="requestData" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestData" inverseName="image" inverseEntity="ERequestData"/>
-        <fetchIndex name="byIdAsc">
+        <fetchIndex name="byId">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
         </fetchIndex>
-        <fetchIndex name="byTypeAsc">
+        <fetchIndex name="byType">
             <fetchIndexElement property="type" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byMarkForDelete">
+            <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -66,11 +72,17 @@
         <relationship name="requestMethods" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequestMethodData" inverseName="project" inverseEntity="ERequestMethodData"/>
         <relationship name="requests" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequest" inverseName="project" inverseEntity="ERequest"/>
         <relationship name="workspace" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="EWorkspace" inverseName="projects" inverseEntity="EWorkspace"/>
-        <fetchIndex name="byCreatedAsc">
+        <fetchIndex name="byCreated">
             <fetchIndexElement property="created" type="Binary" order="ascending"/>
         </fetchIndex>
-        <fetchIndex name="byIdAsc">
+        <fetchIndex name="byId">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byIsSynced">
+            <fetchIndexElement property="isSynced" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byMarkForDelete">
+            <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -97,11 +109,14 @@
         <relationship name="params" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequestData" inverseName="param" inverseEntity="ERequestData"/>
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="EProject" inverseName="requests" inverseEntity="EProject"/>
         <relationship name="tags" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ETag" inverseName="request" inverseEntity="ETag"/>
-        <fetchIndex name="byCreatedAsc">
+        <fetchIndex name="byCreated">
             <fetchIndexElement property="created" type="Binary" order="ascending"/>
         </fetchIndex>
-        <fetchIndex name="bySelectedMethodIndexAsc">
+        <fetchIndex name="bySelectedMethodIndex">
             <fetchIndexElement property="selectedMethodIndex" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byMarkForDelete">
+            <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -126,8 +141,11 @@
         <relationship name="form" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequestData" inverseName="form" inverseEntity="ERequestData"/>
         <relationship name="multipart" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="ERequestData" inverseName="multipart" inverseEntity="ERequestData"/>
         <relationship name="request" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequest" inverseName="body" inverseEntity="ERequest"/>
-        <fetchIndex name="byCreatedAsc">
+        <fetchIndex name="byCreated">
             <fetchIndexElement property="created" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byMarkForDelete">
+            <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -156,11 +174,14 @@
         <relationship name="image" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="EImage" inverseName="requestData" inverseEntity="EImage"/>
         <relationship name="multipart" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequestBodyData" inverseName="multipart" inverseEntity="ERequestBodyData"/>
         <relationship name="param" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequest" inverseName="params" inverseEntity="ERequest"/>
-        <fetchIndex name="byCreatedAsc">
+        <fetchIndex name="byCreated">
             <fetchIndexElement property="created" type="Binary" order="ascending"/>
         </fetchIndex>
-        <fetchIndex name="byTypeAsc">
+        <fetchIndex name="byType">
             <fetchIndexElement property="type" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byMarkForDelete">
+            <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -182,11 +203,14 @@
         <attribute name="wsId" attributeType="String" defaultValueString=""/>
         <relationship name="project" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="EProject" inverseName="requestMethods" inverseEntity="EProject"/>
         <relationship name="request" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="ERequest" inverseName="method" inverseEntity="ERequest"/>
-        <fetchIndex name="byCreatedAsc">
+        <fetchIndex name="byCreated">
             <fetchIndexElement property="created" type="Binary" order="ascending"/>
         </fetchIndex>
-        <fetchIndex name="byIdAsc">
+        <fetchIndex name="byId">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byMarkForDelete">
+            <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -205,11 +229,14 @@
         <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="wsId" attributeType="String" defaultValueString=""/>
         <relationship name="request" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="ERequest" inverseName="tags" inverseEntity="ERequest"/>
-        <fetchIndex name="byCreatedAsc">
+        <fetchIndex name="byCreated">
             <fetchIndexElement property="created" type="Binary" order="ascending"/>
         </fetchIndex>
-        <fetchIndex name="byIdAsc">
+        <fetchIndex name="byId">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byMarkForDelete">
+            <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -231,11 +258,23 @@
         <attribute name="syncDisabled" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="version" attributeType="Integer 64" defaultValueString="0.0" usesScalarValueType="YES"/>
         <relationship name="projects" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="EProject" inverseName="workspace" inverseEntity="EProject"/>
-        <fetchIndex name="byCreatedAsc">
+        <fetchIndex name="byCreated">
             <fetchIndexElement property="created" type="Binary" order="ascending"/>
         </fetchIndex>
-        <fetchIndex name="byIdAsc">
+        <fetchIndex name="byId">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byMarkForDelete">
+            <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byIsSyncEnabled">
+            <fetchIndexElement property="isSyncEnabled" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byIsActive">
+            <fetchIndexElement property="isActive" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byIsSynced">
+            <fetchIndexElement property="isSynced" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>

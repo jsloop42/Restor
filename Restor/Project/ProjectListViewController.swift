@@ -213,14 +213,10 @@ extension ProjectListViewController: NSFetchedResultsControllerDelegate {
         if AppState.currentScreen != .projectList { return }
         DispatchQueue.main.async {
             if self.navigationController?.topViewController == self {
+                self.tableView.reloadData()
                 switch type {
-                case .delete:
-                    self.tableView.deleteRows(at: [indexPath!], with: .automatic)
                 case .insert:
-                    self.tableView.reloadData()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { self.tableView.scrollToBottom(section: 0) }
-                case .update:
-                    self.tableView.reloadRows(at: [indexPath!], with: .none)
                 default:
                     break
                 }

@@ -79,13 +79,6 @@ public class ERequestMethodData: NSManagedObject, Entity {
         record["project"] = ref as CKRecordValue
     }
     
-    static func getProject(_ record: CKRecord, ctx: NSManagedObjectContext) -> EProject? {
-        if let ref = record["project"] as? CKRecord.Reference {
-            return CoreDataService.shared.getProject(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
-        }
-        return nil
-    }
-    
     func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
         if let x = record["created"] as? Int64 { self.created = x }
         if let x = record["modified"] as? Int64 { self.modified = x }
@@ -95,6 +88,6 @@ public class ERequestMethodData: NSManagedObject, Entity {
         if let x = record["name"] as? String { self.name = x }
         if let x = record["shouldDelete"] as? Bool { self.shouldDelete = x }
         if let x = record["version"] as? Int64 { self.version = x }
-        if let proj = ERequestMethodData.getProject(record, ctx: ctx) { self.project = proj }
+        if let ref = record["project"] as? CKRecord.Reference, let proj = EProject.getProjectFromReference(ref, record: record, ctx: ctx) { self.project = proj }
     }
 }
