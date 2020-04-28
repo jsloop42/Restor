@@ -1529,7 +1529,7 @@ class CoreDataService {
             ctx.performAndWait {
                 do {
                     try ctx.save()
-                    //if !AppState.isRequestEdit { self.saveBackgroundContext(isForce: true) }
+                    self.saveBackgroundContext(isForce: true)
                 } catch let error { Log.error("Error saving child context: \(error)") }
             }
         }

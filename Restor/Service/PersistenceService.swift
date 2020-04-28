@@ -106,6 +106,7 @@ class PersistenceService {
     private var isSyncToCloudTriggered = false  // On app launch, is syncing to cloud initialised
     private var syncToCloudTimer: DispatchSourceTimer!
     private var syncToCloudCtx: NSManagedObjectContext!
+    private var syncFromCloudCtx: NSManagedObjectContext!
     private var wsSyncFrc: NSFetchedResultsController<EWorkspace>!
     private var projSyncFrc: NSFetchedResultsController<EProject>!
     private var reqSyncFrc: NSFetchedResultsController<ERequest>!
@@ -397,6 +398,7 @@ class PersistenceService {
         self.syncToCloudTimer.schedule(deadline: .now() + 4.5, repeating: 4.5)  // seconds
         if self.syncToCloudCtx != nil {
             if self.syncToCloudCtx.hasChanges { self.localdb.saveChildContext(self.syncToCloudCtx) }
+        } else {
             self.syncToCloudCtx = self.localdb.getChildMOC()
         }
         self.syncToCloudTimer.resume()
@@ -578,6 +580,7 @@ class PersistenceService {
     
     func syncFromCloud() {
         Log.debug("sync from cloud")
+        if self.syncFromCloudCtx == nil { self.syncFromCloudCtx = self.localdb.getChildMOC() }
         self.queryDefaultZoneRecords(completion: self.syncFromCloudHandler(_:))
     }
     
@@ -631,6 +634,7 @@ class PersistenceService {
             self?.incSyncFromCloudOp()
             self?.queryRecords(zoneID: zoneID, type: recordType, parentId: parentId ?? "", changeTag: changeTag) { result in
                 op?.finish()
+                if let ctx = self?.syncFromCloudCtx { self?.localdb.saveChildContext(ctx) }
                 self?.decSyncFromCloudOp()
                 self?.syncFromCloudHandler(result)
             }
@@ -822,7 +826,7 @@ class PersistenceService {
     
     func updateWorkspaceFromCloud(_ record: CKRecord) {
         let wsId = record.id()
-        let ctx = self.localdb.getChildMOC()
+        let ctx = self.syncFromCloudCtx!
         var aws = self.localdb.getWorkspace(id: wsId, ctx: ctx)
         var isNew = false
         if aws == nil {
@@ -842,7 +846,7 @@ class PersistenceService {
     
     func updateProjectFromCloud(_ record: CKRecord) {
         let projId = record.id()
-        let ctx = self.localdb.getChildMOC()
+        let ctx = self.syncFromCloudCtx!
         var aproj = self.localdb.getProject(id: projId, ctx: ctx)
         var isNew = false
         if aproj == nil {
@@ -860,7 +864,7 @@ class PersistenceService {
     }
     
     func updateRequestFromCloud(_ record: CKRecord) {
-        let ctx = self.localdb.getChildMOC()
+        let ctx = self.syncFromCloudCtx!
         guard let ref = record["project"] as? CKRecord.Reference, let proj = EProject.getProjectFromReference(ref, record: record, ctx: ctx) else { return }
         let reqId = record.id()
         var areq = self.localdb.getRequest(id: reqId, ctx: ctx)
@@ -880,7 +884,7 @@ class PersistenceService {
     }
         
     func updateRequestBodyDataFromCloud(_ record: CKRecord) {
-        let ctx = self.localdb.getChildMOC()
+        let ctx = self.syncFromCloudCtx!
         let reqId = record.id()
         var aReqBodyData = self.localdb.getRequestBodyData(id: reqId, ctx: ctx)
         var isNew = false
@@ -899,7 +903,7 @@ class PersistenceService {
     }
     
     func updateRequestDataFromCloud(_ record: CKRecord) {
-        let ctx = self.localdb.getChildMOC()
+        let ctx = self.syncFromCloudCtx!
         guard let type = ERequestData.getRecordType(record) else { return }
         let fieldType = ERequestData.getFormFieldFormatType(record)
         let reqId = record.id()
@@ -920,7 +924,7 @@ class PersistenceService {
     }
     
     func updateRequestMethodDataFromCloud(_ record: CKRecord) {
-        let ctx = self.localdb.getChildMOC()
+        let ctx = self.syncFromCloudCtx!
         let reqMethodDataId = record.id()
         var aReqMethodData = self.localdb.getRequestMethodData(id: reqMethodDataId, ctx: ctx)
         var isNew = false
@@ -939,7 +943,7 @@ class PersistenceService {
     }
     
     func updateFileDataFromCloud(_ record: CKRecord) {
-        let ctx = self.localdb.getChildMOC()
+        let ctx = self.syncFromCloudCtx!
         let fileId = record.id()
         var aFileData = self.localdb.getFileData(id: fileId, ctx: ctx)
         var isNew = false
@@ -958,7 +962,7 @@ class PersistenceService {
     }
     
     func updateImageDataFromCloud(_ record: CKRecord) {
-        let ctx = self.localdb.getChildMOC()
+        let ctx = self.syncFromCloudCtx!
         let fileId = record.id()
         var aImageData = self.localdb.getImageData(id: fileId, ctx: ctx)
         var isNew = false
