@@ -40,6 +40,7 @@ class App {
     /// List of managed objects modified so that in case of discard, these entities can be reset.
     var editReqManIds: Set<NSManagedObjectID> = Set()
     var editReqDelete: Set<NSManagedObject> = Set()
+    private let editReqLock = NSLock()
     
     enum Screen {
         case workspaceList
@@ -205,7 +206,8 @@ class App {
             }
         }
         let ws = self.localdb.getDefaultWorkspace()
-        self.saveSelectedWorkspaceId(ws.id!)
+        Log.debug("ws: \(ws)")
+        self.saveSelectedWorkspaceId(ws.getId())
         return ws
     }
     
@@ -231,11 +233,13 @@ class App {
     
     func addEditRequestDeleteObject(_ obj: NSManagedObject?) {
         if let x = obj {
-            if x.objectID.isTemporaryID {
-                CoreDataService.shared.deleteEntity(obj)
-                return
+            x.managedObjectContext?.perform {
+                if x.objectID.isTemporaryID {
+                    CoreDataService.shared.deleteEntity(x)
+                    return
+                }
+                self.editReqDelete.insert(x)
             }
-            self.editReqDelete.insert(x)
         }
     }
     
@@ -338,8 +342,10 @@ class App {
     /// MARK: - Entity change tracking
     
     func addEditRequestManagedObjectId(_ id: NSManagedObjectID?) {
-        DispatchQueue.main.sync {
-            if id != nil { self.editReqManIds.insert(id!) }
+        if id != nil {
+            self.editReqLock.lock()
+            self.editReqManIds.insert(id!)
+            self.editReqLock.unlock()
         }
     }
     
@@ -362,7 +368,9 @@ class App {
         // We need to check the whole object for change because, if a element changes, we set true, if another element did not change, we cannot
         // set false. So we would then have to keep track of which element changed the status and such.
         self.diffRescheduler.schedule(fn: EAReschedulerFn(id: self.fnIdReq, block: { () -> Bool in
-            return self.didRequestChangeImp(x, request: request)
+            var status = true
+            x.managedObjectContext?.performAndWait { status = self.didRequestChangeImp(x, request: request) }
+            return status
         }, callback: { status in
             callback(status)
         }, args: [x]))

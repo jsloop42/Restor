@@ -299,7 +299,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
                 self.localdb.saveBackgroundContext()
                 self.isDirty = false
                 self.db.saveRequestToCloud(data)
-                self.db.deleteDataMarkedForDelete(self.app.editReqDelete, request: data)
+                self.db.deleteDataMarkedForDelete(self.app.editReqDelete)
                 self.close()
                 timer.cancel()
             }

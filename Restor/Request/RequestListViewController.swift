@@ -45,7 +45,7 @@ class RequestListViewController: UIViewController {
     func initData() {
         if self.frc == nil, let projId = AppState.currentProject?.id {
             let predicate = NSPredicate(format: "project.id == %@", projId)
-            if let _frc = self.localdb.getFetchResultsController(obj: ERequest.self, predicate: predicate) as? NSFetchedResultsController<ERequest> {
+            if let _frc = self.localdb.getFetchResultsController(obj: ERequest.self, predicate: predicate, ctx: self.localdb.mainMOC) as? NSFetchedResultsController<ERequest> {
                 self.frc = _frc
                 self.frc.delegate = self
             }
@@ -76,8 +76,8 @@ class RequestListViewController: UIViewController {
         } else {
             if AppState.editRequest == nil {
                 let name = self.app.getNewRequestName()
-                if let proj = AppState.currentProject, let wsId = proj.workspace?.getId(), let ctx = AppState.currentProject?.managedObjectContext,
-                    let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: ctx) {
+                if let proj = AppState.currentProject, let wsId = proj.workspace?.getId(),
+                    let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: self.localdb.mainMOC) {
                     AppState.editRequest = req
                     AppState.currentProject?.addToRequests(req)
                 } else {

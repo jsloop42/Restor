@@ -66,28 +66,34 @@ public class ERequestMethodData: NSManagedObject, Entity {
     }
     
     func updateCKRecord(_ record: CKRecord, project: CKRecord) {
-        record["created"] = self.created as CKRecordValue
-        record["modified"] = self.modified as CKRecordValue
-        record["changeTag"] = self.changeTag as CKRecordValue
-        record["id"] = self.getId() as CKRecordValue
-        record["wsId"] = self.getWsId() as CKRecordValue
-        record["isCustom"] = self.isCustom as CKRecordValue
-        record["name"] = (self.name ?? "") as CKRecordValue
-        record["shouldDelete"] = self.shouldDelete as CKRecordValue
-        record["version"] = self.version as CKRecordValue
-        let ref = CKRecord.Reference(record: project, action: .none)
-        record["project"] = ref as CKRecordValue
+        self.managedObjectContext?.performAndWait {
+            record["created"] = self.created as CKRecordValue
+            record["modified"] = self.modified as CKRecordValue
+            record["changeTag"] = self.changeTag as CKRecordValue
+            record["id"] = self.getId() as CKRecordValue
+            record["wsId"] = self.getWsId() as CKRecordValue
+            record["isCustom"] = self.isCustom as CKRecordValue
+            record["name"] = (self.name ?? "") as CKRecordValue
+            record["shouldDelete"] = self.shouldDelete as CKRecordValue
+            record["version"] = self.version as CKRecordValue
+            let ref = CKRecord.Reference(record: project, action: .none)
+            record["project"] = ref as CKRecordValue
+        }
     }
     
     func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
-        if let x = record["created"] as? Int64 { self.created = x }
-        if let x = record["modified"] as? Int64 { self.modified = x }
-        if let x = record["changeTag"] as? Int64 { self.changeTag = x }
-        if let x = record["id"] as? String { self.id = x }
-        if let x = record["isCustom"] as? Bool { self.isCustom = x }
-        if let x = record["name"] as? String { self.name = x }
-        if let x = record["shouldDelete"] as? Bool { self.shouldDelete = x }
-        if let x = record["version"] as? Int64 { self.version = x }
-        if let ref = record["project"] as? CKRecord.Reference, let proj = EProject.getProjectFromReference(ref, record: record, ctx: ctx) { self.project = proj }
+        if let moc = self.managedObjectContext {
+            moc.performAndWait {
+                if let x = record["created"] as? Int64 { self.created = x }
+                if let x = record["modified"] as? Int64 { self.modified = x }
+                if let x = record["changeTag"] as? Int64 { self.changeTag = x }
+                if let x = record["id"] as? String { self.id = x }
+                if let x = record["isCustom"] as? Bool { self.isCustom = x }
+                if let x = record["name"] as? String { self.name = x }
+                if let x = record["shouldDelete"] as? Bool { self.shouldDelete = x }
+                if let x = record["version"] as? Int64 { self.version = x }
+                if let ref = record["project"] as? CKRecord.Reference, let proj = EProject.getProjectFromReference(ref, record: record, ctx: moc) { self.project = proj }
+            }
+        }
     }
 }

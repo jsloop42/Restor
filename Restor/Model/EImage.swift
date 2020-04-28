@@ -66,24 +66,26 @@ public class EImage: NSManagedObject, Entity {
     }
     
     func updateCKRecord(_ record: CKRecord) {
-        record["created"] = self.created as CKRecordValue
-        record["modified"] = self.modified as CKRecordValue
-        record["changeTag"] = self.changeTag as CKRecordValue
-        if let name = self.name, let data = self.data {
-            let url = EAFileManager.getTemporaryURL(name)
-            do {
-                try data.write(to: url)
-                record["data"] = CKAsset(fileURL: url)
-            } catch let error {
-                Log.error("Error: \(error)")
+        self.managedObjectContext?.performAndWait {
+            record["created"] = self.created as CKRecordValue
+            record["modified"] = self.modified as CKRecordValue
+            record["changeTag"] = self.changeTag as CKRecordValue
+            if let name = self.name, let data = self.data {
+                let url = EAFileManager.getTemporaryURL(name)
+                do {
+                    try data.write(to: url)
+                    record["data"] = CKAsset(fileURL: url)
+                } catch let error {
+                    Log.error("Error: \(error)")
+                }
             }
+            record["id"] = self.getId() as CKRecordValue
+            record["wsId"] = self.getWsId() as CKRecordValue
+            record["isCameraMode"] = self.isCameraMode as CKRecordValue
+            record["name"] = (self.name ?? "") as CKRecordValue
+            record["type"] = (self.type ?? "") as CKRecordValue
+            record["version"] = self.version as CKRecordValue
         }
-        record["id"] = self.getId() as CKRecordValue
-        record["wsId"] = self.getWsId() as CKRecordValue
-        record["isCameraMode"] = self.isCameraMode as CKRecordValue
-        record["name"] = (self.name ?? "") as CKRecordValue
-        record["type"] = (self.type ?? "") as CKRecordValue
-        record["version"] = self.version as CKRecordValue
     }
     
     static func addRequestDataReference(_ reqData: CKRecord, image: CKRecord) {
@@ -99,19 +101,23 @@ public class EImage: NSManagedObject, Entity {
     }
     
     func updateFromCKRecord(_ record: CKRecord, ctx: NSManagedObjectContext) {
-        if let x = record["created"] as? Int64 { self.created = x }
-        if let x = record["modified"] as? Int64 { self.modified = x }
-        if let x = record["changeTag"] as? Int64 { self.changeTag = x }
-        if let x = record["data"] as? CKAsset, let url = x.fileURL {
-            do { self.data = try Data(contentsOf: url) } catch let error { Log.error("Error getting data from file url: \(error)") }
-        }
-        if let x = record["id"] as? String { self.id = x }
-        if let x = record["isCameraMode"] as? Bool { self.isCameraMode = x }
-        if let x = record["name"] as? String { self.name = x }
-        if let x = record["type"] as? String { self.type = x }
-        if let x = record["version"] as? Int64 { self.version = x }
-        if let ref = record["requestData"] as? CKRecord.Reference, let reqData = ERequestData.getRequestDataFromReference(ref, record: record, ctx: ctx) {
-            self.requestData = reqData
+        if let moc = self.managedObjectContext {
+            moc.performAndWait {
+                if let x = record["created"] as? Int64 { self.created = x }
+                if let x = record["modified"] as? Int64 { self.modified = x }
+                if let x = record["changeTag"] as? Int64 { self.changeTag = x }
+                if let x = record["data"] as? CKAsset, let url = x.fileURL {
+                    do { self.data = try Data(contentsOf: url) } catch let error { Log.error("Error getting data from file url: \(error)") }
+                }
+                if let x = record["id"] as? String { self.id = x }
+                if let x = record["isCameraMode"] as? Bool { self.isCameraMode = x }
+                if let x = record["name"] as? String { self.name = x }
+                if let x = record["type"] as? String { self.type = x }
+                if let x = record["version"] as? Int64 { self.version = x }
+                if let ref = record["requestData"] as? CKRecord.Reference, let reqData = ERequestData.getRequestDataFromReference(ref, record: record, ctx: moc) {
+                    self.requestData = reqData
+                }
+            }
         }
     }
 }

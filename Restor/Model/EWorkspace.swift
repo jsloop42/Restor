@@ -66,16 +66,18 @@ public class EWorkspace: NSManagedObject, Entity {
     }
     
     func updateCKRecord(_ record: CKRecord) {
-        record["created"] = self.created as CKRecordValue
-        record["modified"] = self.modified as CKRecordValue
-        record["changeTag"] = self.changeTag as CKRecordValue
-        record["desc"] = (self.desc ?? "") as CKRecordValue
-        record["id"] = self.getId() as CKRecordValue
-        record["wsId"] = self.getWsId() as CKRecordValue
-        record["isActive"] = self.isActive as CKRecordValue
-        record["isSyncEnabled"] = self.isSyncEnabled as CKRecordValue
-        record["name"] = self.name! as CKRecordValue
-        record["version"] = self.version as CKRecordValue
+        self.managedObjectContext?.performAndWait {
+            record["created"] = self.created as CKRecordValue
+            record["modified"] = self.modified as CKRecordValue
+            record["changeTag"] = self.changeTag as CKRecordValue
+            record["desc"] = (self.desc ?? "") as CKRecordValue
+            record["id"] = self.getId() as CKRecordValue
+            record["wsId"] = self.getWsId() as CKRecordValue
+            record["isActive"] = self.isActive as CKRecordValue
+            record["isSyncEnabled"] = self.isSyncEnabled as CKRecordValue
+            record["name"] = self.name! as CKRecordValue
+            record["version"] = self.version as CKRecordValue
+        }
     }
     
     static func addProjectReference(to workspace: CKRecord, project: CKRecord) {
@@ -95,14 +97,16 @@ public class EWorkspace: NSManagedObject, Entity {
     }
     
     func updateFromCKRecord(_ record: CKRecord) {
-        if let x = record["created"] as? Int64 { self.created = x }
-        if let x = record["modified"] as? Int64 { self.modified = x }
-        if let x = record["changeTag"] as? Int64 { self.changeTag = x }
-        if let x = record["id"] as? String { self.id = x }
-        if let x = record["isActive"] as? Bool { self.isActive = x }
-        if let x = record["isSyncEnabled"] as? Bool { self.isSyncEnabled = x }
-        if let x = record["name"] as? String { self.name = x }
-        if let x = record["desc"] as? String { self.desc = x }
-        if let x = record["version"] as? Int64 { self.version = x }
+        self.managedObjectContext?.performAndWait {
+            if let x = record["created"] as? Int64 { self.created = x }
+            if let x = record["modified"] as? Int64 { self.modified = x }
+            if let x = record["changeTag"] as? Int64 { self.changeTag = x }
+            if let x = record["id"] as? String { self.id = x }
+            if let x = record["isActive"] as? Bool { self.isActive = x }
+            if let x = record["isSyncEnabled"] as? Bool { self.isSyncEnabled = x }
+            if let x = record["name"] as? String { self.name = x }
+            if let x = record["desc"] as? String { self.desc = x }
+            if let x = record["version"] as? Int64 { self.version = x }
+        }
     }
 }

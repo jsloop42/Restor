@@ -599,6 +599,7 @@ class CloudKitService {
             var zoneOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneOptions] = [:]
             zoneIDs.forEach { zID in
                 let token: CKServerChangeToken? = self.getCachedServerChangeToken(zID)
+                Log.debug("CK: zone change token for zone: \(zID.zoneName) - \(String(describing: token))")
                 let opt = CKFetchRecordZoneChangesOperation.ZoneOptions()
                 opt.previousServerChangeToken = token
                 zoneOptions[zID] = opt

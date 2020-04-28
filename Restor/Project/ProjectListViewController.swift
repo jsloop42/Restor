@@ -76,7 +76,7 @@ class ProjectListViewController: UIViewController {
         self.workspace = self.app.getSelectedWorkspace()
         if self.frc == nil, let wsId = self.workspace.id {
             let predicate = NSPredicate(format: "workspace.id == %@", wsId)
-            if let _frc = self.localdb.getFetchResultsController(obj: EProject.self, predicate: predicate) as? NSFetchedResultsController<EProject> {
+            if let _frc = self.localdb.getFetchResultsController(obj: EProject.self, predicate: predicate, ctx: self.localdb.mainMOC) as? NSFetchedResultsController<EProject> {
                 self.frc = _frc
                 self.frc.delegate = self
             }
@@ -102,7 +102,7 @@ class ProjectListViewController: UIViewController {
         if self.workspace == ws { return }
         self.workspace = ws
         if let wsId = ws.id {
-            if let _frc = self.localdb.updateFetchResultsController(self.frc as! NSFetchedResultsController<NSFetchRequestResult>, predicate: NSPredicate(format: "workspace.id == %@", wsId)) as? NSFetchedResultsController<EProject> {
+            if let _frc = self.localdb.updateFetchResultsController(self.frc as! NSFetchedResultsController<NSFetchRequestResult>, predicate: NSPredicate(format: "workspace.id == %@", wsId), ctx: self.localdb.mainMOC) as? NSFetchedResultsController<EProject> {
                 self.frc = _frc
                 self.frc.delegate = self
                 self.reloadData()
@@ -119,8 +119,10 @@ class ProjectListViewController: UIViewController {
     }
     
     @objc func workspaceDidSync(_ notif: Notification) {
-        self.workspace = self.app.getSelectedWorkspace()
-        self.updateWorkspaceTitle(self.workspace.name ?? "")
+        DispatchQueue.main.async {
+            self.workspace = self.app.getSelectedWorkspace()
+            self.updateWorkspaceTitle(self.workspace.name ?? "")
+        }
     }
     
     @objc func settingsButtonDidTap(_ sender: Any) {
