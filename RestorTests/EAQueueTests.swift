@@ -42,7 +42,8 @@ class EAQueueTests: XCTestCase {
     
     func testOpQueue() {
         let exp = expectation(description: "test operation queue")
-        let op = EACloudOperation {
+        let op = EACloudOperation {op in
+            op?.finish()
             exp.fulfill()
         }
         XCTAssertTrue(self.opq.add(op))

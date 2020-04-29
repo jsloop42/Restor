@@ -188,6 +188,7 @@ class PersistenceService {
     
     init() {
         //self.previousSyncTime = self.getLastSyncTime()
+        if isRunningTests { return }
         self.initSaveQueue()
         self.subscribeToCloudKitEvents()
         self.syncFromCloud()
@@ -439,42 +440,48 @@ class PersistenceService {
         var len = 0
         var start = 0
         var done: Bool = true  // sync visit complete
-        if let xs = self.wsSyncFrc.fetchedObjects {
-            start = self.wsSyncIdx
-            len = xs.count
-            for i in start..<len {
-                self.saveWorkspaceToCloud(xs[i])
-                self.wsSyncIdx += 1
-                if count == 3 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if let xs = self.wsSyncFrc.fetchedObjects {
+                start = self.wsSyncIdx
+                len = xs.count
+                for i in start..<len {
+                    self.saveWorkspaceToCloud(xs[i])
+                    self.wsSyncIdx += 1
+                    if count == 3 { break }
+                    count += 1
+                }
+                if done && self.wsSyncIdx < len { done = false }
             }
-            if done && self.wsSyncIdx < len { done = false }
         }
         if self.projSyncFrc == nil { self.projSyncFrc = self.localdb.getProjectsToSync(ctx: self.syncToCloudCtx) }
-        if let xs = self.projSyncFrc.fetchedObjects {
-            start = self.projSyncIdx
-            len = xs.count
-            count = 0
-            for i in start..<len {
-                self.saveProjectToCloud(xs[i])
-                self.projSyncIdx += 1
-                if count == 7 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if let xs = self.projSyncFrc.fetchedObjects {
+                start = self.projSyncIdx
+                len = xs.count
+                count = 0
+                for i in start..<len {
+                    self.saveProjectToCloud(xs[i])
+                    self.projSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.projSyncIdx < len { done = false }
             }
-            if done && self.projSyncIdx < len { done = false }
         }
         if self.reqSyncFrc == nil { self.reqSyncFrc = self.localdb.getRequestsToSync(ctx: self.syncToCloudCtx) }
-        if let xs = self.reqSyncFrc.fetchedObjects {
-            start = self.reqSyncIdx
-            len = xs.count
-            count = 0
-            for i in start..<len {
-                self.saveRequestToCloud(xs[i])
-                self.reqSyncIdx += 1
-                if count == 3 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if let xs = self.reqSyncFrc.fetchedObjects {
+                start = self.reqSyncIdx
+                len = xs.count
+                count = 0
+                for i in start..<len {
+                    self.saveRequestToCloud(xs[i])
+                    self.reqSyncIdx += 1
+                    if count == 3 { break }
+                    count += 1
+                }
+                if done && self.reqSyncIdx < len  { done = false }
             }
-            if done && self.reqSyncIdx < len  { done = false }
         }
         // Delete entites marked for delete
         var delxs: [Entity] = []
@@ -486,95 +493,109 @@ class PersistenceService {
         }
         // project
         if self.projDelFrc == nil { self.projDelFrc = self.localdb.getDataMarkedForDelete(obj: EProject.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<EProject> }
-        if self.projDelFrc != nil, let xs = self.projDelFrc.fetchedObjects {
-            start = self.projDelSyncIdx
-            len = xs.count
-            for i in start..<len {
-                delxs.append(xs[i])
-                self.projDelSyncIdx += 1
-                if count == 7 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if self.projDelFrc != nil, let xs = self.projDelFrc.fetchedObjects {
+                start = self.projDelSyncIdx
+                len = xs.count
+                for i in start..<len {
+                    delxs.append(xs[i])
+                    self.projDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.projDelSyncIdx < len  { done = false }
             }
-            if done && self.projDelSyncIdx < len  { done = false }
         }
         deleteEntities()
         // request
         if self.reqDelFrc == nil { self.reqDelFrc = self.localdb.getDataMarkedForDelete(obj: ERequest.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<ERequest> }
-        if self.reqDelFrc != nil, let xs = self.reqDelFrc.fetchedObjects {
-            start = self.reqDelSyncIdx
-            len = xs.count
-            for i in start..<len {
-                delxs.append(xs[i])
-                self.reqDelSyncIdx += 1
-                if count == 7 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if self.reqDelFrc != nil, let xs = self.reqDelFrc.fetchedObjects {
+                start = self.reqDelSyncIdx
+                len = xs.count
+                for i in start..<len {
+                    delxs.append(xs[i])
+                    self.reqDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.reqDelSyncIdx < len  { done = false }
             }
-            if done && self.reqDelSyncIdx < len  { done = false }
         }
         deleteEntities()
         if self.reqDataDelFrc == nil { self.reqDataDelFrc = self.localdb.getDataMarkedForDelete(obj: ERequestData.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<ERequestData> }
-        if self.reqDataDelFrc != nil, let xs = self.reqDataDelFrc.fetchedObjects {
-            start = self.reqDataDelSyncIdx
-            len = xs.count
-            for i in start..<len {
-                delxs.append(xs[i])
-                self.reqDataDelSyncIdx += 1
-                if count == 7 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if self.reqDataDelFrc != nil, let xs = self.reqDataDelFrc.fetchedObjects {
+                start = self.reqDataDelSyncIdx
+                len = xs.count
+                for i in start..<len {
+                    delxs.append(xs[i])
+                    self.reqDataDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.reqDataDelSyncIdx < len  { done = false }
             }
-            if done && self.reqDataDelSyncIdx < len  { done = false }
         }
         deleteEntities()
         if self.reqBodyDataDelFrc == nil { self.reqBodyDataDelFrc = self.localdb.getDataMarkedForDelete(obj: ERequestBodyData.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<ERequestBodyData> }
-        if self.reqBodyDataDelFrc != nil, let xs = self.reqBodyDataDelFrc.fetchedObjects {
-            start = self.reqBodyDataDelSyncIdx
-            len = xs.count
-            for i in start..<len {
-                delxs.append(xs[i])
-                self.reqBodyDataDelSyncIdx += 1
-                if count == 7 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if self.reqBodyDataDelFrc != nil, let xs = self.reqBodyDataDelFrc.fetchedObjects {
+                start = self.reqBodyDataDelSyncIdx
+                len = xs.count
+                for i in start..<len {
+                    delxs.append(xs[i])
+                    self.reqBodyDataDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.reqBodyDataDelSyncIdx < len  { done = false }
             }
-            if done && self.reqBodyDataDelSyncIdx < len  { done = false }
         }
         deleteEntities()
         if self.reqMethodDataDelFrc == nil { self.reqMethodDataDelFrc = self.localdb.getDataMarkedForDelete(obj: ERequestMethodData.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<ERequestMethodData> }
-        if self.reqMethodDataDelFrc != nil, let xs = self.reqMethodDataDelFrc.fetchedObjects {
-            start = self.reqMethodDataDelSyncIdx
-            len = xs.count
-            for i in start..<len {
-                delxs.append(xs[i])
-                self.reqMethodDataDelSyncIdx += 1
-                if count == 7 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if self.reqMethodDataDelFrc != nil, let xs = self.reqMethodDataDelFrc.fetchedObjects {
+                start = self.reqMethodDataDelSyncIdx
+                len = xs.count
+                for i in start..<len {
+                    delxs.append(xs[i])
+                    self.reqMethodDataDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.reqMethodDataDelSyncIdx < len  { done = false }
             }
-            if done && self.reqMethodDataDelSyncIdx < len  { done = false }
         }
         deleteEntities()
         if self.fileDelFrc == nil { self.fileDelFrc = self.localdb.getDataMarkedForDelete(obj: EFile.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<EFile> }
-        if self.fileDelFrc != nil, let xs = self.fileDelFrc.fetchedObjects {
-            start = self.fileDelSyncIdx
-            len = xs.count
-            for i in start..<len {
-                delxs.append(xs[i])
-                self.fileDelSyncIdx += 1
-                if count == 7 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if self.fileDelFrc != nil, let xs = self.fileDelFrc.fetchedObjects {
+                start = self.fileDelSyncIdx
+                len = xs.count
+                for i in start..<len {
+                    delxs.append(xs[i])
+                    self.fileDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.fileDelSyncIdx < len  { done = false }
             }
-            if done && self.fileDelSyncIdx < len  { done = false }
         }
         deleteEntities()
         if self.imageDelFrc == nil { self.imageDelFrc = self.localdb.getDataMarkedForDelete(obj: EImage.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<EImage> }
-        if self.imageDelFrc != nil, let xs = self.imageDelFrc.fetchedObjects {
-            start = self.imageDelSyncIdx
-            len = xs.count
-            for i in start..<len {
-                delxs.append(xs[i])
-                self.imageDelSyncIdx += 1
-                if count == 7 { break }
-                count += 1
+        self.syncToCloudCtx.perform {
+            if self.imageDelFrc != nil, let xs = self.imageDelFrc.fetchedObjects {
+                start = self.imageDelSyncIdx
+                len = xs.count
+                for i in start..<len {
+                    delxs.append(xs[i])
+                    self.imageDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.imageDelSyncIdx < len  { done = false }
             }
-            if done && self.imageDelSyncIdx < len  { done = false }
         }
         self.deleteEntitesFromCloud(delxs, ctx: self.syncToCloudCtx)
         delxs = []
@@ -639,7 +660,7 @@ class PersistenceService {
             self?.incSyncFromCloudOp()
             self?.queryRecords(zoneID: zoneID, type: recordType, parentId: parentId ?? "", changeTag: changeTag) { result in
                 op?.finish()
-                if let ctx = self?.syncFromCloudCtx { self?.localdb.saveChildContext(ctx) }
+                if let ctx = self?.syncFromCloudCtx { self?.localdb.saveChildContext(ctx); ctx.performAndWait { ctx.reset() } }
                 self?.decSyncFromCloudOp()
                 self?.syncFromCloudHandler(result)
             }
@@ -654,13 +675,29 @@ class PersistenceService {
                 let zoneID = self.ck.zoneID(workspaceId: record.id())
                 let op = EACloudOperation(recordType: .zone, opType: .fetchZoneChange, zoneID: zoneID, block: { [weak self] op in
                     self?.fetchZoneChanges(zoneIDs: [zoneID], isDeleteOnly: false, completion: {
+                        guard let self = self else { return }
                         op?.finish()
-                        self?.localdb.saveBackgroundContext(isForce: true, callback: { _ in
-                            typealias Notif = CloudKitService.NotificationKey
-                            self?.nc.post(name: Notif.zoneChangesDidSave, object: self, userInfo: [Notif.zoneIDKey: zoneID])
-                            self?.syncToCloud()
-                            self?.processZoneRecord()
-                        })
+                        self.nc.post(Notification(name: NotificationKey.databaseWillUpdate))
+                        self.localdb.saveChildContext(self.syncFromCloudCtx!)
+                        self.syncFromCloudCtx.perform {
+                            self.syncFromCloudCtx.reset()
+                            self.localdb.saveBackgroundContext(isForce: true) { _ in
+                                self.localdb.bgMOC.perform {
+                                    self.localdb.bgMOC.reset()
+                                    self.localdb.mainMOC.perform { self.localdb.mainMOC.refreshAllObjects()
+                                        DispatchQueue.main.async {
+                                            typealias Notif = CloudKitService.NotificationKey
+                                            self.nc.post(name: Notif.zoneChangesDidSave, object: self, userInfo: [Notif.zoneIDKey: zoneID])
+                                            self.nc.post(Notification(name: NotificationKey.databaseDidUpdate))
+                                        }
+                                        DispatchQueue.global().async {
+                                            self.syncToCloud()
+                                            self.processZoneRecord()
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     })
                 })
                 if !self.opQueue.add(op) { self.addSyncOpToLocal(op) }
@@ -840,7 +877,6 @@ class PersistenceService {
                 isNew = true
             }
             guard let ws = aws else { return }
-            // TODO
             if isNew || (ws.isSyncEnabled && (!ws.isActive || ws.changeTag < record.changeTag)) {  // => server has new copy
                 ws.updateFromCKRecord(record)
                 ws.isSynced = true
@@ -1370,18 +1406,23 @@ class PersistenceService {
     
     func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], isDeleteOnly: Bool? = false, isDelayedFetch: Bool? = false, completion: (() -> Void)? = nil) {
         Log.debug("fetching zone changes for zoneIDs: \(zoneIDs) - isDelayedFetch: \(isDelayedFetch ?? false)")
+        let fn: () -> Void = {
+            self.incSyncFromCloudOp()
+            self.ck.fetchZoneChanges(zoneIDs: zoneIDs, consolidate: false, resultHandler: { result in
+                self.decSyncFromCloudOp()
+                self.zoneChangeHandler(isDeleteOnly: isDeleteOnly ?? false, result: result, completion: completion)
+            }, consolidateHandler: { result in
+                self.decSyncFromCloudOp()
+                self.zoneChangeHandler(isDeleteOnly: isDeleteOnly ?? false, result: result, completion: completion)
+            })
+        }
         if isDelayedFetch != nil, isDelayedFetch! {
             if self.fetchZoneChangesDelayTimer == nil {
                 self.fetchZoneChangesDelayTimer = EARescheduler(interval: 4.0, type: .everyFn, limit: 4)
                 Log.debug("Delayed fetch of zones initialised")
             }
-            self.fetchZoneChangesDelayTimer.schedule(fn: EAReschedulerFn(id: "fetch-zone-changes", block: { [weak self] in
-                guard let self = self else { return false }
-                self.incSyncFromCloudOp()
-                self.ck.fetchZoneChanges(zoneIDs: zoneIDs, completion: { result in
-                    self.decSyncFromCloudOp()
-                    self.zoneChangeHandler(isDeleteOnly: isDeleteOnly ?? false, result: result, completion: completion)
-                })
+            self.fetchZoneChangesDelayTimer.schedule(fn: EAReschedulerFn(id: "fetch-zone-changes", block: {
+                fn()
                 Log.debug("Delayed exec - fetch zones")
                 return true
             }, callback: { _ in
@@ -1389,12 +1430,20 @@ class PersistenceService {
                 Log.debug("Delayed fetch exec - done")
             }, args: []))
         } else {
-            self.incSyncFromCloudOp()
-            self.ck.fetchZoneChanges(zoneIDs: zoneIDs, completion: { result in
-                self.decSyncFromCloudOp()
-                self.zoneChangeHandler(isDeleteOnly: isDeleteOnly ?? false, result: result, completion: completion)
-            })
+            fn()
         }
+    }
+    
+    func zoneChangeHandler(isDeleteOnly: Bool, result: Result<(saved: CKRecord?, deleted: CKRecord.ID?), Error>, completion: (() -> Void)? = nil) {
+        Log.debug("zone change handler")
+        switch result {
+        case .success(let (saved, deleted)):
+            if let x = saved { self.cloudRecordDidChange(x) }
+            if !isDeleteOnly, let x = deleted { self.cloudRecordDidDelete(x) }
+        case .failure(let error):
+            Log.error("Error getting zone changes: \(error)")
+        }
+        completion?()  // FIXME: Issue here is that completion does not mean the zone change is done since it's single record
     }
     
     func zoneChangeHandler(isDeleteOnly: Bool, result: Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>, completion: (() -> Void)? = nil) {

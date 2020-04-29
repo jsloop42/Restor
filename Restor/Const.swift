@@ -62,4 +62,6 @@ struct NotificationKey {
     static let requestMethodDataDidSync = Notification.Name("request-method-data-did-sync")
     static let fileDataDidSync = Notification.Name("file-data-did-sync")
     static let imageDataDidSync = Notification.Name("image-data-did-sync")
+    static let databaseWillUpdate = Notification.Name("database-will-update")
+    static let databaseDidUpdate = Notification.Name("database-did-update")
 }

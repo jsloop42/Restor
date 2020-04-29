@@ -87,9 +87,9 @@ class CloudKitTests: XCTestCase {
         let projRecordID = self.ck.recordID(entityId: projId, zoneID: zoneID)
         let reqRecordID = self.ck.recordID(entityId: reqId, zoneID: zoneID)
         guard let ws = self.localdb.createWorkspace(id: wsId, name: wsId, desc: "test workspace", isSyncEnabled: true) else { XCTFail(); return }
-        guard let proj = self.localdb.createProject(id: projId, name: projId, desc: "test project description") else { XCTFail(); return }
+        guard let proj = self.localdb.createProject(id: projId, wsId: wsId, name: projId, desc: "test project description") else { XCTFail(); return }
         proj.workspace = ws
-        guard let req = self.localdb.createRequest(id: reqId, index: 0, name: reqId) else { XCTFail(); exp.fulfill(); return }
+        guard let req = self.localdb.createRequest(id: reqId, wsId: wsId,  name: reqId) else { XCTFail(); exp.fulfill(); return }
         req.project = proj
         req.desc = "test request description"
         let ckws = self.ck.createRecord(recordID: wsRecordID, recordType: "Workspace")
@@ -122,9 +122,10 @@ class CloudKitTests: XCTestCase {
         guard let data = text.data(using: .utf8, allowLossyConversion: false) else { XCTFail("data is empty"); return }
         let reqId = "test-req-data-file"
         let fileId = "test-file"
-        let zoneID = self.ck.zoneID(with: "workspace-id-1")
-        guard let reqData = self.localdb.createRequestData(id: reqId, index: 0, type: .binary, fieldFormat: .file) else { XCTFail("ERequestData creation error"); return }
-        guard let file = self.localdb.createFile(data: data, index: 0, name: "test-file", path: URL(fileURLWithPath: "/tmp")) else { XCTFail("EFile creation error"); return }
+        let wsId = "workspace-id-1"
+        let zoneID = self.ck.zoneID(with: wsId)
+        guard let reqData = self.localdb.createRequestData(id: reqId, wsId: wsId, type: .binary, fieldFormat: .file) else { XCTFail("ERequestData creation error"); return }
+        guard let file = self.localdb.createFile(data: data, wsId: wsId, name: "test-file", path: URL(fileURLWithPath: "/tmp")) else { XCTFail("EFile creation error"); return }
         reqData.addToFiles(file)
         let ckFileID = self.ck.recordID(entityId: fileId, zoneID: zoneID)
         let ckReqDataID = self.ck.recordID(entityId: reqId, zoneID: zoneID)
@@ -143,7 +144,7 @@ class CloudKitTests: XCTestCase {
             self.ck.deleteRecords(recordIDs: [ckFileID, ckReqDataID]) { result in
                 switch result {
                 case .success(let res):
-                    XCTAssertTrue(res)
+                    XCTAssertTrue(res.count == 2)
                 case .failure(let error):
                     XCTFail("Error deleting record: \(error)")
                 }

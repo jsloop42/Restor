@@ -1501,6 +1501,7 @@ class CoreDataService {
                 Log.debug("bg context has changes")
                 try self.bgMOC.save()
                 self.bgMOC.processPendingChanges()
+                callback?(true)
             } catch {
                 status = false
                 let nserror = error as NSError

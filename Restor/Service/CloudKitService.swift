@@ -91,7 +91,8 @@ class CloudKitService {
         static let interval = 4.0
     }
     /// Keeps the current server change token for the zone until the changes have synced locally, after which it's persisted in User Defaults.
-    private var zoneChangeTokens: [CKRecordZone.ID: CKServerChangeToken] = [:]
+    private var zoneChangeTokens: [CKRecordZone.ID: [CKServerChangeToken]] = [:]
+    private let zoneTokenLock = NSLock()
     struct NotificationKey {
         static let zoneChangesDidSave = Notification.Name("zone-changes-did-save")
         static let zoneIDKey = "zoneID"  // used in notification on save success
@@ -277,26 +278,34 @@ class CloudKitService {
         if persist == nil || persist! {
             var zones = self.getCachedZones()
             let key = zoneID.zoneName
-            if let data = zones[key], let info = ZoneInfo.decode(data) {
-                info.serverChangeToken = token
-                zones[key] = info.encode()
-                self.setCachedZones(zones)
-            } else {
-                let info = ZoneInfo(zoneID: zoneID)
-                info.serverChangeToken = token
-                self.setCachedZones([key: info.encode()])
-            }
+            let data = zones[key]
+            let info: ZoneInfo = (data != nil ? ZoneInfo.decode(data!) : ZoneInfo(zoneID: zoneID)) ?? ZoneInfo(zoneID: zoneID)
+            info.serverChangeToken = token
+            zones[key] = info.encode()
+            self.setCachedZones(zones)
         } else {  // keep in mem
-            self.zoneChangeTokens[zoneID] = token
+            self.zoneTokenLock.lock()
+            var xs = self.zoneChangeTokens[zoneID] ?? []
+            if xs.isEmpty || !xs.contains(token) {
+                xs.append(token)
+                self.zoneChangeTokens[zoneID] = xs
+                Log.debug("change token count: \(zoneID.zoneName) - \(xs.count)")
+            }
+            self.zoneTokenLock.unlock()
         }
     }
     
     @objc func zoneChangesDidSave(_ notif: Notification) {
         Log.debug("CK: zone changes did save notif.")
-        if let info = notif.userInfo, let zoneID = info[NotificationKey.zoneIDKey] as? CKRecordZone.ID, let token = self.zoneChangeTokens[zoneID] {
-            self.addServerChangeTokenToCache(token, zoneID: zoneID, persist: true)
-            self.zoneChangeTokens.removeValue(forKey: zoneID)
-            Log.debug("CK: zone change token persisted: \(zoneID.zoneName) - \(token)")
+        EACommon.backgroundQueue.async {
+            self.zoneTokenLock.lock()
+            if let info = notif.userInfo, let zoneID = info[NotificationKey.zoneIDKey] as? CKRecordZone.ID, var tokens = self.zoneChangeTokens[zoneID] {
+                if tokens.isEmpty { self.zoneChangeTokens.removeValue(forKey: zoneID); return }
+                let token = tokens.remove(at: 0)
+                self.addServerChangeTokenToCache(token, zoneID: zoneID, persist: true)
+                Log.debug("CK: zone change token persisted: \(zoneID.zoneName) - \(token)")
+            }
+            self.zoneTokenLock.unlock()
         }
     }
     
@@ -556,8 +565,8 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
-    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], completion: @escaping (Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) -> Void) {
-        Log.debug("CK: fetch zone changes: \(zoneIDs)")
+    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], consolidate: Bool, resultHandler: ((Result<(saved: CKRecord?, deleted: CKRecord.ID?), Error>) -> Void)? = nil, consolidateHandler: ((Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) -> Void)? = nil) {
+        Log.debug("CK: fetch zone changes: \(zoneIDs.map(\.zoneName))")
         var savedRecords: [CKRecord] = []
         var deletedRecords: [CKRecord.ID] = []
         var moreZones: [CKRecordZone.ID] = []
@@ -567,20 +576,21 @@ class CloudKitService {
                     if RetryTimer.fetchZoneChanges == nil && self.canRetry() {
                         RetryTimer.fetchZoneChanges = EARepeatTimer(block: {
                             if Reachability.isConnectedToNetwork() {
-                                self.fetchZoneChanges(zoneIDs: zoneIDs, completion: completion)
+                                self.fetchZoneChanges(zoneIDs: zoneIDs, consolidate: consolidate, resultHandler: resultHandler, consolidateHandler: consolidateHandler)
                                 RetryTimer.fetchZoneChanges.suspend()
                             }
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchZoneChanges.resume()
                         RetryTimer.fetchZoneChanges.done = {
                             Log.error("CK: Error reaching CloudKit server")
-                            completion(.failure(err)); return
+                            consolidate ? consolidateHandler?(.failure(err)) : resultHandler?(.failure(err))
+                            return
                         }
                     } else {
                         RetryTimer.fetchZoneChanges.resume()
                     }
                 } else {
-                    completion(.failure(err)); return
+                    consolidate ? consolidateHandler?(.failure(err)) : resultHandler?(.failure(err)); return
                 }
             }
         }
@@ -610,11 +620,11 @@ class CloudKitService {
         op.qualityOfService = .utility
         op.recordChangedBlock = { record in
             Log.debug("CK: zone change: record obtained: \(record)")
-            savedRecords.append(record)
+            consolidate ? savedRecords.append(record) : resultHandler?(.success((saved: record, deleted: nil)))
         }
         op.recordWithIDWasDeletedBlock = { recordID, _ in
             Log.debug("CK: zone change: record ID deleted: \(recordID)")
-            deletedRecords.append(recordID)
+            consolidate ? deletedRecords.append(recordID) : resultHandler?(.success((saved: nil, deleted: recordID)))
         }
         op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, _ in
             Log.debug("CK: zone change token update for: \(zoneID) - \(String(describing: changeToken))")
@@ -626,7 +636,9 @@ class CloudKitService {
                 handleError(err)
                 return;
             }
-            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
+            if let token = changeToken {
+                self.addServerChangeTokenToCache(token, zoneID: zoneID)
+            }
             if moreComing { moreZones.append(zoneID) }
         }
         op.fetchRecordZoneChangesCompletionBlock = { [unowned self] error in
@@ -635,9 +647,9 @@ class CloudKitService {
                 handleError(err)
                 return;
             }
-            Log.debug("CK: Fetch zone changes complete - saved: \(savedRecords.count), deleted: \(deletedRecords.count)")
-            completion(.success((savedRecords, deletedRecords)))
-            if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, completion: completion) }
+            Log.debug("CK: Fetch zone changes complete")
+            if consolidate { consolidateHandler?(.success((savedRecords, deletedRecords))) }
+            if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, consolidate: consolidate, resultHandler: resultHandler, consolidateHandler: consolidateHandler) }
         }
         self.privateDatabase().add(op)
     }

@@ -64,6 +64,9 @@ class WorkspaceListViewController: UIViewController {
     }
     
     func initEvents() {
+        self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: NotificationKey.databaseWillUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: NotificationKey.databaseDidUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.workspaceDidSync(_:)), name: NotificationKey.workspaceDidSync, object: nil)
     }
     
     func initData() {
@@ -74,6 +77,21 @@ class WorkspaceListViewController: UIViewController {
             }
         }
         self.reloadData()
+    }
+    
+    @objc func workspaceDidSync(_ notif: Notification) {
+        DispatchQueue.main.async { self.reloadData() }
+    }
+    
+    @objc func databaseWillUpdate(_ notif: Notification) {
+        DispatchQueue.main.async { self.frc.delegate = nil }
+    }
+    
+    @objc func databaseDidUpdate(_ notif: Notification) {
+        DispatchQueue.main.async {
+            self.frc.delegate = self
+            self.reloadData()
+        }
     }
     
     func reloadData() {
