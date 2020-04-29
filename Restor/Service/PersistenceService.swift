@@ -984,7 +984,21 @@ class PersistenceService {
     func updateImageDataFromCloud(_ record: CKRecord) {
         let ctx = self.syncFromCloudCtx!
         ctx.performAndWait {
-            
+            let fileId = record.id()
+            var aImageData = self.localdb.getImageData(id: fileId, ctx: ctx)
+            var isNew = false
+            if aImageData == nil {
+                aImageData = self.localdb.createImage(data: Data(), wsId: record.getWsId(), name: record.name(), type: ImageType.jpeg.rawValue, checkExists: false, ctx: ctx)
+                isNew = true
+            }
+            guard let imageData = aImageData else { return }
+            if isNew || imageData.changeTag < record.changeTag {  // => server has new copy
+                imageData.updateFromCKRecord(record, ctx: ctx)
+                imageData.isSynced = true
+                self.localdb.saveChildContext(ctx)
+                Log.debug("Image data synced")
+                self.nc.post(Notification(name: NotificationKey.imageDataDidSync))
+            }
         }
     }
     
