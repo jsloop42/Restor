@@ -22,6 +22,11 @@ class RequestListViewController: UIViewController {
     private var frc: NSFetchedResultsController<ERequest>!
     private let cellReuseId = "requestCell"
     private let db = PersistenceService.shared
+    private let nc = NotificationCenter.default
+    
+    deinit {
+        self.nc.removeObserver(self)
+    }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -34,12 +39,18 @@ class RequestListViewController: UIViewController {
         super.viewDidLoad()
         self.initUI()
         self.initData()
+        self.initEvents()
     }
     
     func initUI() {
         self.app.updateViewBackground(self.view)
         self.app.updateNavigationControllerBackground(self.navigationController)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
+    }
+    
+    func initEvents() {
+        self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: NotificationKey.databaseWillUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: NotificationKey.databaseDidUpdate, object: nil)
     }
     
     func initData() {
@@ -51,6 +62,17 @@ class RequestListViewController: UIViewController {
             }
         }
         self.reloadData()
+    }
+    
+    @objc func databaseWillUpdate(_ notif: Notification) {
+        DispatchQueue.main.async { self.frc.delegate = nil }
+    }
+    
+    @objc func databaseDidUpdate(_ notif: Notification) {
+        DispatchQueue.main.async {
+            self.frc.delegate = self
+            self.reloadData()
+        }
     }
     
     func reloadData() {

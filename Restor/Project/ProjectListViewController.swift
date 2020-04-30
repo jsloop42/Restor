@@ -52,9 +52,6 @@ class ProjectListViewController: UIViewController {
             self.initData()
             self.initUI()
             self.initEvent()
-            // test
-            //self.addProject(name: "Test Project", desc: "My awesome project")
-            // end test
         }
     }
     
@@ -63,12 +60,11 @@ class ProjectListViewController: UIViewController {
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.app.updateNavigationControllerBackground(self.navigationController)
-        // TODO: test
-        //self.addProject(name: "Test project", desc: "My awesome project")
-        // end test
     }
     
     func initEvent() {
+        self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: NotificationKey.databaseWillUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: NotificationKey.databaseDidUpdate, object: nil)
         self.nc.addObserver(self, selector: #selector(self.workspaceDidSync(_:)), name: NotificationKey.workspaceDidSync, object: nil)
     }
     
@@ -82,6 +78,17 @@ class ProjectListViewController: UIViewController {
             }
         }
         self.reloadData()
+    }
+    
+    @objc func databaseWillUpdate(_ notif: Notification) {
+        DispatchQueue.main.async { self.frc.delegate = nil }
+    }
+    
+    @objc func databaseDidUpdate(_ notif: Notification) {
+        DispatchQueue.main.async {
+            self.frc.delegate = self
+            self.reloadData()
+        }
     }
     
     func reloadData() {
