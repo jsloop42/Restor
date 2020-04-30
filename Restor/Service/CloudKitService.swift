@@ -567,6 +567,7 @@ class CloudKitService {
     
     func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], consolidate: Bool, resultHandler: ((Result<(saved: CKRecord?, deleted: CKRecord.ID?), Error>) -> Void)? = nil, consolidateHandler: ((Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) -> Void)? = nil) {
         Log.debug("CK: fetch zone changes: \(zoneIDs.map(\.zoneName))")
+        let lock = NSLock()
         var savedRecords: [CKRecord] = []
         var deletedRecords: [CKRecord.ID] = []
         var moreZones: [CKRecordZone.ID] = []
@@ -639,7 +640,15 @@ class CloudKitService {
             if let token = changeToken {
                 self.addServerChangeTokenToCache(token, zoneID: zoneID)
             }
-            if moreComing { moreZones.append(zoneID) }
+            if moreComing { moreZones.append(zoneID) } else {
+                if consolidate {
+                    lock.lock()
+                    consolidateHandler?(.success((savedRecords, deletedRecords)))
+                    savedRecords = []
+                    deletedRecords = []
+                    lock.unlock()
+                }
+            }
         }
         op.fetchRecordZoneChangesCompletionBlock = { [unowned self] error in
             if let err = error {
