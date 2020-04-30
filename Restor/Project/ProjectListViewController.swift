@@ -145,7 +145,7 @@ class ProjectListViewController: UIViewController {
         if let ctx = self.workspace.managedObjectContext {
             if let proj = self.localdb.createProject(id: self.localdb.projectId(), wsId: self.workspace.getId(), name: name, desc: desc, ws: self.workspace, ctx: ctx) {
                 proj.workspace = self.workspace
-                self.localdb.saveBackgroundContext()
+                self.localdb.saveMainContext()
                 self.db.saveProjectToCloud(proj)
             }
         }

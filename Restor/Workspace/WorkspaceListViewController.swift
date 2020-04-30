@@ -149,7 +149,7 @@ class WorkspaceListViewController: UIViewController {
     func addWorkspace(name: String, desc: String, isSyncEnabled: Bool) {
         AppState.totalworkspaces = self.frc.numberOfRows(in: 0)
         if let ws = self.localdb.createWorkspace(id: self.localdb.workspaceId(), name: name, desc: desc, isSyncEnabled: isSyncEnabled) {
-            self.localdb.saveBackgroundContext()
+            self.localdb.saveMainContext()
             self.db.saveWorkspaceToCloud(ws)
             self.reloadData()
         }
