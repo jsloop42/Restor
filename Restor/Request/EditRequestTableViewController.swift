@@ -1320,6 +1320,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             let row = DocumentPickerState.modelIndex
             if let data = AppState.editRequest, let ctx = data.managedObjectContext,
                 let form = self.localdb.getRequestData(id: DocumentPickerState.reqDataId, ctx: ctx) {
+                let wsId = data.getWsId()
                 form.type = RequestDataType.form.rawValue.toInt64()
                 form.fieldFormat = RequestBodyFormFieldFormatType.file.rawValue.toInt64()
                 form.files = NSSet()  // clear the set, but it does not delete the data
@@ -1329,10 +1330,12 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
                         case .success(let x):
                             Log.debug("body form field creating file attachment")
                             let name = self.app.getFileName(element)
-                            if let file = self.localdb.createFile(data: x, wsId: data.getWsId(), name: name, path: element,
+                            if let file = self.localdb.createFile(data: x, wsId: wsId, name: name, path: element,
                                                                   type: self.selectedType == .form ? .form : .multipart, checkExists: true, ctx: ctx) {
-                                file.requestData = form
-                                self.app.markForDelete(image: form.image, ctx: form.image?.managedObjectContext)
+                                ctx.performAndWait {
+                                    file.requestData = form
+                                    self.app.markForDelete(image: form.image, ctx: form.image?.managedObjectContext)
+                                }
                                 DispatchQueue.main.async {
                                     if let vc = RequestVC.shared {
                                         self.app.didRequestChange(AppState.editRequest!, request: vc.entityDict, callback: { status in vc.updateDoneButton(status) })
