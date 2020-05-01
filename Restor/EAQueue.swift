@@ -17,12 +17,7 @@ public class EAQueue<T> {
     private let accessq = EACommon.userInteractiveQueue
     public var count: Int = 0
     
-    private enum State {
-        case suspended
-        case resumed
-    }
-    
-    private var state: State = .suspended
+    private var state: EATimerState = .suspended
     
     deinit {
         Log.debug("EAQueue deinit")

@@ -975,9 +975,13 @@ class CoreDataService {
     
     func genDefaultRequestMethods(_ proj: EProject, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequestMethodData] {
         let names = ["GET", "POST", "PUT", "PATCH", "DELETE"]
-        guard let projId = proj.id, let wsId = proj.workspace?.getId() else { return [] }
-        return names.compactMap { elem -> ERequestMethodData? in
-            if let x = self.createRequestMethodData(id: self.requestMethodDataId(projId, methodName: elem), wsId: wsId, name: elem, isCustom: false, ctx: ctx) {
+        return names.enumerated().compactMap { seq -> ERequestMethodData? in
+            let elem = seq.element
+            let idx = seq.offset
+            if let x = self.createRequestMethodData(id: self.requestMethodDataId(proj.getId(), methodName: elem), wsId: proj.getWsId(), name: elem, isCustom: false, ctx: ctx) {
+                x.created = proj.getCreated() - 6 + idx.toInt64()
+                x.modified = x.created
+                x.changeTag = x.created
                 x.project = proj
                 return x
             }

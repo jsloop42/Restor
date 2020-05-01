@@ -25,13 +25,8 @@ class EARepeatTimer {
     var limit: Int = 8
     /// The repeat counter.
     private (set) var counter: Int = 0
-    
-    private enum State {
-        case suspended
-        case resumed
-    }
-    
-    private var state: State = .suspended
+        
+    private var state: EATimerState = .suspended
     
     deinit {
         self.stop()

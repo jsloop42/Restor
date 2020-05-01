@@ -63,12 +63,7 @@ public class EARescheduler: EAReschedulable {
     private var isLimitEnabled = false
     private var counter = 0
 
-    private enum State {
-        case suspended
-        case resumed
-    }
-    
-    private var state: State = .suspended
+    private var state: EATimerState = .suspended
     
     deinit {
         self.destroy()

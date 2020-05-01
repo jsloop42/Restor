@@ -97,6 +97,11 @@ class CloudKitService {
         static let zoneChangesDidSave = Notification.Name("zone-changes-did-save")
         static let zoneIDKey = "zoneID"  // used in notification on save success
     }
+    // There could be records fetched, but the zone change completion has not occured yet. If there is an in-activity or of the record count reaches a
+    // limit, we call the handler with the partial result.
+    private let zoneFetchChangesTimer: DispatchSourceTimer = DispatchSource.makeTimerSource()
+    private var zoneFetchChangesTimerState: EATimerState = .undefined
+    private let zoneFetchChangesLock = NSLock()
     
     enum PropKey: String {
         case isZoneCreated
@@ -105,12 +110,18 @@ class CloudKitService {
     
     deinit {
         self.nc.removeObserver(self)
+        if !self.zoneFetchChangesTimer.isCancelled {
+            if self.zoneFetchChangesTimerState == .suspended { self.zoneFetchChangesTimer.resume() }
+            self.zoneFetchChangesTimer.cancel()
+            self.zoneFetchChangesTimer.setEventHandler(handler: {})
+        }
     }
     
     init() {
         if isRunningTests { return }
         self.loadSubscriptions()
         self.nc.addObserver(self, selector: #selector(self.zoneChangesDidSave(_:)), name: NotificationKey.zoneChangesDidSave, object: nil)
+        self.zoneFetchChangesTimer.schedule(deadline: .now() + 5, repeating: 8)
     }
 
     // MARK: - KV Store
@@ -565,33 +576,46 @@ class CloudKitService {
         self.privateDatabase().add(op)
     }
     
-    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], consolidate: Bool, resultHandler: ((Result<(saved: CKRecord?, deleted: CKRecord.ID?), Error>) -> Void)? = nil, consolidateHandler: ((Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) -> Void)? = nil) {
+    struct ZoneChangeResult {
+        var zoneID: CKRecordZone.ID!
+        var saved: [CKRecord] = []
+        var deleted: [CKRecord.ID] = []
+        var isBatched: Bool = true
+        
+        init(zoneID: CKRecordZone.ID) {
+            self.zoneID = zoneID
+        }
+        
+        init() {}
+    }
+    
+    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], handler: ((Result<(ZoneChangeResult, Bool), Error>) -> Void)? = nil) {
         Log.debug("CK: fetch zone changes: \(zoneIDs.map(\.zoneName))")
-        let lock = NSLock()
-        var savedRecords: [CKRecord] = []
-        var deletedRecords: [CKRecord.ID] = []
         var moreZones: [CKRecordZone.ID] = []
+        var zoneChangeResults: [CKRecordZone.ID: ZoneChangeResult] = [:]
+        var count = zoneIDs.count
+        var isHandlerInvoked = false
         let handleError: (Error) -> Void = { error in
             if let err = error as? CKError {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchZoneChanges == nil && self.canRetry() {
                         RetryTimer.fetchZoneChanges = EARepeatTimer(block: {
                             if Reachability.isConnectedToNetwork() {
-                                self.fetchZoneChanges(zoneIDs: zoneIDs, consolidate: consolidate, resultHandler: resultHandler, consolidateHandler: consolidateHandler)
+                                self.fetchZoneChanges(zoneIDs: zoneIDs, handler: handler)
                                 RetryTimer.fetchZoneChanges.suspend()
                             }
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchZoneChanges.resume()
                         RetryTimer.fetchZoneChanges.done = {
                             Log.error("CK: Error reaching CloudKit server")
-                            consolidate ? consolidateHandler?(.failure(err)) : resultHandler?(.failure(err))
+                            handler?(.failure(err))
                             return
                         }
                     } else {
                         RetryTimer.fetchZoneChanges.resume()
                     }
                 } else {
-                    consolidate ? consolidateHandler?(.failure(err)) : resultHandler?(.failure(err)); return
+                    handler?(.failure(err)); return
                 }
             }
         }
@@ -619,46 +643,89 @@ class CloudKitService {
         }
         op.recordZoneIDs = zoneIDs
         op.qualityOfService = .utility
+        let destroyTimer: () -> Void = {
+            Log.debug("remaining zone fetches count: \(count)")
+            if count <= 0 && zoneChangeResults.isEmpty && self.zoneFetchChangesTimerState != .suspended {
+                Log.debug("zone change timer suspended")
+                self.zoneFetchChangesTimer.suspend()
+                self.zoneFetchChangesTimerState = .suspended
+            }
+        }
+        let process: () -> Void = {
+            self.zoneFetchChangesLock.lock()
+            if isHandlerInvoked && count <= 0 && zoneChangeResults.isEmpty { return }
+            let xs = zoneChangeResults.allValues()
+            if xs.isEmpty {
+                handler?(.success((ZoneChangeResult(), true)))
+                isHandlerInvoked = true
+            } else {
+                xs.forEach { result in
+                    if !result.saved.isEmpty || !result.deleted.isEmpty {
+                        handler?(.success((result, count <= 0)))
+                        isHandlerInvoked = true
+                        zoneChangeResults.removeValue(forKey: result.zoneID)
+                    }
+                }
+            }
+            self.zoneFetchChangesLock.unlock()
+            destroyTimer()
+        }
+        let initTimer: () -> Void = {
+            if self.zoneFetchChangesTimerState == .undefined {
+                self.zoneFetchChangesTimer.setEventHandler(handler: { process() })
+                self.zoneFetchChangesTimerState = .suspended
+            }
+            if self.zoneFetchChangesTimerState == .suspended && count > 0 {
+                self.zoneFetchChangesTimer.resume()
+                self.zoneFetchChangesTimerState = .resumed
+            }
+        }
+        initTimer()
         op.recordChangedBlock = { record in
             Log.debug("CK: zone change: record obtained: \(record)")
-            consolidate ? savedRecords.append(record) : resultHandler?(.success((saved: record, deleted: nil)))
+            self.zoneFetchChangesLock.lock()
+            let zoneID = record.zoneID()
+            var result = zoneChangeResults[zoneID] ?? ZoneChangeResult(zoneID: zoneID)
+            result.saved.append(record)
+            zoneChangeResults[zoneID] = result
+            self.zoneFetchChangesLock.unlock()
+            initTimer()
         }
         op.recordWithIDWasDeletedBlock = { recordID, _ in
             Log.debug("CK: zone change: record ID deleted: \(recordID)")
-            consolidate ? deletedRecords.append(recordID) : resultHandler?(.success((saved: nil, deleted: recordID)))
+            self.zoneFetchChangesLock.lock()
+            let zoneID = recordID.zoneID
+            var result = zoneChangeResults[zoneID] ?? ZoneChangeResult(zoneID: zoneID)
+            result.deleted.append(recordID)
+            zoneChangeResults[zoneID] = result
+            self.zoneFetchChangesLock.unlock()
+            initTimer()
         }
         op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, _ in
             Log.debug("CK: zone change token update for: \(zoneID) - \(String(describing: changeToken))")
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
         }
         op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, _, moreComing, error in
+            Log.debug("CK: zone fetch complete: \(zoneID.zoneName)")
             if let err = error {
                 Log.error("CK: Error fetching changes for zone: \(err)")
                 handleError(err)
                 return;
             }
-            if let token = changeToken {
-                self.addServerChangeTokenToCache(token, zoneID: zoneID)
-            }
-            if moreComing { moreZones.append(zoneID) } else {
-                if consolidate {
-                    lock.lock()
-                    consolidateHandler?(.success((savedRecords, deletedRecords)))
-                    savedRecords = []
-                    deletedRecords = []
-                    lock.unlock()
-                }
-            }
+            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
+            if moreComing { moreZones.append(zoneID) }
+            process()
         }
         op.fetchRecordZoneChangesCompletionBlock = { [unowned self] error in
+            Log.debug("CK: all zone changes fetch complete")
             if let err = error {
                 Log.error("CK: Error fetching zone changes: \(err)");
                 handleError(err)
                 return;
             }
             Log.debug("CK: Fetch zone changes complete")
-            if consolidate { consolidateHandler?(.success((savedRecords, deletedRecords))) }
-            if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, consolidate: consolidate, resultHandler: resultHandler, consolidateHandler: consolidateHandler) }
+            count -= 1
+            if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, handler: handler) }
         }
         self.privateDatabase().add(op)
     }

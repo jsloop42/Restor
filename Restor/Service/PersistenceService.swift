@@ -134,6 +134,7 @@ class PersistenceService {
     private var zonesToSync: [CKRecord] = []
     private var syncToCloudSaveIds: Set<String> = Set()
     private var syncToCloudDeleteIds: Set<String> = Set()
+    private var destroySyncStateLock = NSLock()
     
     enum SubscriptionId: String {
         case fileChange = "file-change"
@@ -421,6 +422,7 @@ class PersistenceService {
     
     func destroySyncToCloudState() {
         Log.debug("destroy sync to cloud state")
+        self.destroySyncStateLock.lock()
         if self.syncToCloudTimer == nil { return }
         self.syncToCloudTimer.cancel()
         self.syncToCloudTimer.setEventHandler { }
@@ -433,6 +435,7 @@ class PersistenceService {
                 Log.debug("sync to cloud context reset")
             }
         }
+        self.destroySyncStateLock.unlock()
     }
     
     func syncToCloud() {
@@ -447,7 +450,7 @@ class PersistenceService {
 //            Log.debug("updating last sync time")
 //            self.setLastSyncTime()
 //        }
-        if self.syncFromCloudOpCount > 0 && self.isSyncToCloudTriggered { return }
+        //if self.syncFromCloudOpCount > 0 && self.isSyncToCloudTriggered { return }
         if self.saveQueue.count > 16 { return }
         if !self.zonesToSync.isEmpty { return }
         self.initSyncToCloudState()
@@ -728,38 +731,50 @@ class PersistenceService {
         })
     }
     
+    func zoneChangeFetchCompleteHandler(zoneID: CKRecordZone.ID, done: Bool) {
+        self.nc.post(Notification(name: NotificationKey.databaseWillUpdate))
+        self.localdb.saveChildContext(self.syncFromCloudCtx!)
+        self.syncFromCloudCtx.performAndWait {
+            if done { self.syncFromCloudCtx.reset() }
+            self.localdb.saveBackgroundContext(isForce: true) { _ in
+                self.localdb.bgMOC.perform {
+                    if done { self.localdb.bgMOC.reset() }
+                    self.localdb.mainMOC.perform {
+                        self.localdb.mainMOC.refreshAllObjects()
+                        DispatchQueue.main.async {
+                            typealias Notif = CloudKitService.NotificationKey
+                            self.nc.post(name: Notif.zoneChangesDidSave, object: self, userInfo: [Notif.zoneIDKey: zoneID])
+                            self.nc.post(Notification(name: NotificationKey.databaseDidUpdate))
+                        }
+                        DispatchQueue.global().async {
+                            self.syncToCloud()
+                            self.processZoneRecord()
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     func syncRecordFromCloudHandler(_ record: CKRecord) -> Bool {
 //        let changeTag = self.isSyncedOnce() ? self.previousSyncTime : 0
         switch RecordType(rawValue: record.type()) {
         case .zone:
             //if self.isSyncedOnce() {
                 let zoneID = self.ck.zoneID(workspaceId: record.id())
-                let op = EACloudOperation(recordType: .zone, opType: .fetchZoneChange, zoneID: zoneID, block: { [weak self] op in
-                    self?.fetchZoneChanges(zoneIDs: [zoneID], isDeleteOnly: false, completion: {
-                        guard let self = self else { return }
-                        op?.finish()
-                        self.nc.post(Notification(name: NotificationKey.databaseWillUpdate))
-                        self.localdb.saveChildContext(self.syncFromCloudCtx!)
-                        self.syncFromCloudCtx.perform {
-                            self.syncFromCloudCtx.reset()
-                            self.localdb.saveBackgroundContext(isForce: true) { _ in
-                                self.localdb.bgMOC.perform {
-                                    self.localdb.bgMOC.reset()
-                                    self.localdb.mainMOC.perform { self.localdb.mainMOC.refreshAllObjects()
-                                        DispatchQueue.main.async {
-                                            typealias Notif = CloudKitService.NotificationKey
-                                            self.nc.post(name: Notif.zoneChangesDidSave, object: self, userInfo: [Notif.zoneIDKey: zoneID])
-                                            self.nc.post(Notification(name: NotificationKey.databaseDidUpdate))
-                                        }
-                                        DispatchQueue.global().async {
-                                            self.syncToCloud()
-                                            self.processZoneRecord()
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    })
+                var op: EACloudOperation!
+                // The completion handler is taken out of the EACloudOperation so that the operation can be marked as finished on zone change completion marked
+                // by the done flag. But some records gets synced even after the completion handler gets invoked. This makes sure that handler gets executed in
+                // such cases.
+                let fn: (Bool) -> Void = { done in
+                    if done {
+                        if op != nil { op.finish(); op = nil }
+                        self.processZoneRecord()
+                    }
+                    self.zoneChangeFetchCompleteHandler(zoneID: zoneID, done: done)
+                }
+                op = EACloudOperation(recordType: .zone, opType: .fetchZoneChange, zoneID: zoneID, block: { [weak self] op in
+                    self?.fetchZoneChanges(zoneIDs: [zoneID], isDeleteOnly: false, completion: fn)
                 })
                 if !self.opQueue.add(op) { self.addSyncOpToLocal(op) }
             //}
@@ -962,6 +977,9 @@ class PersistenceService {
             guard let proj = aproj else { return }
             if isNew || proj.changeTag < record.changeTag {  // => server has new copy
                 proj.updateFromCKRecord(record, ctx: ctx)
+                if self.localdb.getRequestMethodData(id: "rm\(proj.getId())-GET", ctx: ctx) == nil {
+                    _ = self.localdb.genDefaultRequestMethods(proj, ctx: ctx)
+                }
                 proj.isSynced = true
                 self.localdb.saveChildContext(ctx)
                 Log.debug("Project synced")
@@ -1484,17 +1502,14 @@ class PersistenceService {
     
     // MARK: - Fetch
     
-    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], isDeleteOnly: Bool? = false, isDelayedFetch: Bool? = false, completion: (() -> Void)? = nil) {
+    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], isDeleteOnly: Bool? = false, isDelayedFetch: Bool? = false, completion: ((Bool) -> Void)? = nil) {
         Log.debug("fetching zone changes for zoneIDs: \(zoneIDs) - isDelayedFetch: \(isDelayedFetch ?? false)")
         let fn: () -> Void = {
             self.incSyncFromCloudOp()
-            self.ck.fetchZoneChanges(zoneIDs: zoneIDs, consolidate: false, resultHandler: { result in
+            self.ck.fetchZoneChanges(zoneIDs: zoneIDs) { result in
                 self.decSyncFromCloudOp()
                 self.zoneChangeHandler(isDeleteOnly: isDeleteOnly ?? false, result: result, completion: completion)
-            }, consolidateHandler: { result in
-                self.decSyncFromCloudOp()
-                self.zoneChangeHandler(isDeleteOnly: isDeleteOnly ?? false, result: result, completion: completion)
-            })
+            }
         }
         if isDelayedFetch != nil, isDelayedFetch! {
             if self.fetchZoneChangesDelayTimer == nil {
@@ -1514,29 +1529,19 @@ class PersistenceService {
         }
     }
     
-    func zoneChangeHandler(isDeleteOnly: Bool, result: Result<(saved: CKRecord?, deleted: CKRecord.ID?), Error>, completion: (() -> Void)? = nil) {
+    func zoneChangeHandler(isDeleteOnly: Bool, result: Result<(CloudKitService.ZoneChangeResult, Bool), Error>, completion: ((Bool) -> Void)? = nil) {
         Log.debug("zone change handler")
+        var status = false
         switch result {
-        case .success(let (saved, deleted)):
-            if let x = saved { self.cloudRecordDidChange(x) }
-            if !isDeleteOnly, let x = deleted { self.cloudRecordDidDelete(x) }
+        case .success(let (result, done)):
+            status = done
+            Log.debug("zone change saved: \(result.saved.count), deleted: \(result.deleted.count)")
+            if !isDeleteOnly { result.saved.forEach { record in self.cloudRecordDidChange(record) } }
+            result.deleted.forEach { record in self.cloudRecordDidDelete(record) }
         case .failure(let error):
             Log.error("Error getting zone changes: \(error)")
         }
-        completion?()  // FIXME: Issue here is that completion does not mean the zone change is done since it's single record
-    }
-    
-    func zoneChangeHandler(isDeleteOnly: Bool, result: Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>, completion: (() -> Void)? = nil) {
-        Log.debug("zone change handler")
-        switch result {
-        case .success(let (saved, deleted)):
-            Log.debug("zone change saved: \(saved.count), deleted: \(deleted.count)")
-            if !isDeleteOnly { saved.forEach { record in self.cloudRecordDidChange(record) } }
-            deleted.forEach { record in self.cloudRecordDidDelete(record) }
-        case .failure(let error):
-            Log.error("Error getting zone changes: \(error)")
-        }
-        completion?()
+        completion?(status)
     }
     
     /// Checks if the record is present in cache. If present, returns, else fetch from cloud, adds to the cache and returns.
@@ -1607,10 +1612,14 @@ class PersistenceService {
         self.saveQueue.enqueue(models)
     }
     
+    func removeFromSyncToCloudSaveId(_ id: String) {
+        self.syncToCloudSaveIds.remove(id)
+    }
+    
     /// Saves the given workspace to the cloud
     func saveWorkspaceToCloud(_ ws: EWorkspace) {
         ws.managedObjectContext?.perform {
-            if !ws.isSyncEnabled { return }
+            if !ws.isSyncEnabled { self.removeFromSyncToCloudSaveId(ws.getId()); return }
             if ws.markForDelete { self.deleteDataMarkedForDelete(ws); return }
             let wsId = ws.getId()
             let zoneID = ws.getZoneID()
@@ -1626,8 +1635,11 @@ class PersistenceService {
     /// Save the given project and updates the associated workspace to the cloud.
     func saveProjectToCloud(_ proj: EProject) {
         proj.managedObjectContext?.perform {
-            guard let ws = proj.workspace else { Log.error("Workspace is empty for project"); return }
-            if !ws.isSyncEnabled { return }
+            if proj.workspace == nil {
+                if let ws = self.localdb.getWorkspace(id: proj.getWsId(), ctx: proj.managedObjectContext) { proj.workspace = ws }
+            }
+            guard let ws = proj.workspace else { self.removeFromSyncToCloudSaveId(proj.getId()); Log.error("Workspace is empty for project"); return }
+            if !ws.isSyncEnabled { self.removeFromSyncToCloudSaveId(proj.getId()); return }
             if ws.markForDelete { self.deleteDataMarkedForDelete(ws); return }
             if proj.markForDelete { self.deleteDataMakedForDelete(proj); return }
             let projId = proj.getId()
@@ -1669,7 +1681,7 @@ class PersistenceService {
     /// Save the given request and updates the associated project to the cloud.
     func saveRequestToCloud(_ req: ERequest) {
         req.managedObjectContext?.perform {
-            guard let proj = req.project, let ws = proj.workspace, ws.isSyncEnabled else { return }
+            guard let proj = req.project, let ws = proj.workspace, ws.isSyncEnabled else { self.removeFromSyncToCloudSaveId(req.getId()); return }
             if proj.markForDelete { self.deleteDataMakedForDelete(proj); return }
             if req.markForDelete { self.deleteDataMarkedForDelete(req); return }
             guard let reqId = req.id else { Log.error("ERequest id is nil"); return }
