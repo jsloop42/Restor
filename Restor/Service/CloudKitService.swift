@@ -227,9 +227,14 @@ class CloudKitService {
         return zoneIDs.map { self.recordID(entityId: self.entityID(zoneID: $0), zoneID: $0) }
     }
     
+    /// Returns the entity ID for the given record name.
+    func entityID(recordName: String) -> String {
+        return recordName.components(separatedBy: ".").first ?? ""
+    }
+    
     /// Returns the entity id for the given record ID.
     func entityID(recordID: CKRecord.ID) -> String {
-        return recordID.recordName.components(separatedBy: ".").first ?? ""
+        return self.entityID(recordName: recordID.recordName)
     }
     
     /// Returns the entity id for the given zone ID.
@@ -503,7 +508,7 @@ class CloudKitService {
     func fetchZone(recordZoneIDs: [CKRecordZone.ID], completion: @escaping (Result<[CKRecordZone.ID: CKRecordZone], Error>) -> Void) {
         Log.debug("CK: fetch zone: \(recordZoneIDs)")
         let op = CKFetchRecordZonesOperation(recordZoneIDs: recordZoneIDs)
-        op.qualityOfService = .utility
+        op.qualityOfService = .userInitiated
         op.fetchRecordZonesCompletionBlock = { res, error in
             if let err = error as? CKError {
                 if err.isNetworkFailure() {
@@ -589,19 +594,16 @@ class CloudKitService {
         init() {}
     }
     
-    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], handler: ((Result<(ZoneChangeResult, Bool), Error>) -> Void)? = nil) {
-        Log.debug("CK: fetch zone changes: \(zoneIDs.map(\.zoneName))")
-        var moreZones: [CKRecordZone.ID] = []
-        var zoneChangeResults: [CKRecordZone.ID: ZoneChangeResult] = [:]
-        var count = zoneIDs.count
-        var isHandlerInvoked = false
+    func fetchZoneChanges(zoneID: CKRecordZone.ID, handler: ((Result<(CKRecord?, CKRecord.ID?), Error>) -> Void)? = nil, completion: (() -> Void)? = nil) {
+        Log.debug("CK: fetch zone changes: \(zoneID)")
+        var hasMore = false
         let handleError: (Error) -> Void = { error in
             if let err = error as? CKError {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchZoneChanges == nil && self.canRetry() {
                         RetryTimer.fetchZoneChanges = EARepeatTimer(block: {
                             if Reachability.isConnectedToNetwork() {
-                                self.fetchZoneChanges(zoneIDs: zoneIDs, handler: handler)
+                                self.fetchZoneChanges(zoneID: zoneID, handler: handler)
                                 RetryTimer.fetchZoneChanges.suspend()
                             }
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
@@ -616,6 +618,90 @@ class CloudKitService {
                     }
                 } else {
                     handler?(.failure(err)); return
+                }
+            }
+        }
+        let op: CKFetchRecordZoneChangesOperation!
+        if #available(iOS 12.0, *) {
+            var zoneOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneConfiguration] = [:]
+            let token: CKServerChangeToken? = self.getCachedServerChangeToken(zoneID)
+            Log.debug("CK: zone change token for zone: \(zoneID.zoneName) - \(String(describing: token))")
+            let opt = CKFetchRecordZoneChangesOperation.ZoneConfiguration()
+            opt.previousServerChangeToken = token
+            zoneOptions[zoneID] = opt
+            op = CKFetchRecordZoneChangesOperation(recordZoneIDs: [zoneID], configurationsByRecordZoneID: zoneOptions)
+        } else {
+            var zoneOptions: [CKRecordZone.ID: CKFetchRecordZoneChangesOperation.ZoneOptions] = [:]
+            let token: CKServerChangeToken? = self.getCachedServerChangeToken(zoneID)
+            Log.debug("CK: zone change token for zone: \(zoneID.zoneName) - \(String(describing: token))")
+            let opt = CKFetchRecordZoneChangesOperation.ZoneOptions()
+            opt.previousServerChangeToken = token
+            zoneOptions[zoneID] = opt
+            op = CKFetchRecordZoneChangesOperation(recordZoneIDs: [zoneID], optionsByRecordZoneID: zoneOptions)
+        }
+        op.recordZoneIDs = [zoneID]
+        op.qualityOfService = .userInitiated
+        op.recordChangedBlock = { record in
+            Log.debug("CK: zone change: record obtained: \(record)")
+            handler?(.success((record, nil)))
+        }
+        op.recordWithIDWasDeletedBlock = { recordID, _ in
+            Log.debug("CK: zone change: record ID deleted: \(recordID)")
+            handler?(.success((nil, recordID)))
+        }
+        op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, _ in
+            Log.debug("CK: zone change token update for: \(zoneID) - \(String(describing: changeToken))")
+            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
+        }
+        op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, _, moreComing, error in
+            Log.debug("CK: zone fetch complete: \(zoneID.zoneName)")
+            if let err = error {
+                Log.error("CK: Error fetching changes for zone: \(err)")
+                handleError(err)
+                return;
+            }
+            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
+            if moreComing { hasMore = true }
+        }
+        op.fetchRecordZoneChangesCompletionBlock = { [unowned self] error in
+            Log.debug("CK: all zone changes fetch complete")
+            if let err = error {
+                Log.error("CK: Error fetching zone changes: \(err)");
+                handleError(err)
+                return;
+            }
+            Log.debug("CK: Fetch zone changes complete")
+            if hasMore { self.fetchZoneChanges(zoneID: zoneID, handler: handler) }
+            completion?()
+        }
+        self.privateDatabase().add(op)
+    }
+    
+    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], completion: @escaping (Result<(saved: [CKRecord], deleted: [CKRecord.ID]), Error>) -> Void) {
+        Log.debug("CK: fetch zone changes: \(zoneIDs)")
+        var savedRecords: [CKRecord] = []
+        var deletedRecords: [CKRecord.ID] = []
+        var moreZones: [CKRecordZone.ID] = []
+        let handleError: (Error) -> Void = { error in
+            if let err = error as? CKError {
+                if err.isNetworkFailure() {
+                    if RetryTimer.fetchZoneChanges == nil && self.canRetry() {
+                        RetryTimer.fetchZoneChanges = EARepeatTimer(block: {
+                            if Reachability.isConnectedToNetwork() {
+                                self.fetchZoneChanges(zoneIDs: zoneIDs, completion: completion)
+                                RetryTimer.fetchZoneChanges.suspend()
+                            }
+                        }, interval: RetryTimer.interval, limit: RetryTimer.limit)
+                        RetryTimer.fetchZoneChanges.resume()
+                        RetryTimer.fetchZoneChanges.done = {
+                            Log.error("CK: Error reaching CloudKit server")
+                            completion(.failure(err)); return
+                        }
+                    } else {
+                        RetryTimer.fetchZoneChanges.resume()
+                    }
+                } else {
+                    completion(.failure(err)); return
                 }
             }
         }
@@ -643,70 +729,19 @@ class CloudKitService {
         }
         op.recordZoneIDs = zoneIDs
         op.qualityOfService = .utility
-        let destroyTimer: () -> Void = {
-            Log.debug("remaining zone fetches count: \(count)")
-            if count <= 0 && zoneChangeResults.isEmpty && self.zoneFetchChangesTimerState != .suspended {
-                Log.debug("zone change timer suspended")
-                self.zoneFetchChangesTimer.suspend()
-                self.zoneFetchChangesTimerState = .suspended
-            }
-        }
-        let process: () -> Void = {
-            self.zoneFetchChangesLock.lock()
-            if isHandlerInvoked && count <= 0 && zoneChangeResults.isEmpty { return }
-            let xs = zoneChangeResults.allValues()
-            if xs.isEmpty {
-                handler?(.success((ZoneChangeResult(), true)))
-                isHandlerInvoked = true
-            } else {
-                xs.forEach { result in
-                    if !result.saved.isEmpty || !result.deleted.isEmpty {
-                        handler?(.success((result, count <= 0)))
-                        isHandlerInvoked = true
-                        zoneChangeResults.removeValue(forKey: result.zoneID)
-                    }
-                }
-            }
-            self.zoneFetchChangesLock.unlock()
-            destroyTimer()
-        }
-        let initTimer: () -> Void = {
-            if self.zoneFetchChangesTimerState == .undefined {
-                self.zoneFetchChangesTimer.setEventHandler(handler: { process() })
-                self.zoneFetchChangesTimerState = .suspended
-            }
-            if self.zoneFetchChangesTimerState == .suspended && count > 0 {
-                self.zoneFetchChangesTimer.resume()
-                self.zoneFetchChangesTimerState = .resumed
-            }
-        }
-        initTimer()
         op.recordChangedBlock = { record in
             Log.debug("CK: zone change: record obtained: \(record)")
-            self.zoneFetchChangesLock.lock()
-            let zoneID = record.zoneID()
-            var result = zoneChangeResults[zoneID] ?? ZoneChangeResult(zoneID: zoneID)
-            result.saved.append(record)
-            zoneChangeResults[zoneID] = result
-            self.zoneFetchChangesLock.unlock()
-            initTimer()
+            savedRecords.append(record)
         }
         op.recordWithIDWasDeletedBlock = { recordID, _ in
             Log.debug("CK: zone change: record ID deleted: \(recordID)")
-            self.zoneFetchChangesLock.lock()
-            let zoneID = recordID.zoneID
-            var result = zoneChangeResults[zoneID] ?? ZoneChangeResult(zoneID: zoneID)
-            result.deleted.append(recordID)
-            zoneChangeResults[zoneID] = result
-            self.zoneFetchChangesLock.unlock()
-            initTimer()
+            deletedRecords.append(recordID)
         }
         op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, _ in
             Log.debug("CK: zone change token update for: \(zoneID) - \(String(describing: changeToken))")
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
         }
         op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, _, moreComing, error in
-            Log.debug("CK: zone fetch complete: \(zoneID.zoneName)")
             if let err = error {
                 Log.error("CK: Error fetching changes for zone: \(err)")
                 handleError(err)
@@ -714,18 +749,16 @@ class CloudKitService {
             }
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
             if moreComing { moreZones.append(zoneID) }
-            process()
         }
         op.fetchRecordZoneChangesCompletionBlock = { [unowned self] error in
-            Log.debug("CK: all zone changes fetch complete")
             if let err = error {
                 Log.error("CK: Error fetching zone changes: \(err)");
                 handleError(err)
                 return;
             }
-            Log.debug("CK: Fetch zone changes complete")
-            count -= 1
-            if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, handler: handler) }
+            Log.debug("CK: Fetch zone changes complete - saved: \(savedRecords.count), deleted: \(deletedRecords.count)")
+            completion(.success((savedRecords, deletedRecords)))
+            if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, completion: completion) }
         }
         self.privateDatabase().add(op)
     }
@@ -734,7 +767,7 @@ class CloudKitService {
     func fetchRecords(recordIDs: [CKRecord.ID], completion: @escaping (Result<[CKRecord.ID: CKRecord], Error>) -> Void) {
         Log.debug("CK: fetch records: \(recordIDs)")
         let op = CKFetchRecordsOperation(recordIDs: recordIDs)
-        op.qualityOfService = .utility
+        op.qualityOfService = .userInitiated
         op.fetchRecordsCompletionBlock = { res, error in
             if let err = error as? CKError {
                 if err.isNetworkFailure() {
@@ -875,7 +908,7 @@ class CloudKitService {
                 completion(.failure(AppError.create))
             }
         }
-        op.qualityOfService = .utility
+        op.qualityOfService = .userInitiated
         self.privateDatabase().add(op)
     }
     
@@ -940,7 +973,7 @@ class CloudKitService {
         let op = CKModifyRecordsOperation(recordsToSave: records, recordIDsToDelete: [])
         var saved: [CKRecord] = []
         let lock = NSLock()
-        op.qualityOfService = .utility
+        op.qualityOfService = .userInitiated
         if isForce! { op.savePolicy = .changedKeys }
         let handleError: (Error?) -> Void = { error in
             if let err = error as? CKError {
@@ -970,6 +1003,7 @@ class CloudKitService {
             handleError(error)
             lock.lock()
             saved.append(record)
+            Log.debug("CK: saved record \(record)")
             lock.unlock()
         }
         op.modifyRecordsCompletionBlock = { [unowned self] _, _, error in
@@ -1001,7 +1035,7 @@ class CloudKitService {
                 }
                 return
             }
-            Log.debug("CK: Records saved successfully: \(records.map { r -> String in r.recordID.recordName })")
+            Log.debug("CK: Records saved successfully: \(records).map { r -> String in r.recordID.recordName })")
             completion(.success(saved))
         }
         self.privateDatabase().add(op)
@@ -1053,7 +1087,7 @@ class CloudKitService {
             self.addToCachedSubscriptions(subId)
             Log.debug("CK: Subscribed to events successfully: \(recordType) with ID: \(subscription.subscriptionID.description)")
         }
-        op.qualityOfService = .utility
+        op.qualityOfService = .userInitiated
         self.privateDatabase().add(op)
     }
     
@@ -1089,7 +1123,7 @@ class CloudKitService {
             self.addToCachedSubscriptions(subId)
             Log.debug("CK: Subscribed to database change event: \(subId)")
         }
-        op.qualityOfService = .utility
+        op.qualityOfService = .userInitiated
         self.privateDatabase().add(op)
     }
     
@@ -1127,7 +1161,7 @@ class CloudKitService {
             self.removeFromCachesZones(recordZoneIds)
             completion(.success(true))
         }
-        op.qualityOfService = .utility
+        op.qualityOfService = .userInitiated
         self.privateDatabase().add(op)
     }
     
@@ -1135,7 +1169,7 @@ class CloudKitService {
     func deleteRecords(recordIDs: [CKRecord.ID], completion: @escaping (Result<[CKRecord.ID], Error>) -> Void) {
         Log.debug("CK: Delete records: \(recordIDs)")
         let op = CKModifyRecordsOperation(recordsToSave: [], recordIDsToDelete: recordIDs)
-        op.qualityOfService = .utility
+        op.qualityOfService = .userInitiated
         op.modifyRecordsCompletionBlock = { _, deleted, error in
             if let err = error as? CKError {
                 Log.error("CK: Error deleteing records: \(err)")
@@ -1170,7 +1204,7 @@ class CloudKitService {
     func deleteSubscriptions(subscriptionIDs: [CKSubscription.ID], completion: @escaping (Result<[CKSubscription.ID], Error>) -> Void) {
         Log.debug("CK: Delete subscriptions: \(subscriptionIDs)")
         let op = CKModifySubscriptionsOperation.init(subscriptionsToSave: [], subscriptionIDsToDelete: subscriptionIDs)
-        op.qualityOfService = .utility
+        op.qualityOfService = .userInitiated
         op.modifySubscriptionsCompletionBlock = { _, ids, error in
             if let err = error as? CKError {
                 Log.error("CK: Error deleting subscriptions: \(err)")
@@ -1275,7 +1309,26 @@ extension CKError {
     }
     
     public func isSameRecord() -> Bool {
-        return self.isSpecificErrorCode(code: .invalidArguments)
+        if !self.isSpecificErrorCode(code: .invalidArguments) { return false }
+        do {
+            let pattern = try NSRegularExpression(pattern: "save(.*)?record(.*)twice", options: .caseInsensitive)
+            return pattern.firstMatch(in: self.localizedDescription, options: [], range: NSMakeRange(0, self.localizedDescription.count)) != nil
+        } catch let error {
+            Log.error("Error matching pattern: \(error)")
+            return false
+        }
+    }
+    
+    public func getRecordNameForSameRecordError() -> String? {
+        let xs = self.localizedDescription.components(separatedBy: " ")
+        var recordNameStr = ""
+        for x in xs {
+            if x.starts(with: "recordName=") { recordNameStr = x; break }
+        }
+        if !recordNameStr.isEmpty {
+            if let name = recordNameStr.components(separatedBy: "=").last { return name }
+        }
+        return nil
     }
     
     public func isSpecificErrorCode(code: CKError.Code) -> Bool {

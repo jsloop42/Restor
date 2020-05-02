@@ -58,9 +58,6 @@ class WorkspaceListViewController: UIViewController {
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
-        // TODO: test
-        //self.createNewWorkspace(name: "Test workspace", desc: "Test workspace desc")
-        // end test
     }
     
     func initEvents() {

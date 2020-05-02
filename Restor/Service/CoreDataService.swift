@@ -22,6 +22,7 @@ enum RecordType: String {
     case zone = "Zone"
     
     static func from(id: String) -> RecordType? {
+        if id == "default" { return .workspace }
         switch id.prefix(2) {
         case "ws":
             return self.workspace
@@ -334,7 +335,7 @@ class CoreDataService {
             if let x = predicate {
                 fr.predicate = x
             } else {
-                fr.predicate = NSPredicate(format: "markForDelete == %hhd", false)
+                fr.predicate = NSPredicate(format: "markForDelete == %hhd AND name != %@", false, "")
             }
             fr.fetchBatchSize = self.fetchBatchSize
             frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
@@ -350,6 +351,30 @@ class CoreDataService {
     func updateFetchResultsController(_ frc: NSFetchedResultsController<NSFetchRequestResult>, predicate: NSPredicate, ctx: NSManagedObjectContext = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
         ctx.performAndWait { frc.fetchRequest.predicate = predicate }
         return frc
+    }
+    
+    func getEntity(recordType: RecordType, id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> Entity? {
+        let moc = self.getMainMOC(ctx: ctx)
+        switch recordType {
+        case .workspace:
+            return self.getWorkspace(id: id, ctx: moc)
+        case .project:
+            return self.getProject(id: id, ctx: moc)
+        case .request:
+            return self.getRequest(id: id, ctx: moc)
+        case .requestData:
+            return self.getRequestData(id: id, ctx: moc)
+        case .requestBodyData:
+            return self.getRequestBodyData(id: id, ctx: moc)
+        case .requestMethodData:
+            return self.getRequestMethodData(id: id, ctx: moc)
+        case .file:
+            return self.getFileData(id: id, ctx: moc)
+        case .image:
+            return self.getImageData(id: id, ctx: moc)
+        default:
+            return nil
+        }
     }
     
     // MARK: EWorkspace
@@ -1482,6 +1507,7 @@ class CoreDataService {
         Log.debug("save main context")
         self.mainMOC.perform {
             do {
+                if !self.mainMOC.hasChanges { Log.debug("main context does not have changes"); callback?(true); return }
                 Log.debug("main context has changes")
                 try self.mainMOC.save()
                 self.mainMOC.processPendingChanges()

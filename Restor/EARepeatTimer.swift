@@ -63,8 +63,8 @@ class EARepeatTimer {
     }
     
     func eventHandler() {
-        Log.debug("repeat timer: event handler")
         self.counter += 1
+        Log.debug("repeat timer: event handler: \(self.counter) - limit: \(self.limit)")
         if self.counter > self.limit {
             self.done?()
             self.stop()

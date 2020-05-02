@@ -60,7 +60,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     }
     
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        Log.debug("did register for remote notification with token: \(String(bytes: deviceToken, encoding: .utf8) ?? "")")
+        //Log.debug("did register for remote notification with token: \(String(bytes: deviceToken, encoding: .utf8) ?? "")")
     }
     
     func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {

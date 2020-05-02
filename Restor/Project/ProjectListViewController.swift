@@ -68,10 +68,14 @@ class ProjectListViewController: UIViewController {
         self.nc.addObserver(self, selector: #selector(self.workspaceDidSync(_:)), name: NotificationKey.workspaceDidSync, object: nil)
     }
     
+    func getFRCPredicate(_ wsId: String) -> NSPredicate {
+        return NSPredicate(format: "workspace.id == %@ AND name != %@", wsId, "")
+    }
+    
     func initData() {
         self.workspace = self.app.getSelectedWorkspace()
         if self.frc == nil, let wsId = self.workspace.id {
-            let predicate = NSPredicate(format: "workspace.id == %@", wsId)
+            let predicate = self.getFRCPredicate(wsId)
             if let _frc = self.localdb.getFetchResultsController(obj: EProject.self, predicate: predicate, ctx: self.localdb.mainMOC) as? NSFetchedResultsController<EProject> {
                 self.frc = _frc
                 self.frc.delegate = self
@@ -109,7 +113,8 @@ class ProjectListViewController: UIViewController {
         if self.workspace == ws { return }
         self.workspace = ws
         if let wsId = ws.id {
-            if let _frc = self.localdb.updateFetchResultsController(self.frc as! NSFetchedResultsController<NSFetchRequestResult>, predicate: NSPredicate(format: "workspace.id == %@", wsId), ctx: self.localdb.mainMOC) as? NSFetchedResultsController<EProject> {
+            let predicate = self.getFRCPredicate(wsId)
+            if let _frc = self.localdb.updateFetchResultsController(self.frc as! NSFetchedResultsController<NSFetchRequestResult>, predicate: predicate, ctx: self.localdb.mainMOC) as? NSFetchedResultsController<EProject> {
                 self.frc = _frc
                 self.frc.delegate = self
                 self.reloadData()

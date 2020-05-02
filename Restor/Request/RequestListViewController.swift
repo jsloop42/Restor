@@ -53,9 +53,13 @@ class RequestListViewController: UIViewController {
         self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: NotificationKey.databaseDidUpdate, object: nil)
     }
     
+    func getFRCPredicate(_ projId: String) -> NSPredicate {
+        return NSPredicate(format: "project.id == %@ AND name != %@", projId, "")
+    }
+    
     func initData() {
         if self.frc == nil, let projId = AppState.currentProject?.id {
-            let predicate = NSPredicate(format: "project.id == %@", projId)
+            let predicate = self.getFRCPredicate(projId)
             if let _frc = self.localdb.getFetchResultsController(obj: ERequest.self, predicate: predicate, ctx: self.localdb.mainMOC) as? NSFetchedResultsController<ERequest> {
                 self.frc = _frc
                 self.frc.delegate = self
