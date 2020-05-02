@@ -41,6 +41,7 @@ class App {
     var editReqManIds: Set<NSManagedObjectID> = Set()
     var editReqDelete: Set<NSManagedObject> = Set()
     private let editReqLock = NSLock()
+    private let nc = NotificationCenter.default
     
     enum Screen {
         case workspaceList
@@ -68,13 +69,49 @@ class App {
         _ = self.getSelectedWorkspace()
     }
     
+    // MARK: - App lifecycle events
+    
+    
+    @available(iOS 13.0, *)
+    func didBecomeActive(scene: UIScene) {
+        Log.debug("did become active")
+    }
+    
+    @available(iOS 10.0, *)
+    func didBecomeActive(app: UIApplication) {
+        Log.debug("did become active")
+    }
+    
+    func willEnterForground() {
+        do {
+            self.nc.addObserver(self, selector: #selector(self.reachabilityDidChange(_:)), name: .reachabilityDidChange, object: EAReachability.shared)
+            try EAReachability.shared.startNotifier()
+        } catch let error {
+            Log.error("Error starting reachability notifier: \(error)")
+        }
+    }
+    
+    func didEnterBackground() {
+        self.nc.removeObserver(self, name: .reachabilityDidChange, object: EAReachability.shared)
+        EAReachability.shared.stopNotifier()
+        self.saveState()
+    }
+    
+    @objc func reachabilityDidChange(_ notif: Notification) {
+        Log.debug("reachability did change: \(notif)")
+        if let reachability = notif.object as? EAReachability {
+            Log.debug("network status: \(reachability.connection.description)")
+        }
+    }
+    
     func saveSelectedWorkspaceId(_ id: String) {
         self.utils.setValue(key: Const.selectedWorkspaceIdKey, value: id)
     }
     
-    /// Invocked before application termination to perform save state, clean up.
+    /// Invoked before application termination to perform save state, clean up.
     func saveState() {
-        self.localdb.saveBackgroundContext(isForce: true)
+        //self.localdb.saveBackgroundContext(isForce: true)
+        self.localdb.saveMainContext()
     }
 
     func addWorkspace(_ ws: EWorkspace) {

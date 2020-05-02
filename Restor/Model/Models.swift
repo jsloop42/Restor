@@ -101,10 +101,10 @@ extension Entity {
     }
     
     public func getZoneID() -> CKRecordZone.ID {
-        return CloudKitService.shared.zoneID(workspaceId: self.getWsId())
+        return EACloudKit.shared.zoneID(workspaceId: self.getWsId())
     }
     
     public func getRecordID() -> CKRecord.ID {
-        return CloudKitService.shared.recordID(entityId: self.getId(), zoneID: self.getZoneID())
+        return EACloudKit.shared.recordID(entityId: self.getId(), zoneID: self.getZoneID())
     }
 }

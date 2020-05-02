@@ -95,7 +95,7 @@ public class EImage: NSManagedObject, Entity {
     
     static func getRequestData(_ record: CKRecord, ctx: NSManagedObjectContext) -> ERequestData? {
         if let ref = record["requestData"] as? CKRecord.Reference {
-            return CoreDataService.shared.getRequestData(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            return CoreDataService.shared.getRequestData(id: EACloudKit.shared.entityID(recordID: ref.recordID), ctx: ctx)
         }
         return nil
     }

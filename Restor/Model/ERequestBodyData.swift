@@ -88,7 +88,7 @@ public class ERequestBodyData: NSManagedObject, Entity {
     }
     
     static func getRequestBodyDataFromReference(_ ref: CKRecord.Reference, record: CKRecord, ctx: NSManagedObjectContext) -> ERequestBodyData? {
-        let reqBodyDataId = CloudKitService.shared.entityID(recordID: ref.recordID)
+        let reqBodyDataId = EACloudKit.shared.entityID(recordID: ref.recordID)
         if let bodyData = CoreDataService.shared.getRequestBodyData(id: reqBodyDataId, ctx: ctx) { return bodyData }
         let bodyData = CoreDataService.shared.createRequestBodyData(id: reqBodyDataId, wsId: record.getWsId(), checkExists: false, ctx: ctx)
         bodyData?.changeTag = 0

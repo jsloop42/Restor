@@ -103,7 +103,7 @@ public class ERequest: NSManagedObject, Entity {
     }
     
     static func getRequestFromReference(_ ref: CKRecord.Reference, record: CKRecord, ctx: NSManagedObjectContext) -> ERequest? {
-        let reqId = CloudKitService.shared.entityID(recordID: ref.recordID)
+        let reqId = EACloudKit.shared.entityID(recordID: ref.recordID)
         let wsId = record.getWsId()
         if let req = CoreDataService.shared.getRequest(id: reqId, ctx: ctx) { return req }
         let req = CoreDataService.shared.createRequest(id: reqId, wsId: wsId, name: "", checkExists: false, ctx: ctx)

@@ -100,14 +100,14 @@ public class EProject: NSManagedObject, Entity {
     
     static func getWorkspace(_ record: CKRecord, ctx: NSManagedObjectContext) -> EWorkspace? {
         if let ref = record["workspace"] as? CKRecord.Reference {
-            return CoreDataService.shared.getWorkspace(id: CloudKitService.shared.entityID(recordID: ref.recordID), ctx: ctx)
+            return CoreDataService.shared.getWorkspace(id: EACloudKit.shared.entityID(recordID: ref.recordID), ctx: ctx)
         }
         return nil
     }
     
     /// Returns project from the given record reference. If the project does not exists, one will be created.
     static func getProjectFromReference(_ ref: CKRecord.Reference, record: CKRecord, ctx: NSManagedObjectContext) -> EProject? {
-        let projId = CloudKitService.shared.entityID(recordID: ref.recordID)
+        let projId = EACloudKit.shared.entityID(recordID: ref.recordID)
         let wsId = record.getWsId()
         if let proj = CoreDataService.shared.getProject(id: projId, ctx: ctx) { return proj }
         let proj = CoreDataService.shared.createProject(id: projId, wsId: wsId, name: "", desc: "", checkExists: false, ctx: ctx)

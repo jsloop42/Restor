@@ -120,7 +120,7 @@ public class ERequestData: NSManagedObject, Entity {
     }
     
     static func getRequestDataFromReference(_ ref: CKRecord.Reference, record: CKRecord, ctx: NSManagedObjectContext) -> ERequestData? {
-        let reqDataId = CloudKitService.shared.entityID(recordID: ref.recordID)
+        let reqDataId = EACloudKit.shared.entityID(recordID: ref.recordID)
         let wsId = record.getWsId()
         if let reqData = CoreDataService.shared.getRequestData(id: reqDataId, ctx: ctx) { return reqData }
         let reqData = CoreDataService.shared.createRequestData(id: reqDataId, wsId: wsId, type: .form, fieldFormat: .file, checkExists: false, ctx: ctx)

@@ -12,7 +12,7 @@ import Foundation
 
 class EAQueueTests: XCTestCase {
     private var timer: Timer?
-    private let ck = CloudKitService.shared
+    private let ck = EACloudKit.shared
     private let opq = EAOperationQueue()
     
     override func setUp() {

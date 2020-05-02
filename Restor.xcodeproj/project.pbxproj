@@ -55,8 +55,9 @@
 		9EB78E73242BE6FF009663FE /* EAQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB78E72242BE6FF009663FE /* EAQueue.swift */; };
 		9EB78E75242BF767009663FE /* EAQueueTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB78E74242BF767009663FE /* EAQueueTests.swift */; };
 		9EBCAA9F2424F3E100C82508 /* PopupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */; };
+		9EBE4CA6245DF6C700CEBEB1 /* LICENSE.txt in Resources */ = {isa = PBXBuildFile; fileRef = 9EBE4CA5245DF6C700CEBEB1 /* LICENSE.txt */; };
 		9EC1F94C2426565B005BDD0A /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EC1F94B2426565B005BDD0A /* CloudKit.framework */; };
-		9EC1F94E2426995A005BDD0A /* CloudKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC1F94D2426995A005BDD0A /* CloudKitService.swift */; };
+		9EC1F94E2426995A005BDD0A /* EACloudKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC1F94D2426995A005BDD0A /* EACloudKit.swift */; };
 		9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC33FB323EEBF1A006C5B37 /* EATextView.swift */; };
 		9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */; };
 		9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED99AFD240AF7940064BDCC /* PersistenceService.swift */; };
@@ -143,8 +144,9 @@
 		9EB78E72242BE6FF009663FE /* EAQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAQueue.swift; sourceTree = "<group>"; };
 		9EB78E74242BF767009663FE /* EAQueueTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAQueueTests.swift; sourceTree = "<group>"; };
 		9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopupViewController.swift; sourceTree = "<group>"; };
+		9EBE4CA5245DF6C700CEBEB1 /* LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = LICENSE.txt; sourceTree = "<group>"; };
 		9EC1F94B2426565B005BDD0A /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
-		9EC1F94D2426995A005BDD0A /* CloudKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitService.swift; sourceTree = "<group>"; };
+		9EC1F94D2426995A005BDD0A /* EACloudKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACloudKit.swift; sourceTree = "<group>"; };
 		9EC33FB323EEBF1A006C5B37 /* EATextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextView.swift; sourceTree = "<group>"; };
 		9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataService.swift; sourceTree = "<group>"; };
 		9ED99AFD240AF7940064BDCC /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
@@ -278,6 +280,7 @@
 				9E926F9523945E79002DF561 /* SceneDelegate.swift */,
 				9E926F9F23945E7D002DF561 /* Assets.xcassets */,
 				9E926FA423945E7D002DF561 /* Info.plist */,
+				9EBE4CA5245DF6C700CEBEB1 /* LICENSE.txt */,
 			);
 			path = Restor;
 			sourceTree = "<group>";
@@ -312,7 +315,7 @@
 		9ED99AFA240AF75B0064BDCC /* Service */ = {
 			isa = PBXGroup;
 			children = (
-				9EC1F94D2426995A005BDD0A /* CloudKitService.swift */,
+				9EC1F94D2426995A005BDD0A /* EACloudKit.swift */,
 				9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */,
 				9ED99AFD240AF7940064BDCC /* PersistenceService.swift */,
 			);
@@ -454,6 +457,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9EBE4CA6245DF6C700CEBEB1 /* LICENSE.txt in Resources */,
 				9E926FA323945E7D002DF561 /* LaunchScreen.storyboard in Resources */,
 				9E926FA023945E7D002DF561 /* Assets.xcassets in Resources */,
 				9E926F9B23945E79002DF561 /* Main.storyboard in Resources */,
@@ -483,7 +487,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9E223D55243626E000229855 /* EACommon.swift in Sources */,
-				9EC1F94E2426995A005BDD0A /* CloudKitService.swift in Sources */,
+				9EC1F94E2426995A005BDD0A /* EACloudKit.swift in Sources */,
 				9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */,
 				9EFA58BD2445EBA8003C8AEA /* EAOperationQueue.swift in Sources */,
 				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,

@@ -12,7 +12,7 @@ import XCTest
 import CloudKit
 
 class CloudKitTests: XCTestCase {
-    private let ck = CloudKitService.shared
+    private let ck = EACloudKit.shared
     private let localdb = CoreDataService.shared
     private var zoneIDs: Set<CKRecordZone.ID> = Set()
     static var testsCount = testInvocations.count

@@ -14,8 +14,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     var window: UIWindow?
     //private let keyboardManager = IQKeyboardManager.shared
     private let app = App.shared
-    private lazy var ck = { return CloudKitService.shared }()
+    private lazy var ck = { return EACloudKit.shared }()
     private lazy var db = { return PersistenceService.shared }()
+    private let nc = NotificationCenter.default
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         UI.setGlobalStyle()
@@ -34,8 +35,19 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         return true
     }
     
+    func applicationDidBecomeActive(_ application: UIApplication) {
+        
+    }
+    
+    func applicationWillEnterForeground(_ application: UIApplication) {
+        self.app.willEnterForground()
+    }
+    
+    func applicationDidEnterBackground(_ application: UIApplication) {
+        self.app.didEnterBackground()
+    }
+    
     func applicationWillTerminate(_ application: UIApplication) {
-        // TODO: handle any editing state
         Log.debug("application will terminate")
         self.app.saveState()
     }
@@ -82,4 +94,3 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         // Use this method to release any resources that were specific to the discarded scenes, as they will not return.
     }
 }
-

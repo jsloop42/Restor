@@ -1,5 +1,5 @@
 //
-//  CloudKitService.swift
+//  EACloudKit.swift
 //  Restor
 //
 //  Created by jsloop on 22/03/20.
@@ -49,8 +49,9 @@ class ZoneInfo: NSObject, NSCoding {
     }
 }
 
-class CloudKitService {
-    static let shared = CloudKitService()
+/// A class that works with CloudKit
+class EACloudKit {
+    static let shared = EACloudKit()
     let cloudKitContainerId = "iCloud.com.estoapps.ios.restor8"
     private var _privateDatabase: CKDatabase!
     private var _container: CKContainer!
@@ -117,7 +118,9 @@ class CloudKitService {
         }
     }
     
-    init() {
+    init() {}
+    
+    func bootstrap() {
         if isRunningTests { return }
         self.loadSubscriptions()
         self.nc.addObserver(self, selector: #selector(self.zoneChangesDidSave(_:)), name: NotificationKey.zoneChangesDidSave, object: nil)
@@ -424,7 +427,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchAllZones == nil && self.canRetry() {
                         RetryTimer.fetchAllZones = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.fetchAllZones(completion: completion)
                                 RetryTimer.fetchAllZones.suspend()
                             }
@@ -477,7 +480,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchZone == nil && self.canRetry() {
                         RetryTimer.fetchZone = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.fetchZone(recordZoneIDs: recordZoneIDs, completion: completion)
                                 RetryTimer.fetchZone.suspend()
                             }
@@ -523,7 +526,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchDatabaseChanges == nil && self.canRetry() {
                         RetryTimer.fetchDatabaseChanges = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.fetchDatabaseChanges()
                                 RetryTimer.fetchAllZones.suspend()
                             }
@@ -565,7 +568,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchZoneChanges == nil && self.canRetry() {
                         RetryTimer.fetchZoneChanges = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.fetchZoneChanges(zoneID: zoneID, handler: handler)
                                 RetryTimer.fetchZoneChanges.suspend()
                             }
@@ -614,7 +617,7 @@ class CloudKitService {
         }
         op.recordZoneChangeTokensUpdatedBlock = { zoneID, changeToken, _ in
             Log.debug("CK: zone change token update for: \(zoneID) - \(String(describing: changeToken))")
-            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
+            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID, persist: true) }
         }
         op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, _, moreComing, error in
             Log.debug("CK: zone fetch complete: \(zoneID.zoneName)")
@@ -623,7 +626,7 @@ class CloudKitService {
                 handleError(err)
                 return;
             }
-            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
+            if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID, persist: true) }
             if moreComing { hasMore = true }
         }
         op.fetchRecordZoneChangesCompletionBlock = { [unowned self] error in
@@ -650,7 +653,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchZoneChanges == nil && self.canRetry() {
                         RetryTimer.fetchZoneChanges = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.fetchZoneChanges(zoneIDs: zoneIDs, completion: completion)
                                 RetryTimer.fetchZoneChanges.suspend()
                             }
@@ -736,7 +739,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchRecords == nil && self.canRetry() {
                         RetryTimer.fetchRecords = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.fetchRecords(recordIDs: recordIDs, completion: completion)
                                 RetryTimer.fetchRecords.suspend()
                             }
@@ -766,7 +769,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchSubscriptions == nil && self.canRetry() {
                         RetryTimer.fetchSubscriptions = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.fetchSubscriptions(completion: completion)
                                 RetryTimer.fetchSubscriptions.suspend()
                             }
@@ -808,7 +811,7 @@ class CloudKitService {
                     if self.canRetry() {
                         if RetryTimer.queryRecords == nil {
                             RetryTimer.queryRecords = EARepeatTimer(block: {
-                                if Reachability.isConnectedToNetwork() {
+                                if EAReachability.isConnectedToNetwork() {
                                     self.queryRecords(zoneID: zoneID, recordType: recordType, predicate: predicate, cursor: cursor, limit: limit, completion: completion)
                                     RetryTimer.queryRecords.suspend()
                                 }
@@ -845,7 +848,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.createZone == nil && self.canRetry() {
                         RetryTimer.createZone = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.createZone(recordZoneId: recordZoneId, completion: completion)
                                 RetryTimer.createZone.suspend()
                             }
@@ -901,7 +904,7 @@ class CloudKitService {
                     } else if err.isNetworkFailure() {
                         if RetryTimer.createZoneIfNotExist == nil && self.canRetry() {
                             RetryTimer.createZoneIfNotExist = EARepeatTimer(block: {
-                                if Reachability.isConnectedToNetwork() {
+                                if EAReachability.isConnectedToNetwork() {
                                     self.createZoneIfNotExist(recordZoneId: recordZoneId, completion: completion)
                                     RetryTimer.fetchZone.suspend()
                                 }
@@ -943,7 +946,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.saveRecords == nil && self.canRetry() {
                         RetryTimer.saveRecords = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.saveRecords(records, count: count, isForce: isForce, completion: completion)
                                 RetryTimer.saveRecords.suspend()
                             }
@@ -1032,7 +1035,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.subscribe == nil && self.canRetry() {
                         RetryTimer.subscribe = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.subscribe(subId, recordType: recordType, zoneID: zoneID)
                                 RetryTimer.fetchAllZones.suspend()
                             }
@@ -1067,7 +1070,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.subscribeToDBChanges == nil && self.canRetry() {
                         RetryTimer.subscribeToDBChanges = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.subscribeToDBChanges(subId: subId)
                                 RetryTimer.subscribeToDBChanges.suspend()
                             }
@@ -1102,7 +1105,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.deleteZone == nil && self.canRetry() {
                         RetryTimer.deleteZone = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.deleteZone(recordZoneIds: recordZoneIds, completion: completion)
                                 RetryTimer.deleteZone.suspend()
                             }
@@ -1139,7 +1142,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.deleteRecords == nil && self.canRetry() {
                         RetryTimer.deleteRecords = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.deleteRecords(recordIDs: recordIDs, completion: completion)
                                 RetryTimer.deleteRecords.suspend()
                             }
@@ -1174,7 +1177,7 @@ class CloudKitService {
                 if err.isNetworkFailure() {
                     if RetryTimer.deleteSubscriptions == nil && self.canRetry() {
                         RetryTimer.deleteSubscriptions = EARepeatTimer(block: {
-                            if Reachability.isConnectedToNetwork() {
+                            if EAReachability.isConnectedToNetwork() {
                                 self.deleteSubscriptions(subscriptionIDs: subscriptionIDs, completion: completion)
                                 RetryTimer.deleteSubscriptions.suspend()
                             }
@@ -1216,7 +1219,7 @@ class CloudKitService {
                             if err.isNetworkFailure() {
                                 if RetryTimer.deleteAllSubscriptions == nil && self.canRetry() {
                                     RetryTimer.deleteAllSubscriptions = EARepeatTimer(block: {
-                                        if Reachability.isConnectedToNetwork() {
+                                        if EAReachability.isConnectedToNetwork() {
                                             self.deleteAllSubscriptions()
                                             RetryTimer.fetchAllZones.suspend()
                                         }

@@ -75,7 +75,7 @@ struct DeferredSaveModel: Hashable {
 class PersistenceService {
     static let shared = PersistenceService()
     private lazy var localdb = { return CoreDataService.shared }()
-    private lazy var ck = { return CloudKitService.shared }()
+    private lazy var ck = { return EACloudKit.shared }()
     var wsCache = EALFUCache(size: 8)
     var projCache = EALFUCache(size: 16)
     var reqCache = EALFUCache(size: 32)
@@ -708,7 +708,7 @@ class PersistenceService {
     func fetchZoneChangesImp(zoneID: CKRecordZone.ID, isDelayedFetch: Bool) {
         let fn: () -> Void = {
             self.localdb.saveMainContext()
-            self.nc.post(name: CloudKitService.NotificationKey.zoneChangesDidSave, object: self, userInfo: [CloudKitService.NotificationKey.zoneIDKey: zoneID])
+            self.nc.post(name: EACloudKit.NotificationKey.zoneChangesDidSave, object: self, userInfo: [EACloudKit.NotificationKey.zoneIDKey: zoneID])
             self.processZoneRecord()
         }
         self.fetchZoneChanges(zoneID: zoneID, isDelayedFetch: isDelayedFetch, completion: fn)
