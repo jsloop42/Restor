@@ -1447,14 +1447,16 @@ class PersistenceService {
     
     /// Save the given project and updates the associated workspace to the cloud.
     func saveProjectToCloud(_ proj: EProject) {
-        proj.managedObjectContext?.perform {
+        let ctx = proj.managedObjectContext ?? self.localdb.mainMOC
+        ctx.perform {
             if proj.workspace == nil {
-                if let ws = self.localdb.getWorkspace(id: proj.getWsId(), ctx: proj.managedObjectContext) { proj.workspace = ws }
+                if let ws = self.localdb.getWorkspace(id: proj.getWsId(), ctx: ctx) { proj.workspace = ws }
             }
             guard let ws = proj.workspace else { self.removeFromSyncToCloudSaveId(proj.getId()); Log.error("Workspace is empty for project"); return }
             if !ws.isSyncEnabled { self.removeFromSyncToCloudSaveId(proj.getId()); return }
             if ws.markForDelete { self.deleteDataMarkedForDelete(ws); return }
             if proj.markForDelete { self.deleteDataMakedForDelete(proj); return }
+            let wsId  = ws.getId()
             let projId = proj.getId()
             let zoneID = proj.getZoneID()
             let recordID = self.ck.recordID(entityId: projId, zoneID: zoneID)
@@ -1471,17 +1473,18 @@ class PersistenceService {
                             self.ck.createZone(recordZoneId: zoneID) { result in
                                 switch result {
                                 case .success(_):
-                                    let wsId = ws.getId()
-                                    let ckwsID = self.ck.recordID(entityId: wsId, zoneID: zoneID)
-                                    let ckws = self.ck.createRecord(recordID: ckwsID, recordType: RecordType.workspace.rawValue)
-                                    ws.updateCKRecord(ckws)
-                                    self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws, isCreateZoneRecord: true)
+                                    ctx.perform {
+                                        let ckwsID = self.ck.recordID(entityId: wsId, zoneID: zoneID)
+                                        let ckws = self.ck.createRecord(recordID: ckwsID, recordType: RecordType.workspace.rawValue)
+                                        ws.updateCKRecord(ckws)
+                                        self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws, isCreateZoneRecord: true)
+                                    }
                                 case .failure(let error):
                                     Log.error("Error creating zone: \(error)")
                                 }
                             }
                         } else if err.isRecordNotFound() {
-                            let ckws = self.ck.createRecord(recordID: self.ck.recordID(entityId: ws.getId(), zoneID: ckproj.zoneID()), recordType: RecordType.workspace.rawValue)
+                            let ckws = self.ck.createRecord(recordID: self.ck.recordID(entityId: wsId, zoneID: ckproj.zoneID()), recordType: RecordType.workspace.rawValue)
                             self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws)
                         }
                     }

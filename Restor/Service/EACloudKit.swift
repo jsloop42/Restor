@@ -52,7 +52,7 @@ class ZoneInfo: NSObject, NSCoding {
 /// A class that works with CloudKit
 class EACloudKit {
     static let shared = EACloudKit()
-    let cloudKitContainerId = "iCloud.com.estoapps.ios.restor8"
+    let cloudKitContainerId = "iCloud.com.estoapps.ios.restor"
     private var _privateDatabase: CKDatabase!
     private var _container: CKContainer!
     private let nc = NotificationCenter.default

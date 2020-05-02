@@ -108,7 +108,7 @@ class CoreDataService {
     let defaultWorkspaceId = "default"
     let defaultWorkspaceName = "Default workspace"
     let defaultWorkspaceDesc = "The default workspace"
-    let cloudKitContainerId = "iCloud.com.estoapps.ios.restor8"
+    let cloudKitContainerId = "iCloud.com.estoapps.ios.restor"
     
     init() {
         self.bootstrap()

@@ -9,11 +9,11 @@
 import Foundation
 
 public struct EACommon {
-    static var userInteractiveQueue = DispatchQueue(label: "com.estoapps.ios.restor8.user-interactive", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
-    static var userInitiatedQueue = DispatchQueue(label: "com.estoapps.ios.restor8.user-initiated", qos: .userInitiated, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
-    static var defaultQueue = DispatchQueue(label: "com.estoapps.ios.restor8.default", qos: .default, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
-    static var utilityQueue = DispatchQueue(label: "com.estoapps.ios.restor8.utility", qos: .utility, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
-    static var backgroundQueue = DispatchQueue(label: "com.estoapps.ios.restor8.background", qos: .background, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+    static var userInteractiveQueue = DispatchQueue(label: "com.estoapps.ios.restor.user-interactive", qos: .userInteractive, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+    static var userInitiatedQueue = DispatchQueue(label: "com.estoapps.ios.restor.user-initiated", qos: .userInitiated, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+    static var defaultQueue = DispatchQueue(label: "com.estoapps.ios.restor.default", qos: .default, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+    static var utilityQueue = DispatchQueue(label: "com.estoapps.ios.restor.utility", qos: .utility, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
+    static var backgroundQueue = DispatchQueue(label: "com.estoapps.ios.restor.background", qos: .background, attributes: .concurrent, autoreleaseFrequency: .workItem, target: nil)
 }
 
 public enum EATimerState {
