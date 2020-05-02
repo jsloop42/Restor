@@ -96,13 +96,11 @@ class PersistenceService {
     private let defaultZoneRecordFetchLimit = 50
     private let opQueue = EAOperationQueue()
     private var syncTimer: DispatchSourceTimer?
-    //private var previousSyncTime: Int = 0
     private var isSyncFromCloudSuccess = false
     private var isSyncToCloudSuccess = false
     private var isSyncTimeSet = false
     private var queryDefaultZoneRecordRepeatTimer: EARepeatTimer!
     private var fetchZoneChangesDelayTimer: EARescheduler!
-    private var syncFromCloudOpCount = 0
     private var isSyncToCloudTriggered = false  // On app launch, is syncing to cloud initialised
     private var isSyncToCloudInProgress = false  // If processing of syncing to cloud in progress (adding to queue part).
     private var syncToCloudTimer: EARepeatTimer!
@@ -191,7 +189,6 @@ class PersistenceService {
     }
     
     init() {
-        //self.previousSyncTime = self.getLastSyncTime()
         if isRunningTests { return }
         self.initSaveQueue()
         self.subscribeToCloudKitEvents()
@@ -267,7 +264,6 @@ class PersistenceService {
                             }
                         }
                     }
-                    //self.decSyncToCloudSaveCount()
                     self.checkSyncToCloudState()
                     Log.error("Error saving to cloud: \(error)")
                 }
@@ -434,10 +430,8 @@ class PersistenceService {
         }
         if self.syncToCloudCtx != nil {
             self.localdb.saveMainContext()
-            //if self.syncToCloudCtx.hasChanges { self.localdb.saveChildContext(self.syncToCloudCtx) }
         } else {
             self.syncToCloudCtx = self.localdb.mainMOC
-            //self.syncToCloudCtx = self.localdb.getChildMOC()
         }
         self.syncToCloudTimer.resume()
         self.isSyncToCloudTriggered = true
@@ -446,33 +440,12 @@ class PersistenceService {
     func destroySyncToCloudState() {
         Log.debug("destroy sync to cloud state")
         self.destroySyncStateLock.lock()
-        //if self.syncToCloudTimer == nil { return }
         self.syncToCloudTimer.suspend()
-        //self.syncToCloudTimer = nil
-        if self.syncToCloudCtx != nil {
-            //self.syncToCloudCtx.performAndWait {
-                //self.localdb.saveChildContext(self.syncToCloudCtx)
-                //self.localdb.saveMainContext()
-                //self.syncToCloudCtx.reset()
-                //Log.debug("sync to cloud context reset")
-            //}
-        }
         self.destroySyncStateLock.unlock()
     }
     
     func syncToCloud() {
         Log.debug("sync to cloud")
-//        if !self.isSyncTimeSet && self.isSyncFromCloudSuccess {
-//            Log.debug("setting sync time")
-//            self.setIsSyncedOnce()
-//            self.setLastSyncTime()
-//            self.isSyncTimeSet = true
-//        }
-//        if self.syncFromCloudOpCount == 0 && self.isSyncToCloudTriggered && self.isSyncTimeSet {  // => not initial sync - could be from notifications
-//            Log.debug("updating last sync time")
-//            self.setLastSyncTime()
-//        }
-        //if self.syncFromCloudOpCount > 0 && self.isSyncToCloudTriggered { return }
         if self.saveQueue.count > 16 { return }
         if !self.zonesToSync.isEmpty { return }
         self.initSyncToCloudState()
@@ -693,7 +666,6 @@ class PersistenceService {
     func syncFromCloud() {
         Log.debug("sync from cloud")
         if self.syncFromCloudCtx == nil {
-            //self.syncFromCloudCtx = self.localdb.getChildMOC()
             self.syncFromCloudCtx = self.localdb.mainMOC
         }
         self.queryDefaultZoneRecords(completion: self.syncFromCloudHandler(_:))
@@ -707,6 +679,10 @@ class PersistenceService {
         return self.store.integer(forKey: self.lastSyncTimeKey)
     }
     
+    func handleSyncNotification(_ zoneID: CKRecordZone.ID) {
+        self.fetchZoneChangesImp(zoneID: zoneID, isDelayedFetch: true)
+    }
+    
     func syncFromCloudHandler(_ result: Result<[CKRecord], Error>) {
         Log.debug("sync from cloud handler")
         self.syncToCloud()
@@ -715,11 +691,9 @@ class PersistenceService {
             Log.debug("sync from cloud handler: records \(records.count)")
             self.zonesToSync = records
             self.processZoneRecord()
-            //records.forEach { record in _ = syncRecordFromCloudHandler(record) }
         case .failure(let error):
             Log.error("Error syncing from cloud: \(error)")
         }
-        Log.debug("sync from cloud op count: \(self.syncFromCloudOpCount)")
     }
     
     func processZoneRecord() {
@@ -731,129 +705,30 @@ class PersistenceService {
         _ = self.syncRecordFromCloudHandler(zone)
     }
     
-    func incSyncFromCloudOp() {
-        Log.debug("opQueue count: \(self.opQueue.count)")
-        self.syncFromCloudOpCount += 1
-    }
-    
-    func decSyncFromCloudOp() {
-        Log.debug("opQueue count: \(self.opQueue.count)")
-        if self.syncFromCloudOpCount == 0 { self.syncToCloud(); return }
-        self.syncFromCloudOpCount -= 1
-        self.syncToCloud()
-    }
-    
-    @available(*, deprecated)
-    func getQueryRecordCloudOp(recordType: RecordType, zoneID: CKRecordZone.ID, parentId: String? = nil, changeTag: Int? = 0) -> EACloudOperation {
-        return EACloudOperation(recordType: recordType, opType: .queryRecord, zoneID: zoneID, parentId: parentId, changeTag: changeTag, block: { [weak self] op in
-            self?.incSyncFromCloudOp()
-            self?.queryRecords(zoneID: zoneID, type: recordType, parentId: parentId ?? "", changeTag: changeTag) { result in
-                op?.finish()
-                if let ctx = self?.syncFromCloudCtx { self?.localdb.saveChildContext(ctx); ctx.performAndWait { ctx.reset() } }
-                self?.decSyncFromCloudOp()
-                self?.syncFromCloudHandler(result)
-            }
-        })
-    }
-    
-    func zoneChangeFetchCompleteHandler(zoneID: CKRecordZone.ID, done: Bool) {
-        self.nc.post(Notification(name: NotificationKey.databaseWillUpdate))
-        //self.localdb.saveChildContext(self.syncFromCloudCtx!)
-        self.syncFromCloudCtx.performAndWait {
-            //if done { self.syncFromCloudCtx.reset() }
-            //self.localdb.saveBackgroundContext(isForce: true) { _ in
-                //self.localdb.bgMOC.perform {
-                    //if done { self.localdb.bgMOC.reset() }
-                    self.localdb.mainMOC.perform {
-                        if done { self.localdb.saveMainContext() }
-                        //self.localdb.mainMOC.refreshAllObjects()
-                        DispatchQueue.main.async {
-                            typealias Notif = CloudKitService.NotificationKey
-                            self.nc.post(name: Notif.zoneChangesDidSave, object: self, userInfo: [Notif.zoneIDKey: zoneID])
-                            self.nc.post(Notification(name: NotificationKey.databaseDidUpdate))
-                        }
-                        DispatchQueue.global().async {
-                            self.syncToCloud()
-                            self.processZoneRecord()
-                        }
-                    }
-                //}
-            //}
+    func fetchZoneChangesImp(zoneID: CKRecordZone.ID, isDelayedFetch: Bool) {
+        let fn: () -> Void = {
+            self.localdb.saveMainContext()
+            self.nc.post(name: CloudKitService.NotificationKey.zoneChangesDidSave, object: self, userInfo: [CloudKitService.NotificationKey.zoneIDKey: zoneID])
+            self.processZoneRecord()
         }
+        self.fetchZoneChanges(zoneID: zoneID, isDelayedFetch: isDelayedFetch, completion: fn)
     }
     
     func syncRecordFromCloudHandler(_ record: CKRecord) -> Bool {
-//        let changeTag = self.isSyncedOnce() ? self.previousSyncTime : 0
         switch RecordType(rawValue: record.type()) {
         case .zone:
-            //if self.isSyncedOnce() {
-                let zoneID = self.ck.zoneID(workspaceId: record.id())
-                var op: EACloudOperation!
-                // The completion handler is taken out of the EACloudOperation so that the operation can be marked as finished on zone change completion marked
-                // by the done flag. But some records gets synced even after the completion handler gets invoked. This makes sure that handler gets executed in
-                // such cases.
-                let fn: () -> Void = {
-                    //if op != nil { op.finish(); op = nil }
-                    self.localdb.saveMainContext()
-                    self.processZoneRecord()
-                    //self.zoneChangeFetchCompleteHandler(zoneID: zoneID, done: done)
-                }
-                //op = EACloudOperation(recordType: .zone, opType: .fetchZoneChange, zoneID: zoneID, block: { [weak self] op in
-                self.fetchZoneChanges(zoneID: zoneID, completion: fn)
-                //})
-                //if !self.opQueue.add(op) { self.addSyncOpToLocal(op) }
-            //}
+            self.fetchZoneChanges(zoneID: self.ck.zoneID(workspaceId: record.id()), isDelayedFetch: false)
             fallthrough
         case .workspace:
             self.updateWorkspaceFromCloud(record)
-//            let wsId = record.id()
-//            let zoneID = self.ck.zoneID(workspaceId: wsId)
-//            let op = self.getQueryRecordCloudOp(recordType: .project, zoneID: zoneID, parentId: wsId, changeTag: changeTag)
-//            op.completionBlock = { Log.debug("op completion: - query project") }
-//            if !self.opQueue.add(op) { self.addSyncOpToLocal(op); return false }
-//            return true
         case .project:
             self.updateProjectFromCloud(record)
-//            let zoneID = record.zoneID()
-//            let projId = record.id()
-//            var status = true
-//            let opreq = self.getQueryRecordCloudOp(recordType: .request, zoneID: zoneID, parentId: projId, changeTag: changeTag)
-//            opreq.completionBlock = { Log.debug("op completion: - query request") }
-//            if !self.opQueue.add(opreq) { self.addSyncOpToLocal(opreq); status = false }
-//            let opreqmeth = self.getQueryRecordCloudOp(recordType: .requestMethodData, zoneID: zoneID, parentId: projId, changeTag: changeTag)
-//            opreqmeth.completionBlock = { Log.debug("op completion: - query request method") }
-//            if !self.opQueue.add(opreqmeth) { self.addSyncOpToLocal(opreqmeth); status = false }
-//            return status
         case .request:
             self.updateRequestFromCloud(record)
-//            let zoneID = record.zoneID()
-//            let reqId = record.id()
-//            var status = false
-//            let opreqdata = self.getQueryRecordCloudOp(recordType: .requestData, zoneID: zoneID, parentId: reqId, changeTag: changeTag)
-//            opreqdata.completionBlock = { Log.debug("op completion: - query request") }
-//            if !self.opQueue.add(opreqdata) { self.addSyncOpToLocal(opreqdata); status = false }
-//            let opreqbody = self.getQueryRecordCloudOp(recordType: .requestBodyData, zoneID: zoneID, parentId: reqId, changeTag: changeTag)
-//            opreqbody.completionBlock = { Log.debug("op completion: - query request method") }
-//            if !self.opQueue.add(opreqbody) { self.addSyncOpToLocal(opreqbody); status = false }
-//            return status
         case .requestBodyData:
             self.updateRequestBodyDataFromCloud(record)
-//            let op = self.getQueryRecordCloudOp(recordType: .requestData, zoneID: record.zoneID(), parentId: record.id(), changeTag: changeTag)
-//            op.completionBlock = { Log.debug("op completion: - query request data") }
-//            if !self.opQueue.add(op) { self.addSyncOpToLocal(op); return false }
-//            return true
         case .requestData:
             self.updateRequestDataFromCloud(record)
-//            let zoneID = record.zoneID()
-//            let reqDataId = record.id()
-//            var status = false
-//            let opfile = self.getQueryRecordCloudOp(recordType: .file, zoneID: zoneID, parentId: reqDataId, changeTag: changeTag)
-//            opfile.completionBlock = { Log.debug("op completion: - query file") }
-//            if !self.opQueue.add(opfile) { self.addSyncOpToLocal(opfile); status = false }
-//            let opimage = self.getQueryRecordCloudOp(recordType: .image, zoneID: zoneID, parentId: reqDataId, changeTag: changeTag)
-//            opimage.completionBlock = { Log.debug("op completion: - query image") }
-//            if !self.opQueue.add(opimage) { self.addSyncOpToLocal(opimage); status = false }
-//            return status
         case .requestMethodData:
             self.updateRequestMethodDataFromCloud(record)
         case .file:
@@ -982,7 +857,6 @@ class PersistenceService {
                 ws.updateFromCKRecord(record)
                 ws.isSynced = true
                 ws.isActive = true
-                //self.localdb.saveChildContext(ctx)
                 self.localdb.saveMainContext()
                 Log.debug("Workspace synced")
                 self.nc.post(Notification(name: NotificationKey.workspaceDidSync))
@@ -1007,7 +881,6 @@ class PersistenceService {
                     _ = self.localdb.genDefaultRequestMethods(proj, ctx: ctx)
                 }
                 proj.isSynced = true
-                //self.localdb.saveChildContext(ctx)
                 self.localdb.saveMainContext()
                 Log.debug("Project synced")
                 self.nc.post(Notification(name: NotificationKey.projectDidSync))
@@ -1030,7 +903,6 @@ class PersistenceService {
             if isNew || req.changeTag < record.changeTag {  // => server has new copy
                 req.updateFromCKRecord(record, ctx: ctx)
                 req.isSynced = true
-                //self.localdb.saveChildContext(ctx)
                 self.localdb.saveMainContext()
                 Log.debug("Request synced")
                 self.nc.post(Notification(name: NotificationKey.requestDidSync))
@@ -1052,7 +924,6 @@ class PersistenceService {
             if isNew || reqBodyData.changeTag < record.changeTag {  // => server has new copy
                 reqBodyData.updateFromCKRecord(record, ctx: ctx)
                 reqBodyData.isSynced = true
-                //self.localdb.saveChildContext(ctx)
                 self.localdb.saveMainContext()
                 Log.debug("Request body synced")
                 self.nc.post(Notification(name: NotificationKey.requestBodyDataDidSync))
@@ -1076,7 +947,6 @@ class PersistenceService {
             if isNew || reqData.changeTag < record.changeTag {  // => server has new copy
                 reqData.updateFromCKRecord(record, ctx: ctx)
                 reqData.isSynced = true
-                //self.localdb.saveChildContext(ctx)
                 self.localdb.saveMainContext()
                 Log.debug("Request data synced")
                 self.nc.post(Notification(name: NotificationKey.requestDataDidSync))
@@ -1098,7 +968,6 @@ class PersistenceService {
             if isNew || reqMethodData.changeTag < record.changeTag {  // => server has new copy
                 reqMethodData.updateFromCKRecord(record, ctx: ctx)
                 reqMethodData.isSynced = true
-                //self.localdb.saveChildContext(ctx)
                 self.localdb.saveMainContext()
                 Log.debug("Request method data synced")
                 self.nc.post(Notification(name: NotificationKey.requestMethodDataDidSync))
@@ -1120,7 +989,6 @@ class PersistenceService {
             if isNew || fileData.changeTag < record.changeTag {  // => server has new copy
                 fileData.updateFromCKRecord(record, ctx: ctx)
                 fileData.isSynced = true
-                //self.localdb.saveChildContext(ctx)
                 self.localdb.saveMainContext()
                 Log.debug("File data synced")
                 self.nc.post(Notification(name: NotificationKey.fileDataDidSync))
@@ -1181,49 +1049,41 @@ class PersistenceService {
     func workspaceDidDeleteFromCloud(_ id: String) {
         let ctx = self.syncFromCloudCtx!
         self.localdb.deleteWorkspace(id: id, ctx: ctx)
-        self.localdb.saveChildContext(ctx)
     }
     
     func projectDidDeleteFromCloud(_ id: String) {
         let ctx = self.syncFromCloudCtx!
         self.localdb.deleteProject(id: id, ctx: ctx)
-        self.localdb.saveChildContext(ctx)
     }
     
     func requestDidDeleteFromCloud(_ id: String) {
         let ctx = self.syncFromCloudCtx!
         self.localdb.deleteRequest(id: id, ctx: ctx)
-        self.localdb.saveChildContext(ctx)
     }
         
     func requestBodyDataDidDeleteFromCloud(_ id: String) {
         let ctx = self.syncFromCloudCtx!
         self.localdb.deleteRequestBodyData(id: id, ctx: ctx)
-        self.localdb.saveChildContext(ctx)
     }
     
     func requestDataDidDeleteFromCloud(_ id: String) {
         let ctx = self.syncFromCloudCtx!
         self.localdb.deleteRequestData(id: id, ctx: ctx)
-        self.localdb.saveChildContext(ctx)
     }
     
     func requestMethodDataDidDeleteFromCloud(_ id: String) {
         let ctx = self.syncFromCloudCtx!
         self.localdb.deleteRequestMethodData(id: id, ctx: ctx)
-        self.localdb.saveChildContext(ctx)
     }
     
     func fileDataDidDeleteFromCloud(_ id: String) {
         let ctx = self.syncFromCloudCtx!
         self.localdb.deleteFileData(id: id, ctx: ctx)
-        self.localdb.saveChildContext(ctx)
     }
     
     func imageDataDidDeleteFromCloud(_ id: String) {
         let ctx = self.syncFromCloudCtx!
         self.localdb.deleteImageData(id: id, ctx: ctx)
-        self.localdb.saveChildContext(ctx)
     }
     
     func cloudRecordDidDelete(_ recordID: CKRecord.ID) {
@@ -1252,6 +1112,7 @@ class PersistenceService {
         case .none:
             Log.error("Unknown record type: \(id)")
         }
+        self.localdb.saveMainContext()
     }
     
     func cloudRecordsDidDelete(_ recordsIDs: [CKRecord.ID]) {
@@ -1265,7 +1126,6 @@ class PersistenceService {
     ///   - set: The entities deleted in the edit request.
     ///   - request: The request object.
     func deleteDataMarkedForDelete(_ set: Set<NSManagedObject>) {
-        // TODO: crash
         Log.debug("delete data marked for delete - set: \(set.count)")
         guard set.count > 0 else { return }
         self.deleteEntitesFromCloud(set.toArray() as! [Entity])
@@ -1413,19 +1273,14 @@ class PersistenceService {
                                     count += 1
                                     lock.unlock()
                                     if count == len {
-                                        //self?.localdb.saveChildContext(ctx);
-                                        //self?.localdb.saveMainContext()
                                         self?.checkSyncToCloudState()
                                     }
                                 }
                             }
                         }
                     }
-                    //self?.checkSyncToCloudState()
                     Log.debug("Remaining entities to delete: \(xs.count)")
-                    // if xs.count > 0 { self.deleteEntitesFromCloud(xs, zoneID: zoneID) }
                 case .failure(let error):
-                    //self?.decSyncToCloudDeleteCount()
                     self?.checkSyncToCloudState()
                     Log.error("Error deleting records: \(error)")
                 }
@@ -1462,85 +1317,12 @@ class PersistenceService {
         }
     }
     
-    /// Fetch records belonging to the given record type with id in the given zone.
-    /// - Parameters:
-    ///   - zoneID: The zone in which the record exists
-    ///   - type: The record type
-    ///   - parentId: The parent Id of the record which is used in predicate
-    ///   - isContinue: Should continue from the previous cursor if exists. If set to false, the cursor will be removed from the cache.
-    ///   - changeTag: The last sync time which is used to fetch records modified after that
-    ///   - completion: The completion handler.
-    @available(*, deprecated)
-    func queryRecords(zoneID: CKRecordZone.ID, type: RecordType, parentId: String, predicate: NSPredicate? = nil, isContinue: Bool? = true, changeTag: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
-        Log.debug("query records: \(zoneID), type: \(type), parentId: \(parentId) modified: \(changeTag ?? 0)")
-        let changeTag = changeTag ?? 0
-        let cursor: CKQueryOperation.Cursor? = self.getQueryCursor(type, zoneID: zoneID)
-        let predicate: NSPredicate = {
-            if predicate != nil { return predicate! }
-            var pred: NSPredicate!
-            switch type {
-            case .workspace:
-                pred = NSPredicate(format: "changeTag >= %ld", changeTag)
-            case .project:
-                pred = NSPredicate(format: "workspace == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
-            case .request:
-                pred = NSPredicate(format: "project == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
-            case .requestBodyData:
-                pred = NSPredicate(format: "request == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
-            case .requestData:
-                [NSPredicate(format: "binary == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag),
-                 NSPredicate(format: "form == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag),
-                 NSPredicate(format: "header == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag),
-                 NSPredicate(format: "image == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag),
-                 NSPredicate(format: "multipart == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)].forEach { pred in
-                    self.queryRecords(zoneID: zoneID, type: type, parentId: parentId, predicate: pred, isContinue: isContinue, completion: completion)
-                }
-                pred = NSPredicate(format: "param == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
-            case .requestMethodData:
-                pred = NSPredicate(format: "project == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
-            case .file:
-                pred = NSPredicate(format: "requestData == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
-            case .image:
-                pred = NSPredicate(format: "requestData == %@ AND changeTag >= %ld", CKRecord.Reference(recordID: self.ck.recordID(entityId: parentId, zoneID: zoneID), action: .none), changeTag)
-            case .zone:
-                pred = NSPredicate(format: "isSyncEnabled == %hdd AND changeTag >= %ld", true, changeTag)
-            }
-            return pred
-        }()
-        self.ck.queryRecords(zoneID: zoneID, recordType: type.rawValue, predicate: predicate,
-                             cursor: cursor, limit: self.defaultZoneRecordFetchLimit) { [weak self] result in
-            self?.queryRecordsHandler(zoneID: zoneID, type: type, parentId: parentId, isContinue: isContinue, result: result, completion: completion)
-        }
-    }
-    
-    @available(*, deprecated)
-    func queryRecordsHandler(zoneID: CKRecordZone.ID, type: RecordType, parentId: String, isContinue: Bool? = true, result: Result<(records: [CKRecord], cursor: CKQueryOperation.Cursor?), Error>, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
-        switch result {
-        case .success(let (records, cursor)):
-            if let cursor = cursor {
-                self.setQueryCursor(cursor, type: type, zoneID: zoneID)
-                DispatchQueue.global().asyncAfter(deadline: .now() + 3) {
-                    self.queryRecords(zoneID: zoneID, type: type, parentId: parentId, isContinue: isContinue, completion: completion)
-                }
-            } else {
-                self.removeQueryCursor(for: type, zoneID: zoneID)
-            }
-            completion(.success(records))
-        case .failure(let error):
-            Log.error("Error querying records: \(error)")
-            completion(.failure(error))
-            break
-        }
-    }
-    
     // MARK: - Fetch
     
     func fetchZoneChanges(zoneID: CKRecordZone.ID, isDelayedFetch: Bool? = false, completion: (() -> Void)? = nil) {
         Log.debug("fetching zone changes for zoneID: \(zoneID.zoneName) - isDelayedFetch: \(isDelayedFetch ?? false)")
         let fn: () -> Void = {
-            self.incSyncFromCloudOp()
             self.ck.fetchZoneChanges(zoneID: zoneID, handler: { result in
-                self.decSyncFromCloudOp()
                 Log.debug("zone change handler")
                 switch result {
                 case .success(let (saved, deleted)):
@@ -1573,48 +1355,6 @@ class PersistenceService {
         } else {
             fn()
         }
-    }
-    
-    func fetchZoneChanges(zoneIDs: [CKRecordZone.ID], isDeleteOnly: Bool? = false, isDelayedFetch: Bool? = false, completion: ((Bool) -> Void)? = nil) {
-        Log.debug("fetching zone changes for zoneIDs: \(zoneIDs) - isDelayedFetch: \(isDelayedFetch ?? false)")
-        let fn: () -> Void = {
-            self.incSyncFromCloudOp()
-            self.ck.fetchZoneChanges(zoneIDs: zoneIDs) { result in
-                self.decSyncFromCloudOp()
-                self.zoneChangeHandler(isDeleteOnly: isDeleteOnly ?? false, result: result, completion: completion)
-            }
-        }
-        if isDelayedFetch != nil, isDelayedFetch! {
-            if self.fetchZoneChangesDelayTimer == nil {
-                self.fetchZoneChangesDelayTimer = EARescheduler(interval: 4.0, type: .everyFn, limit: 4)
-                Log.debug("Delayed fetch of zones initialised")
-            }
-            self.fetchZoneChangesDelayTimer.schedule(fn: EAReschedulerFn(id: "fetch-zone-changes", block: {
-                fn()
-                Log.debug("Delayed exec - fetch zones")
-                return true
-            }, callback: { _ in
-                self.fetchZoneChangesDelayTimer = nil
-                Log.debug("Delayed fetch exec - done")
-            }, args: []))
-        } else {
-            fn()
-        }
-    }
-    
-    func zoneChangeHandler(isDeleteOnly: Bool, result: Result<(CloudKitService.ZoneChangeResult, Bool), Error>, completion: ((Bool) -> Void)? = nil) {
-        Log.debug("zone change handler")
-        var status = false
-        switch result {
-        case .success(let (result, done)):
-            status = done
-            Log.debug("zone change saved: \(result.saved.count), deleted: \(result.deleted.count)")
-            if !isDeleteOnly { result.saved.forEach { record in self.cloudRecordDidChange(record) } }
-            result.deleted.forEach { record in self.cloudRecordDidDelete(record) }
-        case .failure(let error):
-            Log.error("Error getting zone changes: \(error)")
-        }
-        completion?(status)
     }
     
     /// Checks if the record is present in cache. If present, returns, else fetch from cloud, adds to the cache and returns.
@@ -1736,7 +1476,6 @@ class PersistenceService {
                                     let ckws = self.ck.createRecord(recordID: ckwsID, recordType: RecordType.workspace.rawValue)
                                     ws.updateCKRecord(ckws)
                                     self.saveProjectToCloudImp(ckproj: ckproj, proj: proj, ckws: ckws, ws: ws, isCreateZoneRecord: true)
-                                    //self.saveRecords(records, completion: completion)
                                 case .failure(let error):
                                     Log.error("Error creating zone: \(error)")
                                 }
@@ -1817,7 +1556,6 @@ class PersistenceService {
             let zoneID = ckreq.zoneID()
             guard let wsId = req.project?.workspace?.getId() else { return }
             req.updateCKRecord(ckreq, project: ckproj)
-            //EProject.addRequestReference(to: ckproj, request: ckreq)
             let projModel = DeferredSaveModel(record: ckproj, entity: proj, id: proj.getId())
             let reqModel = DeferredSaveModel(record: ckreq, entity: req, id: req.getId())
             acc.append(contentsOf: [projModel, reqModel])
@@ -1938,7 +1676,7 @@ class PersistenceService {
                     }
                 }
             }
-            self.saveToCloud(acc)  // we need to save this in the same request so that the deps are created and referrenced properly.
+            self.saveToCloud(acc)  // we need to save this in the same request so that the deps are created and referenced properly.
         }
     }
 }

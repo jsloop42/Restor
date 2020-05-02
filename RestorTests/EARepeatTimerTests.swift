@@ -24,12 +24,13 @@ class EARepeatTimerTests: XCTestCase {
     func testRepeatTimer() {
         let exp = expectation(description: "repeat timer execution")
         var c = 0
+        var done = false
         self.timer = EARepeatTimer(block: {
             c += 1
         }, interval: 1.0, limit: 5)
         self.timer.done = {
             XCTAssertEqual(c, 5)
-            exp.fulfill()
+            if !done { done = true; exp.fulfill() }
         }
         self.timer.resume()
         waitForExpectations(timeout: 10, handler: nil)

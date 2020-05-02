@@ -28,21 +28,11 @@
     {
       "skippedTests" : [
         "CloudKitTests",
-        "RestorTests\/testBackgroundWorker()",
-        "RestorTests\/testCoreData()",
         "RestorTests\/testCoreDataBackgroundContextConcurrencyType()",
         "RestorTests\/testCoreDataMainContextConcurrencyType()",
         "RestorTests\/testCoreDataPersistenceLoadedOnDisk()",
         "RestorTests\/testCoreDataPersistenceStoreCreated()",
-        "RestorTests\/testCoreDataSetupCompletion()",
-        "RestorTests\/testEntityCRUD()",
-        "RestorTests\/testEntitySorting()",
-        "RestorTests\/testFileAttachmentDelete()",
-        "RestorTests\/testFileRead()",
-        "RestorTests\/testGetImageType()",
-        "RestorTests\/testRequestDidChange()",
-        "RestorTests\/testRequestToDictionary()",
-        "RestorTests\/testTemp()"
+        "RestorTests\/testCoreDataSetupCompletion()"
       ],
       "target" : {
         "containerPath" : "container:Restor.xcodeproj",

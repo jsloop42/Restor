@@ -396,43 +396,6 @@ class CloudKitService {
         }
     }
     
-    /// Handles remote iCloud notifications
-//    func handleNotification(zoneID: CKRecordZone.ID) {
-//        Log.debug("CK: handle notification: \(zoneID)")
-//        var changeToken: CKServerChangeToken? = nil
-//        if let changeTokenData = self.store.data(forKey: PropKey.serverChangeToken.rawValue) {
-//            changeToken = NSKeyedUnarchiver.unarchiveObject(with: changeTokenData) as? CKServerChangeToken
-//        }
-//        let options = CKFetchRecordZoneChangesOperation.ZoneOptions()
-//        options.previousServerChangeToken = changeToken
-//        let optionsMap = [zoneID: options]
-//        let op = CKFetchRecordZoneChangesOperation(recordZoneIDs: [zoneID], optionsByRecordZoneID: optionsMap)
-//        op.fetchAllChanges = true
-//        op.qualityOfService = .utility
-//        op.recordChangedBlock = { record in
-//            Log.debug("CK: record changed: \(record)")
-//            PersistenceService.shared.cloudRecordDidChange(record)
-//        }
-//        op.recordZoneChangeTokensUpdatedBlock = { [unowned self] zoneID, changeToken, data in
-//            guard let changeToken = changeToken else { return }
-//            Log.debug("CK: record zone change tokens updated")
-//            let changeTokenData = NSKeyedArchiver.archivedData(withRootObject: changeToken)
-//            self.store.set(changeTokenData, forKey: PropKey.serverChangeToken.rawValue)
-//        }
-//        op.recordZoneFetchCompletionBlock = { [unowned self] zoneID, changeToken, data, more, error in
-//            guard error == nil else { return }
-//            guard let changeToken = changeToken else { return }
-//            Log.debug("CK: record zone fetch completion")
-//            let changeTokenData = NSKeyedArchiver.archivedData(withRootObject: changeToken)
-//            self.store.set(changeTokenData, forKey: PropKey.serverChangeToken.rawValue)
-//        }
-//        op.fetchRecordZoneChangesCompletionBlock = {error in
-//            guard error == nil else { return }
-//            Log.debug("CK: fetch record zone changes completion")
-//        }
-//        self.privateDatabase().add(op)
-//    }
-    
     /// Fetches all subscriptions from cloud and updates user defaults.
     func loadSubscriptions() {
         self.fetchSubscriptions { [unowned self] result in

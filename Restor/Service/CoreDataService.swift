@@ -82,10 +82,6 @@ class CoreDataService {
         let model = self.model
         return NSPersistentContainer(name: self.containerName, managedObjectModel: model)
     }()
-//    lazy var persistentContainer: NSPersistentCloudKitContainer = {
-//        let model = self.model
-//        return NSPersistentCloudKitContainer(name: self.containerName, managedObjectModel: model)
-//    }()
     lazy var persistentContainer: NSPersistentContainer = {
         let model = self.model
         return NSPersistentContainer(name: self.containerName, managedObjectModel: model)
@@ -126,7 +122,6 @@ class CoreDataService {
     func bootstrap() {
         let desc = self.persistentContainer.persistentStoreDescriptions.first
         desc?.type = self.storeType
-        // desc.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)  // for local store only
         self.setup()
     }
     
@@ -140,22 +135,10 @@ class CoreDataService {
     }
     
     private func loadPersistentStore(completion: @escaping () -> Void) {
-        // Handle data migration on a different thread/queue here
+        // Handle data migration on a different thread / queue
         self.persistentContainer.loadPersistentStores { description, error  in
             guard error == nil else { fatalError("Unable to load store \(error!)") }
             self.persistentContainer.viewContext.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
-            //do {
-                // CloudKit related change
-                // try self.persistentContainer.viewContext.setQueryGenerationFrom(.current)
-                //let desc = self.persistentContainer.persistentStoreDescriptions.first
-                //desc?.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(containerIdentifier: self.cloudKitContainerId)
-                //desc?.configuration = "Cloud"
-                
-                // NB: This needs to be done only once and should not be included in the release version.
-                //try self.persistentContainer.initializeCloudKitSchema(options: [])
-            //} catch let error {
-                //Log.error("Persistence store error: \(error)")
-            //}
             completion()
         }
     }
@@ -1184,7 +1167,7 @@ class CoreDataService {
     
     // MARK: - Entities to sync
     
-    func getWorkspacesToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<EWorkspace> {
+    func getWorkspacesToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<EWorkspace> {
         let moc = self.getMainMOC(ctx: ctx)
         let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
         fr.predicate = NSPredicate(format: "isSynced == %hhd AND isActive == %hhd", false, true)
@@ -1199,7 +1182,7 @@ class CoreDataService {
         return frc
     }
     
-    func getProjectsToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<EProject> {
+    func getProjectsToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<EProject> {
         let moc = self.getMainMOC(ctx: ctx)
         let fr = NSFetchRequest<EProject>(entityName: "EProject")
         fr.predicate = NSPredicate(format: "isSynced == %hhd AND markForDelete == %hhd", false, false)  // Deleted items will be fetched separately
@@ -1214,7 +1197,7 @@ class CoreDataService {
         return frc
     }
     
-    func getRequestsToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<ERequest> {
+    func getRequestsToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<ERequest> {
         let moc = self.getMainMOC(ctx: ctx)
         let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
         fr.predicate = NSPredicate(format: "isSynced == %hhd AND markForDelete == %hhd", false, false)
@@ -1229,7 +1212,7 @@ class CoreDataService {
         return frc
     }
     
-    func getDataMarkedForDelete(obj: Entity.Type, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
+    func getDataMarkedForDelete(obj: Entity.Type, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
         let moc = self.getMainMOC(ctx: ctx)
         var frc: NSFetchedResultsController<NSFetchRequestResult>!
         moc.performAndWait {
@@ -1255,10 +1238,10 @@ class CoreDataService {
     ///   - name: The workspace name.
     ///   - name: The workspace description.
     ///   - checkExists: Check whether the workspace exists before creating.
-    func createWorkspace(id: String, name: String, desc: String, isSyncEnabled: Bool, isActive: Bool? = true, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC)  -> EWorkspace? {
+    func createWorkspace(id: String, name: String, desc: String, isSyncEnabled: Bool, isActive: Bool? = true, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC)  -> EWorkspace? {
         var x: EWorkspace?
         let ts = Date().currentTimeNanos()
-        let moc = self.getBgMOC(ctx: ctx)
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             if let isExist = checkExists, isExist, let ws = self.getWorkspace(id: id, ctx: ctx) { x = ws }
             let ws = x != nil ? x! : EWorkspace(context: moc)
@@ -1277,8 +1260,8 @@ class CoreDataService {
         return x
     }
     
-    func setWorkspaceActive(_ wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
-        let moc = self.getBgMOC(ctx: ctx)
+    func setWorkspaceActive(_ wsId: String, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) {
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             let ws = self.getWorkspace(id: wsId, ctx: ctx)
             ws?.isActive = true
@@ -1290,8 +1273,8 @@ class CoreDataService {
         }
     }
     
-    func setWorkspaceSyncEnabled(_ state: Bool, ws: EWorkspace, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) {
-        let moc = self.getBgMOC(ctx: ctx)
+    func setWorkspaceSyncEnabled(_ state: Bool, ws: EWorkspace, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) {
+        let moc = self.getMainMOC(ctx: ctx)
         let ts = Date().currentTimeNanos()
         moc.performAndWait {
             if !state { ws.syncDisabled = ts }
@@ -1314,10 +1297,10 @@ class CoreDataService {
     ///   - ws: The workspace to which the project belongs.
     ///   - checkExists: Check if the given project exists before creating.
     func createProject(id: String, wsId: String, name: String, desc: String, ws: EWorkspace? = nil, checkExists: Bool? = true,
-                       ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EProject? {
+                       ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EProject? {
         var x: EProject?
         let ts = Date().currentTimeNanos()
-        let moc = self.getBgMOC(ctx: ctx)
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             if let isExist = checkExists, isExist, let proj = self.getProject(id: id, ctx: ctx) { x = proj }
             let proj = x != nil ? x! : EProject(context: moc)
@@ -1345,10 +1328,10 @@ class CoreDataService {
     ///   - checkExists: Check if the request exists before creating one.
     ///   - ctx: The managed object context
     func createRequest(id: String, wsId: String, name: String, project: EProject? = nil, checkExists: Bool? = true,
-                       ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequest? {
+                       ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequest? {
         var x: ERequest?
         let ts = Date().currentTimeNanos()
-        let moc = self.getBgMOC(ctx: ctx)
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             if let isExists = checkExists, isExists, let req = self.getRequest(id: id, ctx: ctx) { x = req }
             let req = x != nil ? x! : ERequest(context: moc)
@@ -1373,10 +1356,10 @@ class CoreDataService {
     ///   - checkExists: Check for existing request data object.
     ///   - ctx: The managed object context.
     func createRequestData(id: String, wsId: String, type: RequestDataType, fieldFormat: RequestBodyFormFieldFormatType, checkExists: Bool? = true,
-                           ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestData? {
+                           ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestData? {
         var x: ERequestData?
         let ts = Date().currentTimeNanos()
-        let moc = self.getBgMOC(ctx: ctx)
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestData(context: moc)
@@ -1401,10 +1384,10 @@ class CoreDataService {
     ///   - checkExists: Check if the request method data exists
     ///   - ctx: The managed object context
     func createRequestMethodData(id: String, wsId: String, name: String, isCustom: Bool? = true, checkExists: Bool? = true,
-                                 ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestMethodData? {
+                                 ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let ts = Date().currentTimeNanos()
-        let moc = self.getBgMOC(ctx: ctx)
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestMethodData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestMethodData(context: moc)
@@ -1426,10 +1409,10 @@ class CoreDataService {
     ///   - id: The request body data id.
     ///   - checkExists: Check if the request body data exists before creating.
     ///   - ctx: The managed object context.
-    func createRequestBodyData(id: String, wsId: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> ERequestBodyData? {
+    func createRequestBodyData(id: String, wsId: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestBodyData? {
         var x: ERequestBodyData?
         let ts = Date().currentTimeNanos()
-        let moc = self.getBgMOC(ctx: ctx)
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             if let isExists = checkExists, isExists, let data = self.getRequestBodyData(id: id, ctx: ctx) { x = data }
             let data = x != nil ? x! : ERequestBodyData(context: moc)
@@ -1451,10 +1434,10 @@ class CoreDataService {
     ///   - type: The image type (png, jpg, etc.)
     ///   - checkExists: Check if the image exists already before creating
     ///   - ctx: The managed object context
-    func createImage(data: Data, wsId: String, name: String, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EImage? {
+    func createImage(data: Data, wsId: String, name: String, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EImage? {
         var x: EImage?
         let ts = Date().currentTimeNanos()
-        let moc = self.getBgMOC(ctx: ctx)
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             let imageId = self.imageId()
             if let isExists = checkExists, isExists, let data = self.getImageData(id: imageId, ctx: ctx) { x = data }
@@ -1473,15 +1456,15 @@ class CoreDataService {
         return x
     }
     
-    func createFile(data: Data, wsId: String, name: String, path: URL, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
+    func createFile(data: Data, wsId: String, name: String, path: URL, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EFile? {
         return self.createFile(data: data, wsId: wsId, name: name, path: path, type: .form, checkExists: checkExists, ctx: ctx)
     }
     
     func createFile(data: Data, wsId: String, name: String, path: URL, type: RequestDataType, checkExists: Bool? = true,
-                    ctx: NSManagedObjectContext? = CoreDataService.shared.bgMOC) -> EFile? {
+                    ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EFile? {
         var x: EFile?
         let ts = Date().currentTimeNanos()
-        let moc = self.getBgMOC(ctx: ctx)
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             let fileId = self.fileId()
             if let isExists = checkExists, isExists, let data = self.getFileData(id: fileId, ctx: ctx) { x = data }
@@ -1635,7 +1618,7 @@ class CoreDataService {
     ///   - type: The entity type.
     ///   - ctx: The managed object context.
     func deleteRequestData(dataId: String, req: ERequest, type: RequestCellType, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) {
-        let moc = self.getBgMOC(ctx: ctx)
+        let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             var x: Entity?
             switch type {

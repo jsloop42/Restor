@@ -102,18 +102,19 @@ class RestorTests: XCTestCase {
             self.serialQueue.async {
                 let wsname = "test-ws"
                 let wsId = wsname
-                let rws = self.localdb.createWorkspace(id: wsId, name: wsname, desc: "", isSyncEnabled: false)
+                let ctx = self.localdb.bgMOC
+                let rws = self.localdb.createWorkspace(id: wsId, name: wsname, desc: "", isSyncEnabled: false, ctx: ctx)
                 XCTAssertNotNil(rws)
                 guard let ws = rws else { return }
                 ws.name = wsname
                 ws.desc = "test description"
-                let wproj1 = self.localdb.createProject(id: "test-project-22", wsId: wsId, name: "test-project-22", desc: "")
+                let wproj1 = self.localdb.createProject(id: "test-project-22", wsId: wsId, name: "test-project-22", desc: "", ctx: ctx)
                 XCTAssertNotNil(wproj1)
                 guard let proj1 = wproj1 else { return }
-                let wproj2 = self.localdb.createProject(id: "test-project-11", wsId: wsId, name: "test-project-11", desc: "")
+                let wproj2 = self.localdb.createProject(id: "test-project-11", wsId: wsId, name: "test-project-11", desc: "", ctx: ctx)
                 XCTAssertNotNil(wproj2)
                 guard let proj2 = wproj2 else { return }
-                let wproj3 = self.localdb.createProject(id: "test-project-33", wsId: wsId, name: "test-project-33", desc: "")
+                let wproj3 = self.localdb.createProject(id: "test-project-33", wsId: wsId, name: "test-project-33", desc: "", ctx: ctx)
                 XCTAssertNotNil(wproj3)
                 guard let proj3 = wproj3 else { return }
                 ws.projects = NSSet(array: [proj1, proj2, proj3])
@@ -122,35 +123,35 @@ class RestorTests: XCTestCase {
                 // ws2
                 let wsname2 = "test-ws-2"
                 let wsId2 = wsname2
-                let rws2 = self.localdb.createWorkspace(id: wsId2, name: wsname2, desc: "", isSyncEnabled: false)
+                let rws2 = self.localdb.createWorkspace(id: wsId2, name: wsname2, desc: "", isSyncEnabled: false, ctx: ctx)
                 XCTAssertNotNil(rws2)
                 guard let ws2 = rws2 else { return }
                 ws2.name = wsname2
                 ws2.desc = "test description 2"
-                let wproj21 = self.localdb.createProject(id: "ws2-test-project-22", wsId: wsId2, name: "ws2-test-project-22", desc: "")
+                let wproj21 = self.localdb.createProject(id: "ws2-test-project-22", wsId: wsId2, name: "ws2-test-project-22", desc: "", ctx: ctx)
                 XCTAssertNotNil(wproj21)
                 guard let proj21 = wproj21 else { return }
-                let wproj22 = self.localdb.createProject(id: "ws2-test-project-11", wsId: wsId2, name: "ws2-test-project-11", desc: "")
+                let wproj22 = self.localdb.createProject(id: "ws2-test-project-11", wsId: wsId2, name: "ws2-test-project-11", desc: "", ctx: ctx)
                 XCTAssertNotNil(wproj22)
                 guard let proj22 = wproj22 else { return }
-                let wproj23 = self.localdb.createProject(id: "ws2-test-project-33", wsId: wsId2, name: "ws2-test-project-33", desc: "")
+                let wproj23 = self.localdb.createProject(id: "ws2-test-project-33", wsId: wsId2, name: "ws2-test-project-33", desc: "", ctx: ctx)
                 XCTAssertNotNil(wproj23)
                 guard let proj23 = wproj23 else { return }
                 ws2.projects = NSSet(array: [proj21, proj22, proj23])
                 self.localdb.saveBackgroundContext()
                 
-                let lws = self.localdb.getWorkspace(id: wsname)
+                let lws = self.localdb.getWorkspace(id: wsname, ctx: ctx)
                 XCTAssertNotNil(lws)
-                let projxs = self.localdb.getProjects(wsId: ws.getId())
+                let projxs = self.localdb.getProjects(wsId: ws.getId(), ctx: ctx)
                 XCTAssert(projxs.count == 3)
                 Log.debug("projxs: \(projxs)")
                 XCTAssertEqual(projxs[0].name, "test-project-22")
                 XCTAssertEqual(projxs[1].name, "test-project-11")
                 XCTAssertEqual(projxs[2].name, "test-project-33")
                 
-                let lws2 = self.localdb.getWorkspace(id: wsname2)
+                let lws2 = self.localdb.getWorkspace(id: wsname2, ctx: ctx)
                 XCTAssertNotNil(lws2)
-                let projxs2 = self.localdb.getProjects(wsId: ws2.getId())
+                let projxs2 = self.localdb.getProjects(wsId: ws2.getId(), ctx: ctx)
                 XCTAssert(projxs2.count == 3)
                 Log.debug("projxs: \(projxs2)")
                 XCTAssertEqual(projxs2[0].name, "ws2-test-project-22")
@@ -158,12 +159,13 @@ class RestorTests: XCTestCase {
                 XCTAssertEqual(projxs2[2].name, "ws2-test-project-33")
                 
                 // cleanup
-                projxs.forEach { p in self.localdb.deleteEntity(p) }
-                projxs2.forEach { p in self.localdb.deleteEntity(p) }
-                self.localdb.deleteEntity(ws)
-                self.localdb.deleteEntity(ws)
+                projxs.forEach { p in self.localdb.deleteEntity(p, ctx: ctx) }
+                projxs2.forEach { p in self.localdb.deleteEntity(p, ctx: ctx) }
+                self.localdb.deleteEntity(ws, ctx: ctx)
+                self.localdb.deleteEntity(ws, ctx: ctx)
                 self.localdb.saveBackgroundContext()
                 self.localdb.discardChanges(in: self.localdb.bgMOC)
+                self.localdb.discardChanges(in: self.localdb.mainMOC)
                 exp.fulfill()
             }
         }
@@ -230,7 +232,7 @@ class RestorTests: XCTestCase {
                 self.localdb.deleteEntity(h0)
                 self.localdb.deleteEntity(h1)
                 self.localdb.deleteEntity(h2)
-                XCTAssertNoThrow(self.localdb.saveBackgroundContext())
+                XCTAssertNoThrow(ctx.reset())
                 exp.fulfill()
             }
         }
@@ -345,8 +347,8 @@ class RestorTests: XCTestCase {
                 XCTAssertNotNil(reqhmb)
                 XCTAssert(reqhmb.count > 0)
                 status = self.app.didRequestChangeImp(areq, request: reqhmb)
-                XCTAssertFalse(status)
-                let reqData = self.localdb.createRequestData(id: self.localdb.requestDataId(), wsId: wsId, type: .header, fieldFormat: .text)
+                XCTAssertTrue(status)
+                let reqData = self.localdb.createRequestData(id: self.localdb.requestDataId(), wsId: wsId, type: .header, fieldFormat: .text, ctx: ctx)
                 XCTAssertNotNil(reqData)
                 breq.addToHeaders(reqData!)
                 XCTAssertNotNil(breq.headers)
@@ -354,7 +356,7 @@ class RestorTests: XCTestCase {
                 XCTAssertTrue(self.app.didAnyRequestHeaderChangeImp(reqDataxs, request: reqhmb))
                 XCTAssertTrue(self.app.didRequestChangeImp(areq, request: reqhmb))
                 breq.removeFromHeaders(reqData!)
-                XCTAssertFalse(self.app.didRequestChangeImp(areq, request: reqhmb))
+                XCTAssertTrue(self.app.didRequestChangeImp(areq, request: reqhmb))
                 exp.fulfill()
             }
         }
@@ -389,7 +391,7 @@ class RestorTests: XCTestCase {
                 XCTAssertEqual(f0.files!.count, 0)
                 let xfile0 = self.localdb.getFileData(id: "file-0", ctx: ctx)
                 XCTAssertNil(xfile0)
-                let ereq = self.localdb.getRequest(id: "edit-req")
+                let ereq = self.localdb.getRequest(id: "edit-req", ctx: ctx)
                 XCTAssertNotNil(ereq)
                 self.localdb.discardChanges(in: moc)
                 exp.fulfill()
