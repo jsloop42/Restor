@@ -812,6 +812,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDel
         self.presentDocPicker()
     }
     
+    // The left delete cirle button
     @objc func deleteBtnDidTap() {
         Log.debug("delete row did tap")
         RequestVC.shared?.clearEditing({
@@ -822,6 +823,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDel
         })
     }
     
+    // The right delete cell view
     @objc func deleteViewDidTap() {
         Log.debug("delete view did tap")
         self.delegate?.deleteRow(self.bodyDataId, type: .body)

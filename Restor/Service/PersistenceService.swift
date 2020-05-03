@@ -130,6 +130,7 @@ class PersistenceService {
     private var imageDelSyncIdx = 0
     private var hasMoreZonesToQuery = false
     private var zonesToSync: [CKRecord] = []
+    private var zonesToSyncInProgress: Set<CKRecord> = Set()
     private var syncToCloudSaveIds: Set<String> = Set()
     private var syncToCloudDeleteIds: Set<String> = Set()
     private var destroySyncStateLock = NSLock()
@@ -697,7 +698,12 @@ class PersistenceService {
         switch result {
         case .success(let records):
             Log.debug("sync from cloud handler: records \(records.count)")
-            self.zonesToSync = records
+            records.forEach { record in
+                if !self.zonesToSyncInProgress.contains(record) {
+                    self.zonesToSync.append(record)
+                    self.zonesToSyncInProgress.insert(record)
+                }
+            }
             self.processZoneRecord()
         case .failure(let error):
             Log.error("Error syncing from cloud: \(error)")
@@ -719,27 +725,31 @@ class PersistenceService {
     }
     
     func processZoneRecord() {
+        Log.debug("process zone record: \(self.zonesToSync.map(\.recordID.recordName))")
         if self.zonesToSync.isEmpty {
+            if !self.zonesToSyncInProgress.isEmpty { self.zonesToSyncInProgress = Set() }
             if self.hasMoreZonesToQuery { self.syncFromCloud() }
             return
         }
         let zone = self.zonesToSync.removeFirst()
+        Log.debug("Processing zone: \(zone.recordID.recordName) for syncing")
         _ = self.syncRecordFromCloudHandler(zone)
     }
     
+    func fetchZoneChangeCompleteHandler(_ zoneID: CKRecordZone.ID) {
+        self.localdb.saveMainContext()
+        self.nc.post(name: EACloudKit.NotificationKey.zoneChangesDidSave, object: self, userInfo: [EACloudKit.NotificationKey.zoneIDKey: zoneID])
+        self.processZoneRecord()
+    }
+    
     func fetchZoneChangesImp(zoneID: CKRecordZone.ID, isDelayedFetch: Bool) {
-        let fn: () -> Void = {
-            self.localdb.saveMainContext()
-            self.nc.post(name: EACloudKit.NotificationKey.zoneChangesDidSave, object: self, userInfo: [EACloudKit.NotificationKey.zoneIDKey: zoneID])
-            self.processZoneRecord()
-        }
-        self.fetchZoneChanges(zoneID: zoneID, isDelayedFetch: isDelayedFetch, completion: fn)
+        self.fetchZoneChanges(zoneID: zoneID, isDelayedFetch: isDelayedFetch, completion: self.fetchZoneChangeCompleteHandler)
     }
     
     func syncRecordFromCloudHandler(_ record: CKRecord) -> Bool {
         switch RecordType(rawValue: record.type()) {
         case .zone:
-            self.fetchZoneChanges(zoneID: self.ck.zoneID(workspaceId: record.id()), isDelayedFetch: false)
+            self.fetchZoneChanges(zoneID: self.ck.zoneID(workspaceId: record.id()), isDelayedFetch: false, completion: self.fetchZoneChangeCompleteHandler)
             fallthrough
         case .workspace:
             self.updateWorkspaceFromCloud(record)
@@ -1279,7 +1289,7 @@ class PersistenceService {
         Log.debug("delete data count: \(xs.count)")
         var recordIDs: [CKRecord.ID] = []
         xs.forEach { elem in
-            (elem as NSManagedObject).managedObjectContext?.performAndWait { recordIDs.append(elem.getRecordID()) }
+            elem.managedObjectContext?.performAndWait { recordIDs.append(elem.getRecordID()) }
         }
         let op = EACloudOperation(deleteRecordIDs: recordIDs) { [weak self] op in
             self?.ck.deleteRecords(recordIDs: recordIDs) { result in
@@ -1295,17 +1305,15 @@ class PersistenceService {
                             let elem = xs[idx]
                             xs.remove(at: idx)
                             recordIDs.remove(at: idx)
-                            self?.syncToCloudDeleteIds.remove(elem.getId())
-                            Log.debug("Entity deleted from local: \(elem.getId())")
-                            if let ctx = (elem as NSManagedObject).managedObjectContext {
-                                ctx.perform {
+                            if let ctx = elem.managedObjectContext {
+                                ctx.performAndWait {
+                                    self?.syncToCloudDeleteIds.remove(elem.getId())
+                                    Log.debug("Entity deleted from local: \(elem.getId())")
                                     self?.localdb.deleteEntity(elem)
                                     lock.lock()
                                     count += 1
                                     lock.unlock()
-                                    if count == len {
-                                        self?.checkSyncToCloudState()
-                                    }
+                                    if count == len { self?.checkSyncToCloudState() }
                                 }
                             }
                         }
@@ -1349,7 +1357,7 @@ class PersistenceService {
     
     // MARK: - Fetch
     
-    func fetchZoneChanges(zoneID: CKRecordZone.ID, isDelayedFetch: Bool? = false, completion: (() -> Void)? = nil) {
+    func fetchZoneChanges(zoneID: CKRecordZone.ID, isDelayedFetch: Bool? = false, completion: ((CKRecordZone.ID) -> Void)? = nil) {
         Log.debug("fetching zone changes for zoneID: \(zoneID.zoneName) - isDelayedFetch: \(isDelayedFetch ?? false)")
         let fn: () -> Void = {
             self.ck.fetchZoneChanges(zoneID: zoneID, handler: { result in

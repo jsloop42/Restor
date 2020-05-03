@@ -560,7 +560,7 @@ class EACloudKit {
         init() {}
     }
     
-    func fetchZoneChanges(zoneID: CKRecordZone.ID, handler: ((Result<(CKRecord?, CKRecord.ID?), Error>) -> Void)? = nil, completion: (() -> Void)? = nil) {
+    func fetchZoneChanges(zoneID: CKRecordZone.ID, handler: ((Result<(CKRecord?, CKRecord.ID?), Error>) -> Void)? = nil, completion: ((CKRecordZone.ID) -> Void)? = nil) {
         Log.debug("CK: fetch zone changes: \(zoneID)")
         var hasMore = false
         let handleError: (Error) -> Void = { error in
@@ -569,7 +569,7 @@ class EACloudKit {
                     if RetryTimer.fetchZoneChanges == nil && self.canRetry() {
                         RetryTimer.fetchZoneChanges = EARepeatTimer(block: {
                             if EAReachability.isConnectedToNetwork() {
-                                self.fetchZoneChanges(zoneID: zoneID, handler: handler)
+                                self.fetchZoneChanges(zoneID: zoneID, handler: handler, completion: completion)
                                 RetryTimer.fetchZoneChanges.suspend()
                             }
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
@@ -636,9 +636,8 @@ class EACloudKit {
                 handleError(err)
                 return;
             }
-            Log.debug("CK: Fetch zone changes complete")
-            if hasMore { self.fetchZoneChanges(zoneID: zoneID, handler: handler) }
-            completion?()
+            if hasMore { self.fetchZoneChanges(zoneID: zoneID, handler: handler, completion: completion) }
+            completion?(zoneID)
         }
         self.privateDatabase().add(op)
     }

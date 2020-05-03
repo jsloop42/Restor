@@ -289,7 +289,7 @@ class App {
     }
     
     func markEntityForDelete(file: EFile?, ctx: NSManagedObjectContext? = nil) {
-        ctx?.perform {
+        ctx?.performAndWait {
             guard let file = file else { return }
             file.requestData = nil
             self.localdb.markEntityForDelete(file, ctx: ctx)
@@ -298,7 +298,7 @@ class App {
     }
     
     func markForDelete(image: EImage?, ctx: NSManagedObjectContext? = nil) {
-        ctx?.perform {
+        ctx?.performAndWait {
             guard let image = image else { return }
             image.requestData = nil
             self.localdb.markEntityForDelete(image, ctx: ctx)
@@ -307,7 +307,7 @@ class App {
     }
     
     func markEntityForDelete(reqData: ERequestData?, ctx: NSManagedObjectContext? = nil) {
-        ctx?.perform {
+        ctx?.performAndWait {
             guard let reqData = reqData else { return }
             if let xs = reqData.files?.allObjects as? [EFile] {
                 xs.forEach { file in self.markEntityForDelete(file: file, ctx: ctx) }
@@ -325,7 +325,7 @@ class App {
     }
     
     func markEntityForDelete(body: ERequestBodyData?, ctx: NSManagedObjectContext? = nil) {
-        ctx?.perform {
+        ctx?.performAndWait {
             guard let body = body else { return }
             if let xs = body.form?.allObjects as? [ERequestData] {
                 xs.forEach { reqData in self.markEntityForDelete(reqData: reqData, ctx: ctx) }
@@ -342,7 +342,7 @@ class App {
     }
     
     func markEntityForDelete(reqMethodData: ERequestMethodData?, ctx: NSManagedObjectContext? = nil) {
-        ctx?.perform {
+        ctx?.performAndWait {
             guard let reqMethodData = reqMethodData else { return }
             self.localdb.markEntityForDelete(reqMethodData)
             reqMethodData.project = nil
@@ -351,7 +351,7 @@ class App {
     }
     
     func markEntityForDelete(req: ERequest?, ctx: NSManagedObjectContext? = nil) {
-        ctx?.perform {
+        ctx?.performAndWait {
             guard let req = req else { return }
             self.localdb.markEntityForDelete(req)
             guard let projId = req.project?.getId() else { return }
@@ -370,7 +370,7 @@ class App {
     }
     
     func markEntityForDelete(proj: EProject?, ctx: NSManagedObjectContext? = nil) {
-        ctx?.perform {
+        ctx?.performAndWait {
             guard let proj = proj else { return }
             self.localdb.markEntityForDelete(proj)
             proj.workspace = nil
@@ -382,7 +382,7 @@ class App {
     }
     
     func markEntityForDelete(ws: EWorkspace?, ctx: NSManagedObjectContext? = nil) {
-        ctx?.perform {
+        ctx?.performAndWait {
             guard let ws = ws else { return }
             self.localdb.markEntityForDelete(ws)
             if let xs = ws.projects?.allObjects as? [EProject] {

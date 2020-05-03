@@ -28,10 +28,16 @@ class RequestListViewController: UIViewController {
         self.nc.removeObserver(self)
     }
     
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        if self.frc != nil { self.frc.delegate = nil }
+    }
+    
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         AppState.setCurrentScreen(.requestList)
         self.navigationItem.title = "Requests"
+        if self.frc != nil { self.frc.delegate = self }
         self.reloadData()
     }
     

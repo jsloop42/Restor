@@ -1572,7 +1572,6 @@ class CoreDataService {
     }
     
     func deleteEntity(_ entity: NSManagedObject?, ctx: NSManagedObjectContext? = nil) {
-        Log.debug("delete entity: \(String(describing: entity))")
         if let x = entity, let moc = ctx != nil ? ctx! : x.managedObjectContext {
             moc.performAndWait { moc.delete(x) }
         }
