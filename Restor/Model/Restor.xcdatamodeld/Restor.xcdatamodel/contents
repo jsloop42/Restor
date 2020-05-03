@@ -252,6 +252,7 @@
         <attribute name="isActive" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="isSynced" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="isSyncEnabled" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
+        <attribute name="isZoneSynced" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="markForDelete" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="name" attributeType="String" defaultValueString=""/>
@@ -276,6 +277,9 @@
         <fetchIndex name="byIsSynced">
             <fetchIndexElement property="isSynced" type="Binary" order="ascending"/>
         </fetchIndex>
+        <fetchIndex name="byIsZoneSynced">
+            <fetchIndexElement property="isZoneSynced" type="Binary" order="ascending"/>
+        </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
                 <constraint value="id"/>
@@ -291,6 +295,6 @@
         <element name="ERequestData" positionX="18" positionY="63" width="128" height="343"/>
         <element name="ERequestMethodData" positionX="-18" positionY="27" width="128" height="238"/>
         <element name="ETag" positionX="0" positionY="99" width="128" height="193"/>
-        <element name="EWorkspace" positionX="-63" positionY="-18" width="128" height="238"/>
+        <element name="EWorkspace" positionX="-63" positionY="-18" width="128" height="253"/>
     </elements>
 </model>

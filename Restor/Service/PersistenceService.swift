@@ -229,21 +229,29 @@ class PersistenceService {
                     xs.forEach { record in
                         if let map = entityMap[record.recordID] {
                             if let entity = map.entity {
-                                entity.managedObjectContext?.performAndWait {
+                                let ctx = entity.managedObjectContext
+                                ctx?.performAndWait {
                                     id = entity.getId()
                                     Log.debug("saved entity: \(id!)")
                                     self.syncToCloudSaveIds.remove(id)
                                     entity.setIsSynced(true)
                                     if let type = RecordType(rawValue: record.recordType) {
                                         self.addToCache(record: record, entityId: id, type: type)
-                                        if type == .workspace { self.localdb.setWorkspaceActive(id) }
+                                        if type == .workspace { self.localdb.setWorkspaceActive(id, ctx: ctx) }
+                                        if type == .zone {
+                                            if let ws = self.localdb.getWorkspace(id: id, ctx: ctx) {
+                                                ws.isZoneSynced = true
+                                                self.localdb.saveMainContext()
+                                            }
+                                        }
                                     }
-                                    if let _ = self.syncToCloudSaveIds.remove(id) {
-                                        self.checkSyncToCloudState()
-                                    }
+                                    if let _ = self.syncToCloudSaveIds.remove(id) { self.checkSyncToCloudState() }
                                 }
                             } else {
-                                Log.debug("not expecting this path")
+                                Log.debug("Likely a save after a zone record not found error. Re-sync.")
+                                if let type = RecordType[record.type()], type == .zone {
+                                    self.syncFromCloud()
+                                }
                             }
                             map.completion?()
                         }
@@ -693,6 +701,20 @@ class PersistenceService {
             self.processZoneRecord()
         case .failure(let error):
             Log.error("Error syncing from cloud: \(error)")
+            if let err = error as? CKError {
+                if err.isUnknownItem() {
+                    if let type = err.getRecordTypeForUnknownItem(), let recordType = RecordType[type], recordType == .zone {
+                        let ctx = self.localdb.mainMOC
+                        ctx.performAndWait {
+                            if let ws = self.localdb.getWorkspace(id: self.localdb.defaultWorkspaceId, ctx: ctx) {
+                                if !ws.isSyncEnabled { return }
+                                Log.debug("Unknown item - Zone: default - saving")
+                                self.saveZoneToCloud(ws)
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -1048,7 +1070,16 @@ class PersistenceService {
     
     func workspaceDidDeleteFromCloud(_ id: String) {
         let ctx = self.syncFromCloudCtx!
-        self.localdb.deleteWorkspace(id: id, ctx: ctx)
+        ctx.perform {
+            if id == self.localdb.defaultWorkspaceId {
+                let ws = self.localdb.getDefaultWorkspace(ctx: ctx)
+                ws.resetToDefault()
+                ws.isSynced = true
+                self.localdb.saveMainContext()
+                return
+            }
+            self.localdb.deleteWorkspace(id: id, ctx: ctx)
+        }
     }
     
     func projectDidDeleteFromCloud(_ id: String) {
@@ -1312,7 +1343,6 @@ class PersistenceService {
                 Log.error("Error querying default zone record: \(error)")
                 self.isSyncFromCloudSuccess = false
                 completion(.failure(error))
-                break
             }
         }
     }
@@ -1427,6 +1457,11 @@ class PersistenceService {
     
     func removeFromSyncToCloudSaveId(_ id: String) {
         self.syncToCloudSaveIds.remove(id)
+    }
+    
+    func saveZoneToCloud(_ ws: EWorkspace) {
+        let zoneModel = self.zoneDeferredSaveModel(ws: ws)
+        self.saveToCloud([zoneModel])
     }
     
     /// Saves the given workspace to the cloud

@@ -1262,6 +1262,14 @@ extension CKError {
         return self.isSpecificErrorCode(code: .unknownItem)
     }
     
+    public func getRecordTypeForUnknownItem() -> String? {
+        let str = self.localizedDescription
+        if let data = str.data(using: .utf8), let hm = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [String: String], let type = hm["recordTypeId"] {
+            return type
+        }
+        return nil
+    }
+    
     public func isConflict() -> Bool {
         return self.isSpecificErrorCode(code: .serverRecordChanged)
     }

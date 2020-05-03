@@ -70,6 +70,10 @@ enum RecordType: String {
         }
     }
     
+    static subscript(_ type: String) -> RecordType? {
+        return RecordType(rawValue: type)
+    }
+    
     /// All data record type
     static let allCases: [RecordType] = [RecordType.workspace, RecordType.project, RecordType.request, RecordType.requestBodyData, RecordType.requestData,
                                          RecordType.requestMethodData, RecordType.file, RecordType.image]
@@ -1170,7 +1174,10 @@ class CoreDataService {
     func getWorkspacesToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<EWorkspace> {
         let moc = self.getMainMOC(ctx: ctx)
         let fr = NSFetchRequest<EWorkspace>(entityName: "EWorkspace")
-        fr.predicate = NSPredicate(format: "isSynced == %hhd AND isActive == %hhd", false, true)
+        fr.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [
+            NSPredicate(format: "isSynced == %hhd AND isActive == %hhd AND isZoneSynced == %hhd", false, true, true),
+            NSPredicate(format: "isActive == %hhd AND isZoneSynced == %hhd", true, false)  // ws synced but zone did not get created
+        ])
         fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
         fr.fetchBatchSize = self.fetchBatchSize
         let frc = NSFetchedResultsController(fetchRequest: fr, managedObjectContext: moc, sectionNameKeyPath: nil, cacheName: nil)
