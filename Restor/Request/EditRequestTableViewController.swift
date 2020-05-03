@@ -1977,6 +1977,12 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         guard let tv = self.kvTableView else { return }
         tv.reloadData()
         guard let cell: KVContentCellType = tv.cellForRow(at: indexPath) as? KVContentCellType else { return }
+        cell.getDeleteView().transform = CGAffineTransform.identity
+        if let _ = cell as? KVBodyContentCell {
+            if let data = AppState.editRequest, let body = data.body, let type = RequestBodyType(rawValue: body.selected.toInt()), type == .binary {
+                cell.getDeleteView().transform = CGAffineTransform.identity.translatedBy(x: 0, y: -21)  // Update the delete view size to align to cell center for binary
+            }
+        }
         UIView.animate(withDuration: 0.3, animations: {
             cell.getContainerView().transform = CGAffineTransform.identity.translatedBy(x: -64, y: 0)
         }, completion: nil)
