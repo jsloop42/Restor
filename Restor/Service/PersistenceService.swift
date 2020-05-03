@@ -76,6 +76,7 @@ class PersistenceService {
     static let shared = PersistenceService()
     private lazy var localdb = { return CoreDataService.shared }()
     private lazy var ck = { return EACloudKit.shared }()
+    private let nc = NotificationCenter.default
     var wsCache = EALFUCache(size: 8)
     var projCache = EALFUCache(size: 16)
     var reqCache = EALFUCache(size: 32)
@@ -86,7 +87,6 @@ class PersistenceService {
     var imageCache = EALFUCache(size: 16)
     var saveQueueCompletionHandler: (([CKRecord]) -> Void)!
     var saveQueue: EAQueue<DeferredSaveModel>!
-    private let nc = NotificationCenter.default
     var defaultZoneCursor: CKQueryOperation.Cursor?
     private let store = UserDefaults.standard
     private let lastSyncedKey = "last-synced-key"
@@ -189,11 +189,21 @@ class PersistenceService {
         }
     }
     
+    deinit {
+        self.nc.removeObserver(self)
+    }
+    
     init() {
         if isRunningTests { return }
+        self.initEvents()
         self.initSaveQueue()
         self.subscribeToCloudKitEvents()
         self.syncFromCloud()
+    }
+    
+    func initEvents() {
+        self.nc.addObserver(self, selector: #selector(self.networkDidBecomeAvailable(_:)), name: .online, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.networkDidBecomeUnavailable(_:)), name: .offline, object: nil)
     }
     
     func initDefaultWorkspace() -> EWorkspace? {
@@ -211,6 +221,16 @@ class PersistenceService {
         self.fileCache.resetCache()
         self.imageCache.resetCache()
     }
+    
+    @objc func networkDidBecomeUnavailable(_ notif: Notification) {
+        self.destroySyncToCloudState()
+    }
+    
+    @objc func networkDidBecomeAvailable(_ notif: Notification) {
+        self.isSyncToCloudTriggered = false
+        self.syncToCloud()
+    }
+    
     
     // MARK: - CloudKit
     
@@ -250,8 +270,15 @@ class PersistenceService {
                                 }
                             } else {
                                 Log.debug("Likely a save after a zone record not found error. Re-sync.")
-                                if let type = RecordType[record.type()], type == .zone {
-                                    self.syncFromCloud()
+                                let ctx = self.localdb.mainMOC
+                                ctx.performAndWait {
+                                    if let type = RecordType[record.type()], type == .zone {
+                                        if let ws = self.localdb.getWorkspace(id: record.id(), ctx: ctx) {
+                                            ws.isZoneSynced = true
+                                            self.localdb.saveMainContext()
+                                        }
+                                        self.syncFromCloud()
+                                    }
                                 }
                             }
                             map.completion?()
@@ -268,6 +295,7 @@ class PersistenceService {
                             self.localdb.mainMOC.performAndWait {
                                 if let elem = self.localdb.getEntity(recordType: recordType, id: id, ctx: self.localdb.mainMOC) {
                                     elem.setIsSynced(true)
+                                    if recordType == .workspace, let ws = elem as? EWorkspace, !ws.isZoneSynced { self.saveZoneToCloud(ws) }
                                     self.localdb.saveMainContext()
                                 }
                             }
@@ -436,12 +464,12 @@ class PersistenceService {
         }
         self.syncToCloudTimer.done = {
             Log.debug("Sync to cloud timer max limit - saves: \(self.syncToCloudSaveIds), deletes: \(self.syncToCloudDeleteIds)")
-        }
-        if self.syncToCloudCtx != nil {
+            self.syncToCloudTimer = nil
+            self.syncToCloudSaveIds = Set()
+            self.syncToCloudDeleteIds = Set()
             self.localdb.saveMainContext()
-        } else {
-            self.syncToCloudCtx = self.localdb.mainMOC
         }
+        if self.syncToCloudCtx == nil { self.syncToCloudCtx = self.localdb.mainMOC }
         self.syncToCloudTimer.resume()
         self.isSyncToCloudTriggered = true
     }
@@ -449,7 +477,7 @@ class PersistenceService {
     func destroySyncToCloudState() {
         Log.debug("destroy sync to cloud state")
         self.destroySyncStateLock.lock()
-        self.syncToCloudTimer.suspend()
+        if self.syncToCloudTimer != nil { self.syncToCloudTimer.suspend() }
         self.destroySyncStateLock.unlock()
     }
     

@@ -108,6 +108,11 @@ class App {
         Log.debug("reachability did change: \(notif)")
         if let reachability = notif.object as? EAReachability {
             Log.debug("network status: \(reachability.connection.description)")
+            if reachability.connection == .unavailable {
+                self.nc.post(name: .offline, object: self)
+            } else {
+                self.nc.post(name: .online, object: self)
+            }
         }
     }
     

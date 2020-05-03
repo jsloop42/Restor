@@ -89,8 +89,13 @@ class EACloudKit {
         static var deleteRecords: EARepeatTimer!
         static var deleteSubscriptions: EARepeatTimer!
         static var deleteAllSubscriptions: EARepeatTimer!
-        static let limit = 3
+        static let limit = 45  // 3 mins
         static let interval = 4.0
+        
+        static var allTimers: [EARepeatTimer?] = [
+            RetryTimer.fetchAllZones, RetryTimer.fetchZone, RetryTimer.fetchDatabaseChanges, RetryTimer.fetchZoneChanges, RetryTimer.fetchRecords,
+            RetryTimer.fetchSubscriptions, RetryTimer.queryRecords, RetryTimer.createZone, RetryTimer.createZoneIfNotExist, RetryTimer.createRecord, RetryTimer.saveRecords, RetryTimer.subscribe, RetryTimer.subscribeToDBChanges, RetryTimer.deleteZone, RetryTimer.deleteRecords, RetryTimer.deleteSubscriptions, RetryTimer.deleteAllSubscriptions
+        ]
     }
     /// Keeps the current server change token for the zone until the changes have synced locally, after which it's persisted in User Defaults.
     private var zoneChangeTokens: [CKRecordZone.ID: [CKServerChangeToken]] = [:]
@@ -104,6 +109,7 @@ class EACloudKit {
     private let zoneFetchChangesTimer: DispatchSourceTimer = DispatchSource.makeTimerSource()
     private var zoneFetchChangesTimerState: EATimerState = .undefined
     private let zoneFetchChangesLock = NSLock()
+    private var isOffline = false
     
     enum PropKey: String {
         case isZoneCreated
@@ -119,13 +125,30 @@ class EACloudKit {
         }
     }
     
-    init() {}
+    init() {
+        self.initEvents()
+    }
+    
+    func initEvents() {
+        self.nc.addObserver(self, selector: #selector(self.networkDidBecomeAvailable(_:)), name: .online, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.networkDidBecomeUnavailable(_:)), name: .offline, object: nil)
+    }
     
     func bootstrap() {
         if isRunningTests { return }
         self.loadSubscriptions()
         self.nc.addObserver(self, selector: #selector(self.zoneChangesDidSave(_:)), name: NotificationKey.zoneChangesDidSave, object: nil)
         self.zoneFetchChangesTimer.schedule(deadline: .now() + 5, repeating: 8)
+    }
+    
+    @objc func networkDidBecomeUnavailable(_ notif: Notification) {
+        self.isOffline = true
+        RetryTimer.allTimers.forEach { $0?.suspend() }
+    }
+    
+    @objc func networkDidBecomeAvailable(_ notif: Notification) {
+        self.isOffline = false
+        RetryTimer.allTimers.forEach { $0?.resume() }
     }
 
     // MARK: - KV Store
@@ -428,10 +451,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchAllZones == nil && self.canRetry() {
                         RetryTimer.fetchAllZones = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.fetchAllZones(completion: completion)
-                                RetryTimer.fetchAllZones.suspend()
-                            }
+                            if !self.isOffline { self.fetchAllZones(completion: completion) }
+                            RetryTimer.fetchAllZones.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchAllZones.resume()
                         RetryTimer.fetchAllZones.done = {
@@ -481,10 +502,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchZone == nil && self.canRetry() {
                         RetryTimer.fetchZone = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.fetchZone(recordZoneIDs: recordZoneIDs, completion: completion)
-                                RetryTimer.fetchZone.suspend()
-                            }
+                            if !self.isOffline { self.fetchZone(recordZoneIDs: recordZoneIDs, completion: completion) }
+                            RetryTimer.fetchZone.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchZone.resume()
                         RetryTimer.fetchZone.done = {
@@ -499,6 +518,7 @@ class EACloudKit {
                     completion(.failure(err)); return
                 }
             }
+            if RetryTimer.fetchZone != nil { RetryTimer.fetchZone.stop(); RetryTimer.fetchZone = nil }
             if let hm = res { completion(.success(hm)) }
         }
         self.privateDatabase().add(op)
@@ -527,10 +547,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchDatabaseChanges == nil && self.canRetry() {
                         RetryTimer.fetchDatabaseChanges = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.fetchDatabaseChanges()
-                                RetryTimer.fetchAllZones.suspend()
-                            }
+                            if !self.isOffline { self.fetchDatabaseChanges() }
+                            RetryTimer.fetchDatabaseChanges.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchDatabaseChanges.resume()
                         RetryTimer.fetchDatabaseChanges.done = {
@@ -542,6 +560,7 @@ class EACloudKit {
                 }
                 return
             }
+            if RetryTimer.fetchDatabaseChanges != nil { RetryTimer.fetchDatabaseChanges.stop(); RetryTimer.fetchDatabaseChanges = nil }
             self.setDBChangeToken(token)
             if moreComing { self.fetchDatabaseChanges() }
         }
@@ -556,10 +575,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchZoneChanges == nil && self.canRetry() {
                         RetryTimer.fetchZoneChanges = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.fetchZoneChanges(zoneID: zoneID, handler: handler, completion: completion)
-                                RetryTimer.fetchZoneChanges.suspend()
-                            }
+                            if !self.isOffline { self.fetchZoneChanges(zoneID: zoneID, handler: handler, completion: completion) }
+                            RetryTimer.fetchZoneChanges.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchZoneChanges.resume()
                         RetryTimer.fetchZoneChanges.done = {
@@ -614,6 +631,7 @@ class EACloudKit {
                 handleError(err)
                 return;
             }
+            if RetryTimer.fetchZoneChanges != nil { RetryTimer.fetchZoneChanges.stop(); RetryTimer.fetchZoneChanges = nil }
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID, persist: true) }
             if moreComing { hasMore = true }
         }
@@ -624,6 +642,7 @@ class EACloudKit {
                 handleError(err)
                 return;
             }
+            if RetryTimer.fetchZoneChanges != nil { RetryTimer.fetchZoneChanges.stop(); RetryTimer.fetchZoneChanges = nil }
             if hasMore { self.fetchZoneChanges(zoneID: zoneID, handler: handler, completion: completion) }
             completion?(zoneID)
         }
@@ -640,10 +659,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchZoneChanges == nil && self.canRetry() {
                         RetryTimer.fetchZoneChanges = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.fetchZoneChanges(zoneIDs: zoneIDs, completion: completion)
-                                RetryTimer.fetchZoneChanges.suspend()
-                            }
+                            if !self.isOffline { self.fetchZoneChanges(zoneIDs: zoneIDs, completion: completion) }
+                            RetryTimer.fetchZoneChanges.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchZoneChanges.resume()
                         RetryTimer.fetchZoneChanges.done = {
@@ -700,6 +717,7 @@ class EACloudKit {
                 handleError(err)
                 return;
             }
+            if RetryTimer.fetchZoneChanges != nil { RetryTimer.fetchZoneChanges.stop(); RetryTimer.fetchZoneChanges = nil }
             if let token = changeToken { self.addServerChangeTokenToCache(token, zoneID: zoneID) }
             if moreComing { moreZones.append(zoneID) }
         }
@@ -709,6 +727,7 @@ class EACloudKit {
                 handleError(err)
                 return;
             }
+            if RetryTimer.fetchZoneChanges != nil { RetryTimer.fetchZoneChanges.stop(); RetryTimer.fetchZoneChanges = nil }
             Log.debug("CK: Fetch zone changes complete - saved: \(savedRecords.count), deleted: \(deletedRecords.count)")
             completion(.success((savedRecords, deletedRecords)))
             if moreZones.count > 0 { self.fetchZoneChanges(zoneIDs: moreZones, completion: completion) }
@@ -726,10 +745,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchRecords == nil && self.canRetry() {
                         RetryTimer.fetchRecords = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.fetchRecords(recordIDs: recordIDs, completion: completion)
-                                RetryTimer.fetchRecords.suspend()
-                            }
+                            if !self.isOffline { self.fetchRecords(recordIDs: recordIDs, completion: completion) }
+                            RetryTimer.fetchRecords.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchRecords.resume()
                         RetryTimer.fetchRecords.done = {
@@ -744,6 +761,7 @@ class EACloudKit {
                     completion(.failure(err)); return
                 }
             }
+            if RetryTimer.fetchRecords != nil { RetryTimer.fetchRecords.stop(); RetryTimer.fetchRecords = nil }
             if let hm = res { completion(.success(hm)) }
         }
         self.privateDatabase().add(op)
@@ -756,10 +774,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.fetchSubscriptions == nil && self.canRetry() {
                         RetryTimer.fetchSubscriptions = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.fetchSubscriptions(completion: completion)
-                                RetryTimer.fetchSubscriptions.suspend()
-                            }
+                            if !self.isOffline { self.fetchSubscriptions(completion: completion) }
+                            RetryTimer.fetchSubscriptions.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.fetchSubscriptions.resume()
                         RetryTimer.fetchSubscriptions.done = {
@@ -774,6 +790,7 @@ class EACloudKit {
                     completion(.failure(err)); return
                 }
             }
+            if RetryTimer.fetchSubscriptions != nil { RetryTimer.fetchSubscriptions.stop(); RetryTimer.fetchSubscriptions = nil }
             completion(.success(subscriptions ?? []))
         }
     }
@@ -798,10 +815,10 @@ class EACloudKit {
                     if self.canRetry() {
                         if RetryTimer.queryRecords == nil {
                             RetryTimer.queryRecords = EARepeatTimer(block: {
-                                if EAReachability.isConnectedToNetwork() {
+                                if !self.isOffline {
                                     self.queryRecords(zoneID: zoneID, recordType: recordType, predicate: predicate, cursor: cursor, limit: limit, completion: completion)
-                                    RetryTimer.queryRecords.suspend()
                                 }
+                                RetryTimer.queryRecords.suspend()
                             }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                             RetryTimer.queryRecords.done = {
                                 Log.error("CK: Error reaching CloudKit server")
@@ -816,6 +833,7 @@ class EACloudKit {
                 }
                 completion(.failure(err)); return
             }
+            if RetryTimer.queryRecords != nil { RetryTimer.queryRecords.stop(); RetryTimer.queryRecords = nil }
             completion(.success((records: records, cursor: cursor)))
         }
         self.privateDatabase().add(op)
@@ -835,10 +853,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.createZone == nil && self.canRetry() {
                         RetryTimer.createZone = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.createZone(recordZoneId: recordZoneId, completion: completion)
-                                RetryTimer.createZone.suspend()
-                            }
+                            if !self.isOffline { self.createZone(recordZoneId: recordZoneId, completion: completion) }
+                            RetryTimer.createZone.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.createZone.resume()
                         RetryTimer.createZone.done = {
@@ -852,6 +868,7 @@ class EACloudKit {
                     completion(.failure(err)); return
                 }
             }
+            if RetryTimer.createZone != nil { RetryTimer.createZone.stop(); RetryTimer.createZone = nil }
             if let x = zones?.first {
                 Log.debug("CK: Zone created successfully: \(x.zoneID.zoneName)")
                 self.addToCachedZones(x)
@@ -871,6 +888,7 @@ class EACloudKit {
         self.fetchZone(recordZoneIDs: [recordZoneId], completion: { [unowned self] result in
             switch result {
             case .success(let hm):
+                if RetryTimer.createZoneIfNotExist != nil { RetryTimer.createZoneIfNotExist.stop(); RetryTimer.createZoneIfNotExist = nil }
                 if let zone = hm[recordZoneId] {
                     self.addToCachedZones(zone)
                     completion(.success(zone.zoneID))
@@ -891,10 +909,8 @@ class EACloudKit {
                     } else if err.isNetworkFailure() {
                         if RetryTimer.createZoneIfNotExist == nil && self.canRetry() {
                             RetryTimer.createZoneIfNotExist = EARepeatTimer(block: {
-                                if EAReachability.isConnectedToNetwork() {
-                                    self.createZoneIfNotExist(recordZoneId: recordZoneId, completion: completion)
-                                    RetryTimer.fetchZone.suspend()
-                                }
+                                if !self.isOffline { self.createZoneIfNotExist(recordZoneId: recordZoneId, completion: completion) }
+                                RetryTimer.deleteAllSubscriptions.suspend()
                             }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                             RetryTimer.createZoneIfNotExist.resume()
                             RetryTimer.createZoneIfNotExist.done = {
@@ -933,10 +949,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.saveRecords == nil && self.canRetry() {
                         RetryTimer.saveRecords = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.saveRecords(records, count: count, isForce: isForce, completion: completion)
-                                RetryTimer.saveRecords.suspend()
-                            }
+                            if !self.isOffline { self.saveRecords(records, count: count, isForce: isForce, completion: completion) }
+                            RetryTimer.saveRecords.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.saveRecords.resume()
                         RetryTimer.saveRecords.done = {
@@ -988,6 +1002,7 @@ class EACloudKit {
                 }
                 return
             }
+            if RetryTimer.saveRecords != nil { RetryTimer.saveRecords.stop(); RetryTimer.saveRecords = nil }
             Log.debug("CK: Records saved successfully: \(records).map { r -> String in r.recordID.recordName })")
             completion(.success(saved))
         }
@@ -1022,21 +1037,20 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.subscribe == nil && self.canRetry() {
                         RetryTimer.subscribe = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.subscribe(subId, recordType: recordType, zoneID: zoneID)
-                                RetryTimer.fetchAllZones.suspend()
-                            }
+                            if !self.isOffline { self.subscribe(subId, recordType: recordType, zoneID: zoneID) }
+                            RetryTimer.subscribe.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
-                        RetryTimer.fetchAllZones.resume()
-                        RetryTimer.fetchAllZones.done = {
+                        RetryTimer.subscribe.resume()
+                        RetryTimer.subscribe.done = {
                             Log.error("CK: Error reaching CloudKit server")
                         }
                     } else {
-                        RetryTimer.fetchAllZones.resume()
+                        RetryTimer.subscribe.resume()
                     }
                 }
                 return
             }
+            if RetryTimer.subscribe != nil { RetryTimer.subscribe.stop(); RetryTimer.subscribe = nil }
             self.addToCachedSubscriptions(subId)
             Log.debug("CK: Subscribed to events successfully: \(recordType) with ID: \(subscription.subscriptionID.description)")
         }
@@ -1057,10 +1071,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.subscribeToDBChanges == nil && self.canRetry() {
                         RetryTimer.subscribeToDBChanges = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.subscribeToDBChanges(subId: subId)
-                                RetryTimer.subscribeToDBChanges.suspend()
-                            }
+                            if !self.isOffline { self.subscribeToDBChanges(subId: subId) }
+                            RetryTimer.subscribeToDBChanges.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.subscribeToDBChanges.resume()
                         RetryTimer.subscribeToDBChanges.done = {
@@ -1073,6 +1085,7 @@ class EACloudKit {
                 }
                 return
             }
+            if RetryTimer.subscribeToDBChanges != nil { RetryTimer.subscribeToDBChanges.stop(); RetryTimer.subscribeToDBChanges = nil }
             self.addToCachedSubscriptions(subId)
             Log.debug("CK: Subscribed to database change event: \(subId)")
         }
@@ -1092,10 +1105,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.deleteZone == nil && self.canRetry() {
                         RetryTimer.deleteZone = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.deleteZone(recordZoneIds: recordZoneIds, completion: completion)
-                                RetryTimer.deleteZone.suspend()
-                            }
+                            if !self.isOffline { self.deleteZone(recordZoneIds: recordZoneIds, completion: completion) }
+                            RetryTimer.deleteZone.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.deleteZone.resume()
                         RetryTimer.deleteZone.done = {
@@ -1110,6 +1121,7 @@ class EACloudKit {
                     completion(.failure(err)); return
                 }
             }
+            if RetryTimer.deleteZone != nil { RetryTimer.deleteZone.stop(); RetryTimer.deleteZone = nil }
             Log.debug("CK: Zone deleted successfully: \(recordZoneIds.map { r -> String in r.zoneName })")
             self.removeFromCachesZones(recordZoneIds)
             completion(.success(true))
@@ -1129,10 +1141,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.deleteRecords == nil && self.canRetry() {
                         RetryTimer.deleteRecords = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.deleteRecords(recordIDs: recordIDs, completion: completion)
-                                RetryTimer.deleteRecords.suspend()
-                            }
+                            if !self.isOffline { self.deleteRecords(recordIDs: recordIDs, completion: completion) }
+                            RetryTimer.deleteRecords.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.deleteRecords.resume()
                         RetryTimer.deleteRecords.done = {
@@ -1147,6 +1157,7 @@ class EACloudKit {
                     completion(.failure(err)); return
                 }
             }
+            if RetryTimer.deleteRecords != nil { RetryTimer.deleteRecords.stop(); RetryTimer.deleteRecords = nil }
             Log.debug("CK: Records deleted successfully: \(recordIDs.map { r -> String in r.recordName })")
             completion(.success(deleted ?? []))
         }
@@ -1164,10 +1175,8 @@ class EACloudKit {
                 if err.isNetworkFailure() {
                     if RetryTimer.deleteSubscriptions == nil && self.canRetry() {
                         RetryTimer.deleteSubscriptions = EARepeatTimer(block: {
-                            if EAReachability.isConnectedToNetwork() {
-                                self.deleteSubscriptions(subscriptionIDs: subscriptionIDs, completion: completion)
-                                RetryTimer.deleteSubscriptions.suspend()
-                            }
+                            if !self.isOffline { self.deleteSubscriptions(subscriptionIDs: subscriptionIDs, completion: completion) }
+                            RetryTimer.deleteSubscriptions.suspend()
                         }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                         RetryTimer.deleteSubscriptions.resume()
                         RetryTimer.deleteSubscriptions.done = {
@@ -1182,6 +1191,7 @@ class EACloudKit {
                     completion(.failure(err)); return
                 }
             }
+            if RetryTimer.deleteSubscriptions != nil { RetryTimer.deleteSubscriptions.stop(); RetryTimer.deleteSubscriptions = nil }
             guard let xs = ids else { completion(.failure(AppError.delete)); return }
             Log.debug("CK: Subscriptions deleted successfully: \(xs)")
             completion(.success(xs))
@@ -1197,6 +1207,7 @@ class EACloudKit {
                 self.deleteSubscriptions(subscriptionIDs: subs.map { $0.subscriptionID }) { result in
                     switch result {
                     case .success(let ids):
+                        if RetryTimer.deleteAllSubscriptions != nil { RetryTimer.deleteAllSubscriptions.stop(); RetryTimer.deleteAllSubscriptions = nil }
                         let xs = UserDefaults.standard.array(forKey: self.subscriptionsKey) as? [CKSubscription.ID] ?? []
                         let diff = EAUtils.shared.subtract(lxs: xs, rxs: ids)  // not deleted subscriptions
                         UserDefaults.standard.set(diff, forKey: self.subscriptionsKey)
@@ -1206,10 +1217,8 @@ class EACloudKit {
                             if err.isNetworkFailure() {
                                 if RetryTimer.deleteAllSubscriptions == nil && self.canRetry() {
                                     RetryTimer.deleteAllSubscriptions = EARepeatTimer(block: {
-                                        if EAReachability.isConnectedToNetwork() {
-                                            self.deleteAllSubscriptions()
-                                            RetryTimer.fetchAllZones.suspend()
-                                        }
+                                        if !self.isOffline { self.deleteAllSubscriptions() }
+                                        RetryTimer.deleteAllSubscriptions.suspend()
                                     }, interval: RetryTimer.interval, limit: RetryTimer.limit)
                                     RetryTimer.deleteAllSubscriptions.resume()
                                     RetryTimer.deleteAllSubscriptions.done = {

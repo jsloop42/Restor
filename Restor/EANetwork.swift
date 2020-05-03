@@ -180,6 +180,8 @@ public class EAReachability {
 
 public extension Notification.Name {
     static let reachabilityDidChange = Notification.Name("reachability-did-change")
+    static let offline = Notification.Name("offline")
+    static let online = Notification.Name("online")
 }
 
 extension SCNetworkReachabilityFlags {
