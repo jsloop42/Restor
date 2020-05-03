@@ -161,7 +161,7 @@ class CoreDataService {
         return self.bgMOC
     }
     
-    /// Returns a child managed object context with parent as the background context.
+    /// Returns a child managed object context.
     func getChildMOC() -> NSManagedObjectContext {
         let moc = NSManagedObjectContext(concurrencyType: NSManagedObjectContextConcurrencyType.privateQueueConcurrencyType)
         moc.parent = self.mainMOC
@@ -243,7 +243,7 @@ class CoreDataService {
     
     // MARK: - To dictionary
     
-    /// Can be used to get the initial value of the request before modification during edit
+    /// Can be used to get the initial value of the request before modification during edit.
     func requestToDictionary(_ x: ERequest) -> [String: Any] {
         let attrs = ERequest.entity().attributesByName.map { arg -> String in arg.key }
         var dict = x.dictionaryWithValues(forKeys: attrs)
@@ -588,6 +588,7 @@ class CoreDataService {
     /// Retrieve the requests in the given project.
     /// - Parameters:
     ///   - projectId: The project id.
+    ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
     func getRequests(projectId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequest] {
         var xs: [ERequest] = []
@@ -741,6 +742,7 @@ class CoreDataService {
     /// Retrieve form data for the given request body.
     /// - Parameters:
     ///   - bodyDataId: The request body data id.
+    ///   - type: The request data type.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context of the request body data object.
     func getFormRequestData(_ bodyDataId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequestData] {
@@ -970,16 +972,17 @@ class CoreDataService {
     
     /// Get the count for requests with the given request method data selected.
     /// - Parameters:
-    ///   - methodDataId: The request method data id.
+    ///   - projId: The project Id under which the requests belongs to.
     ///   - index: The method index which will be the selected method index in the request.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
-    func getRequestsCountForRequestMethodData(index: Int64? = Const.defaultRequestMethodsCount.toInt64(), includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> Int {
+    func getRequestsCountForRequestMethodData(projId: String, index: Int64? = Const.defaultRequestMethodsCount.toInt64(), includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> Int {
         var x: Int = 0
         let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<ERequest>(entityName: "ERequest")
-            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "selectedMethodIndex == %ld", index!) : NSPredicate(format: "selectedMethodIndex == %ld AND markForDelete == %hhd", index!, includeMarkForDelete!)
+            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "selectedMethodIndex == %ld AND project.id == %@", index!, projId)
+                : NSPredicate(format: "selectedMethodIndex == %ld AND markForDelete == %hhd AND project.id == %@", index!, includeMarkForDelete!, projId)
             do {
                 x = try moc.count(for: fr)
             } catch let error {
@@ -1247,8 +1250,11 @@ class CoreDataService {
     /// - Parameters:
     ///   - id: The workspace id.
     ///   - name: The workspace name.
-    ///   - name: The workspace description.
+    ///   - desc: The workspace description.
+    ///   - isSyncEnabled: Is syncing with iCloud enabled.
+    ///   - isActive: Is the workspace active (applies to default workspace only).
     ///   - checkExists: Check whether the workspace exists before creating.
+    ///   - ctx: The managed object context.
     func createWorkspace(id: String, name: String, desc: String, isSyncEnabled: Bool, isActive: Bool? = true, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC)  -> EWorkspace? {
         var x: EWorkspace?
         let ts = Date().currentTimeNanos()
@@ -1303,10 +1309,12 @@ class CoreDataService {
     /// Create project.
     /// - Parameters:
     ///   - id: The project id.
+    ///   - wsId: The workspace id.
     ///   - name: The project name.
     ///   - desc: The project description.
     ///   - ws: The workspace to which the project belongs.
     ///   - checkExists: Check if the given project exists before creating.
+    ///   - ctx: The managed object context.
     func createProject(id: String, wsId: String, name: String, desc: String, ws: EWorkspace? = nil, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EProject? {
         var x: EProject?
@@ -1333,11 +1341,12 @@ class CoreDataService {
     
     /// Create a request
     /// - Parameters:
-    ///   - id: The request id.
+    ///   - id: The request Id.
+    ///   - wsId: The workspace Id.
     ///   - name: The name of the request.
     ///   - project: The project to which the request belongs to.
     ///   - checkExists: Check if the request exists before creating one.
-    ///   - ctx: The managed object context
+    ///   - ctx: The managed object context.
     func createRequest(id: String, wsId: String, name: String, project: EProject? = nil, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequest? {
         var x: ERequest?
@@ -1361,9 +1370,10 @@ class CoreDataService {
         
     /// Create request data.
     /// - Parameters:
-    ///   - id: The request data id.
-    ///   - index: The index of the request data.
+    ///   - id: The request data Id.
+    ///   - wsId: The workspace Id.
     ///   - type: The request data type.
+    ///   - fieldFormat: The request body form field format.
     ///   - checkExists: Check for existing request data object.
     ///   - ctx: The managed object context.
     func createRequestData(id: String, wsId: String, type: RequestDataType, fieldFormat: RequestBodyFormFieldFormatType, checkExists: Bool? = true,
@@ -1388,12 +1398,14 @@ class CoreDataService {
         return x
     }
     
-    /// Crate request method data
+    /// Create request method data.
     /// - Parameters:
-    ///   - id: The request method data id.
+    ///   - id: The request method data Id.
+    ///   - wsId: The workspace Id.
     ///   - name: The name of the request method data.
-    ///   - checkExists: Check if the request method data exists
-    ///   - ctx: The managed object context
+    ///   - isCustom: If the request method is user created.
+    ///   - checkExists: Check if the request method data exists.
+    ///   - ctx: The managed object context.
     func createRequestMethodData(id: String, wsId: String, name: String, isCustom: Bool? = true, checkExists: Bool? = true,
                                  ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
@@ -1417,7 +1429,8 @@ class CoreDataService {
     
     /// Create request body data.
     /// - Parameters:
-    ///   - id: The request body data id.
+    ///   - id: The request body data Id.
+    ///   - wsId: The workspace Id.
     ///   - checkExists: Check if the request body data exists before creating.
     ///   - ctx: The managed object context.
     func createRequestBodyData(id: String, wsId: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestBodyData? {
@@ -1440,11 +1453,12 @@ class CoreDataService {
     
     /// Create an image object with the given image data.
     /// - Parameters:
-    ///   - data: The image data
-    ///   - name: The image name
-    ///   - type: The image type (png, jpg, etc.)
-    ///   - checkExists: Check if the image exists already before creating
-    ///   - ctx: The managed object context
+    ///   - data: The image data.
+    ///   - wsId: The workspace Id.
+    ///   - name: The image name.
+    ///   - type: The image type (png, jpg, etc.).
+    ///   - checkExists: Check if the image exists already before creating.
+    ///   - ctx: The managed object context.
     func createImage(data: Data, wsId: String, name: String, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EImage? {
         var x: EImage?
         let ts = Date().currentTimeNanos()

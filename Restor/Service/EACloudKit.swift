@@ -9,6 +9,7 @@
 import Foundation
 import CloudKit
 
+/// Used in caching the server change token for the given zone.
 class ZoneInfo: NSObject, NSCoding {
     var zoneID: CKRecordZone.ID
     var serverChangeToken: CKServerChangeToken? = nil
@@ -49,7 +50,7 @@ class ZoneInfo: NSObject, NSCoding {
     }
 }
 
-/// A class that works with CloudKit
+/// A class to work with CloudKit.
 class EACloudKit {
     static let shared = EACloudKit()
     let cloudKitContainerId = "iCloud.com.estoapps.ios.restor"
@@ -58,7 +59,7 @@ class EACloudKit {
     private let nc = NotificationCenter.default
     private let kvstore = NSUbiquitousKeyValueStore.default
     private let store = UserDefaults.standard
-    /// Cloudkit user defaults subscriptions key
+    /// CloudKit user defaults subscriptions key
     private let subscriptionsKey = "ck-subscriptions"
     /// A dictionary of all zones [String: Data]  // [zone-name: zone-info]
     private let zonesKey = "zones-key"
@@ -69,7 +70,7 @@ class EACloudKit {
     private var networkRetryOpsCount = 0
     /// Maximum number of retry operations before which circuit breaker trips.
     private var maxRetryOpsCount = 3
-    // Retry timers
+    /// Retry timers
     struct RetryTimer {
         static var fetchAllZones: EARepeatTimer!
         static var fetchZone: EARepeatTimer!
@@ -547,19 +548,6 @@ class EACloudKit {
         self.privateDatabase().add(op)
     }
     
-    struct ZoneChangeResult {
-        var zoneID: CKRecordZone.ID!
-        var saved: [CKRecord] = []
-        var deleted: [CKRecord.ID] = []
-        var isBatched: Bool = true
-        
-        init(zoneID: CKRecordZone.ID) {
-            self.zoneID = zoneID
-        }
-        
-        init() {}
-    }
-    
     func fetchZoneChanges(zoneID: CKRecordZone.ID, handler: ((Result<(CKRecord?, CKRecord.ID?), Error>) -> Void)? = nil, completion: ((CKRecordZone.ID) -> Void)? = nil) {
         Log.debug("CK: fetch zone changes: \(zoneID)")
         var hasMore = false
@@ -924,7 +912,7 @@ class EACloudKit {
         })
     }
     
-    /// Creates a record with the given ID and type
+    /// Creates a record with the given ID and type.
     func createRecord(recordID: CKRecord.ID, recordType: String) -> CKRecord {
         return CKRecord(recordType: recordType, recordID: recordID)
     }

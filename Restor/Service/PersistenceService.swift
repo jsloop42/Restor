@@ -524,7 +524,7 @@ class PersistenceService {
                 delxs = []
             }
         }
-        // project
+        // Project
         if self.projDelFrc == nil { self.projDelFrc = self.localdb.getDataMarkedForDelete(obj: EProject.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<EProject> }
         self.syncToCloudCtx.perform {
             if self.projDelFrc != nil, let xs = self.projDelFrc.fetchedObjects {
@@ -543,7 +543,7 @@ class PersistenceService {
             }
         }
         deleteEntities()
-        // request
+        // Request
         if self.reqDelFrc == nil { self.reqDelFrc = self.localdb.getDataMarkedForDelete(obj: ERequest.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<ERequest> }
         self.syncToCloudCtx.perform {
             if self.reqDelFrc != nil, let xs = self.reqDelFrc.fetchedObjects {
@@ -1042,7 +1042,6 @@ class PersistenceService {
             if isNew || imageData.changeTag < record.changeTag {  // => server has new copy
                 imageData.updateFromCKRecord(record, ctx: ctx)
                 imageData.isSynced = true
-                //self.localdb.saveChildContext(ctx)
                 self.localdb.saveMainContext()
                 Log.debug("Image data synced")
                 self.nc.post(Notification(name: NotificationKey.imageDataDidSync))
@@ -1172,7 +1171,6 @@ class PersistenceService {
         let ctx = self.localdb.mainMOC
         ctx.perform {
             let xs = set.toArray().compactMap({ info -> Entity? in
-                //self.localdb.getEntity(recordType: info.recordType, id: info.id, ctx: ctx)
                 self.localdb.getManagedObject(moId: info.moID, withContext: ctx) as? Entity
             })
             self.deleteEntitesFromCloud(xs)

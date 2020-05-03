@@ -234,6 +234,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
         let row = indexPath.row
         if self.pickerType == .requestMethod {
             if self.modelxs.count > row {
+                if AppState.editRequest?.project == nil { return false }
                 return (self.modelxs[row] as? ERequestMethodData)?.isCustom ?? false
             }
         }
@@ -243,7 +244,8 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let row = indexPath.row
         let elem = self.modelxs[row] as? ERequestMethodData
-        let count = self.localdb.getRequestsCountForRequestMethodData(ctx: elem?.managedObjectContext)
+        let projId = AppState.editRequest!.project!.getId()
+        let count = self.localdb.getRequestsCountForRequestMethodData(projId: projId, ctx: elem?.managedObjectContext)
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             if count > 0, let name = elem?.name {
                 UI.viewAlert(vc: self, title: "Delete \"HEAD\"?",
