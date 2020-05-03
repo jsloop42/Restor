@@ -308,15 +308,17 @@ class CoreDataService {
     /// - Parameters:
     ///   - moId: The managed object Id of the entity.
     ///   - context: The managed object context used to access.
+    /// - Returns: The managed object.
     func getManagedObject(moId: NSManagedObjectID, withContext context: NSManagedObjectContext) -> NSManagedObject {
         return context.object(with: moId)
     }
     
-    /// Returns a fetch results controller with the given entity type
+    /// Returns a fetch results controller with the given entity type.
     /// - Parameters:
-    ///   - obj: The entity type
-    ///   - predicate: An optional fetch predicate
-    ///   - ctx: The managed object context
+    ///   - obj: The entity type.
+    ///   - predicate: An optional fetch predicate.
+    ///   - ctx: The managed object context.
+    /// - Returns: The fetch results controller.
     func getFetchResultsController(obj: Entity.Type, predicate: NSPredicate? = nil, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
         let moc = self.getMainMOC(ctx: ctx)
         var frc: NSFetchedResultsController<NSFetchRequestResult>!
@@ -334,11 +336,12 @@ class CoreDataService {
         return frc
     }
         
-    /// Updates the given fetch results controller predicate
+    /// Updates the given fetch results controller predicate.
     /// - Parameters:
-    ///   - frc: The fetch results controller
-    ///   - predicate: A fetch predicate
-    ///   - ctx: The managed object context
+    ///   - frc: The fetch results controller.
+    ///   - predicate: A fetch predicate.
+    ///   - ctx: The managed object context.
+    /// - Returns: The fetch results controller.
     func updateFetchResultsController(_ frc: NSFetchedResultsController<NSFetchRequestResult>, predicate: NSPredicate, ctx: NSManagedObjectContext = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
         ctx.performAndWait { frc.fetchRequest.predicate = predicate }
         return frc
@@ -392,6 +395,7 @@ class CoreDataService {
     ///   - limit: The maximum number of results to fetch
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context
+    /// - Returns: A list of workspaces
     func getAllWorkspaces(offset: Int? = 0, limit: Int? = 0, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EWorkspace] {
         var xs: [EWorkspace] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -435,6 +439,7 @@ class CoreDataService {
     /// - Parameters:
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context
+    /// - Returns: The count of workspaces
     func getWorkspaceCount(includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> Int {
         var x: Int = 0
         let moc = self.getMainMOC(ctx: ctx)
@@ -450,7 +455,7 @@ class CoreDataService {
         return x
     }
     
-    /// Default entities will have the id "default"
+    /// Default entities will have the id `default`.
     func getDefaultWorkspace(with project: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EWorkspace {
         var x: EWorkspace!
         let moc = self.getMainMOC(ctx: ctx)
@@ -492,6 +497,7 @@ class CoreDataService {
     ///   - wsId: The workspace id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The project.
     func getProject(at index: Int, wsId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EProject? {
         var x: EProject?
         let moc = self.getMainMOC(ctx: ctx)
@@ -514,6 +520,7 @@ class CoreDataService {
     /// - Parameters:
     ///   - moId: The managed object Id of the entity.
     ///   - context: The managed object context used to access.
+    /// - Returns: The project.
     func getProject(moId: NSManagedObjectID, withContext context: NSManagedObjectContext) -> EProject? {
         return context.object(with: moId) as? EProject
     }
@@ -523,6 +530,7 @@ class CoreDataService {
     ///   - wsId: The workspace id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: A list of projects.
     func getProjects(wsId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EProject] {
         var xs: [EProject] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -590,6 +598,7 @@ class CoreDataService {
     ///   - projectId: The project id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: A list of requests.
     func getRequests(projectId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequest] {
         var xs: [ERequest] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -613,6 +622,7 @@ class CoreDataService {
     ///   - projectId: The project id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The request.
     func getRequest(at index: Int, projectId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequest? {
         var x: ERequest?
         let moc = self.getMainMOC(ctx: ctx)
@@ -635,6 +645,7 @@ class CoreDataService {
     ///   - projectId: The project id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The count of requests.
     func getRequestsCount(projectId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> Int {
         var x: Int = 0
         let moc = self.getMainMOC(ctx: ctx)
@@ -723,6 +734,7 @@ class CoreDataService {
     ///   - type: The request data type.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The count of request data entities.
     func getRequestDataCount(reqId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> Int {
         var x: Int = 0
         let moc = self.getMainMOC(ctx: ctx)
@@ -745,6 +757,7 @@ class CoreDataService {
     ///   - type: The request data type.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context of the request body data object.
+    /// - Returns: A list of request data entities.
     func getFormRequestData(_ bodyDataId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -771,6 +784,7 @@ class CoreDataService {
     ///   - type: The request data type (form, multipart)
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The request data entity.
     func getFormRequestData(at index: Int, bodyDataId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC)
         -> ERequestData? {
         var x: ERequestData?
@@ -802,6 +816,7 @@ class CoreDataService {
     ///   - reqId: The request id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: A list of request data entities.
     func getHeadersRequestData(_ reqId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -824,6 +839,7 @@ class CoreDataService {
     ///   - reqId: The request id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: A list of request data entities.
     func getParamsRequestData(_ reqId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -863,7 +879,7 @@ class CoreDataService {
     ///   - reqId: The request Id
     ///   - type: The request data type
     ///   - ctx: The managed object context.
-    /// - Returns: A list of request data
+    /// - Returns: A list of request data entities.
     func getRequestDataMarkedForDelete(reqId: String, type: RequestDataType, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequestData] {
         var xs: [ERequestData] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -888,6 +904,7 @@ class CoreDataService {
     ///   - id: The request method data id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The request method data entity.
     func getRequestMethodData(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let moc = self.getMainMOC(ctx: ctx)
@@ -908,6 +925,7 @@ class CoreDataService {
     ///   - reqId: The request id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: A list of request method data entities.
     func getRequestMethodData(reqId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequestMethodData] {
         var xs: [ERequestMethodData] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -930,6 +948,7 @@ class CoreDataService {
     ///   - projId: The project id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: A list of request method data entities.
     func getRequestMethodData(projId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [ERequestMethodData] {
         var xs: [ERequestMethodData] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -953,6 +972,7 @@ class CoreDataService {
     ///   - projId: The project id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The request method data entity.
     func getRequestMethodData(at index: Int, projId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
         let moc = self.getMainMOC(ctx: ctx)
@@ -976,6 +996,7 @@ class CoreDataService {
     ///   - index: The method index which will be the selected method index in the request.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The count of entities.
     func getRequestsCountForRequestMethodData(projId: String, index: Int64? = Const.defaultRequestMethodsCount.toInt64(), includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> Int {
         var x: Int = 0
         let moc = self.getMainMOC(ctx: ctx)
@@ -1049,6 +1070,7 @@ class CoreDataService {
     ///   - type: The `RequestDataType` indicating whether it is a `file` or a `multipart`
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context of the request data.
+    /// - Returns: The count of files.
     func getFilesCount(_ reqDataId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> Int {
         var x: Int = 0
         let moc = self.getMainMOC(ctx: ctx)
@@ -1073,6 +1095,7 @@ class CoreDataService {
     ///   - type: The `RequestDataType` indicating whether it is a `file` or a `multipart`
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context of the request data.
+    /// - Returns: A list of file entities.
     func getFiles(_ reqDataId: String, type: RequestDataType, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EFile] {
         var xs: [EFile] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -1098,6 +1121,7 @@ class CoreDataService {
     ///   - reqDataId: The request data id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The file entity.
     func getFile(at index: Int, reqDataId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EFile? {
         var x: EFile?
         let moc = self.getMainMOC(ctx: ctx)
@@ -1121,6 +1145,7 @@ class CoreDataService {
     ///   - id: The file object id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The file entity.
     func getFileData(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EFile? {
         var x: EFile?
         let moc = self.getMainMOC(ctx: ctx)
@@ -1160,6 +1185,7 @@ class CoreDataService {
     ///   - id: The image object id.
     ///   - includeMarkForDelete: Whether to include entities marked for deletion.
     ///   - ctx: The managed object context.
+    /// - Returns: The image entity.
     func getImageData(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EImage? {
         var x: EImage?
         let moc = self.getMainMOC(ctx: ctx)
@@ -1255,6 +1281,7 @@ class CoreDataService {
     ///   - isActive: Is the workspace active (applies to default workspace only).
     ///   - checkExists: Check whether the workspace exists before creating.
     ///   - ctx: The managed object context.
+    /// - Returns: A workspace.
     func createWorkspace(id: String, name: String, desc: String, isSyncEnabled: Bool, isActive: Bool? = true, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC)  -> EWorkspace? {
         var x: EWorkspace?
         let ts = Date().currentTimeNanos()
@@ -1315,6 +1342,7 @@ class CoreDataService {
     ///   - ws: The workspace to which the project belongs.
     ///   - checkExists: Check if the given project exists before creating.
     ///   - ctx: The managed object context.
+    /// - Returns: A project.
     func createProject(id: String, wsId: String, name: String, desc: String, ws: EWorkspace? = nil, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EProject? {
         var x: EProject?
@@ -1347,6 +1375,7 @@ class CoreDataService {
     ///   - project: The project to which the request belongs to.
     ///   - checkExists: Check if the request exists before creating one.
     ///   - ctx: The managed object context.
+    /// - Returns: A request.
     func createRequest(id: String, wsId: String, name: String, project: EProject? = nil, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequest? {
         var x: ERequest?
@@ -1376,6 +1405,7 @@ class CoreDataService {
     ///   - fieldFormat: The request body form field format.
     ///   - checkExists: Check for existing request data object.
     ///   - ctx: The managed object context.
+    /// - Returns: A request data.
     func createRequestData(id: String, wsId: String, type: RequestDataType, fieldFormat: RequestBodyFormFieldFormatType, checkExists: Bool? = true,
                            ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestData? {
         var x: ERequestData?
@@ -1406,6 +1436,7 @@ class CoreDataService {
     ///   - isCustom: If the request method is user created.
     ///   - checkExists: Check if the request method data exists.
     ///   - ctx: The managed object context.
+    /// - Returns: A request method data.
     func createRequestMethodData(id: String, wsId: String, name: String, isCustom: Bool? = true, checkExists: Bool? = true,
                                  ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestMethodData? {
         var x: ERequestMethodData?
@@ -1433,6 +1464,7 @@ class CoreDataService {
     ///   - wsId: The workspace Id.
     ///   - checkExists: Check if the request body data exists before creating.
     ///   - ctx: The managed object context.
+    /// - Returns: A request body data.
     func createRequestBodyData(id: String, wsId: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> ERequestBodyData? {
         var x: ERequestBodyData?
         let ts = Date().currentTimeNanos()
@@ -1459,6 +1491,7 @@ class CoreDataService {
     ///   - type: The image type (png, jpg, etc.).
     ///   - checkExists: Check if the image exists already before creating.
     ///   - ctx: The managed object context.
+    /// - Returns: An image entity.
     func createImage(data: Data, wsId: String, name: String, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EImage? {
         var x: EImage?
         let ts = Date().currentTimeNanos()
