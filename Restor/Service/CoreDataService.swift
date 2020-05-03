@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 
-enum RecordType: String {
+enum RecordType: String, Hashable {
     case file = "File"
     case image = "Image"
     case project = "Project"
@@ -68,6 +68,10 @@ enum RecordType: String {
         case .zone:
             return "zn"
         }
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(self.rawValue)
     }
     
     static subscript(_ type: String) -> RecordType? {
@@ -160,7 +164,7 @@ class CoreDataService {
     /// Returns a child managed object context with parent as the background context.
     func getChildMOC() -> NSManagedObjectContext {
         let moc = NSManagedObjectContext(concurrencyType: NSManagedObjectContextConcurrencyType.privateQueueConcurrencyType)
-        moc.parent = self.bgMOC
+        moc.parent = self.mainMOC
         moc.automaticallyMergesChangesFromParent = true
         moc.mergePolicy = NSMergePolicy.mergeByPropertyObjectTrump
         return moc
@@ -1495,6 +1499,7 @@ class CoreDataService {
     
     func saveMainContext(_ callback: ((Bool) -> Void)? = nil) {
         Log.debug("save main context")
+        if AppState.isRequestEdit { Log.debug("Edit request in progress. Skipping main context save."); callback?(false); return }
         self.mainMOC.perform {
             do {
                 if !self.mainMOC.hasChanges { Log.debug("main context does not have changes"); callback?(true); return }
@@ -1567,8 +1572,15 @@ class CoreDataService {
         context.performAndWait { context.refresh(entity, mergeChanges: false) }
     }
     
-    func discardChanges(for objects: Set<NSManagedObjectID>, inContext context: NSManagedObjectContext) {
-        context.performAndWait { objects.forEach { oid in self.discardChanges(for: context.object(with: oid), inContext: context) } }
+    func discardChanges(for ids: Set<EditRequestInfo>, inContext context: NSManagedObjectContext) {
+        Log.debug("Discard changes for: \(ids)")
+        context.performAndWait {
+            ids.toArray().forEach { info in
+                let elem = self.getManagedObject(moId: info.moID, withContext: context)
+                Log.debug("discard changes in obj: \(elem)")
+                self.discardChanges(for: elem, inContext: context)
+            }
+        }
     }
     
     func deleteEntity(_ entity: NSManagedObject?, ctx: NSManagedObjectContext? = nil) {

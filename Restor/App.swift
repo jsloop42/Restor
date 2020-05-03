@@ -11,6 +11,13 @@ import UIKit
 import CoreData
 import CloudKit
 
+struct EditRequestInfo: Hashable {
+    var id: String
+    var moID: NSManagedObjectID
+    var recordType: RecordType
+    var isDelete: Bool = false
+}
+
 class App {
     static let shared: App = App()
     var popupBottomContraints: NSLayoutConstraint?
@@ -38,8 +45,8 @@ class App {
     private let fnIdReqFile =  "request-file-fn"
     private let fnIdReqImage = "request-image-fn"
     /// List of managed objects modified so that in case of discard, these entities can be reset.
-    var editReqManIds: Set<NSManagedObjectID> = Set()
-    var editReqDelete: Set<NSManagedObject> = Set()
+    var editReqInfo: Set<EditRequestInfo> = Set()
+    var editReqDelete: Set<EditRequestInfo> = Set()
     private let editReqLock = NSLock()
     private let nc = NotificationCenter.default
     
@@ -268,20 +275,18 @@ class App {
     
     // MARK: - Mark entity for delete
     
-    func addEditRequestDeleteObject(_ obj: NSManagedObject?) {
-        if let x = obj {
-            x.managedObjectContext?.perform {
-                if x.objectID.isTemporaryID {
-                    CoreDataService.shared.deleteEntity(x)
-                    return
-                }
-                self.editReqDelete.insert(x)
-            }
+    func addEditRequestDeleteObject(_ obj: Entity?) {
+        guard let obj = obj else { return }
+        obj.managedObjectContext?.performAndWait {
+            if obj.objectID.isTemporaryID { CoreDataService.shared.deleteEntity(obj); return }
+            guard let type = RecordType.from(id: obj.getId()) else { return }
+            self.editReqDelete.insert(EditRequestInfo(id: obj.getId(), moID: obj.objectID, recordType: type, isDelete: true))
         }
     }
     
-    func removeEditRequestDeleteObject(_ x: NSManagedObject) {
-        self.editReqDelete.remove(x)
+    func removeEditRequestDeleteObject(_ obj: Entity) {
+        guard let type = RecordType.from(id: obj.getId()) else { return }
+        self.editReqDelete.remove(EditRequestInfo(id: obj.getId(), moID: obj.objectID, recordType: type, isDelete: true))
     }
     
     func clearEditRequestDeleteObjects() {
@@ -394,20 +399,20 @@ class App {
     
     /// MARK: - Entity change tracking
     
-    func addEditRequestManagedObjectId(_ id: NSManagedObjectID?) {
-        if id != nil {
-            self.editReqLock.lock()
-            self.editReqManIds.insert(id!)
-            self.editReqLock.unlock()
-        }
+    func addEditRequestEntity(_ obj: Entity?) {
+        guard let obj = obj, let type = RecordType.from(id: obj.getId()) else { return }
+        self.editReqLock.lock()
+        self.editReqInfo.insert(EditRequestInfo(id: obj.getId(), moID: obj.objectID, recordType: type))
+        self.editReqLock.unlock()
     }
     
-    func removeEditRequestManagedObjectId(_ id: NSManagedObjectID) {
-        self.editReqManIds.remove(id)
+    func removeEditRequestEntityId(_ obj: Entity) {
+        guard let type = RecordType.from(id: obj.getId()) else { return }
+        self.editReqInfo.remove(EditRequestInfo(id: obj.getId(), moID: obj.objectID, recordType: type))
     }
     
-    func clearEditRequestManagedObjectIds() {
-        self.editReqManIds.removeAll()
+    func clearEditRequestEntityIds() {
+        self.editReqInfo.removeAll()
     }
     
     // MARK: - Request change
@@ -434,13 +439,13 @@ class App {
     ///   - x: The request object.
     ///   - request: The initial request dictionary.
     func didRequestChangeImp(_ x: ERequest, request: [String: Any]) -> Bool {
-        self.addEditRequestManagedObjectId(x.objectID)
+        self.addEditRequestEntity(x)
         if x.markForDelete != request["markForDelete"] as? Bool { x.isSynced = false; x.setChangeTagWithEditTs(); return true }
         if x.url == nil || x.url!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
         if self.didRequestURLChangeImp(x.url ?? "", request: request) { x.setChangeTagWithEditTs(); return true }
         if self.didRequestMetaChangeImp(name: x.name ?? "", desc: x.desc ?? "", request: request) { x.setChangeTagWithEditTs(); return true }
         if self.didRequestMethodIndexChangeImp(x.selectedMethodIndex, request: request) { x.setChangeTagWithEditTs(); return true }
-        self.addEditRequestManagedObjectId(x.method?.objectID)
+        self.addEditRequestEntity(x.method)
         if (x.method == nil && request["method"] != nil) || (x.method != nil && (x.method!.isInserted || x.method!.isDeleted) && request["method"] == nil) { return true }
         if let hm = request["method"] as? [String: Any], let ida = x.id, let idb = hm["id"] as? String, ida != idb { return true }
         guard let projId = x.project?.getId() else { return true }
@@ -530,7 +535,7 @@ class App {
     func didAnyRequestMethodChangeImp(_ xs: [ERequestMethodData], request: [String: Any]) -> Bool {
         let xsa = xs.filter { x -> Bool in
             let flag = x.isCustom && x.hasChanges
-            if flag { self.addEditRequestManagedObjectId(x.objectID) }
+            if flag { self.addEditRequestEntity(x) }
             return flag
         }
         let xsb = (request["methods"] as? [[String: Any]])?.filter({ hm -> Bool in
@@ -638,7 +643,7 @@ class App {
     /// Check if any of the request headers changed.
     func didAnyRequestHeaderChangeImp(_ xs: [ERequestData], request: [String: Any]) -> Bool {
         var xs: [Entity] = xs
-        xs.forEach { x in self.addEditRequestManagedObjectId(x.objectID) }
+        xs.forEach { x in self.addEditRequestEntity(x) }
         self.localdb.sortByCreated(&xs)
         let len = xs.count
         if len != (request["headers"] as! [[String: Any]]).count { return true }
@@ -660,7 +665,7 @@ class App {
     /// Check if any of the request params changed.
     func didAnyRequestParamChangeImp(_ xs: [ERequestData], request: [String: Any]) -> Bool {
         var xs: [Entity] = xs
-        xs.forEach { x in self.addEditRequestManagedObjectId(x.objectID) }
+        xs.forEach { x in self.addEditRequestEntity(x) }
         self.localdb.sortByCreated(&xs)
         let len = xs.count
         if len != (request["params"] as! [[String: Any]]).count { return true }
@@ -681,7 +686,7 @@ class App {
     
     /// Checks if the request body changed
     func didRequestBodyChangeImp(_ x: ERequestBodyData?, request: [String: Any]) -> Bool {
-        self.addEditRequestManagedObjectId(x?.objectID)
+        self.addEditRequestEntity(x)
         if (x == nil && request["body"] != nil) || (x != nil && request["body"] == nil) { x?.isSynced = false; return true }
         if let body = request["body"] as? [String: Any] {
             if x?.json != body["json"] as? String ||
@@ -728,7 +733,7 @@ class App {
             } else if selectedType == .binary {
                 return self.didRequestBodyBinaryChangeImp(x.binary, body: body)
             }
-            formxsa.forEach { e in self.addEditRequestManagedObjectId(e.objectID) }
+            formxsa.forEach { e in self.addEditRequestEntity(e) }
             if formxsa.count != formxsb.count { return true }
             self.localdb.sortByCreated(&formxsa)
             
@@ -782,7 +787,7 @@ class App {
     
     /// Checks if the given form's attachments changed.
     func didRequestBodyFormAttachmentChangeImp(_ x: ERequestData, y: [String: Any]) -> Bool {
-        self.addEditRequestManagedObjectId(x.image?.objectID)
+        self.addEditRequestEntity(x.image)
         if (x.image != nil && y["image"] == nil) || (x.image == nil && y["image"] != nil) { x.isSynced = false; x.setChangeTagWithEditTs(); return true }
         if let ximage = x.image, let yimage = y["image"] as? [String: Any]  {
             if self.didRequestImageChangeImp(x: ximage, y: yimage) { x.isSynced = false; x.setChangeTagWithEditTs(); return true }
@@ -791,7 +796,7 @@ class App {
         let yfiles = y["files"] as! [[String: Any]]
         if x.files!.count != yfiles.count { x.isSynced = false; return true }
         if let set = x.files, var xs = set.allObjects as? [Entity] {
-            xs.forEach { x in self.addEditRequestManagedObjectId(x.objectID) }
+            xs.forEach { x in self.addEditRequestEntity(x) }
             self.localdb.sortByCreated(&xs)
             let len = xs.count
             for i in 0..<len {

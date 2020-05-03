@@ -1166,11 +1166,18 @@ class PersistenceService {
     /// - Parameters:
     ///   - set: The entities deleted in the edit request.
     ///   - request: The request object.
-    func deleteDataMarkedForDelete(_ set: Set<NSManagedObject>) {
+    func deleteDataMarkedForDelete(_ set: Set<EditRequestInfo>) {
         Log.debug("delete data marked for delete - set: \(set.count)")
         guard set.count > 0 else { return }
-        self.deleteEntitesFromCloud(set.toArray() as! [Entity])
-        App.shared.clearEditRequestDeleteObjects()
+        let ctx = self.localdb.mainMOC
+        ctx.perform {
+            let xs = set.toArray().compactMap({ info -> Entity? in
+                //self.localdb.getEntity(recordType: info.recordType, id: info.id, ctx: ctx)
+                self.localdb.getManagedObject(moId: info.moID, withContext: ctx) as? Entity
+            })
+            self.deleteEntitesFromCloud(xs)
+            App.shared.clearEditRequestDeleteObjects()
+        }
     }
     
     

@@ -89,12 +89,14 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         super.didReceiveMemoryWarning()
     }
     
-    func discardContextChange() {
+    func discardContextChanges() {
         if let data = AppState.editRequest, let ctx = data.managedObjectContext {
-            //self.localdb.discardChanges(in: ctx)
-            self.localdb.discardChanges(for: self.app.editReqManIds, inContext: ctx)
-            self.app.clearEditRequestManagedObjectIds()
-            if ctx.hasChanges { self.localdb.saveBackgroundContext() }
+            [self.app.editReqInfo, self.app.editReqDelete].forEach { self.localdb.discardChanges(for: $0, inContext: ctx) }
+            self.app.clearEditRequestEntityIds()
+            self.app.clearEditRequestDeleteObjects()
+            self.localdb.saveMainContext { _ in
+                self.close()
+            }
         }
     }
     
@@ -106,7 +108,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
                                // keep editing
                                cancelCallback: { Log.debug("cancel callback") },
                                // discard changes
-                               otherCallback: { self.discardContextChange(); self.close() })
+                               otherCallback: { self.discardContextChanges() })
             return false
         } else {
             if let data = AppState.editRequest, let url = data.url, url.isEmpty {  // New request and user taps back button without any change, so we discard.
@@ -296,7 +298,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
             timer.schedule(deadline: .now() + .milliseconds(300))
             timer.setEventHandler {
                 Log.debug("edit req in save timer")
-                self.localdb.saveBackgroundContext()
+                self.localdb.saveMainContext()
                 self.isDirty = false
                 self.db.saveRequestToCloud(data)
                 self.db.deleteDataMarkedForDelete(self.app.editReqDelete)
