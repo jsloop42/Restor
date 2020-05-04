@@ -55,6 +55,7 @@ class App {
         case projectList
         case requestList
         case editRequest
+        case request
         case settings
         case envGroup
         case requestMethodList
@@ -939,6 +940,9 @@ enum TableCellId: String {
 
 enum StoryboardId: String {
     case editRequestVC
+    case requestTabBar
+    case requestVC
+    case responseVC
     case environmentGroupVC
     case optionsPickerNav
     case optionsPickerVC

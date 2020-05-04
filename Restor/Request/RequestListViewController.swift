@@ -144,7 +144,11 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        self.viewEditRequestVC(true, indexPath: indexPath)
+        //self.viewEditRequestVC(true, indexPath: indexPath)
+        if let vc = self.storyboard!.instantiateViewController(withIdentifier: StoryboardId.requestTabBar.rawValue) as? RequestTabBarController {
+            vc.request = self.frc.object(at: indexPath)
+            self.navigationController?.pushViewController(vc, animated: true)
+        }
     }
 }
 

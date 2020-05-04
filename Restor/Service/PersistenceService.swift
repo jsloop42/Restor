@@ -765,9 +765,11 @@ class PersistenceService {
     }
     
     func fetchZoneChangeCompleteHandler(_ zoneID: CKRecordZone.ID) {
-        self.localdb.saveMainContext()
-        self.nc.post(name: EACloudKit.NotificationKey.zoneChangesDidSave, object: self, userInfo: [EACloudKit.NotificationKey.zoneIDKey: zoneID])
-        self.processZoneRecord()
+        DispatchQueue.main.async {
+            self.localdb.saveMainContext()
+            self.nc.post(name: EACloudKit.NotificationKey.zoneChangesDidSave, object: self, userInfo: [EACloudKit.NotificationKey.zoneIDKey: zoneID])
+            self.processZoneRecord()
+        }
     }
     
     func fetchZoneChangesImp(zoneID: CKRecordZone.ID, isDelayedFetch: Bool) {
