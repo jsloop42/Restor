@@ -1939,7 +1939,20 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             }
         }
         Log.debug("cell for row: kvTitleCell")
-        let cell = tableView.dequeueReusableCell(withIdentifier: "kvTitleCell", for: indexPath) as! KVHeaderCell
+        var title: String = ""
+        var titleCellId: String = ""
+        if self.tableViewType == .header {
+            title = " add header"
+            titleCellId = "kvHeaderTitleCell"
+        } else if self.tableViewType == .params {
+            title = " add params"
+            titleCellId = "kvParamsTitleCell"
+        } else if self.tableViewType == .body {
+            title = " add body"
+            titleCellId = "kvBodyTitleCell"
+        }
+        let cell = tableView.dequeueReusableCell(withIdentifier: titleCellId, for: indexPath) as! KVHeaderCell
+        cell.headerTitleBtn.setTitle(title, for: .normal)
         return cell
     }
     
