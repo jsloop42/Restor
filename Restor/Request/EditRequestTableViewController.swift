@@ -19,9 +19,9 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     @IBOutlet weak var urlTextField: EATextField!
     @IBOutlet weak var nameTextField: EATextField!
     @IBOutlet weak var descTextView: EATextView!
-    @IBOutlet var headerKVTableViewManager: KVTableViewManager!
-    @IBOutlet var paramsKVTableViewManager: KVTableViewManager!
-    @IBOutlet var bodyKVTableViewManager: KVTableViewManager!
+    @IBOutlet var headerKVTableViewManager: KVEditTableViewManager!
+    @IBOutlet var paramsKVTableViewManager: KVEditTableViewManager!
+    @IBOutlet var bodyKVTableViewManager: KVEditTableViewManager!
     @IBOutlet weak var headersTableView: UITableView!
     @IBOutlet weak var paramsTableView: UITableView!
     @IBOutlet weak var bodyTableView: UITableView!
@@ -612,7 +612,7 @@ extension EditRequestTableViewController: UIDocumentPickerDelegate {
     }
 }
 
-extension EditRequestTableViewController: KVTableViewDelegate {
+extension EditRequestTableViewController: KVEditTableViewDelegate {
     func reloadData() {
         self.tableView.reloadData()
     }
@@ -624,16 +624,16 @@ enum KVTableViewType {
     case body
 }
 
-protocol KVTableViewDelegate: class {
+protocol KVEditTableViewDelegate: class {
     func reloadData()
     //func presentOptionsVC(_ data: [String], selected: Int)
 }
 
-class KVHeaderCell: UITableViewCell {
+class KVEditHeaderCell: UITableViewCell {
     @IBOutlet weak var headerTitleBtn: UIButton!
 }
 
-protocol KVContentCellDelegate: class {
+protocol KVEditContentCellDelegate: class {
     func enableEditing(indexPath: IndexPath)
     func disableEditing(indexPath: IndexPath)
     func clearEditing(completion: ((Bool) -> Void)?)
@@ -641,10 +641,10 @@ protocol KVContentCellDelegate: class {
     func deleteRow(_ reqDataId: String, type: RequestCellType)
     //func presentOptionsVC(_ data: [String], selected: Int)
     func dataDidChange(key: String, value: String, reqDataId: String, row: Int)
-    func refreshCell(indexPath: IndexPath, cell: KVContentCellType)
+    func refreshCell(indexPath: IndexPath, cell: KVEditContentCellType)
 }
 
-protocol KVContentCellType: class {
+protocol KVEditContentCellType: class {
     var isEditingActive: Bool { get set }
     var editingIndexPath: IndexPath? { get set }
     func getDeleteView() -> UIView
@@ -653,13 +653,13 @@ protocol KVContentCellType: class {
 
 // MARK: - Key-Value content cell
 
-class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
+class KVEditContentCell: UITableViewCell, KVEditContentCellType, UITextFieldDelegate {
     @IBOutlet weak var keyTextField: EATextField!
     @IBOutlet weak var valueTextField: EATextField!
     @IBOutlet weak var deleteBtn: UIButton!
     @IBOutlet weak var deleteView: UIView!
     @IBOutlet weak var containerView: UIView!
-    weak var delegate: KVContentCellDelegate?
+    weak var delegate: KVEditContentCellDelegate?
     private let app = App.shared
     var editingIndexPath: IndexPath?
     var isEditingActive = false
@@ -668,7 +668,7 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        Log.debug("kvcontentcell awake from nib")
+        Log.debug("kvEditContentCell awake from nib")
         self.keyTextField.delegate = self
         self.valueTextField.delegate = self
         self.initUI()
@@ -731,7 +731,7 @@ class KVContentCell: UITableViewCell, KVContentCellType, UITextFieldDelegate {
 
 // MARK: - Body cell
 
-class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+class KVEditBodyContentCell: UITableViewCell, KVEditContentCellType, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     @IBOutlet weak var deleteBtn: UIButton!
     @IBOutlet weak var containerView: UIView!
     @IBOutlet weak var deleteView: UIView!
@@ -740,7 +740,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDel
     @IBOutlet weak var rawTextView: EATextView!
     @IBOutlet var bodyLabelViewWidth: NSLayoutConstraint!
     @IBOutlet weak var typeLabel: UILabel!
-    @IBOutlet weak var bodyFieldTableView: KVBodyFieldTableView!
+    @IBOutlet weak var bodyFieldTableView: KVEditBodyFieldTableView!
     // binary fields
     @IBOutlet weak var binaryTextFieldView: UIView!
     @IBOutlet weak var binaryTextField: EATextField!
@@ -748,7 +748,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDel
     @IBOutlet var typeNameBtnTop: NSLayoutConstraint!
     @IBOutlet weak var imageFileView: UIImageView!  // binary image attachment
     @IBOutlet weak var fileCollectionView: UICollectionView!  // binary file attachment
-    weak var delegate: KVContentCellDelegate?
+    weak var delegate: KVEditContentCellDelegate?
     var optionsData: [String] = ["json", "xml", "raw", "form", "multipart", "binary"]
     var isEditingActive: Bool = false
     var editingIndexPath: IndexPath?
@@ -772,7 +772,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDel
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        Log.debug("kvcontentcell awake from nib")
+        Log.debug("kvEditContentCell awake from nib")
         self.rawTextView.delegate = self
         self.initUI()
         self.initEvents()
@@ -1005,7 +1005,7 @@ class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDel
 }
 
 // MARK: - Raw textview delegate
-extension KVBodyContentCell: UITextViewDelegate {
+extension KVEditBodyContentCell: UITextViewDelegate {
     func textViewDidBeginEditing(_ textView: UITextView) {
         RequestVC.shared?.clearEditing()
     }
@@ -1048,11 +1048,11 @@ class FileCollectionViewCell: UICollectionViewCell {
     }
 }
 
-protocol KVBodyFieldTableViewCellDelegate: class {
+protocol KVEditBodyFieldTableViewCellDelegate: class {
     func updateState(_ data: ERequestData, row: Int)
 }
 
-class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+class KVEditBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     @IBOutlet weak var keyTextField: EATextField!
     @IBOutlet weak var valueTextField: EATextField!
     @IBOutlet weak var containerView: UIView!
@@ -1062,7 +1062,7 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     @IBOutlet weak var fileCollectionView: UICollectionView!
     @IBOutlet weak var borderView: UIView!
     @IBOutlet var keyTextFieldHeight: NSLayoutConstraint!
-    weak var delegate: KVBodyFieldTableViewCellDelegate?
+    weak var delegate: KVEditBodyFieldTableViewCellDelegate?
     var isValueTextFieldActive = false
     var selectedType: RequestBodyType = .form
     var isKeyTextFieldActive = false
@@ -1239,8 +1239,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollecti
     }
 }
 
-class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSource, KVBodyFieldTableViewCellDelegate {
-    private let cellId = "kvBodyTableViewCell"
+class KVEditBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSource, KVEditBodyFieldTableViewCellDelegate {
+    private let cellId = "editBodyTableViewCell"
     var isCellRegistered = false
     private let nc = NotificationCenter.default
     var selectedType: RequestBodyType = .json
@@ -1408,10 +1408,10 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 1 {  // title
-            let cell = tableView.dequeueReusableCell(withIdentifier: "kvBodyFieldTitleCell", for: indexPath) as! KVHeaderCell
+            let cell = tableView.dequeueReusableCell(withIdentifier: "editBodyFieldTitleCell", for: indexPath) as! KVEditHeaderCell
             return cell
         }
-        let cell = tableView.dequeueReusableCell(withIdentifier: self.cellId, for: indexPath) as! KVBodyFieldTableViewCell
+        let cell = tableView.dequeueReusableCell(withIdentifier: self.cellId, for: indexPath) as! KVEditBodyFieldTableViewCell
         let row = indexPath.row
         cell.tag = row
         cell.delegate = self
@@ -1471,7 +1471,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         return cell
     }
     
-    func updateCellPlaceholder(_ cell: KVBodyFieldTableViewCell) {
+    func updateCellPlaceholder(_ cell: KVEditBodyFieldTableViewCell) {
         if cell.selectedFieldFormat == .file {
             cell.valueTextField.placeholder = "select files"
             cell.valueTextField.text = ""
@@ -1484,28 +1484,28 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
         }
     }
     
-    func displayImageAttachment(cell: KVBodyFieldTableViewCell) {
+    func displayImageAttachment(cell: KVEditBodyFieldTableViewCell) {
         cell.imageFileView.isHidden = false
         cell.fileCollectionView.isHidden = true
         cell.valueTextField.isHidden = true
         self.updateCellPlaceholder(cell)
     }
     
-    func hideImageAttachment(cell: KVBodyFieldTableViewCell) {
+    func hideImageAttachment(cell: KVEditBodyFieldTableViewCell) {
         cell.imageFileView.image = nil
         cell.imageFileView.isHidden = true
         cell.valueTextField.isHidden = false
         self.updateCellPlaceholder(cell)
     }
     
-    func displayFileAttachment(cell: KVBodyFieldTableViewCell) {
+    func displayFileAttachment(cell: KVEditBodyFieldTableViewCell) {
         cell.fileCollectionView.isHidden = false
         cell.imageFileView.isHidden = true
         cell.valueTextField.isHidden = true
         self.updateCellPlaceholder(cell)
     }
     
-    func hideFileAttachment(cell: KVBodyFieldTableViewCell) {
+    func hideFileAttachment(cell: KVEditBodyFieldTableViewCell) {
         cell.fileCollectionView.isHidden = true
         cell.valueTextField.isHidden = false
         self.updateCellPlaceholder(cell)
@@ -1529,7 +1529,7 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
             Log.debug("delete row: \(indexPath)")
             guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { completion(false); return }
             var shouldReload = false
-            if let cell = tableView.cellForRow(at: indexPath) as? KVBodyFieldTableViewCell  {
+            if let cell = tableView.cellForRow(at: indexPath) as? KVEditBodyFieldTableViewCell  {
                 if !cell.reqDataId.isEmpty {
                     let elem = self.localdb.getRequestData(id: cell.reqDataId, ctx: ctx)
                     if let xs = elem?.files?.allObjects as? [EFile] {
@@ -1596,9 +1596,9 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
 
 // MARK: - Table view manager
 
-class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
+class KVEditTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     weak var kvTableView: UITableView?
-    weak var delegate: KVTableViewDelegate?
+    weak var delegate: KVEditTableViewDelegate?
     var height: CGFloat = 44
     var editingIndexPath: IndexPath?
     var tableViewType: KVTableViewType = .header
@@ -1773,7 +1773,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     
     /// Returns the raw textview cell height
     func getRowTextViewCellHeight() -> CGFloat {
-        if let cell = self.kvTableView?.cellForRow(at: IndexPath(row: 0, section: 0)) as? KVBodyContentCell {
+        if let cell = self.kvTableView?.cellForRow(at: IndexPath(row: 0, section: 0)) as? KVEditBodyContentCell {
             height = cell.frame.size.height + 8
         }
         Log.debug("raw text cell height: \(height)")
@@ -1827,9 +1827,9 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         case .header:
             fallthrough
         case .params:
-            return "kvContentCell"
+            return "kvEditContentCell"
         case .body:
-            return "bodyContentCell"
+            return "editBodyContentCell"
         }
     }
 
@@ -1866,7 +1866,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         if indexPath.section == 0 {
             if self.tableViewType == .body {
                 Log.debug("cell for row: bodyContentCell")
-                let cell = tableView.dequeueReusableCell(withIdentifier: "bodyContentCell", for: indexPath) as! KVBodyContentCell
+                let cell = tableView.dequeueReusableCell(withIdentifier: "editBodyContentCell", for: indexPath) as! KVEditBodyContentCell
                 let row = indexPath.row
                 cell.tag = row
                 cell.delegate = self
@@ -1901,7 +1901,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 }
                 return cell
             } else {
-                let cell = tableView.dequeueReusableCell(withIdentifier: "kvContentCell", for: indexPath) as! KVContentCell
+                let cell = tableView.dequeueReusableCell(withIdentifier: "kvEditContentCell", for: indexPath) as! KVEditContentCell
                 let row = indexPath.row
                 cell.tag = row
                 cell.delegate = self
@@ -1938,20 +1938,20 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
                 return cell
             }
         }
-        Log.debug("cell for row: kvTitleCell")
+        Log.debug("cell for row: kvEditTitleCell")
         var title: String = ""
         var titleCellId: String = ""
         if self.tableViewType == .header {
             title = " add header"
-            titleCellId = "kvHeaderTitleCell"
+            titleCellId = "kvEditHeaderTitleCell"
         } else if self.tableViewType == .params {
             title = " add params"
-            titleCellId = "kvParamsTitleCell"
+            titleCellId = "kvEditParamsTitleCell"
         } else if self.tableViewType == .body {
             title = " add body"
-            titleCellId = "kvBodyTitleCell"
+            titleCellId = "editBodyTitleCell"
         }
-        let cell = tableView.dequeueReusableCell(withIdentifier: titleCellId, for: indexPath) as! KVHeaderCell
+        let cell = tableView.dequeueReusableCell(withIdentifier: titleCellId, for: indexPath) as! KVEditHeaderCell
         cell.headerTitleBtn.setTitle(title, for: .normal)
         return cell
     }
@@ -1991,9 +1991,9 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     func previewActions(forCellAt indexPath: IndexPath) {
         guard let tv = self.kvTableView else { return }
         tv.reloadData()
-        guard let cell: KVContentCellType = tv.cellForRow(at: indexPath) as? KVContentCellType else { return }
+        guard let cell: KVEditContentCellType = tv.cellForRow(at: indexPath) as? KVEditContentCellType else { return }
         cell.getDeleteView().transform = CGAffineTransform.identity
-        if let _ = cell as? KVBodyContentCell {
+        if let _ = cell as? KVEditBodyContentCell {
             if let data = AppState.editRequest, let body = data.body, let type = RequestBodyType(rawValue: body.selected.toInt()), type == .binary {
                 cell.getDeleteView().transform = CGAffineTransform.identity.translatedBy(x: 0, y: -21)  // Update the delete view size to align to cell center for binary
             }
@@ -2003,17 +2003,17 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         }, completion: nil)
     }
     
-    func hideDeleteRowView(cell: KVContentCellType) {
+    func hideDeleteRowView(cell: KVEditContentCellType) {
         cell.getContainerView().transform = CGAffineTransform.identity
         cell.getDeleteView().isHidden = true
     }
     
     func hideActions(forCellAt indexPath: IndexPath, completion: ((Bool) -> Void)? = nil) {
         Log.debug("hide actions")
-        var cell: KVContentCellType!
-        if let aCell = self.kvTableView?.cellForRow(at: indexPath) as? KVContentCell {
+        var cell: KVEditContentCellType!
+        if let aCell = self.kvTableView?.cellForRow(at: indexPath) as? KVEditContentCell {
             cell = aCell
-        } else if let aCell = self.kvTableView?.cellForRow(at: indexPath) as? KVBodyContentCell {
+        } else if let aCell = self.kvTableView?.cellForRow(at: indexPath) as? KVEditBodyContentCell {
             cell = aCell
         }
         if cell == nil {
@@ -2029,7 +2029,7 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
 }
 
-extension KVTableViewManager: KVContentCellDelegate {
+extension KVEditTableViewManager: KVEditContentCellDelegate {
     func enableEditing(indexPath: IndexPath) {
         if self.editingIndexPath != nil {
             self.hideActions(forCellAt: self.editingIndexPath!) { _ in
@@ -2084,11 +2084,11 @@ extension KVTableViewManager: KVContentCellDelegate {
     }
     
     /// Refreshes the cell and scroll to the end of the growing text view cell.
-    func refreshCell(indexPath: IndexPath, cell: KVContentCellType) {
+    func refreshCell(indexPath: IndexPath, cell: KVEditContentCellType) {
         Log.debug("refresh cell")
         UIView.setAnimationsEnabled(false)
         self.kvTableView?.beginUpdates()
-        if let aCell = cell as? KVBodyContentCell {
+        if let aCell = cell as? KVEditBodyContentCell {
             aCell.rawTextView.scrollRangeToVisible(NSMakeRange(aCell.rawTextView.text.count - 1, 0))
         }
         self.kvTableView?.endUpdates()
