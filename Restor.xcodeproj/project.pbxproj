@@ -35,6 +35,7 @@
 		9E568E3F2430B576003150EC /* Zone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3E2430B576003150EC /* Zone.swift */; };
 		9E70D4B924605DBB00B33CF1 /* RequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */; };
 		9E70D4BB24605E2700B33CF1 /* ResponseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E70D4BA24605E2700B33CF1 /* ResponseViewController.swift */; };
+		9E732EE9246694E9004A3E4D /* EADynamicSizeTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E732EE8246694E9004A3E4D /* EADynamicSizeTableView.swift */; };
 		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
 		9E769AFA242147AB005B18C3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E769AF9242147AB005B18C3 /* Models.swift */; };
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
@@ -121,6 +122,7 @@
 		9E568E3E2430B576003150EC /* Zone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone.swift; sourceTree = "<group>"; };
 		9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTableViewController.swift; sourceTree = "<group>"; };
 		9E70D4BA24605E2700B33CF1 /* ResponseViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseViewController.swift; sourceTree = "<group>"; };
+		9E732EE8246694E9004A3E4D /* EADynamicSizeTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EADynamicSizeTableView.swift; sourceTree = "<group>"; };
 		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
 		9E769AF9242147AB005B18C3 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
@@ -222,6 +224,7 @@
 		9E7585F023A2B24300AD6E8B /* View */ = {
 			isa = PBXGroup;
 			children = (
+				9E732EE8246694E9004A3E4D /* EADynamicSizeTableView.swift */,
 				9E7585F123A2B27B00AD6E8B /* EATextField.swift */,
 				9EC33FB323EEBF1A006C5B37 /* EATextView.swift */,
 				9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */,
@@ -523,6 +526,7 @@
 				9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectListViewController.swift in Sources */,
 				9E568E3F2430B576003150EC /* Zone.swift in Sources */,
+				9E732EE9246694E9004A3E4D /* EADynamicSizeTableView.swift in Sources */,
 				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
 				9E1B2DE82427997E00994233 /* ERequestBodyData.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,

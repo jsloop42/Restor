@@ -97,30 +97,13 @@ class RequestListViewController: UIViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
-        self.viewEditRequestVC(false)
-    }
-    
-    func viewEditRequestVC(_ isUpdate: Bool, indexPath: IndexPath? = nil) {
-        Log.debug("view edit request vc")
-        var isDisplay = true
-        if isUpdate, let idxPath = indexPath {
-            AppState.editRequest = self.frc.object(at: idxPath)
-        } else {
-            if AppState.editRequest == nil {
-                let name = self.app.getNewRequestName()
-                if let proj = AppState.currentProject, let wsId = proj.workspace?.getId(),
-                    let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: self.localdb.mainMOC) {
-                    AppState.editRequest = req
-                    AppState.currentProject?.addToRequests(req)
-                } else {
-                    isDisplay = false
-                }
+        if AppState.editRequest == nil {
+            let name = self.app.getNewRequestName()
+            if let proj = AppState.currentProject, let wsId = proj.workspace?.getId(),
+                let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: self.localdb.mainMOC) {
+                AppState.editRequest = req
+                AppState.currentProject?.addToRequests(req)
             }
-        }
-        if isDisplay {
-            UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
-        } else {
-            // TODO: display error alert
         }
     }
 }
@@ -144,7 +127,6 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        //self.viewEditRequestVC(true, indexPath: indexPath)
         if let vc = self.storyboard!.instantiateViewController(withIdentifier: StoryboardId.requestTabBar.rawValue) as? RequestTabBarController {
             vc.request = self.frc.object(at: indexPath)
             self.navigationController?.pushViewController(vc, animated: true)

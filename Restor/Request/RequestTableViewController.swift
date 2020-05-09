@@ -14,23 +14,22 @@ class RequestTableViewController: UITableViewController {
     private let localdb = CoreDataService.shared
     private let utils = EAUtils.shared
     var request: ERequest?
+    var headers: [ERequestData] = []
+    var params: [ERequestData] = []
+    var requestBody: ERequestBodyData?
+    var bodyForms: [ERequestData] = []
     private var tabbarController: RequestTabBarController { self.tabBarController as! RequestTabBarController }
     @IBOutlet var headerKVTableViewManager: KVTableViewManager!
     @IBOutlet var paramsKVTableViewManager: KVTableViewManager!
     @IBOutlet var bodyKVTableViewManager: KVTableViewManager!
-    @IBOutlet weak var headersTableView: UITableView!
-    @IBOutlet weak var paramsTableView: UITableView!
+    @IBOutlet weak var headersTableView: EADynamicSizeTableView!
+    @IBOutlet weak var paramsTableView: EADynamicSizeTableView!
     @IBOutlet weak var bodyTableView: UITableView!
     @IBOutlet weak var methodView: UIView!
     @IBOutlet weak var methodLabel: UILabel!
     @IBOutlet weak var urlLabel: UILabel!
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var descLabel: UILabel!
-    @IBOutlet weak var urlCell: UITableViewCell!
-    @IBOutlet weak var nameCell: UITableViewCell!
-    @IBOutlet weak var headerCell: UITableViewCell!
-    @IBOutlet weak var paramCell: UITableViewCell!
-    @IBOutlet weak var bodyCell: UITableViewCell!
     
     enum CellId: Int {
         case spaceAfterTop = 0
@@ -58,10 +57,23 @@ class RequestTableViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("request vc - did load")
-        self.request = self.tabbarController.request
+        self.initData()
         self.initUI()
         self.updateData()
         self.reloadAllTableViews()
+    }
+    
+    func initData() {
+        self.request = self.tabbarController.request
+        guard let request = self.request else { return }
+        let reqId = request.getId()
+        self.headers = self.localdb.getHeadersRequestData(reqId)
+        self.params = self.localdb.getParamsRequestData(reqId)
+        self.requestBody = request.body
+        guard let body = self.requestBody else { return }
+        if body.selected.toInt() == RequestBodyType.form.rawValue {
+            self.bodyForms = self.localdb.getFormRequestData(body.getId(), type: .form)
+        }
     }
     
     func initUI() {
@@ -74,8 +86,6 @@ class RequestTableViewController: UITableViewController {
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.addNavigationBarEditButton()
-        // clear storyboard debug helpers
-        [self.urlCell, self.nameCell, self.headerCell, self.paramCell, self.bodyCell].forEach { $0.borderColor = .clear }
         self.renderTheme()
     }
     
@@ -87,7 +97,7 @@ class RequestTableViewController: UITableViewController {
     func initHeadersTableViewManager() {
         self.headerKVTableViewManager.request = self.request
         self.headerKVTableViewManager.kvTableView = self.headersTableView
-        //self.headerKVTableViewManager.delegate = self
+        self.headerKVTableViewManager.delegate = self
         self.headerKVTableViewManager.tableViewType = .header
         self.headerKVTableViewManager.bootstrap()
         self.headerKVTableViewManager.reloadData()
@@ -96,7 +106,7 @@ class RequestTableViewController: UITableViewController {
     func initParamsTableViewManager() {
         self.paramsKVTableViewManager.request = self.request
         self.paramsKVTableViewManager.kvTableView = self.paramsTableView
-        //self.paramsKVTableViewManager.delegate = self
+        self.paramsKVTableViewManager.delegate = self
         self.paramsKVTableViewManager.tableViewType = .params
         self.paramsKVTableViewManager.bootstrap()
         self.paramsKVTableViewManager.reloadData()
@@ -105,7 +115,7 @@ class RequestTableViewController: UITableViewController {
     func initBodyTableViewManager() {
         self.bodyKVTableViewManager.request = self.request
         self.bodyKVTableViewManager.kvTableView = self.bodyTableView
-        //self.bodyKVTableViewManager.delegate = self
+        self.bodyKVTableViewManager.delegate = self
         self.bodyKVTableViewManager.tableViewType = .body
         self.bodyKVTableViewManager.bootstrap()
         self.bodyKVTableViewManager.reloadData()
@@ -121,6 +131,13 @@ class RequestTableViewController: UITableViewController {
     
     @objc func editButtonDidTap(_ sender: Any) {
         Log.debug("edit button did tap")
+        self.viewEditRequestVC()
+    }
+    
+    func viewEditRequestVC() {
+        Log.debug("view edit request vc")
+        AppState.editRequest = self.request
+        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
     }
     
     func updateData() {
@@ -233,12 +250,44 @@ extension RequestTableViewController {
     }
 }
 
+// MARK: - KVTableViewManager Delegate
+extension RequestTableViewController: KVTableViewManagerDelegate {
+    func getHeaders() -> [ERequestData] {
+        return self.headers
+    }
+    
+    func getParams() -> [ERequestData] {
+        return self.params
+    }
+    
+    func getHeadersCount() -> Int {
+        return self.headers.count
+    }
+    
+    func getParamsCount() -> Int {
+        return self.params.count
+    }
+    
+    func getBody() -> ERequestBodyData? {
+        return self.requestBody
+    }
+    
+    func getBodyForms() -> [ERequestData] {
+        return self.bodyForms
+    }
+    
+    func getBodyFormsCount() -> Int {
+        return self.bodyForms.count
+    }
+}
+
 class KVHeaderCell: UITableViewCell {
     @IBOutlet weak var titleLabel: UILabel!
 }
 
 class KVContentCell: UITableViewCell, KVContentCellType {
-    
+    @IBOutlet weak var keyLabel: UILabel!
+    @IBOutlet weak var valueLabel: UILabel!
 }
 
 protocol KVContentCellType: class {
@@ -277,17 +326,39 @@ class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSou
 
 // MARK: - Table view manager
 
+protocol KVTableViewManagerDelegate: class {
+    func getHeaders() -> [ERequestData]
+    func getParams() -> [ERequestData]
+    func getHeadersCount() -> Int
+    func getParamsCount() -> Int
+    func getBody() -> ERequestBodyData?
+    func getBodyForms() -> [ERequestData]
+    func getBodyFormsCount() -> Int
+}
+
 class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     weak var kvTableView: UITableView?
     var tableViewType: KVTableViewType = .header
     weak var request: ERequest?
+    weak var delegate: KVTableViewManagerDelegate?
     
     func bootstrap() {
-        
+        self.kvTableView?.estimatedRowHeight = 44
     }
     
     func getHeight() -> CGFloat {
+        guard let tv = self.kvTableView else { return 44 }
         let height: CGFloat = 44
+        switch self.tableViewType {
+        case .header:
+            fallthrough
+        case .params:
+            tv.layoutIfNeeded()
+            let h = tv.contentSize.height
+            return h > 0 ? h + 4 : height
+        case .body:
+            break
+        }
         return height
     }
     
@@ -304,10 +375,9 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch self.tableViewType {
         case .header:
-            return self.request?.headers?.count ?? 0
+            return self.delegate?.getHeadersCount() ?? 0
         case .params:
-            return 0
-            //return self.request?.params?.count ?? 0
+            return self.delegate?.getParamsCount() ?? 0
         case .body:
             return 0
             //return self.request?.body == nil ? 0 : 1
@@ -325,7 +395,36 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
+    func updateCell(_ cell: KVContentCell, indexPath: IndexPath) {
+        let row = indexPath.row
+        cell.keyLabel.clear()
+        cell.valueLabel.clear()
+        switch self.tableViewType {
+        case .header:
+            if let xs = self.delegate?.getHeaders() {
+                let elem = xs[row]
+                cell.keyLabel.text = elem.key
+                //cell.keyLabel.text = "The sacrifice is hard son, but you're no stranger to it. The sacrifice is hard son, but you're no stranger to it. "
+                cell.valueLabel.text = elem.value
+            }
+        case .params:
+            if let xs = self.delegate?.getParams() {
+                let elem = xs[row]
+                cell.keyLabel.text = elem.key
+                cell.valueLabel.text = elem.value
+            }
+        case .body:
+            break
+        }
+    }
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        return UITableViewCell(frame: .zero)
+        let cell = tableView.dequeueReusableCell(withIdentifier: self.getContentCellId(), for: indexPath) as! KVContentCell
+        self.updateCell(cell, indexPath: indexPath)
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
     }
 }

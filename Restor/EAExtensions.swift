@@ -83,6 +83,13 @@ public extension UITableView {
     }
 }
 
+public extension UILabel {
+    /// Set the text to empty string.
+    func clear() {
+        self.text = ""
+    }
+}
+
 public extension NSFetchedResultsController {
     @objc func numberOfSections() -> Int {
         return self.sections?.count ?? 0
