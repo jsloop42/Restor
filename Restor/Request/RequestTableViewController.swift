@@ -75,6 +75,7 @@ class RequestTableViewController: UITableViewController {
         if body.selected.toInt() == RequestBodyType.form.rawValue {
             self.bodyForms = self.localdb.getFormRequestData(body.getId(), type: .form)
         }
+        self.setBodyTitleLabel(RequestBodyType.toString(body.selected.toInt()))
     }
     
     func initUI() {
@@ -282,7 +283,7 @@ extension RequestTableViewController: KVTableViewManagerDelegate {
     }
     
     func setBodyTitleLabel(_ text: String) {
-        self.bodyTitleLabel.text = text
+        self.bodyTitleLabel.text = "BODY (\(text))"
         self.tableView.reloadRows(at: [IndexPath(item: CellId.bodyTitle.rawValue, section: 0)], with: .none)
     }
 }
@@ -300,15 +301,19 @@ protocol KVContentCellType: class {
     
 }
 
-class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+class KVBodyContentCell: UITableViewCell, KVContentCellType {
+    @IBOutlet weak var rawTextLabel: UILabel!
+    @IBOutlet weak var bodyFieldTableView: EADynamicSizeTableView!
+    private let monospaceFont = UIFont(name: "Menlo-Regular", size: 13)
     
-    
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 0
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        self.initUI()
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        return UICollectionViewCell(frame: .zero)
+    func initUI() {
+        self.rawTextLabel.font = self.monospaceFont
+        self.bodyFieldTableView.isHidden = true
     }
 }
 
@@ -359,9 +364,9 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     func getHeight() -> CGFloat {
         let height: CGFloat = 44
         guard let tv = self.kvTableView else { return height }
-        if self.tableViewType == .body { return 0 }
         tv.layoutIfNeeded()
         let h = tv.contentSize.height
+        if self.tableViewType == .body && h < height { return height }
         return h > 0 ? h + 4 : height
 //        switch self.tableViewType {
 //        case .header:
@@ -393,8 +398,8 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         case .params:
             return self.delegate?.getParamsCount() ?? 0
         case .body:
-            // return self.request?.body == nil ? 0 : 1
-            return 0
+            return self.request?.body == nil ? 0 : 1
+            //return 0
         }
     }
     
@@ -437,16 +442,34 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
+    func getSelectedBodyType(_ body: ERequestBodyData) -> RequestBodyType {
+        return RequestBodyType(rawValue: body.selected.toInt()) ?? RequestBodyType.json
+    }
+    
     func updateCell(_ cell: KVBodyContentCell, indexPath: IndexPath) {
-        //let row = indexPath.row
-        
+        guard let request = self.request, let body = request.body else { return }
+        let bodyType = self.getSelectedBodyType(body)
+        switch bodyType {
+        case .json:
+            cell.rawTextLabel.text = body.json
+        case .xml:
+            cell.rawTextLabel.text = body.xml
+        case .raw:
+            cell.rawTextLabel.text = body.raw
+        case .form:
+            break
+        case .multipart:
+            break
+        case .binary:
+            break
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if self.tableViewType == .body {
-            return UITableViewCell(frame: .zero)
-            
+            // return UITableViewCell(frame: .zero)
             let cell = tableView.dequeueReusableCell(withIdentifier: self.getContentCellId(), for: indexPath) as! KVBodyContentCell
+            self.updateCell(cell, indexPath: indexPath)
             return cell
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: self.getContentCellId(), for: indexPath) as! KVContentCell

@@ -988,6 +988,24 @@ enum RequestBodyType: Int {
     static var allCases: [String] {
         return ["json", "xml", "raw", "form", "multipart", "binary"]
     }
+    
+    static func toString(_ type: Int) -> String {
+        guard let _type = RequestBodyType(rawValue: type) else { return "" }
+        switch _type {
+        case .json:
+            return "json"
+        case .xml:
+            return "xml"
+        case .raw:
+            return "raw"
+        case .form:
+            return "form"
+        case .multipart:
+            return "multipart"
+        case .binary:
+            return "binary"
+        }
+    }
 }
 
 /// Indicates to which model the `ERequestData` belongs to
