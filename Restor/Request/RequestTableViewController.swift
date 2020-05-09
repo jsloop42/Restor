@@ -30,6 +30,7 @@ class RequestTableViewController: UITableViewController {
     @IBOutlet weak var urlLabel: UILabel!
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var descLabel: UILabel!
+    @IBOutlet weak var bodyTitleLabel: UILabel!
     
     enum CellId: Int {
         case spaceAfterTop = 0
@@ -279,6 +280,11 @@ extension RequestTableViewController: KVTableViewManagerDelegate {
     func getBodyFormsCount() -> Int {
         return self.bodyForms.count
     }
+    
+    func setBodyTitleLabel(_ text: String) {
+        self.bodyTitleLabel.text = text
+        self.tableView.reloadRows(at: [IndexPath(item: CellId.bodyTitle.rawValue, section: 0)], with: .none)
+    }
 }
 
 class KVHeaderCell: UITableViewCell {
@@ -295,6 +301,8 @@ protocol KVContentCellType: class {
 }
 
 class KVBodyContentCell: UITableViewCell, KVContentCellType, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    
+    
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return 0
     }
@@ -334,6 +342,8 @@ protocol KVTableViewManagerDelegate: class {
     func getBody() -> ERequestBodyData?
     func getBodyForms() -> [ERequestData]
     func getBodyFormsCount() -> Int
+    /// Sets the body title header text
+    func setBodyTitleLabel(_ text: String)
 }
 
 class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
@@ -347,19 +357,23 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func getHeight() -> CGFloat {
-        guard let tv = self.kvTableView else { return 44 }
         let height: CGFloat = 44
-        switch self.tableViewType {
-        case .header:
-            fallthrough
-        case .params:
-            tv.layoutIfNeeded()
-            let h = tv.contentSize.height
-            return h > 0 ? h + 4 : height
-        case .body:
-            break
-        }
-        return height
+        guard let tv = self.kvTableView else { return height }
+        if self.tableViewType == .body { return 0 }
+        tv.layoutIfNeeded()
+        let h = tv.contentSize.height
+        return h > 0 ? h + 4 : height
+//        switch self.tableViewType {
+//        case .header:
+//            fallthrough
+//        case .params:
+//            tv.layoutIfNeeded()
+//            let h = tv.contentSize.height
+//            return h > 0 ? h + 4 : height
+//        case .body:
+//
+//        }
+//        return height
     }
     
     func reloadData() {
@@ -379,8 +393,8 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         case .params:
             return self.delegate?.getParamsCount() ?? 0
         case .body:
+            // return self.request?.body == nil ? 0 : 1
             return 0
-            //return self.request?.body == nil ? 0 : 1
         }
     }
     
@@ -395,6 +409,11 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
+    func getKVText(_ text: String?) -> String {
+        if text == nil { return " " }
+        return text!.isEmpty ? " " : text!
+    }
+    
     func updateCell(_ cell: KVContentCell, indexPath: IndexPath) {
         let row = indexPath.row
         cell.keyLabel.clear()
@@ -403,22 +422,33 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         case .header:
             if let xs = self.delegate?.getHeaders() {
                 let elem = xs[row]
-                cell.keyLabel.text = elem.key
+                cell.keyLabel.text = self.getKVText(elem.key)
                 //cell.keyLabel.text = "The sacrifice is hard son, but you're no stranger to it. The sacrifice is hard son, but you're no stranger to it. "
-                cell.valueLabel.text = elem.value
+                cell.valueLabel.text = self.getKVText(elem.value)
             }
         case .params:
             if let xs = self.delegate?.getParams() {
                 let elem = xs[row]
-                cell.keyLabel.text = elem.key
-                cell.valueLabel.text = elem.value
+                cell.keyLabel.text = self.getKVText(elem.key)
+                cell.valueLabel.text = self.getKVText(elem.value)
             }
-        case .body:
+        default:
             break
         }
     }
     
+    func updateCell(_ cell: KVBodyContentCell, indexPath: IndexPath) {
+        //let row = indexPath.row
+        
+    }
+    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        if self.tableViewType == .body {
+            return UITableViewCell(frame: .zero)
+            
+            let cell = tableView.dequeueReusableCell(withIdentifier: self.getContentCellId(), for: indexPath) as! KVBodyContentCell
+            return cell
+        }
         let cell = tableView.dequeueReusableCell(withIdentifier: self.getContentCellId(), for: indexPath) as! KVContentCell
         self.updateCell(cell, indexPath: indexPath)
         return cell
