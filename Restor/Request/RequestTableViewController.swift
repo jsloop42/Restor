@@ -345,6 +345,8 @@ class KVBodyFieldTableViewCell: UITableViewCell, UICollectionViewDelegate, UICol
     @IBOutlet weak var valueLabel: UILabel!
     @IBOutlet weak var fieldImageView: UIImageView!
     @IBOutlet weak var fileCollectionView: UICollectionView!
+    @IBOutlet weak var fieldTypeBtn: UIButton!
+    var fieldType: RequestBodyFormFieldFormatType = .text
     var files: [EFile] = []
     
     override func awakeFromNib() {
@@ -353,6 +355,14 @@ class KVBodyFieldTableViewCell: UITableViewCell, UICollectionViewDelegate, UICol
         self.fileCollectionView.dataSource = self
         self.fileCollectionView.isHidden = true
         self.fieldImageView.isHidden = true
+    }
+    
+    func updateFieldTypeUI() {
+        if self.fieldType == .text {
+            self.fieldTypeBtn.setImage(UIImage(named: "text"), for: .normal)
+        } else {
+            self.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
+        }
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -416,8 +426,10 @@ class KVBodyFieldTableView: EADynamicSizeTableView, UITableViewDelegate, UITable
         cell.fieldImageView.isHidden = true
         if self.bodyType == .form {
             let elem = forms[row]
+            cell.fieldType = RequestBodyFormFieldFormatType(rawValue: elem.fieldFormat.toInt()) ?? .text
             cell.keyLabel.text = self.app.getKVText(elem.key)
             cell.valueLabel.text = self.app.getKVText(elem.value)
+            cell.updateFieldTypeUI()
             Log.debug("body form name: \(String(describing: cell.keyLabel.text))")
             Log.debug("body value name: \(String(describing: cell.valueLabel.text))")
             if let img = elem.image, let data = img.data {
