@@ -18,6 +18,7 @@ class RequestTableViewController: UITableViewController {
     var params: [ERequestData] = []
     var requestBody: ERequestBodyData?
     var bodyForms: [ERequestData] = []
+    var multipart: [ERequestData] = []
     private var tabbarController: RequestTabBarController { self.tabBarController as! RequestTabBarController }
     @IBOutlet var headerKVTableViewManager: KVTableViewManager!
     @IBOutlet var paramsKVTableViewManager: KVTableViewManager!
@@ -72,8 +73,11 @@ class RequestTableViewController: UITableViewController {
         self.params = self.localdb.getParamsRequestData(reqId)
         self.requestBody = request.body
         guard let body = self.requestBody else { return }
-        if body.selected.toInt() == RequestBodyType.form.rawValue {
+        guard let bodyType = RequestBodyType(rawValue: body.selected.toInt()) else { return }
+        if bodyType == .form {
             self.bodyForms = self.localdb.getFormRequestData(body.getId(), type: .form)
+        } else if bodyType == .multipart {
+            self.multipart = self.localdb.getFormRequestData(body.getId(), type: .multipart)
         }
         self.setBodyTitleLabel(RequestBodyType.toString(body.selected.toInt()))
     }
@@ -144,7 +148,7 @@ class RequestTableViewController: UITableViewController {
             self.methodLabel.text = "GET"
         }
         self.urlLabel.text = req.url
-        self.urlLabel.text = "https://example.com/api/image/2458C0A7-538A-4A4B-9788-971BD38934BD/olive/imCJHoKQhHRWStsT3MkGiPbg.jpg"
+        // self.urlLabel.text = "https://example.com/api/image/2458C0A7-538A-4A4B-9788-971BD38934BD/olive/imCJHoKQhHRWStsT3MkGiPbg.jpg"
         self.nameLabel.text = req.name
         self.nameLabel.sizeToFit()
         self.descLabel.text = req.desc
@@ -225,7 +229,15 @@ class RequestTableViewController: UITableViewController {
             self.bodyFieldTableView.reloadData()
             self.tableView.reloadData()
         case .multipart:
-            break
+            if self.multipart.isEmpty { return }
+            self.bodyRawLabel.isHidden = true
+            self.bodyFieldTableView.isHidden = false
+            self.bodyFieldTableView.body = body
+            self.bodyFieldTableView.bodyType = bodyType
+            self.bodyFieldTableView.multipart = self.multipart
+            self.bodyFieldTableView.request = self.request
+            self.bodyFieldTableView.reloadData()
+            self.tableView.reloadData()
         case .binary:
             break
         }
@@ -235,7 +247,7 @@ class RequestTableViewController: UITableViewController {
 // MARK: - Tableview delegates
 extension RequestTableViewController {
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        var height: CGFloat!
+        var height: CGFloat = 54
         if indexPath.row == CellId.spaceAfterTop.rawValue {
             height = 12
         } else if indexPath.row == CellId.url.rawValue {
@@ -355,14 +367,20 @@ class KVBodyFieldTableViewCell: UITableViewCell, UICollectionViewDelegate, UICol
         self.fileCollectionView.dataSource = self
         self.fileCollectionView.isHidden = true
         self.fieldImageView.isHidden = true
+        self.hideFieldTypeUI()
     }
     
     func updateFieldTypeUI() {
+        self.fieldTypeBtn.isHidden = false
         if self.fieldType == .text {
             self.fieldTypeBtn.setImage(UIImage(named: "text"), for: .normal)
         } else {
             self.fieldTypeBtn.setImage(UIImage(named: "file"), for: .normal)
         }
+    }
+    
+    func hideFieldTypeUI() {
+        self.fieldTypeBtn.isHidden = true
     }
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -449,6 +467,7 @@ class KVBodyFieldTableView: EADynamicSizeTableView, UITableViewDelegate, UITable
             let elem = multipart[row]
             cell.keyLabel.text = self.app.getKVText(elem.key)
             cell.valueLabel.text = self.app.getKVText(elem.value)
+            cell.hideFieldTypeUI()
         }
     }
     

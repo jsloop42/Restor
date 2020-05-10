@@ -103,6 +103,7 @@ class RequestListViewController: UIViewController {
                 let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: self.localdb.mainMOC) {
                 AppState.editRequest = req
                 AppState.currentProject?.addToRequests(req)
+                UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
             }
         }
     }

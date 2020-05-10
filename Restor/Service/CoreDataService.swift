@@ -764,8 +764,20 @@ class CoreDataService {
         moc.performAndWait {
             let fr = NSFetchRequest<ERequestData>(entityName: "ERequestData")
             let _type = type.rawValue.toInt32()
-            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "form.id == %@ AND type == %d", bodyDataId, _type)
-                : NSPredicate(format: "form.id == %@ AND type == %d AND markForDelete == %hhd", bodyDataId, _type, includeMarkForDelete!)  // ERequestBodyData.id
+            let relKey: String = {
+                switch type {
+                case .form:
+                    return "form.id"
+                case .multipart:
+                    return "multipart.id"
+                case .binary:
+                    return "binary.id"
+                default:
+                    return "form.id"
+                }
+            }()
+            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "%K == %@ AND type == %d", relKey, bodyDataId, _type)
+                : NSPredicate(format: "%K == %@ AND type == %d AND markForDelete == %hhd", relKey, bodyDataId, _type, includeMarkForDelete!)  // ERequestBodyData.id
             fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
             fr.fetchBatchSize = self.fetchBatchSize
             do {
