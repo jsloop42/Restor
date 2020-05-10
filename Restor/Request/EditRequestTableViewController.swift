@@ -758,7 +758,7 @@ class KVEditBodyContentCell: UITableViewCell, KVEditContentCellType, UICollectio
     private let app = App.shared
     private var rawTextViewPrevHeight: CGFloat = 89
     private var rawTextViewText = ""
-    private let monospaceFont = UIFont(name: "Menlo-Regular", size: 13)
+    private let monospaceFont = App.Font.monospace13
     private lazy var textViewAttrs: [NSAttributedString.Key: Any]  = {
         let style = NSMutableParagraphStyle()
         style.lineSpacing = 1.35

@@ -279,6 +279,13 @@ class App {
         return .jpeg  // default photo extension
     }
     
+    /// Get text for displaying in name, value cells. If the text value is not present, a space character will be returned so that cells gets displayed with
+    /// proper dimension.
+    func getKVText(_ text: String?) -> String {
+        if text == nil { return " " }
+        return text!.isEmpty ? " " : text!
+    }
+    
     // MARK: - Mark entity for delete
     
     func addEditRequestDeleteObject(_ obj: Entity?) {
@@ -931,6 +938,10 @@ class App {
                 return Color.lightGrey1
             }
         }()
+    }
+    
+    public struct Font {
+        static let monospace13 = UIFont(name: "Menlo-Regular", size: 13)
     }
 }
 

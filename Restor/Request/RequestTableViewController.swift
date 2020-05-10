@@ -21,16 +21,16 @@ class RequestTableViewController: UITableViewController {
     private var tabbarController: RequestTabBarController { self.tabBarController as! RequestTabBarController }
     @IBOutlet var headerKVTableViewManager: KVTableViewManager!
     @IBOutlet var paramsKVTableViewManager: KVTableViewManager!
-    @IBOutlet var bodyKVTableViewManager: KVTableViewManager!
     @IBOutlet weak var headersTableView: EADynamicSizeTableView!
     @IBOutlet weak var paramsTableView: EADynamicSizeTableView!
-    @IBOutlet weak var bodyTableView: UITableView!
     @IBOutlet weak var methodView: UIView!
     @IBOutlet weak var methodLabel: UILabel!
     @IBOutlet weak var urlLabel: UILabel!
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var descLabel: UILabel!
     @IBOutlet weak var bodyTitleLabel: UILabel!
+    @IBOutlet weak var bodyRawLabel: UILabel!
+    @IBOutlet weak var bodyFieldTableView: KVBodyFieldTableView!
     
     enum CellId: Int {
         case spaceAfterTop = 0
@@ -84,10 +84,10 @@ class RequestTableViewController: UITableViewController {
         self.view.backgroundColor = App.Color.tableViewBg
         self.initHeadersTableViewManager()
         self.initParamsTableViewManager()
-        self.initBodyTableViewManager()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.addNavigationBarEditButton()
+        self.bodyRawLabel.font = App.Font.monospace13
         self.renderTheme()
     }
     
@@ -114,21 +114,14 @@ class RequestTableViewController: UITableViewController {
         self.paramsKVTableViewManager.reloadData()
     }
     
-    func initBodyTableViewManager() {
-        self.bodyKVTableViewManager.request = self.request
-        self.bodyKVTableViewManager.kvTableView = self.bodyTableView
-        self.bodyKVTableViewManager.delegate = self
-        self.bodyKVTableViewManager.tableViewType = .body
-        self.bodyKVTableViewManager.bootstrap()
-        self.bodyKVTableViewManager.reloadData()
-    }
-    
     func renderTheme() {
         self.methodView.backgroundColor = App.Color.requestMethodBg
     }
     
     func reloadAllTableViews() {
-        self.tableView.reloadData()
+        self.headerKVTableViewManager.reloadData()
+        self.paramsKVTableViewManager.reloadData()
+        self.reloadData()
     }
     
     @objc func editButtonDidTap(_ sender: Any) {
@@ -202,6 +195,40 @@ class RequestTableViewController: UITableViewController {
 //            self.descTextView.isHidden = true
 //            self.descBorderView.isHidden = true
 //        }
+        self.updateBodyCell()
+    }
+    
+    func updateBodyCell() {
+        guard let body = self.requestBody else { return }
+        guard let bodyType = RequestBodyType(rawValue: body.selected.toInt()) else { return }
+        switch bodyType {
+        case .json:
+            self.bodyRawLabel.text = body.json
+            self.bodyRawLabel.isHidden = false
+            self.bodyFieldTableView.isHidden = true
+        case .xml:
+            self.bodyRawLabel.text = body.xml
+            self.bodyRawLabel.isHidden = false
+            self.bodyFieldTableView.isHidden = true
+        case .raw:
+            self.bodyRawLabel.text = body.raw
+            self.bodyRawLabel.isHidden = false
+            self.bodyFieldTableView.isHidden = true
+        case .form:
+            if self.bodyForms.isEmpty { return }
+            self.bodyRawLabel.isHidden = true
+            self.bodyFieldTableView.isHidden = false
+            self.bodyFieldTableView.body = body
+            self.bodyFieldTableView.bodyType = bodyType
+            self.bodyFieldTableView.forms = self.bodyForms
+            self.bodyFieldTableView.request = self.request
+            self.bodyFieldTableView.reloadData()
+            self.tableView.reloadData()
+        case .multipart:
+            break
+        case .binary:
+            break
+        }
     }
 }
 
@@ -218,36 +245,47 @@ extension RequestTableViewController {
         } else if indexPath.row == CellId.name.rawValue {
             let h = self.nameLabel.frame.size.height + self.descLabel.frame.size.height + 93.5
             height = h > 167 ? h : 167  // 167
-//        } else if indexPath.row == CellId.spacerAfterName.rawValue {
-//            height = 16
         } else if indexPath.row == CellId.headerTitle.rawValue {
             height = 44
+            if self.headers.isEmpty { height = 0 }
         } else if indexPath.row == CellId.header.rawValue && indexPath.section == 0 {
-            height = self.headerKVTableViewManager.getHeight()
-//        } else if indexPath.row == CellId.spacerAfterHeader.rawValue {
-//            height = 12
+            if self.headers.isEmpty {  // static branch prediction always assumes branches to be false
+                height = 0
+            } else {
+                height = self.headerKVTableViewManager.getHeight()
+            }
         } else if indexPath.row == CellId.paramTitle.rawValue {
             height = 44
+            if self.params.isEmpty { height = 0 }
         } else if indexPath.row == CellId.params.rawValue && indexPath.section == 0 {
-            height = self.paramsKVTableViewManager.getHeight()
-//        } else if indexPath.row == CellId.spacerAfterParams.rawValue {
-//            height = 12
+            if self.params.isEmpty {
+                height = 0
+            } else {
+                height = self.paramsKVTableViewManager.getHeight()
+            }
         } else if indexPath.row == CellId.bodyTitle.rawValue {
+            if self.requestBody == nil { return 0 }
             height = 44
         } else if indexPath.row == CellId.body.rawValue && indexPath.section == 0 {
-            if let body = AppState.editRequest?.body, !body.markForDelete, (body.selected == RequestBodyType.form.rawValue || body.selected == RequestBodyType.multipart.rawValue) {
-                return RequestVC.bodyFormCellHeight()
+            if self.requestBody == nil { return 0 }
+            guard let bodyType = RequestBodyType(rawValue: self.requestBody!.selected.toInt()) else { return 0 }
+            switch bodyType {
+            case .json, .xml, .raw:
+                self.bodyRawLabel.sizeToFit()
+                height = UITableView.automaticDimension
+            case .form, .multipart:
+                self.bodyFieldTableView.layoutIfNeeded()
+                height = self.bodyFieldTableView.contentSize.height
+                height = height < 54 ? 54 : height
+            case .binary:
+                break
             }
-            if let body = AppState.editRequest?.body, !body.markForDelete, body.selected == RequestBodyType.binary.rawValue {
-                return 60  // Only this one gets called.
-            }
-            height = self.bodyKVTableViewManager.getHeight()
         } else if indexPath.row == CellId.spacerAfterBody.rawValue {
             height = 12
         } else {
             height = UITableView.automaticDimension
         }
-//        Log.debug("height: \(height) for index: \(indexPath)")
+        Log.debug("height: \(String(describing: height)) for index: \(indexPath)")
         return height
     }
 }
@@ -286,54 +324,130 @@ extension RequestTableViewController: KVTableViewManagerDelegate {
         self.bodyTitleLabel.text = "BODY (\(text))"
         self.tableView.reloadRows(at: [IndexPath(item: CellId.bodyTitle.rawValue, section: 0)], with: .none)
     }
+    
+    func reloadData() {
+        self.updateData()
+        self.tableView.reloadData()
+    }
 }
 
 class KVHeaderCell: UITableViewCell {
     @IBOutlet weak var titleLabel: UILabel!
 }
 
-class KVContentCell: UITableViewCell, KVContentCellType {
+class KVContentCell: UITableViewCell {
     @IBOutlet weak var keyLabel: UILabel!
     @IBOutlet weak var valueLabel: UILabel!
 }
 
-protocol KVContentCellType: class {
-    
-}
-
-class KVBodyContentCell: UITableViewCell, KVContentCellType {
-    @IBOutlet weak var rawTextLabel: UILabel!
-    @IBOutlet weak var bodyFieldTableView: EADynamicSizeTableView!
-    private let monospaceFont = UIFont(name: "Menlo-Regular", size: 13)
+class KVBodyFieldTableViewCell: UITableViewCell, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    @IBOutlet weak var keyLabel: UILabel!
+    @IBOutlet weak var valueLabel: UILabel!
+    @IBOutlet weak var fieldImageView: UIImageView!
+    @IBOutlet weak var fileCollectionView: UICollectionView!
+    var files: [EFile] = []
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        self.initUI()
+        self.fileCollectionView.delegate = self
+        self.fileCollectionView.dataSource = self
+        self.fileCollectionView.isHidden = true
+        self.fieldImageView.isHidden = true
     }
     
-    func initUI() {
-        self.rawTextLabel.font = self.monospaceFont
-        self.bodyFieldTableView.isHidden = true
-    }
-}
-
-class KVBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        return 0
+        return self.files.count
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        return UICollectionViewCell(frame: .zero)
+        Log.debug("file collection view cell")
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "fileCell", for: indexPath) as! FileCollectionViewCell
+        let row = indexPath.row
+        let elem = self.files[row]
+        cell.nameLabel.text = elem.getName()
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        var width: CGFloat = 50
+        if let cell = collectionView.cellForItem(at: indexPath) as? FileCollectionViewCell {
+            width = cell.frame.width
+        } else {
+            let row = indexPath.row
+            let elem = self.files[row]
+            let name = elem.getName()
+            let lbl = UILabel(frame: CGRect(x: 0, y: 0, width: .greatestFiniteMagnitude, height: 19.5))
+            lbl.text = name
+            lbl.layoutIfNeeded()
+            width = lbl.textWidth()
+        }
+        Log.debug("width: \(width)")
+        return CGSize(width: width, height: 23.5)
     }
 }
 
-class KVBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDataSource {
+class KVBodyFieldTableView: EADynamicSizeTableView, UITableViewDelegate, UITableViewDataSource {
+    var request: ERequest?
+    var body: ERequestBodyData?
+    var bodyType: RequestBodyType = .json
+    var forms: [ERequestData] = []
+    var multipart: [ERequestData] = []
+    private let app = App.shared
+    let labelFont = UIFont.systemFont(ofSize: 14)
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        Log.debug("kvbodyfieldtableview init")
+        self.estimatedRowHeight = 44
+        self.delegate = self
+        self.dataSource = self
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        0
+        if self.bodyType == .form { return self.forms.count }
+        return self.multipart.count
+    }
+    
+    func updateCell(_ cell: KVBodyFieldTableViewCell, indexPath: IndexPath) {
+        let row = indexPath.row
+        cell.keyLabel.clear()
+        cell.valueLabel.clear()
+        cell.valueLabel.isHidden = false
+        cell.fieldImageView.isHidden = true
+        if self.bodyType == .form {
+            let elem = forms[row]
+            cell.keyLabel.text = self.app.getKVText(elem.key)
+            cell.valueLabel.text = self.app.getKVText(elem.value)
+            Log.debug("body form name: \(String(describing: cell.keyLabel.text))")
+            Log.debug("body value name: \(String(describing: cell.valueLabel.text))")
+            if let img = elem.image, let data = img.data {
+                cell.fieldImageView.image = UIImage(data: data)
+                cell.valueLabel.isHidden = true
+                cell.fieldImageView.isHidden = false
+                cell.fileCollectionView.isHidden = true
+            }
+            if let set = elem.files, !set.isEmpty, let files = set.allObjects as? [EFile] {
+                cell.files = files
+                cell.fileCollectionView.reloadData()
+                cell.fileCollectionView.isHidden = false
+                cell.fieldImageView.isHidden = true
+                cell.valueLabel.isHidden = true
+            }
+        } else if self.bodyType == .multipart {
+            let elem = multipart[row]
+            cell.keyLabel.text = self.app.getKVText(elem.key)
+            cell.valueLabel.text = self.app.getKVText(elem.value)
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        return UITableViewCell(frame: .zero)
+        let cell = tableView.dequeueReusableCell(withIdentifier: "bodyFieldTableViewCell", for: indexPath) as! KVBodyFieldTableViewCell
+        self.updateCell(cell, indexPath: indexPath)
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
     }
 }
 
@@ -349,13 +463,15 @@ protocol KVTableViewManagerDelegate: class {
     func getBodyFormsCount() -> Int
     /// Sets the body title header text
     func setBodyTitleLabel(_ text: String)
+    func reloadData()
 }
 
 class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
-    weak var kvTableView: UITableView?
+    weak var kvTableView: EADynamicSizeTableView?
     var tableViewType: KVTableViewType = .header
     weak var request: ERequest?
     weak var delegate: KVTableViewManagerDelegate?
+    private let app = App.shared
     
     func bootstrap() {
         self.kvTableView?.estimatedRowHeight = 44
@@ -366,19 +482,8 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         guard let tv = self.kvTableView else { return height }
         tv.layoutIfNeeded()
         let h = tv.contentSize.height
-        if self.tableViewType == .body && h < height { return height }
+        Log.debug("kvtableview content size: \(h)")
         return h > 0 ? h + 4 : height
-//        switch self.tableViewType {
-//        case .header:
-//            fallthrough
-//        case .params:
-//            tv.layoutIfNeeded()
-//            let h = tv.contentSize.height
-//            return h > 0 ? h + 4 : height
-//        case .body:
-//
-//        }
-//        return height
     }
     
     func reloadData() {
@@ -397,9 +502,8 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
             return self.delegate?.getHeadersCount() ?? 0
         case .params:
             return self.delegate?.getParamsCount() ?? 0
-        case .body:
-            return self.request?.body == nil ? 0 : 1
-            //return 0
+        default:
+            return 0
         }
     }
     
@@ -414,11 +518,6 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
-    func getKVText(_ text: String?) -> String {
-        if text == nil { return " " }
-        return text!.isEmpty ? " " : text!
-    }
-    
     func updateCell(_ cell: KVContentCell, indexPath: IndexPath) {
         let row = indexPath.row
         cell.keyLabel.clear()
@@ -427,51 +526,22 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         case .header:
             if let xs = self.delegate?.getHeaders() {
                 let elem = xs[row]
-                cell.keyLabel.text = self.getKVText(elem.key)
+                cell.keyLabel.text = self.app.getKVText(elem.key)
                 //cell.keyLabel.text = "The sacrifice is hard son, but you're no stranger to it. The sacrifice is hard son, but you're no stranger to it. "
-                cell.valueLabel.text = self.getKVText(elem.value)
+                cell.valueLabel.text = self.app.getKVText(elem.value)
             }
         case .params:
             if let xs = self.delegate?.getParams() {
                 let elem = xs[row]
-                cell.keyLabel.text = self.getKVText(elem.key)
-                cell.valueLabel.text = self.getKVText(elem.value)
+                cell.keyLabel.text = self.app.getKVText(elem.key)
+                cell.valueLabel.text = self.app.getKVText(elem.value)
             }
         default:
             break
         }
     }
     
-    func getSelectedBodyType(_ body: ERequestBodyData) -> RequestBodyType {
-        return RequestBodyType(rawValue: body.selected.toInt()) ?? RequestBodyType.json
-    }
-    
-    func updateCell(_ cell: KVBodyContentCell, indexPath: IndexPath) {
-        guard let request = self.request, let body = request.body else { return }
-        let bodyType = self.getSelectedBodyType(body)
-        switch bodyType {
-        case .json:
-            cell.rawTextLabel.text = body.json
-        case .xml:
-            cell.rawTextLabel.text = body.xml
-        case .raw:
-            cell.rawTextLabel.text = body.raw
-        case .form:
-            break
-        case .multipart:
-            break
-        case .binary:
-            break
-        }
-    }
-    
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        if self.tableViewType == .body {
-            // return UITableViewCell(frame: .zero)
-            let cell = tableView.dequeueReusableCell(withIdentifier: self.getContentCellId(), for: indexPath) as! KVBodyContentCell
-            self.updateCell(cell, indexPath: indexPath)
-            return cell
-        }
         let cell = tableView.dequeueReusableCell(withIdentifier: self.getContentCellId(), for: indexPath) as! KVContentCell
         self.updateCell(cell, indexPath: indexPath)
         return cell
