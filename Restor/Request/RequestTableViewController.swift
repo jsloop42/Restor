@@ -13,6 +13,7 @@ class RequestTableViewController: UITableViewController {
     private let app = App.shared
     private let localdb = CoreDataService.shared
     private let utils = EAUtils.shared
+    private let nc = NotificationCenter.default
     var request: ERequest?
     var headers: [ERequestData] = []
     var params: [ERequestData] = []
@@ -47,6 +48,10 @@ class RequestTableViewController: UITableViewController {
         case spacerAfterBody = 10
     }
     
+    deinit {
+        self.nc.removeObserver(self)
+    }
+    
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
     }
@@ -61,6 +66,7 @@ class RequestTableViewController: UITableViewController {
         Log.debug("request vc - did load")
         self.initData()
         self.initUI()
+        self.initEvents()
         self.updateData()
         self.reloadAllTableViews()
     }
@@ -74,6 +80,8 @@ class RequestTableViewController: UITableViewController {
         self.requestBody = request.body
         guard let body = self.requestBody else { return }
         guard let bodyType = RequestBodyType(rawValue: body.selected.toInt()) else { return }
+        self.bodyForms = []
+        self.multipart = []
         if bodyType == .form {
             self.bodyForms = self.localdb.getFormRequestData(body.getId(), type: .form)
         } else if bodyType == .multipart {
@@ -93,6 +101,10 @@ class RequestTableViewController: UITableViewController {
         self.addNavigationBarEditButton()
         self.bodyRawLabel.font = App.Font.monospace13
         self.renderTheme()
+    }
+    
+    func initEvents() {
+        self.nc.addObserver(self, selector: #selector(self.requestDidChange(_:)), name: .requestDidChange, object: nil)
     }
     
     /// Display Edit button in navigation bar
@@ -131,6 +143,18 @@ class RequestTableViewController: UITableViewController {
     @objc func editButtonDidTap(_ sender: Any) {
         Log.debug("edit button did tap")
         self.viewEditRequestVC()
+    }
+    
+    @objc func requestDidChange(_ notif: Notification) {
+        Log.debug("request did change notif")
+        DispatchQueue.main.async {
+            if let info = notif.userInfo as? [String: String], let reqId = info["requestId"], reqId == self.request?.getId() {
+                Log.debug("current request did change - reloading views")
+                self.initData()
+                self.updateData()
+                self.reloadAllTableViews()
+            }
+        }
     }
     
     func viewEditRequestVC() {
@@ -209,14 +233,17 @@ class RequestTableViewController: UITableViewController {
         case .json:
             self.bodyRawLabel.text = body.json
             self.bodyRawLabel.isHidden = false
+            self.bodyFieldTableView.resetTableView()
             self.bodyFieldTableView.isHidden = true
         case .xml:
             self.bodyRawLabel.text = body.xml
             self.bodyRawLabel.isHidden = false
+            self.bodyFieldTableView.resetTableView()
             self.bodyFieldTableView.isHidden = true
         case .raw:
             self.bodyRawLabel.text = body.raw
             self.bodyRawLabel.isHidden = false
+            self.bodyFieldTableView.resetTableView()
             self.bodyFieldTableView.isHidden = true
         case .form:
             if self.bodyForms.isEmpty { return }
@@ -226,8 +253,6 @@ class RequestTableViewController: UITableViewController {
             self.bodyFieldTableView.bodyType = bodyType
             self.bodyFieldTableView.forms = self.bodyForms
             self.bodyFieldTableView.request = self.request
-            self.bodyFieldTableView.reloadData()
-            self.tableView.reloadData()
         case .multipart:
             if self.multipart.isEmpty { return }
             self.bodyRawLabel.isHidden = true
@@ -236,11 +261,11 @@ class RequestTableViewController: UITableViewController {
             self.bodyFieldTableView.bodyType = bodyType
             self.bodyFieldTableView.multipart = self.multipart
             self.bodyFieldTableView.request = self.request
-            self.bodyFieldTableView.reloadData()
-            self.tableView.reloadData()
         case .binary:
             break
         }
+        self.bodyFieldTableView.reloadData()
+        self.tableView.reloadData()
     }
 }
 
@@ -283,6 +308,7 @@ extension RequestTableViewController {
             guard let bodyType = RequestBodyType(rawValue: self.requestBody!.selected.toInt()) else { return 0 }
             switch bodyType {
             case .json, .xml, .raw:
+                self.bodyFieldTableView.resetTableView()
                 self.bodyRawLabel.sizeToFit()
                 height = UITableView.automaticDimension
             case .form, .multipart:
@@ -431,9 +457,18 @@ class KVBodyFieldTableView: EADynamicSizeTableView, UITableViewDelegate, UITable
         self.dataSource = self
     }
     
+    /// Clears all table view data
+    func resetTableView() {
+        self.forms = []
+        self.multipart = []
+        self.bodyType = .json
+        self.reloadData()
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if self.bodyType == .form { return self.forms.count }
-        return self.multipart.count
+        if self.bodyType == .multipart { return self.multipart.count }
+        return 0
     }
     
     func updateCell(_ cell: KVBodyFieldTableViewCell, indexPath: IndexPath) {

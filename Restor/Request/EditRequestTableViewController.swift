@@ -12,6 +12,10 @@ import CoreData
 
 typealias RequestVC = EditRequestTableViewController
 
+extension Notification.Name {
+     static let requestDidChange = Notification.Name("request-did-change")
+}
+
 class EditRequestTableViewController: UITableViewController, UITextFieldDelegate, UITextViewDelegate {
     static weak var shared: EditRequestTableViewController?
     @IBOutlet weak var methodView: UIView!
@@ -287,6 +291,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
         self.endEditing()
         self.app.diffRescheduler.done()
         if self.isDirty, let data = AppState.editRequest, let proj = AppState.currentProject {
+            let reqId = data.getId()
             proj.addToRequests(data)
             data.isSynced = false
             if let set = proj.requestMethods, let xs = set.allObjects as? [ERequestMethodData] {
@@ -302,6 +307,7 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
                 self.isDirty = false
                 self.db.saveRequestToCloud(data)
                 self.db.deleteDataMarkedForDelete(self.app.editReqDelete)
+                self.nc.post(name: .requestDidChange, object: self, userInfo: ["requestId": reqId])
                 self.close()
                 timer.cancel()
             }
