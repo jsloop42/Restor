@@ -20,6 +20,8 @@ class RequestTableViewController: UITableViewController {
     var requestBody: ERequestBodyData?
     var bodyForms: [ERequestData] = []
     var multipart: [ERequestData] = []
+    var binary: ERequestData?
+    var binaryFiles: [EFile] = []
     private var tabbarController: RequestTabBarController { self.tabBarController as! RequestTabBarController }
     @IBOutlet var headerKVTableViewManager: KVTableViewManager!
     @IBOutlet var paramsKVTableViewManager: KVTableViewManager!
@@ -33,6 +35,9 @@ class RequestTableViewController: UITableViewController {
     @IBOutlet weak var bodyTitleLabel: UILabel!
     @IBOutlet weak var bodyRawLabel: UILabel!
     @IBOutlet weak var bodyFieldTableView: KVBodyFieldTableView!
+    @IBOutlet weak var binaryTextFieldView: UIView!
+    @IBOutlet weak var binaryImageView: UIImageView!
+    @IBOutlet weak var binaryCollectionView: UICollectionView!
     
     enum CellId: Int {
         case spaceAfterTop = 0
@@ -82,10 +87,20 @@ class RequestTableViewController: UITableViewController {
         guard let bodyType = RequestBodyType(rawValue: body.selected.toInt()) else { return }
         self.bodyForms = []
         self.multipart = []
+        self.binaryCollectionView.delegate = nil
+        self.binaryCollectionView.dataSource = nil
+        self.binaryImageView.isHidden = true
         if bodyType == .form {
             self.bodyForms = self.localdb.getFormRequestData(body.getId(), type: .form)
         } else if bodyType == .multipart {
             self.multipart = self.localdb.getFormRequestData(body.getId(), type: .multipart)
+        } else if bodyType == .binary {
+            if let bin = body.binary {
+                self.binary = bin
+                if let files = bin.files, !files.isEmpty {
+                    self.binaryFiles = self.localdb.getFiles(bin.getId(), type: .binary)
+                }
+            }
         }
         self.setBodyTitleLabel(RequestBodyType.toString(body.selected.toInt()))
     }
@@ -235,16 +250,19 @@ class RequestTableViewController: UITableViewController {
             self.bodyRawLabel.isHidden = false
             self.bodyFieldTableView.resetTableView()
             self.bodyFieldTableView.isHidden = true
+            self.binaryTextFieldView.isHidden = true
         case .xml:
             self.bodyRawLabel.text = body.xml
             self.bodyRawLabel.isHidden = false
             self.bodyFieldTableView.resetTableView()
             self.bodyFieldTableView.isHidden = true
+            self.binaryTextFieldView.isHidden = true
         case .raw:
             self.bodyRawLabel.text = body.raw
             self.bodyRawLabel.isHidden = false
             self.bodyFieldTableView.resetTableView()
             self.bodyFieldTableView.isHidden = true
+            self.binaryTextFieldView.isHidden = true
         case .form:
             if self.bodyForms.isEmpty { return }
             self.bodyRawLabel.isHidden = true
@@ -253,6 +271,7 @@ class RequestTableViewController: UITableViewController {
             self.bodyFieldTableView.bodyType = bodyType
             self.bodyFieldTableView.forms = self.bodyForms
             self.bodyFieldTableView.request = self.request
+            self.binaryTextFieldView.isHidden = true
         case .multipart:
             if self.multipart.isEmpty { return }
             self.bodyRawLabel.isHidden = true
@@ -261,11 +280,62 @@ class RequestTableViewController: UITableViewController {
             self.bodyFieldTableView.bodyType = bodyType
             self.bodyFieldTableView.multipart = self.multipart
             self.bodyFieldTableView.request = self.request
+            self.binaryTextFieldView.isHidden = true
         case .binary:
-            break
+            self.bodyFieldTableView.resetTableView()
+            self.bodyFieldTableView.isHidden = true
+            self.bodyRawLabel.isHidden = true
+            self.binaryCollectionView.delegate = self
+            self.binaryCollectionView.dataSource = self
+            if self.binaryFiles.isEmpty { self.resetBinaryCollectionView() }
+            self.binaryCollectionView.isHidden = self.binaryFiles.isEmpty
+            self.binaryTextFieldView.isHidden = false
+            self.binaryCollectionView.reloadData()
+            self.binaryImageView.isHidden = true
+            if let bin = self.requestBody?.binary, let image = bin.image, let data = image.data {
+                self.binaryImageView.image = UIImage(data: data)
+                self.binaryImageView.isHidden = false
+            }
         }
         self.bodyFieldTableView.reloadData()
         self.tableView.reloadData()
+    }
+}
+
+extension RequestTableViewController: UICollectionViewDelegate, UICollectionViewDataSource, UICollectionViewDelegateFlowLayout {
+    func resetBinaryCollectionView() {
+        self.binaryFiles = []
+        self.binaryCollectionView.reloadData()
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        return self.binaryFiles.count
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        Log.debug("file collection view cell")
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "fileCell", for: indexPath) as! FileCollectionViewCell
+        let row = indexPath.row
+        let elem = self.binaryFiles[row]
+        cell.nameLabel.text = elem.getName()
+        return cell
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        var width: CGFloat = 50
+        if let cell = collectionView.cellForItem(at: indexPath) as? FileCollectionViewCell {
+            width = cell.frame.width
+        } else {
+            let row = indexPath.row
+            let elem = self.binaryFiles[row]
+            let name = elem.getName()
+            let lbl = UILabel(frame: CGRect(x: 0, y: 0, width: .greatestFiniteMagnitude, height: 19.5))
+            lbl.text = name
+            lbl.layoutIfNeeded()
+            width = lbl.textWidth()
+        }
+        Log.debug("width: \(width)")
+        return CGSize(width: width, height: 23.5)
     }
 }
 
@@ -316,7 +386,7 @@ extension RequestTableViewController {
                 height = self.bodyFieldTableView.contentSize.height
                 height = height < 54 ? 54 : height
             case .binary:
-                break
+                height = 54
             }
         } else if indexPath.row == CellId.spacerAfterBody.rawValue {
             height = 12

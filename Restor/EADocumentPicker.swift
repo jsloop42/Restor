@@ -57,10 +57,11 @@ class EADocumentPicker: NSObject {
         }
     }
     
-    func presentDocumentPicker(navVC: UINavigationController? = nil, vc: UIDocumentPickerDelegate? = nil, completion: (() -> Void)? = nil) {
+    func presentDocumentPicker(navVC: UINavigationController? = nil, vc: UIDocumentPickerDelegate? = nil, isMultiSelect: Bool, completion: (() -> Void)? = nil) {
         if navVC != nil { self.navVC = navVC }
         guard let aVC = self.navVC else { return }
         self.docPicker.delegate = vc
+        self.docPicker.allowsMultipleSelection = isMultiSelect
         aVC.present(self.docPicker, animated: true, completion: completion)
     }
     
@@ -87,12 +88,12 @@ class EADocumentPicker: NSObject {
     
     func presentDocumentMenu(navVC: UINavigationController? = nil,
                              imagePickerDelegate: (UIImagePickerControllerDelegate & UINavigationControllerDelegate)? = nil,
-                             documentPickerDelegate: UIDocumentPickerDelegate? = nil) {
+                             documentPickerDelegate: UIDocumentPickerDelegate? = nil, isMultiSelect: Bool) {
         if navVC != nil { self.navVC = navVC }
         guard let aVC = self.navVC else { return }
         let alert = UIAlertController()
         let docAction = UIAlertAction(title: "Document", style: .default) { action in
-            self.presentDocumentPicker(navVC: navVC, vc: documentPickerDelegate, completion: nil)
+            self.presentDocumentPicker(navVC: navVC, vc: documentPickerDelegate, isMultiSelect: isMultiSelect, completion: nil)
         }
         let cameraAction = UIAlertAction(title: "Camera", style: .default) { action in
             DocumentPickerState.isCameraMode = true

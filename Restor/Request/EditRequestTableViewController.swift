@@ -420,11 +420,15 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     }
     
     @objc func presentDocumentMenuPicker(_ notif: Notification) {
-        self.docPicker.presentDocumentMenu(navVC: self.navigationController!, imagePickerDelegate: self, documentPickerDelegate: self)
+        var isMultiSelect = true
+        if let info = notif.userInfo, let multiSelect = info["isMultiSelect"] as? Bool { isMultiSelect = multiSelect }
+        self.docPicker.presentDocumentMenu(navVC: self.navigationController!, imagePickerDelegate: self, documentPickerDelegate: self, isMultiSelect: isMultiSelect)
     }
     
     @objc func presentDocumentPicker(_ notif: Notification) {
-        self.docPicker.presentDocumentPicker(navVC: self.navigationController!, vc: self, completion: nil)
+        var isMultiSelect = true
+        if let info = notif.userInfo, let multiSelect = info["isMultiSelect"] as? Bool { isMultiSelect = multiSelect }
+        self.docPicker.presentDocumentPicker(navVC: self.navigationController!, vc: self, isMultiSelect: isMultiSelect, completion: nil)
     }
     
     @objc func presentImagePicker(_ notif: Notification) {
@@ -840,7 +844,7 @@ class KVEditBodyContentCell: UITableViewCell, KVEditContentCellType, UICollectio
     
     func presentDocPicker() {
         DocumentPickerState.modelIndex = 0
-        self.nc.post(Notification(name: NotificationKey.documentPickerMenuShouldPresent))
+        self.nc.post(name: NotificationKey.documentPickerMenuShouldPresent, object: self, userInfo: ["isMultiSelect": false])
     }
     
     @IBAction func typeBtnDidTap(_ sender: Any) {
