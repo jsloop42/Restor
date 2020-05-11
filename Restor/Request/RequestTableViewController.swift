@@ -176,6 +176,10 @@ class RequestTableViewController: UITableViewController {
         }
     }
     
+    @IBAction func goButtonDidTap(_ sender: Any) {
+        Log.debug("go button did tap")
+    }
+    
     func viewEditRequestVC() {
         Log.debug("view edit request vc")
         AppState.editRequest = self.request

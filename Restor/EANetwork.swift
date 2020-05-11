@@ -9,6 +9,8 @@
 import Foundation
 import SystemConfiguration
 
+// MARK: - Reachability
+
 public enum EAReachabilityError: Error {
     case failedToCreateWithAddress(sockaddr, Int32)
     case failedToCreateWithHostname(String, Int32)
@@ -259,5 +261,94 @@ private class EAReachabilityBridge {
     weak var reachability: EAReachability?
     init(reachability: EAReachability) {
         self.reachability = reachability
+    }
+}
+
+// MARK: - HTTP Client
+
+public class EAHTTPClient: NSObject {
+    private lazy var queue: OperationQueue = {
+        let q = OperationQueue()
+        q.name = "com.estoapps.ios.network-queue"
+        q.qualityOfService = .utility
+        return q
+    }()
+    private var session: URLSession!
+    private let nc = NotificationCenter.default
+    private var isOffline = false
+    
+    override init() {
+        super.init()
+        self.session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: self.queue)
+        self.bootstrap()
+    }
+    
+    init(config: URLSessionConfiguration) {
+        super.init()
+        self.session = URLSession(configuration: config, delegate: nil, delegateQueue: self.queue)
+        self.bootstrap()
+    }
+    
+    func bootstrap() {
+        self.initEvents()
+    }
+    
+    private func initEvents() {
+        if isRunningTests { return }
+        self.nc.addObserver(self, selector: #selector(self.networkDidBecomeAvailable(_:)), name: .online, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.networkDidBecomeUnavailable(_:)), name: .offline, object: nil)
+    }
+    
+    @objc private func networkDidBecomeAvailable(_ notif: Notification) {
+        Log.debug("nw: online")
+        self.isOffline = false
+    }
+    
+    @objc private func networkDidBecomeUnavailable(_ notif: Notification) {
+        Log.debug("nw: offline")
+        self.isOffline = true
+    }
+    
+    public func process() {
+        
+    }
+    
+    public func get() {
+        
+    }
+    
+    public func post() {
+        
+    }
+    
+    public func put() {
+        
+    }
+    
+    public func patch() {
+        
+    }
+    
+    public func delete() {
+        
+    }
+}
+
+extension EAHTTPClient: URLSessionDelegate {
+    public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
+        let protectionSpace = challenge.protectionSpace
+        if protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
+            if let trust = protectionSpace.serverTrust {
+                let cred = URLCredential(trust: trust)
+                completionHandler(.useCredential, cred)
+            } else {
+                // SSL certificate validation failure
+                completionHandler(.performDefaultHandling, nil)
+            }
+        } else if protectionSpace.authenticationMethod == NSURLAuthenticationMethodClientCertificate {
+            // TODO
+        } else {
+            completionHandler(.cancelAuthenticationChallenge, nil)
+        }
     }
 }

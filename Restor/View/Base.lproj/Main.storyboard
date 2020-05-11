@@ -2505,6 +2505,9 @@
                                                             </constraints>
                                                             <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                                             <state key="normal" image="play.fill" catalog="system"/>
+                                                            <connections>
+                                                                <action selector="goButtonDidTap:" destination="XFn-zo-qCR" eventType="touchUpInside" id="vnB-18-kx3"/>
+                                                            </connections>
                                                         </button>
                                                     </subviews>
                                                     <color key="backgroundColor" name="table-view-cell-bg"/>
