@@ -124,7 +124,11 @@ class RequestTableViewController: UITableViewController {
     
     /// Display Edit button in navigation bar
     func addNavigationBarEditButton() {
-        self.tabbarController.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .edit, target: self, action: #selector(self.editButtonDidTap(_:)))
+        let editBtn = UIButton(type: .custom)
+        editBtn.setTitle("Edit", for: .normal)
+        editBtn.setTitleColor(editBtn.tintColor, for: .normal)
+        editBtn.addTarget(self, action: #selector(self.editButtonDidTap(_:)), for: .touchUpInside)
+        self.tabbarController.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: editBtn)
     }
     
     func initHeadersTableViewManager() {

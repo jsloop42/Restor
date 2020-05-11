@@ -2475,7 +2475,7 @@
                                                             </userDefinedRuntimeAttributes>
                                                         </view>
                                                         <scrollView clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" showsHorizontalScrollIndicator="NO" showsVerticalScrollIndicator="NO" translatesAutoresizingMaskIntoConstraints="NO" id="eOS-V0-I82">
-                                                            <rect key="frame" x="58.5" y="14" width="311.5" height="17"/>
+                                                            <rect key="frame" x="62.5" y="14" width="305.5" height="17"/>
                                                             <subviews>
                                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="https://example.com" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" minimumFontSize="12" translatesAutoresizingMaskIntoConstraints="NO" id="CHf-iT-o99" userLabel="URL Label">
                                                                     <rect key="frame" x="0.0" y="0.0" width="132.5" height="17"/>
@@ -2509,13 +2509,13 @@
                                                     </subviews>
                                                     <color key="backgroundColor" name="table-view-cell-bg"/>
                                                     <constraints>
-                                                        <constraint firstItem="eOS-V0-I82" firstAttribute="leading" secondItem="pVX-sk-l58" secondAttribute="trailing" constant="4" id="5ZW-mP-f2M"/>
+                                                        <constraint firstItem="eOS-V0-I82" firstAttribute="leading" secondItem="pVX-sk-l58" secondAttribute="trailing" constant="8" id="5ZW-mP-f2M"/>
                                                         <constraint firstItem="pVX-sk-l58" firstAttribute="leading" secondItem="V9l-8M-UhY" secondAttribute="leading" constant="16" id="90R-Q2-Sgy"/>
                                                         <constraint firstItem="pVX-sk-l58" firstAttribute="centerY" secondItem="eOS-V0-I82" secondAttribute="centerY" id="MHI-Pb-BL2"/>
                                                         <constraint firstItem="eOS-V0-I82" firstAttribute="centerY" secondItem="V9l-8M-UhY" secondAttribute="centerY" constant="-2" id="fgf-0s-4yj"/>
                                                         <constraint firstAttribute="trailing" secondItem="bDU-Cr-Hdf" secondAttribute="trailing" constant="16" id="hg2-Zp-giz"/>
                                                         <constraint firstItem="bDU-Cr-Hdf" firstAttribute="centerY" secondItem="eOS-V0-I82" secondAttribute="centerY" id="shH-xp-I1m"/>
-                                                        <constraint firstItem="bDU-Cr-Hdf" firstAttribute="leading" secondItem="eOS-V0-I82" secondAttribute="trailing" id="yKT-b5-eIO"/>
+                                                        <constraint firstItem="bDU-Cr-Hdf" firstAttribute="leading" secondItem="eOS-V0-I82" secondAttribute="trailing" constant="2" id="yKT-b5-eIO"/>
                                                     </constraints>
                                                 </view>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="IVI-TO-YhJ" userLabel="Bottom Border View">
