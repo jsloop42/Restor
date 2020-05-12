@@ -276,6 +276,34 @@ public class EAHTTPClient: NSObject {
     private var session: URLSession!
     private let nc = NotificationCenter.default
     private var isOffline = false
+    private var url: URL?
+    private var method: Method = .get
+    
+    public enum Method {
+        case get
+        case post
+        case put
+        case patch
+        case delete
+        case custom(String)
+        
+        var rawValue: String {
+            switch self {
+            case .get:
+                return "GET"
+            case .post:
+                return "POST"
+            case .put:
+                return "PUT"
+            case .patch:
+                return "PATCH"
+            case .delete:
+                return "DELETE"
+            case .custom(let x):
+                return x
+            }
+        }
+    }
     
     override init() {
         super.init()
@@ -286,6 +314,14 @@ public class EAHTTPClient: NSObject {
     init(config: URLSessionConfiguration) {
         super.init()
         self.session = URLSession(configuration: config, delegate: nil, delegateQueue: self.queue)
+        self.bootstrap()
+    }
+    
+    init(url: URL, method: Method) {
+        super.init()
+        self.session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: self.queue)
+        self.url = url
+        self.method = method
         self.bootstrap()
     }
     
@@ -309,12 +345,34 @@ public class EAHTTPClient: NSObject {
         self.isOffline = true
     }
     
-    public func process() {
-        
+    public func process(url: URL?, queryParams: [String: String], headers: [String: String], body: Data?, method: Method, completion: @escaping (Result<Data, Error>) -> Void) {
+        guard let url = url else { return }
+        guard var urlComp = URLComponents(string: url.absoluteString) else { return }
+        if !queryParams.isEmpty {
+            urlComp.queryItems = queryParams.map({ (key, value) -> URLQueryItem in URLQueryItem(name: key, value: value) })
+        }
+        if (!queryParams.isEmpty && !headers.isEmpty && headers.contains(where: { (key, value) -> Bool in
+            key.lowercased() == "content-type" && value.lowercased() == "application/x-www-form-urlencoded"
+        })) {
+            urlComp.percentEncodedQuery = urlComp.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
+        }
+        guard let aUrl = urlComp.url else { return }
+        var req = URLRequest(url: aUrl)
+        req.httpMethod = method.rawValue
+        let task = self.session.dataTask(with: req) { data, resp, err in
+            guard let data = data, let resp = resp as? HTTPURLResponse,
+                (200..<300) ~= resp.statusCode, err == nil else {
+                Log.error("http-client - response error: \(err!)")
+                completion(.failure(err!))
+                return
+            }
+            completion(.success(data))
+        }
+        task.resume()
     }
     
-    public func get() {
-        
+    public func get(queryParams: [String: String], headers: [String: String], completion: @escaping (Result<Data, Error>) -> Void) {
+        self.process(url: self.url, queryParams: queryParams, headers: headers, body: nil, method: .get, completion: completion)
     }
     
     public func post() {
