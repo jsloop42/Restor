@@ -10,6 +10,10 @@ import Foundation
 import UIKit
 import CoreData
 
+extension Notification.Name {
+    static let navigatedBackToRequestList = Notification.Name("navigated-back-to-request-list")
+}
+
 class RequestListViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var toolbar: UIToolbar!
@@ -18,11 +22,12 @@ class RequestListViewController: UIViewController {
     @IBOutlet weak var addBtn: UIBarButtonItem!
     private let utils = EAUtils.shared
     private let app: App = App.shared
-    private let localdb = CoreDataService.shared
+    private lazy var localdb = { CoreDataService.shared }()
     private var frc: NSFetchedResultsController<ERequest>!
     private let cellReuseId = "requestCell"
-    private let db = PersistenceService.shared
+    private lazy var db = { PersistenceService.shared }()
     private let nc = NotificationCenter.default
+    var project: EProject?
     
     deinit {
         self.nc.removeObserver(self)
@@ -35,6 +40,7 @@ class RequestListViewController: UIViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        if self.isNavigatedBack { self.nc.post(name: .navigatedBackToRequestList, object: self) }
         AppState.setCurrentScreen(.requestList)
         self.navigationItem.title = "Requests"
         if self.frc != nil { self.frc.delegate = self }
@@ -64,7 +70,7 @@ class RequestListViewController: UIViewController {
     }
     
     func initData() {
-        if self.frc == nil, let projId = AppState.currentProject?.id {
+        if self.frc == nil, let projId = self.project?.getId() {
             let predicate = self.getFRCPredicate(projId)
             if let _frc = self.localdb.getFetchResultsController(obj: ERequest.self, predicate: predicate, ctx: self.localdb.mainMOC) as? NSFetchedResultsController<ERequest> {
                 self.frc = _frc
@@ -99,10 +105,10 @@ class RequestListViewController: UIViewController {
         Log.debug("add btn did tap")
         if AppState.editRequest == nil {
             let name = self.app.getNewRequestName()
-            if let proj = AppState.currentProject, let wsId = proj.workspace?.getId(),
+            if let proj = self.project, let wsId = proj.workspace?.getId(),
                 let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: self.localdb.mainMOC) {
                 AppState.editRequest = req
-                AppState.currentProject?.addToRequests(req)
+                self.project?.addToRequests(req)
                 UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
             }
         }

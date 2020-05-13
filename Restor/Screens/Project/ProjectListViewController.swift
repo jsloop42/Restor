@@ -10,7 +10,11 @@ import Foundation
 import UIKit
 import CoreData
 
-class ProjectListViewController: UIViewController {
+extension Notification.Name {
+    static let navigatedBackToProjectList = Notification.Name("did-navigate-back-to-project-list-vc")
+}
+
+class ProjectListViewController: RestorViewController {
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var workspaceBtn: UIButton!
@@ -21,8 +25,8 @@ class ProjectListViewController: UIViewController {
     private let utils: EAUtils = EAUtils.shared
     private let app: App = App.shared
     private let nc = NotificationCenter.default
-    private let localdb = CoreDataService.shared
-    private let db = PersistenceService.shared
+    private lazy var localdb = { CoreDataService.shared }()
+    private lazy var db = { PersistenceService.shared }()
     private var frc: NSFetchedResultsController<EProject>!
     private let cellReuseId = "projectCell"
     
@@ -216,9 +220,17 @@ extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource 
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        AppState.currentProject = self.frc.object(at: indexPath)
-        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestListVC.rawValue)
+        let proj = self.frc.object(at: indexPath)
+        AppState.currentProject = proj  // TODO: remove AppState.currentProject
+        DispatchQueue.main.async {
+            self.nc.post(name: .requestListVCShouldPresent, object: self, userInfo: ["project": proj])
+        }
+        //UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestListVC.rawValue)
     }
+}
+
+extension Notification.Name {
+    static let requestListVCShouldPresent = Notification.Name("request-list-vc-should-present")
 }
 
 extension ProjectListViewController: NSFetchedResultsControllerDelegate {

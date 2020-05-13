@@ -344,3 +344,8 @@ extension UINavigationController: UINavigationBarDelegate {
         return false
     }
 }
+
+extension UIViewController {
+    var isNavigatedBack: Bool { !self.isBeingPresented && !self.isMovingToParent }
+    var className: String { NSStringFromClass(self.classForCoder).components(separatedBy: ".").last! }
+}

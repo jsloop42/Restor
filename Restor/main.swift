@@ -12,6 +12,4 @@ import CloudKit
 
 let isRunningTests = NSClassFromString("XCTestCase") != nil
 let appDelegateClass = isRunningTests ? NSStringFromClass(AppDelegateMock.self) : NSStringFromClass(AppDelegate.self)
-CoreDataService.shared.bootstrap()
-EACloudKit.shared.bootstrap()
 UIApplicationMain(CommandLine.argc, CommandLine.unsafeArgv, nil, appDelegateClass)

@@ -49,6 +49,7 @@ class App {
     var editReqDelete: Set<EditRequestInfo> = Set()
     private let editReqLock = NSLock()
     private let nc = NotificationCenter.default
+    private var appLaunched = false
     
     enum Screen {
         case workspaceList
@@ -79,15 +80,26 @@ class App {
     
     // MARK: - App lifecycle events
     
+    private func didFinishLaunchingImpl(window: UIWindow, appCoord: AppCoordinator) {
+        if !self.appLaunched {
+            CoreDataService.shared.bootstrap()
+            EACloudKit.shared.bootstrap()
+            self.updateWindowBackground(window)
+            appCoord.start()
+            self.appLaunched = true
+        }
+    }
     
     @available(iOS 13.0, *)
-    func didBecomeActive(scene: UIScene) {
-        Log.debug("did become active")
+    func didFinishLaunching(scene: UIScene, window: UIWindow, appCoord: AppCoordinator) {
+        Log.debug("did finish launching")
+        self.didFinishLaunchingImpl(window: window, appCoord: appCoord)
     }
     
     @available(iOS 10.0, *)
-    func didBecomeActive(app: UIApplication) {
-        Log.debug("did become active")
+    func didFinishLaunching(app: UIApplication, window: UIWindow, appCoord: AppCoordinator) {
+        Log.debug("did finish launching")
+        self.didFinishLaunchingImpl(window: window, appCoord: appCoord)
     }
     
     func willEnterForground() {
@@ -950,6 +962,7 @@ enum TableCellId: String {
 }
 
 enum StoryboardId: String {
+    case rootNav
     case editRequestVC
     case requestTabBar
     case requestVC

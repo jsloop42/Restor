@@ -25,9 +25,9 @@ class WorkspaceListViewController: UIViewController {
     private let app: App = App.shared
     weak var delegate: WorkspaceVCDelegate?
     private let nc = NotificationCenter.default
-    private let localdb = CoreDataService.shared
+    private lazy var localdb = { CoreDataService.shared }()
     private var frc: NSFetchedResultsController<EWorkspace>!
-    private let db = PersistenceService.shared
+    private lazy var db = { PersistenceService.shared }()
     private var wsSelected: EWorkspace!
     
     deinit {

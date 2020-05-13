@@ -11,7 +11,7 @@ import UIKit
 
 class RequestTableViewController: UITableViewController {
     private let app = App.shared
-    private let localdb = CoreDataService.shared
+    private lazy var localdb = { CoreDataService.shared }()
     private let utils = EAUtils.shared
     private let nc = NotificationCenter.default
     var request: ERequest?

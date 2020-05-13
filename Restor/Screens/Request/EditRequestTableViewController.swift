@@ -47,8 +47,8 @@ class EditRequestTableViewController: UITableViewController, UITextFieldDelegate
     var isOptionFromNotif = false
     private let docPicker = EADocumentPicker.shared
     private let utils = EAUtils.shared
-    private let db = PersistenceService.shared
-    private var localdb = CoreDataService.shared
+    private lazy var db = { PersistenceService.shared }()
+    private lazy var localdb = { CoreDataService.shared }()
     private lazy var doneBtn: UIButton = {
         let btn = UI.getNavbarTopDoneButton()
         btn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)

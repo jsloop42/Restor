@@ -12,15 +12,16 @@ import UserNotifications
 
 class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     var window: UIWindow?
-    //private let keyboardManager = IQKeyboardManager.shared
     private let app = App.shared
-    private lazy var ck = { return EACloudKit.shared }()
-    private lazy var db = { return PersistenceService.shared }()
+    private lazy var ck = { EACloudKit.shared }()
+    private lazy var db = { PersistenceService.shared }()
     private let nc = NotificationCenter.default
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        UI.setGlobalStyle()
-        self.app.updateWindowBackground(self.window)
+        Log.debug("app delegate did finish launching with options")
+        self.window = UIWindow(frame: UIScreen.main.bounds)
+        AppState.appCoord = AppCoordinator(window: self.window!)
+        //UI.setGlobalStyle()
 //        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
 //            if let error = error {
 //                Log.error("Notification auth req err:  \(error.localizedDescription)")
@@ -32,6 +33,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
 //        }
 //        UNUserNotificationCenter.current().delegate = self
         application.registerForRemoteNotifications()
+        self.app.didFinishLaunching(app: application, window: self.window!, appCoord: AppState.appCoord!)
         return true
     }
     
