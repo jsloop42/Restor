@@ -767,7 +767,7 @@ class PersistenceService {
     func fetchZoneChangeCompleteHandler(_ zoneID: CKRecordZone.ID) {
         DispatchQueue.main.async {
             self.localdb.saveMainContext()
-            self.nc.post(name: EACloudKit.NotificationKey.zoneChangesDidSave, object: self, userInfo: [EACloudKit.NotificationKey.zoneIDKey: zoneID])
+            self.nc.post(name: .zoneChangesDidSave, object: self, userInfo: [EACloudKit.zoneIDKey: zoneID])
             self.processZoneRecord()
         }
     }
@@ -921,7 +921,7 @@ class PersistenceService {
                 ws.isActive = true
                 self.localdb.saveMainContext()
                 Log.debug("Workspace synced")
-                self.nc.post(Notification(name: NotificationKey.workspaceDidSync))
+                self.nc.post(Notification(name: .workspaceDidSync))
             }
         }
     }
@@ -945,7 +945,7 @@ class PersistenceService {
                 proj.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Project synced")
-                self.nc.post(Notification(name: NotificationKey.projectDidSync))
+                self.nc.post(Notification(name: .projectDidSync))
             }
         }
     }
@@ -967,7 +967,7 @@ class PersistenceService {
                 req.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Request synced")
-                self.nc.post(Notification(name: NotificationKey.requestDidSync))
+                self.nc.post(Notification(name: .requestDidSync))
             }
         }
     }
@@ -988,7 +988,7 @@ class PersistenceService {
                 reqBodyData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Request body synced")
-                self.nc.post(Notification(name: NotificationKey.requestBodyDataDidSync))
+                self.nc.post(Notification(name: .requestBodyDataDidSync))
             }
         }
     }
@@ -1011,7 +1011,7 @@ class PersistenceService {
                 reqData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Request data synced")
-                self.nc.post(Notification(name: NotificationKey.requestDataDidSync))
+                self.nc.post(Notification(name: .requestDataDidSync))
             }
         }
     }
@@ -1032,7 +1032,7 @@ class PersistenceService {
                 reqMethodData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Request method data synced")
-                self.nc.post(Notification(name: NotificationKey.requestMethodDataDidSync))
+                self.nc.post(Notification(name: .requestMethodDataDidSync))
             }
         }
     }
@@ -1053,7 +1053,7 @@ class PersistenceService {
                 fileData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("File data synced")
-                self.nc.post(Notification(name: NotificationKey.fileDataDidSync))
+                self.nc.post(Notification(name: .fileDataDidSync))
             }
         }
     }
@@ -1074,7 +1074,7 @@ class PersistenceService {
                 imageData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Image data synced")
-                self.nc.post(Notification(name: NotificationKey.imageDataDidSync))
+                self.nc.post(Notification(name: .imageDataDidSync))
             }
         }
     }

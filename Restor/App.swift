@@ -84,7 +84,6 @@ class App {
         if !self.appLaunched {
             CoreDataService.shared.bootstrap()
             EACloudKit.shared.bootstrap()
-            self.updateWindowBackground(window)
             appCoord.start()
             self.appLaunched = true
         }
@@ -183,11 +182,7 @@ class App {
     }
     
     func updateWindowBackground(_ window: UIWindow?) {
-        if #available(iOS 13.0, *) {
-            window?.backgroundColor = UIColor.systemBackground
-        } else {
-            window?.backgroundColor = UIColor.white
-        }
+        window?.backgroundColor = UIColor.clear
     }
     
     func updateViewBackground(_ view: UIView?) {

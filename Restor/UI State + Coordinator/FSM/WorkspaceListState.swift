@@ -10,5 +10,24 @@ import Foundation
 import GameplayKit
 
 class WorkspaceListState: GKState {
+    var coord: WorkspaceListCoordinator?
     
+    override func isValidNextState(_ stateClass: AnyClass) -> Bool {
+        return stateClass == ProjectListState.self
+    }
+    
+    override func didEnter(from previousState: GKState?) {
+        Log.debug("[state] did enter - ws list")
+        if previousState?.classForCoder == ProjectListState.self {
+            guard let fsm = self.stateMachine as? EAUIStateMachine else { return }
+            // guard let projListVC = fsm.presenter.viewControllers.first else { return }
+            // self.coord = WorkspaceListCoordinator(presenter: projListVC)
+            self.coord = WorkspaceListCoordinator(presenter: fsm.presenter)
+            self.coord?.start()
+        }
+    }
+    
+    override func willExit(to nextState: GKState) {
+        Log.debug("[state] will exit - ws listt")
+    }
 }

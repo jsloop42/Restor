@@ -67,9 +67,10 @@ class ProjectListViewController: RestorViewController {
     }
     
     func initEvent() {
-        self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: NotificationKey.databaseWillUpdate, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: NotificationKey.databaseDidUpdate, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.workspaceDidSync(_:)), name: NotificationKey.workspaceDidSync, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: .databaseWillUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: .databaseDidUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.workspaceDidSync(_:)), name: .workspaceDidSync, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.workspaceDidChange(_:)), name: .workspaceDidChange, object: nil)
     }
     
     func getFRCPredicate(_ wsId: String) -> NSPredicate {
@@ -145,10 +146,6 @@ class ProjectListViewController: RestorViewController {
         Log.debug("settings btn did tap")
         UI.pushScreen(self.navigationController!, storyboard: self.storyboard!, storyboardId: StoryboardId.settingsVC.rawValue)
     }
-        
-    @objc func workspaceDidTap() {
-        Log.debug("workspace did tap")
-    }
     
     func addProject(name: String, desc: String) {
         if let ctx = self.workspace.managedObjectContext {
@@ -167,11 +164,19 @@ class ProjectListViewController: RestorViewController {
     
     @IBAction func workspaceDidTap(_ sender: Any) {
         Log.debug("workspace did tap")
+        self.nc.post(name: .workspaceVCShouldPresent, object: self)
+    }
+    
+    @objc func workspaceDidChange(_ notif: Notification) {
+        Log.debug("workspace did change notif")
+        if let info = notif.userInfo, let ws = info["workspace"] as? EWorkspace {
+            self.updateWorkspaceTitle(ws.getName())
+            self.updateListingWorkspace(ws)
+        }
     }
     
     @IBSegueAction func workspaceSegue(_ coder: NSCoder) -> WorkspaceListViewController? {
         let ws = WorkspaceListViewController(coder: coder)
-        ws?.delegate = self
         return ws
     }
     
@@ -244,12 +249,5 @@ extension ProjectListViewController: NSFetchedResultsControllerDelegate {
                 }
             }
         }
-    }
-}
-
-extension ProjectListViewController: WorkspaceVCDelegate {
-    func workspaceDidChange(ws: EWorkspace) {
-        self.updateWorkspaceTitle(ws.name ?? "")
-        self.updateListingWorkspace(ws)
     }
 }

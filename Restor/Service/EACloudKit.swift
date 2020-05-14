@@ -50,6 +50,10 @@ class ZoneInfo: NSObject, NSCoding {
     }
 }
 
+extension Notification.Name {
+    static let zoneChangesDidSave = Notification.Name("zone-changes-did-save")
+}
+
 /// A class to work with CloudKit.
 class EACloudKit {
     static let shared = EACloudKit()
@@ -100,10 +104,7 @@ class EACloudKit {
     /// Keeps the current server change token for the zone until the changes have synced locally, after which it's persisted in User Defaults.
     private var zoneChangeTokens: [CKRecordZone.ID: [CKServerChangeToken]] = [:]
     private let zoneTokenLock = NSLock()
-    struct NotificationKey {
-        static let zoneChangesDidSave = Notification.Name("zone-changes-did-save")
-        static let zoneIDKey = "zoneID"  // used in notification on save success
-    }
+    static let zoneIDKey = "zoneID"  // used in notification on save success
     // There could be records fetched, but the zone change completion has not occured yet. If there is an in-activity or of the record count reaches a
     // limit, we call the handler with the partial result.
     private let zoneFetchChangesTimer: DispatchSourceTimer = DispatchSource.makeTimerSource()
@@ -137,7 +138,7 @@ class EACloudKit {
     func bootstrap() {
         if isRunningTests { return }
         self.loadSubscriptions()
-        self.nc.addObserver(self, selector: #selector(self.zoneChangesDidSave(_:)), name: NotificationKey.zoneChangesDidSave, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.zoneChangesDidSave(_:)), name: .zoneChangesDidSave, object: nil)
         self.zoneFetchChangesTimer.schedule(deadline: .now() + 5, repeating: 8)
     }
     
@@ -342,7 +343,7 @@ class EACloudKit {
         Log.debug("CK: zone changes did save notif.")
         EACommon.backgroundQueue.async {
             self.zoneTokenLock.lock()
-            if let info = notif.userInfo, let zoneID = info[NotificationKey.zoneIDKey] as? CKRecordZone.ID, var tokens = self.zoneChangeTokens[zoneID] {
+            if let info = notif.userInfo, let zoneID = info[EACloudKit.zoneIDKey] as? CKRecordZone.ID, var tokens = self.zoneChangeTokens[zoneID] {
                 if tokens.isEmpty { self.zoneChangeTokens.removeValue(forKey: zoneID); return }
                 let token = tokens.remove(at: 0)
                 self.addServerChangeTokenToCache(token, zoneID: zoneID, persist: true)

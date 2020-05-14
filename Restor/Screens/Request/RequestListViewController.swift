@@ -62,8 +62,8 @@ class RequestListViewController: RestorViewController {
     }
     
     func initEvents() {
-        self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: NotificationKey.databaseWillUpdate, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: NotificationKey.databaseDidUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: .databaseWillUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: .databaseDidUpdate, object: nil)
     }
     
     func getFRCPredicate(_ projId: String) -> NSPredicate {

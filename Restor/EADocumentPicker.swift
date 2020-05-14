@@ -152,7 +152,7 @@ class EADocumentPicker: NSObject {
     func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
         Log.debug("urls: \(urls)")
         DocumentPickerState.docs = urls
-        self.nc.post(Notification(name: NotificationKey.documentPickerFileIsAvailable))
+        self.nc.post(Notification(name: .documentPickerFileIsAvailable))
     }
     
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
@@ -172,7 +172,7 @@ class EADocumentPicker: NSObject {
                 DocumentPickerState.imageType = DocumentPickerState.imageName.components(separatedBy: ".").last ?? "jpeg"
             }
             Log.debug("image obtained")
-            self.nc.post(Notification(name: NotificationKey.documentPickerImageIsAvailable))
+            self.nc.post(Notification(name: .documentPickerImageIsAvailable))
         }
     }
     

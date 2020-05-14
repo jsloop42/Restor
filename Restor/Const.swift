@@ -39,7 +39,7 @@ struct Const {
     static let helpTextForAddNewRequestMethod = "The request method name will be available to all requests within the same project and should be unique."
 }
 
-struct NotificationKey {
+extension Notification.Name {
     static let requestTableViewReload = Notification.Name("request-table-view-reload")
     static let requestViewClearEditing = Notification.Name("request-view-clear-editing")
     static let requestMethodDidChange = Notification.Name("request-method-did-change")

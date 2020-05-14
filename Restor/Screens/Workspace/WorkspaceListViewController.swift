@@ -9,8 +9,10 @@
 import UIKit
 import CoreData
 
-protocol WorkspaceVCDelegate: class {
-    func workspaceDidChange(ws: EWorkspace)
+extension Notification.Name {
+    static let workspaceVCShouldPresent = Notification.Name("workspace-vc-should-present")
+    static let workspaceDidChange = Notification.Name("workspace-did-change")
+    static let workspaceWillClose = Notification.Name("workspace-will-close")
 }
 
 class WorkspaceListViewController: RestorViewController {
@@ -23,7 +25,6 @@ class WorkspaceListViewController: RestorViewController {
     private var keyboardHeight: CGFloat = 0.0
     private let utils = EAUtils.shared
     private let app: App = App.shared
-    weak var delegate: WorkspaceVCDelegate?
     private let nc = NotificationCenter.default
     private lazy var localdb = { CoreDataService.shared }()
     private var frc: NSFetchedResultsController<EWorkspace>!
@@ -31,6 +32,7 @@ class WorkspaceListViewController: RestorViewController {
     private var wsSelected: EWorkspace!
     
     deinit {
+        self.nc.post(name: .workspaceWillClose, object: self)
         self.nc.removeObserver(self)
     }
     
@@ -55,15 +57,17 @@ class WorkspaceListViewController: RestorViewController {
     }
 
     func initUI() {
+        self.app.updateViewBackground(self.view)
+        self.app.updateNavigationControllerBackground(self.navigationController)
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
     }
     
     func initEvents() {
-        self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: NotificationKey.databaseWillUpdate, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: NotificationKey.databaseDidUpdate, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.workspaceDidSync(_:)), name: NotificationKey.workspaceDidSync, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: .databaseWillUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: .databaseDidUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.workspaceDidSync(_:)), name: .workspaceDidSync, object: nil)
     }
     
     func initData() {
@@ -74,6 +78,15 @@ class WorkspaceListViewController: RestorViewController {
             }
         }
         self.reloadData()
+    }
+    
+    func postWorkspaceWillCloseEvent() {
+        self.nc.post(name: .workspaceWillClose, object: self)
+    }
+    
+    func close() {
+        self.postWorkspaceWillCloseEvent()
+        self.dismiss(animated: true, completion: nil)
     }
     
     @objc func workspaceDidSync(_ notif: Notification) {
@@ -177,8 +190,8 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
         Log.debug("workspace cell did select \(indexPath.row)")
         let ws = self.frc.object(at: indexPath)
         self.app.setSelectedWorkspace(ws)
-        self.delegate?.workspaceDidChange(ws: ws)        
-        self.dismiss(animated: true, completion: nil)
+        self.nc.post(name: .workspaceDidChange, object: self, userInfo: ["workspace": ws])
+        self.close()
     }
 }
 

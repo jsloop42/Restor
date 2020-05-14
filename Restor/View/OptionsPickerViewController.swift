@@ -93,7 +93,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
             self.nc.addObserver(self, selector: #selector(self.keyboardWillShow(notif:)), name: UIResponder.keyboardWillShowNotification, object: nil)
             self.nc.addObserver(self, selector: #selector(self.keyboardWillHide(notif:)), name: UIResponder.keyboardWillHideNotification, object: nil)
         }
-        self.nc.addObserver(self, selector: #selector(self.optionPickerShouldReload(_:)), name: NotificationKey.optionPickerShouldReload, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.optionPickerShouldReload(_:)), name: .optionPickerShouldReload, object: nil)
     }
     
     @objc func keyboardWillShow(notif: Notification) {
@@ -143,8 +143,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
                                                              shouldValidate: true, shouldDisplayHelp: true, doneHandler: { model in
                 Log.debug("model: \(model)")
                 self.isPopupActive = false
-                self.nc.post(name: NotificationKey.customRequestMethodDidAdd, object: self,
-                             userInfo: [Const.requestMethodNameKey: model.name, Const.modelIndexKey: self.data.count])
+                self.nc.post(name: .customRequestMethodDidAdd, object: self, userInfo: [Const.requestMethodNameKey: model.name, Const.modelIndexKey: self.data.count])
             }, validateHandler: { model in
                 if model.name.trim().isEmpty { return false }
                 return self.data.first { x -> Bool in x == model.name } == nil
@@ -179,18 +178,18 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
     
     func postRequestMethodChangeNotification() {
         if self.data.isEmpty { return }
-        self.nc.post(name: NotificationKey.requestMethodDidChange, object: self,
+        self.nc.post(name: .requestMethodDidChange, object: self,
                      userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
                                 Const.requestMethodNameKey: self.data[self.selectedIndex]])
     }
     
     func postRequestBodyChangeNotification() {
-        self.nc.post(name: NotificationKey.requestBodyTypeDidChange, object: self,
+        self.nc.post(name: .requestBodyTypeDidChange, object: self,
                      userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex])
     }
     
     func postRequestBodyFieldChangeNotification() {
-        self.nc.post(name: NotificationKey.requestBodyFormFieldTypeDidChange, object: self,
+        self.nc.post(name: .requestBodyFormFieldTypeDidChange, object: self,
                      userInfo: [Const.optionSelectedIndexKey: self.selectedIndex, Const.modelIndexKey: self.modelIndex,
                                 Const.optionModelKey: self.model as Any])
     }
@@ -269,7 +268,7 @@ class OptionsPickerViewController: UIViewController, UITableViewDelegate, UITabl
                 self.selectedIndex = 0
                 self.postRequestMethodChangeNotification()
             }
-            self.nc.post(name: NotificationKey.customRequestMethodShouldDelete, object: self,
+            self.nc.post(name: .customRequestMethodShouldDelete, object: self,
                          userInfo: [Const.optionModelKey: self.modelxs[index], Const.indexKey: index])
         }
     }

@@ -191,18 +191,18 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         self.view.addGestureRecognizer(tap)
         self.urlTextField.addTarget(self, action: #selector(self.updateStateForTextField(_:)), for: .editingChanged)
         self.nameTextField.addTarget(self, action: #selector(self.updateStateForTextField(_:)), for: .editingChanged)
-        self.nc.addObserver(self, selector: #selector(self.reloadTableView), name: NotificationKey.requestTableViewReload, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.clearEditing), name: NotificationKey.requestViewClearEditing, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.reloadTableView), name: .requestTableViewReload, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.clearEditing), name: .requestViewClearEditing, object: nil)
         let methodTap = UITapGestureRecognizer(target: self, action: #selector(self.methodViewDidTap))
         self.methodView.addGestureRecognizer(methodTap)
-        self.nc.addObserver(self, selector: #selector(self.requestMethodDidChange(_:)), name: NotificationKey.requestMethodDidChange, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.customRequestMethodDidAdd(_:)), name: NotificationKey.customRequestMethodDidAdd, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.customRequestMethodShouldDelete(_:)), name: NotificationKey.customRequestMethodShouldDelete, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.requestBodyDidChange(_:)), name: NotificationKey.requestBodyTypeDidChange, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.presentOptionsScreen(_:)), name: NotificationKey.optionScreenShouldPresent, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.presentDocumentMenuPicker(_:)), name: NotificationKey.documentPickerMenuShouldPresent, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: NotificationKey.documentPickerShouldPresent, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.presentImagePicker(_:)), name: NotificationKey.imagePickerShouldPresent, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.requestMethodDidChange(_:)), name: .requestMethodDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.customRequestMethodDidAdd(_:)), name: .customRequestMethodDidAdd, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.customRequestMethodShouldDelete(_:)), name: .customRequestMethodShouldDelete, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.requestBodyDidChange(_:)), name: .requestBodyTypeDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.presentOptionsScreen(_:)), name: .optionScreenShouldPresent, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.presentDocumentMenuPicker(_:)), name: .documentPickerMenuShouldPresent, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: .documentPickerShouldPresent, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.presentImagePicker(_:)), name: .imagePickerShouldPresent, object: nil)
     }
 
     func updateData() {
@@ -344,7 +344,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
                 self.methods.append(method)
                 method.project = AppState.currentProject
                 self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
-                self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
+                self.nc.post(name: .optionPickerShouldReload, object: self,
                              userInfo: [Const.optionModelKey: method, Const.optionDataActionKey: OptionDataAction.add])
             }
         }
@@ -359,7 +359,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
                 AppState.editRequest?.selectedMethodIndex = selectedIdx.toInt64()
                 if let method = self.methods.first { self.methodLabel.text = method.name }
                 self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
-                self.nc.post(name: NotificationKey.optionPickerShouldReload, object: self,
+                self.nc.post(name: .optionPickerShouldReload, object: self,
                              userInfo: [Const.optionDataActionKey: OptionDataAction.delete, Const.dataKey: id, Const.optionSelectedIndexKey: selectedIdx])
             }
         }
@@ -844,7 +844,7 @@ class KVEditBodyContentCell: UITableViewCell, KVEditContentCellType, UICollectio
     
     func presentDocPicker() {
         DocumentPickerState.modelIndex = 0
-        self.nc.post(name: NotificationKey.documentPickerMenuShouldPresent, object: self, userInfo: ["isMultiSelect": false])
+        self.nc.post(name: .documentPickerMenuShouldPresent, object: self, userInfo: ["isMultiSelect": false])
     }
     
     @IBAction func typeBtnDidTap(_ sender: Any) {
@@ -852,7 +852,7 @@ class KVEditBodyContentCell: UITableViewCell, KVEditContentCellType, UICollectio
         var selected: Int! = 0
         guard let ctx = AppState.editRequest?.managedObjectContext else { return }
         if let body = AppState.editRequest!.body { selected = Int(body.selected) }
-        self.nc.post(name: NotificationKey.optionScreenShouldPresent, object: self,
+        self.nc.post(name: .optionScreenShouldPresent, object: self,
                      userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyForm.rawValue,
                                 Const.modelIndexKey: self.tag,
                                 Const.optionSelectedIndexKey: selected as Any,
@@ -1147,7 +1147,7 @@ class KVEditBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UIColl
         guard let data = AppState.editRequest, let ctx = data.managedObjectContext else { return }
         RequestVC.addRequestBodyToState()
         let reqData = self.localdb.getRequestData(id: self.reqDataId, ctx: ctx)
-        self.nc.post(name: NotificationKey.optionScreenShouldPresent, object: self,
+        self.nc.post(name: .optionScreenShouldPresent, object: self,
                      userInfo: [Const.optionTypeKey: OptionPickerType.requestBodyFormField.rawValue,
                                 Const.modelIndexKey: self.tag,
                                 Const.optionSelectedIndexKey: self.selectedFieldFormat.rawValue,
@@ -1162,15 +1162,15 @@ class KVEditBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UIColl
             DocumentPickerState.reqDataId = elem.id ?? ""
             if let image = elem.image {
                 DocumentPickerState.isCameraMode = image.isCameraMode
-                self.nc.post(Notification(name: NotificationKey.imagePickerShouldPresent))
+                self.nc.post(Notification(name: .imagePickerShouldPresent))
                 return
             }
             if let files = elem.files, files.count > 0 {
-                self.nc.post(Notification(name: NotificationKey.documentPickerShouldPresent))
+                self.nc.post(Notification(name: .documentPickerShouldPresent))
                 return
             }
         }
-        self.nc.post(Notification(name: NotificationKey.documentPickerMenuShouldPresent))
+        self.nc.post(Notification(name: .documentPickerMenuShouldPresent))
     }
     
     @objc func updateState(_ textField: UITextField) {
@@ -1284,9 +1284,9 @@ class KVEditBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDat
     }
     
     func initEvents() {
-        self.nc.addObserver(self, selector: #selector(self.requestBodyFieldDidChange(_:)), name: NotificationKey.requestBodyFormFieldTypeDidChange, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.imageAttachmentDidReceive(_:)), name: NotificationKey.documentPickerImageIsAvailable, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.documentAttachmentDidReceive(_:)), name: NotificationKey.documentPickerFileIsAvailable, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.requestBodyFieldDidChange(_:)), name: .requestBodyFormFieldTypeDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.imageAttachmentDidReceive(_:)), name: .documentPickerImageIsAvailable, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.documentAttachmentDidReceive(_:)), name: .documentPickerFileIsAvailable, object: nil)
     }
     
     @objc func requestBodyFieldDidChange(_ notif: Notification) {
@@ -1635,8 +1635,8 @@ class KVEditTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSour
         self.kvTableView?.estimatedRowHeight = 44
         self.kvTableView?.rowHeight = UITableView.automaticDimension
         self.kvTableView?.allowsMultipleSelectionDuringEditing = false
-        self.nc.addObserver(self, selector: #selector(self.imageAttachmentDidReceive(_:)), name: NotificationKey.documentPickerImageIsAvailable, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.documentAttachmentDidReceive(_:)), name: NotificationKey.documentPickerFileIsAvailable, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.imageAttachmentDidReceive(_:)), name: .documentPickerImageIsAvailable, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.documentAttachmentDidReceive(_:)), name: .documentPickerFileIsAvailable, object: nil)
     }
     
     func addRequestDataToModel() {

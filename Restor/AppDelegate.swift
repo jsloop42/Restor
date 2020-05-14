@@ -20,6 +20,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         Log.debug("app delegate did finish launching with options")
         self.window = UIWindow(frame: UIScreen.main.bounds)
+        self.app.updateWindowBackground(self.window)
         AppState.appCoord = AppCoordinator(window: self.window!)
         //UI.setGlobalStyle()
 //        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in

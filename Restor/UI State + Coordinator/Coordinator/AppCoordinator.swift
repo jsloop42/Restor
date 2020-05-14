@@ -14,11 +14,14 @@ class AppCoordinator: EACoordinator {
     let rootVC: UINavigationController
     let fsm: EAUIStateMachine
     let nc = NotificationCenter.default
+    let app = App.shared
     
     init(window: UIWindow) {
         self.window = window
-        //self.rootVC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: StoryboardId.rootNav.rawValue) as! UINavigationController
         self.rootVC = UINavigationController()
+        self.app.updateViewBackground(self.rootVC.view)
+        self.app.updateNavigationControllerBackground(self.rootVC)
+        self.window.rootViewController?.modalPresentationStyle = .overCurrentContext
         self.fsm = EAUIStateMachine(presenter: self.rootVC, states: [ProjectListState(), WorkspaceListState(), RequestListState(), RequestState(),
                                                                      EditRequestState()])
         self.initEvents()
@@ -32,15 +35,22 @@ class AppCoordinator: EACoordinator {
     }
     
     func initEvents() {
+        self.nc.addObserver(self, selector: #selector(self.workspaceVCShouldPresent(_:)), name: .workspaceVCShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.requestListVCShouldPresent(_:)), name: .requestListVCShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.requestVCShouldPresent(_:)), name: .requestVCShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.editRequestVCShouldPresent(_:)), name: .editRequestVCShouldPresent, object: nil)
         // TODO: move notif name to enum
+        self.nc.addObserver(self, selector: #selector(self.didNavigateBackToProjectListVC(_:)), name: .workspaceWillClose, object: nil)
         self.nc.addObserver(self, selector: #selector(self.didNavigateBackToProjectListVC(_:)), name: Notification.Name("did-navigate-back-to-ProjectListViewController"), object: nil)
         self.nc.addObserver(self, selector: #selector(self.didNavigateBackToRequestListVC(_:)), name: Notification.Name("did-navigate-back-to-RequestListViewController"), object: nil)
         self.nc.addObserver(self, selector: #selector(self.didNavigateBackToRequestVC(_:)), name: Notification.Name("did-navigate-back-to-RequestTableViewController"), object: nil)
     }
-        
+    
+    @objc func workspaceVCShouldPresent(_ notif: Notification) {
+        Log.debug("workspace vc should present")
+        self.fsm.enter(WorkspaceListState.self)
+    }
+    
     @objc func requestListVCShouldPresent(_ notif: Notification) {
         Log.debug("request list vc should present notif")
         if let info = notif.userInfo, let proj = info["project"] as? EProject {
