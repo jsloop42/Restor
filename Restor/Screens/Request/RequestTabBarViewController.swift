@@ -9,6 +9,10 @@
 import Foundation
 import UIKit
 
+extension Notification.Name {
+    static let requestVCShouldPresent = Notification.Name("request-vc-should-present")
+}
+
 class RequestTabBarController: UITabBarController {
     var request: ERequest?
     

@@ -9,6 +9,6 @@
 import Foundation
 import UIKit
 
-class ResponseViewController: UIViewController {
+class ResponseViewController: RestorViewController {
     
 }

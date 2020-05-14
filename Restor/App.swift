@@ -1088,3 +1088,12 @@ extension CKRecord {
         return self["wsId"] ?? ""
     }
 }
+
+extension UIStoryboard {
+    static var main: UIStoryboard { UIStoryboard(name: "Main", bundle: nil) }
+    static var workspaceListVC: WorkspaceListViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.workspaceListVC.rawValue) as? WorkspaceListViewController }
+    static var projectListVC: ProjectListViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.projectListVC.rawValue) as? ProjectListViewController }
+    static var requestListVC: RequestListViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.requestListVC.rawValue) as? RequestListViewController }
+    static var requestTabBar: RequestTabBarController? { self.main.instantiateViewController(withIdentifier: StoryboardId.requestTabBar.rawValue) as? RequestTabBarController }
+    static var editRequestVC: EditRequestTableViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.editRequestVC.rawValue) as? EditRequestTableViewController }
+}

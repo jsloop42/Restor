@@ -229,10 +229,6 @@ extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource 
     }
 }
 
-extension Notification.Name {
-    static let requestListVCShouldPresent = Notification.Name("request-list-vc-should-present")
-}
-
 extension ProjectListViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         Log.debug("projects list frc did change")

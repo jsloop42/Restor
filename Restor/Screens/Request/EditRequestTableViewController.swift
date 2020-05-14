@@ -16,7 +16,7 @@ extension Notification.Name {
      static let requestDidChange = Notification.Name("request-did-change")
 }
 
-class EditRequestTableViewController: UITableViewController, UITextFieldDelegate, UITextViewDelegate {
+class EditRequestTableViewController: RestorTableViewController, UITextFieldDelegate, UITextViewDelegate {
     static weak var shared: EditRequestTableViewController?
     @IBOutlet weak var methodView: UIView!
     @IBOutlet weak var methodLabel: UILabel!

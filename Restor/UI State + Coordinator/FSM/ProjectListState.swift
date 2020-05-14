@@ -16,8 +16,7 @@ class ProjectListState: GKState {
     }()
     
     override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-        return stateClass == RequestListState.self ||
-            stateClass == WorkspaceListState.self
+        return stateClass == RequestListState.self || stateClass == WorkspaceListState.self
     }
     
     override func didEnter(from previousState: GKState?) {

@@ -12,9 +12,10 @@ import CoreData
 
 extension Notification.Name {
     static let navigatedBackToRequestList = Notification.Name("navigated-back-to-request-list")
+    static let requestListVCShouldPresent = Notification.Name("request-list-vc-should-present")
 }
 
-class RequestListViewController: UIViewController {
+class RequestListViewController: RestorViewController {
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var filterBtn: UIBarButtonItem!
@@ -134,10 +135,8 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
     }
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        if let vc = self.storyboard!.instantiateViewController(withIdentifier: StoryboardId.requestTabBar.rawValue) as? RequestTabBarController {
-            vc.request = self.frc.object(at: indexPath)
-            self.navigationController?.pushViewController(vc, animated: true)
-        }
+        let req = self.frc.object(at: indexPath)
+        self.nc.post(name: .requestVCShouldPresent, object: self, userInfo: ["request": req])
     }
 }
 

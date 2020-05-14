@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-class SettingsTableViewController: UITableViewController {
+class SettingsTableViewController: RestorTableViewController {
     private let app = App.shared
     
     enum CellId: Int {

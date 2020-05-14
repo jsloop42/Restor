@@ -1,26 +1,26 @@
 //
-//  RequestListCoordinator.swift
+//  RequestCoordinator.swift
 //  Restor
 //
-//  Created by jsloop on 13/05/20.
+//  Created by jsloop on 14/05/20.
 //  Copyright © 2020 EstoApps OÜ. All rights reserved.
 //
 
 import Foundation
 import UIKit
 
-class RequestListCoordinator: EACoordinator {
+class RequestCoordinator: EACoordinator {
     let presenter: UINavigationController
     private let nc = NotificationCenter.default
-    let project: EProject
+    let request: ERequest
     
     deinit {
         self.nc.removeObserver(self)
     }
     
-    init(presenter: UINavigationController, project: EProject) {
+    init(presenter: UINavigationController, request: ERequest) {
         self.presenter = presenter
-        self.project = project
+        self.request = request
         self.initEvents()
     }
     
@@ -30,8 +30,8 @@ class RequestListCoordinator: EACoordinator {
     
     func start() {
         DispatchQueue.main.async {
-            if let vc = UIStoryboard.requestListVC {
-                vc.project = self.project
+            if let vc = UIStoryboard.requestTabBar {
+                vc.request = self.request
                 self.presenter.pushViewController(vc, animated: true)
             }
         }

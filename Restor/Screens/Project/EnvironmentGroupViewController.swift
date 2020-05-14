@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-class EnvironmentGroupViewController: UIViewController {
+class EnvironmentGroupViewController: RestorViewController {
     private let app = App.shared
     
     override func viewWillAppear(_ animated: Bool) {

@@ -13,7 +13,7 @@ protocol WorkspaceVCDelegate: class {
     func workspaceDidChange(ws: EWorkspace)
 }
 
-class WorkspaceListViewController: UIViewController {
+class WorkspaceListViewController: RestorViewController {
     static weak var shared: WorkspaceListViewController?
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!

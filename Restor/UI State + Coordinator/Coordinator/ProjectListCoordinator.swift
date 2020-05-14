@@ -18,7 +18,7 @@ class ProjectListCoordinator: EACoordinator {
     
     func start() {
         Log.debug("proj list coord - start")
-        if let vc = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: StoryboardId.projectListVC.rawValue) as? ProjectListViewController {
+        if let vc = UIStoryboard.projectListVC {
             self.presenter.pushViewController(vc, animated: true)
         }
     }

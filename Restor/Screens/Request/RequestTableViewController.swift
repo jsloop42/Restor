@@ -9,7 +9,12 @@
 import Foundation
 import UIKit
 
-class RequestTableViewController: UITableViewController {
+extension Notification.Name {
+    static let editRequestVCShouldPresent = Notification.Name("edit-request-vc-should-present")
+}
+
+
+class RequestTableViewController: RestorTableViewController {
     private let app = App.shared
     private lazy var localdb = { CoreDataService.shared }()
     private let utils = EAUtils.shared
@@ -182,8 +187,7 @@ class RequestTableViewController: UITableViewController {
     
     func viewEditRequestVC() {
         Log.debug("view edit request vc")
-        AppState.editRequest = self.request
-        UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
+        if let req = self.request { self.nc.post(name: .editRequestVCShouldPresent, object: self, userInfo: ["request": req]) }
     }
     
     func updateData() {
