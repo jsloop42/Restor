@@ -266,6 +266,11 @@ private class EAReachabilityBridge {
 
 // MARK: - HTTP Client
 
+public protocol EAHTTPClientDelegate: class {
+    /// Returns the certificate data and the password associated with it
+    func getClientCertificate() -> (Data, String)
+}
+
 public class EAHTTPClient: NSObject {
     private lazy var queue: OperationQueue = {
         let q = OperationQueue()
@@ -278,6 +283,7 @@ public class EAHTTPClient: NSObject {
     private var isOffline = false
     private var url: URL?
     private var method: Method = .get
+    public weak var delegate: EAHTTPClientDelegate?
     
     public enum Method {
         case get
@@ -305,19 +311,19 @@ public class EAHTTPClient: NSObject {
         }
     }
     
-    override init() {
+    public override init() {
         super.init()
         self.session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: self.queue)
         self.bootstrap()
     }
     
-    init(config: URLSessionConfiguration) {
+    public init(config: URLSessionConfiguration) {
         super.init()
         self.session = URLSession(configuration: config, delegate: nil, delegateQueue: self.queue)
         self.bootstrap()
     }
     
-    init(url: URL, method: Method) {
+    public init(url: URL, method: Method) {
         super.init()
         self.session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: self.queue)
         self.url = url
@@ -325,7 +331,7 @@ public class EAHTTPClient: NSObject {
         self.bootstrap()
     }
     
-    func bootstrap() {
+    public func bootstrap() {
         self.initEvents()
     }
     
@@ -371,24 +377,29 @@ public class EAHTTPClient: NSObject {
         task.resume()
     }
     
-    public func get(queryParams: [String: String], headers: [String: String], completion: @escaping (Result<Data, Error>) -> Void) {
-        self.process(url: self.url, queryParams: queryParams, headers: headers, body: nil, method: .get, completion: completion)
+    /// Get uses query parameters. Specifying body data does not have any specific semantics associated with it.
+    public func get(queryParams: [String: String], headers: [String: String], body: Data, completion: @escaping (Result<Data, Error>) -> Void) {
+        self.process(url: self.url, queryParams: queryParams, headers: headers, body: body, method: .get, completion: completion)
     }
     
-    public func post() {
-        
+    /// Post uses body data for creation or modification. Query parameters can be used for response modification for example.
+    public func post(queryParams: [String: String], headers: [String: String], body: Data, completion: @escaping (Result<Data, Error>) -> Void) {
+        self.process(url: self.url, queryParams: queryParams, headers: headers, body: body, method: .post, completion: completion)
     }
     
-    public func put() {
-        
+    /// Put uses body data for creation or modification. Query parameters can be used for response modification for example.
+    public func put(queryParams: [String: String], headers: [String: String], body: Data, completion: @escaping (Result<Data, Error>) -> Void) {
+        self.process(url: self.url, queryParams: queryParams, headers: headers, body: body, method: .put, completion: completion)
     }
     
-    public func patch() {
-        
+    /// Patch uses body data for modification. Query parameters can be used for response modification for example.
+    public func patch(queryParams: [String: String], headers: [String: String], body: Data, completion: @escaping (Result<Data, Error>) -> Void) {
+        self.process(url: self.url, queryParams: queryParams, headers: headers, body: body, method: .patch, completion: completion)
     }
     
-    public func delete() {
-        
+    /// Delete can have query params (for eg: filter data criteria), but body does not have any semantics.
+    public func delete(queryParams: [String: String], headers: [String: String], body: Data, completion: @escaping (Result<Data, Error>) -> Void) {
+        self.process(url: self.url, queryParams: queryParams, headers: headers, body: body, method: .delete, completion: completion)
     }
 }
 
@@ -404,7 +415,15 @@ extension EAHTTPClient: URLSessionDelegate {
                 completionHandler(.performDefaultHandling, nil)
             }
         } else if protectionSpace.authenticationMethod == NSURLAuthenticationMethodClientCertificate {
-            // TODO
+            if let (cert, pass) = self.delegate?.getClientCertificate() {
+                let pkcs12 = PKCS12(data: cert, password: pass)
+                if let cred = URLCredential(pkcs12: pkcs12) {
+                    challenge.sender?.use(cred, for: challenge)
+                    completionHandler(.useCredential, cred)
+                    return
+                }
+            }
+            completionHandler(.performDefaultHandling, nil)
         } else {
             completionHandler(.cancelAuthenticationChallenge, nil)
         }

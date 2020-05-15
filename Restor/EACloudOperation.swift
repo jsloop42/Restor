@@ -66,7 +66,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
     ///   - predicate: An optional predicate statement.
     ///   - changeTag: Modified timestamp value when given will fetch record changes starting from that point. If none specified or 0, all changes will be fetched.
     ///   - completion: The callback function on completion.
-    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String, predicate: NSPredicate? = nil, changeTag: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+    public init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String, predicate: NSPredicate? = nil, changeTag: Int? = 0, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
         self.recordType = recordType
         self._recordType = self.recordType.rawValue
         self.opType = opType
@@ -78,7 +78,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
         self.completionHandler = completion
     }
     
-    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String? = nil, predicate: NSPredicate? = nil, changeTag: Int? = 0, block: ((EACloudOperation?) -> Void)? = nil) {
+    public init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID, parentId: String? = nil, predicate: NSPredicate? = nil, changeTag: Int? = 0, block: ((EACloudOperation?) -> Void)? = nil) {
         self.recordType = recordType
         self._recordType = self.recordType.rawValue
         self.opType = opType
@@ -96,7 +96,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
     ///   - recordType: The record type.
     ///   - opType: The operation.
     ///   - zoneID: The zone ID for the record.
-    init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID) {
+    public init(recordType: RecordType, opType: OpType, zoneID: CKRecordZone.ID) {
         self.recordType = recordType
         self._recordType = self.recordType.rawValue
         self.opType = opType
@@ -109,7 +109,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
     ///   - deleteRecordIDs: The ID of the records.
     ///   - zoneID: The zone ID for the records.
     ///   - completion: The completion callback function.
-    init(deleteRecordIDs: [CKRecord.ID], block: ((EACloudOperation?) -> Void)? = nil) {
+    public init(deleteRecordIDs: [CKRecord.ID], block: ((EACloudOperation?) -> Void)? = nil) {
         self.recordIDs = deleteRecordIDs
         self.opType = .deleteRecord
         self._opType = self.opType.rawValue
@@ -118,7 +118,7 @@ public class EACloudOperation: Operation, NSSecureCoding {
     
     /// Initialises in block opertion mode.
     /// - Parameter block: The block to be executed.
-    init(block: @escaping (EACloudOperation?) -> Void) {
+    public init(block: @escaping (EACloudOperation?) -> Void) {
         self.block = block
         self.opType = .block
     }

@@ -9,7 +9,7 @@
 import Foundation
 import CoreData
 
-enum RecordType: String, Hashable {
+public enum RecordType: String, Hashable {
     case file = "File"
     case image = "Image"
     case project = "Project"
@@ -70,7 +70,7 @@ enum RecordType: String, Hashable {
         }
     }
     
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(self.rawValue)
     }
     

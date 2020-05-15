@@ -64,6 +64,7 @@
 		9E926FA323945E7D002DF561 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 9E926FA123945E7D002DF561 /* LaunchScreen.storyboard */; };
 		9E926FAE23945E7D002DF561 /* RestorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FAD23945E7D002DF561 /* RestorTests.swift */; };
 		9E926FB923945E7D002DF561 /* RestorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FB823945E7D002DF561 /* RestorUITests.swift */; };
+		9E9CFA86246F3C1D009D870E /* EACrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9CFA85246F3C1C009D870E /* EACrypto.swift */; };
 		9E9DE8C9246C2AE80068F8CE /* RequestListCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9DE8C8246C2AE80068F8CE /* RequestListCoordinator.swift */; };
 		9E9DE8CC246C7DCD0068F8CE /* RestorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */; };
 		9EB4DC40246061230077DF2A /* RequestTabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */; };
@@ -172,6 +173,7 @@
 		9E926FB423945E7D002DF561 /* RestorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RestorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E926FB823945E7D002DF561 /* RestorUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorUITests.swift; sourceTree = "<group>"; };
 		9E926FBA23945E7D002DF561 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		9E9CFA85246F3C1C009D870E /* EACrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACrypto.swift; sourceTree = "<group>"; };
 		9E9DE8C8246C2AE80068F8CE /* RequestListCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListCoordinator.swift; sourceTree = "<group>"; };
 		9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorViewController.swift; sourceTree = "<group>"; };
 		9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTabBarViewController.swift; sourceTree = "<group>"; };
@@ -315,6 +317,7 @@
 				9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */,
 				9E4334832416C4AA002452EB /* EAFileManager.swift */,
 				9E7B5847242A9BAB00997302 /* EALFUCache.swift */,
+				9E9CFA85246F3C1C009D870E /* EACrypto.swift */,
 				9E223D522436261600229855 /* EACloudOperation.swift */,
 				9E4C30B5244A189300C1EEBA /* EANetwork.swift */,
 				9EFA58BC2445EBA8003C8AEA /* EAOperationQueue.swift */,
@@ -598,6 +601,7 @@
 				9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */,
 				9ED7C8CA246C157700936701 /* EACoordinator.swift in Sources */,
 				9E9DE8CC246C7DCD0068F8CE /* RestorViewController.swift in Sources */,
+				9E9CFA86246F3C1D009D870E /* EACrypto.swift in Sources */,
 				9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */,
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
 				9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */,
