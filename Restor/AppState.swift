@@ -28,6 +28,12 @@ struct AppState {
     static var editRequestSaveTs: Int64 = 0
     static private (set) var previousScreen: App.Screen = .projectList
     static private (set) var currentScreen: App.Screen = .projectList
+    /// The state will own the manager so that even if the vc gets deallocated, the processing happens.
+    static var requestState: [String: RequestManager] = [:]
+    
+    static func addToRequestState(_ man: RequestManager) {
+        self.requestState[man.request.getId()] = man
+    }
     
     static func setCurrentScreen(_ screen: App.Screen) {
         if self.currentScreen == screen { return }

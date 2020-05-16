@@ -365,14 +365,25 @@ public class EAHTTPClient: NSObject {
         guard let aUrl = urlComp.url else { return }
         var req = URLRequest(url: aUrl)
         req.httpMethod = method.rawValue
-        let task = self.session.dataTask(with: req) { data, resp, err in
+        self.process(request: req) { result in
+            switch result {
+            case .success(let (data, _)):
+                completion(.success(data))
+            case .failure(let err):
+                completion(.failure(err))
+            }
+        }
+    }
+    
+    public func process(request: URLRequest, completion: @escaping (Result<(Data, HTTPURLResponse), Error>) -> Void) {
+        let task = self.session.dataTask(with: request) { data, resp, err in
             guard let data = data, let resp = resp as? HTTPURLResponse,
                 (200..<300) ~= resp.statusCode, err == nil else {
                 Log.error("http-client - response error: \(err!)")
                 completion(.failure(err!))
                 return
             }
-            completion(.success(data))
+            completion(.success((data, resp)))
         }
         task.resume()
     }
@@ -427,5 +438,23 @@ extension EAHTTPClient: URLSessionDelegate {
         } else {
             completionHandler(.cancelAuthenticationChallenge, nil)
         }
+    }
+}
+
+extension URLRequest {
+    public func curl(pretty: Bool? = false) -> String {
+        let pretty = pretty ?? false
+        var data = ""
+        let complement = pretty ? "\\\n" : ""
+        let method = "-X \(self.httpMethod ?? "GET") \(complement)"
+        let url = "\"\(self.url?.absoluteString ?? "")\""
+        let header = self.allHTTPHeaderFields?.reduce("", { (acc, arg) -> String in
+            let (key, value) = arg
+            return acc + "-H \"\(key): \(value)\" \(complement)"
+        }) ?? ""
+        if let bodyData = self.httpBody, let bodyString = String(data:bodyData, encoding:.utf8) {
+            data = "-d \"\(bodyString)\" \(complement)"
+        }
+        return "curl -i \(complement)\(method)\(header)\(data)\(url)"
     }
 }

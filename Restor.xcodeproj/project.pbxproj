@@ -39,6 +39,7 @@
 		9E4C30B22449F36900C1EEBA /* EARepeatTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B12449F36900C1EEBA /* EARepeatTimer.swift */; };
 		9E4C30B42449F5FB00C1EEBA /* EARepeatTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B32449F5FB00C1EEBA /* EARepeatTimerTests.swift */; };
 		9E4C30B6244A189300C1EEBA /* EANetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B5244A189300C1EEBA /* EANetwork.swift */; };
+		9E4CE933246FED560088621D /* RequestStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CE932246FED560088621D /* RequestStateMachine.swift */; };
 		9E538DAC239951790025C14C /* UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAB239951790025C14C /* UI.swift */; };
 		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
 		9E568E3C24308C67003150EC /* EAUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3B24308C67003150EC /* EAUtilsTests.swift */; };
@@ -89,6 +90,8 @@
 		9EFA58BB2445E0F0003C8AEA /* EASystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFA58BA2445E0F0003C8AEA /* EASystem.swift */; };
 		9EFA58BD2445EBA8003C8AEA /* EAOperationQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFA58BC2445EBA8003C8AEA /* EAOperationQueue.swift */; };
 		9EFF1FFE24229DB600E97632 /* SettingsTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */; };
+		9EFFF1CA246FEA50003D7CA8 /* RequestManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFFF1C9246FEA50003D7CA8 /* RequestManager.swift */; };
+		9EFFF1CC246FEA83003D7CA8 /* RequestStates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EFFF1CB246FEA83003D7CA8 /* RequestStates.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -142,6 +145,7 @@
 		9E4C30B12449F36900C1EEBA /* EARepeatTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARepeatTimer.swift; sourceTree = "<group>"; };
 		9E4C30B32449F5FB00C1EEBA /* EARepeatTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARepeatTimerTests.swift; sourceTree = "<group>"; };
 		9E4C30B5244A189300C1EEBA /* EANetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EANetwork.swift; sourceTree = "<group>"; };
+		9E4CE932246FED560088621D /* RequestStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestStateMachine.swift; sourceTree = "<group>"; };
 		9E538DAB239951790025C14C /* UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI.swift; sourceTree = "<group>"; };
 		9E538DAD239953460025C14C /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		9E568E3B24308C67003150EC /* EAUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUtilsTests.swift; sourceTree = "<group>"; };
@@ -198,6 +202,8 @@
 		9EFA58BA2445E0F0003C8AEA /* EASystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EASystem.swift; sourceTree = "<group>"; };
 		9EFA58BC2445EBA8003C8AEA /* EAOperationQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAOperationQueue.swift; sourceTree = "<group>"; };
 		9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTableViewController.swift; sourceTree = "<group>"; };
+		9EFFF1C9246FEA50003D7CA8 /* RequestManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestManager.swift; sourceTree = "<group>"; };
+		9EFFF1CB246FEA83003D7CA8 /* RequestStates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestStates.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -419,6 +425,9 @@
 				9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */,
 				9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */,
 				9E70D4BA24605E2700B33CF1 /* ResponseViewController.swift */,
+				9EFFF1C9246FEA50003D7CA8 /* RequestManager.swift */,
+				9EFFF1CB246FEA83003D7CA8 /* RequestStates.swift */,
+				9E4CE932246FED560088621D /* RequestStateMachine.swift */,
 			);
 			path = Request;
 			sourceTree = "<group>";
@@ -581,6 +590,7 @@
 				9E223D55243626E000229855 /* EACommon.swift in Sources */,
 				9EC1F94E2426995A005BDD0A /* EACloudKit.swift in Sources */,
 				9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */,
+				9EFFF1CC246FEA83003D7CA8 /* RequestStates.swift in Sources */,
 				9EFA58BD2445EBA8003C8AEA /* EAOperationQueue.swift in Sources */,
 				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,
 				9E223D532436261600229855 /* EACloudOperation.swift in Sources */,
@@ -622,6 +632,7 @@
 				9E732EE9246694E9004A3E4D /* EADynamicSizeTableView.swift in Sources */,
 				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
 				9E1B2DE82427997E00994233 /* ERequestBodyData.swift in Sources */,
+				9E4CE933246FED560088621D /* RequestStateMachine.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
 				9EFA58BB2445E0F0003C8AEA /* EASystem.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
@@ -629,6 +640,7 @@
 				9EB4DC40246061230077DF2A /* RequestTabBarViewController.swift in Sources */,
 				9E1B2DEA242799AF00994233 /* ERequestData.swift in Sources */,
 				9E85FE48240E9CDB002821F2 /* main.swift in Sources */,
+				9EFFF1CA246FEA50003D7CA8 /* RequestManager.swift in Sources */,
 				9E473B04241CE74200DEC889 /* EditRequestTableViewController.swift in Sources */,
 				9E1B2DE22427990600994233 /* ERequestMethodData.swift in Sources */,
 				9E1B2DE0242798EF00994233 /* ERequest.swift in Sources */,
