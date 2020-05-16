@@ -77,6 +77,13 @@ class RequestResponseState: GKState {
 }
 
 class RequestCancelState: GKState {
+    unowned var request: ERequest
+    
+    init(_ request: ERequest) {
+        self.request = request
+        super.init()
+    }
+    
     override func isValidNextState(_ stateClass: AnyClass) -> Bool {
         return false
     }

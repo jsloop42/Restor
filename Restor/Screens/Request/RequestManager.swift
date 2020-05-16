@@ -38,7 +38,7 @@ class RequestManager {
     }
     
     private static func getAllRequestStates(_ req: ERequest) -> [GKState] {
-        return [RequestPrepareState(req), RequestSendState(req), RequestResponseState(req)]
+        return [RequestPrepareState(req), RequestSendState(req), RequestResponseState(req), RequestCancelState(req)]
     }
     
     func start() {
