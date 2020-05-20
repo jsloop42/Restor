@@ -35,6 +35,18 @@ struct AppState {
         self.requestState[man.request.getId()] = man
     }
     
+    static func removeFromRequestState(_ reqId: String) {
+        self.requestState.removeValue(forKey: reqId)
+    }
+    
+    static func getFromRequestState(_ reqId: String) -> RequestManager? {
+        self.requestState[reqId]
+    }
+    
+    static func clearRequestState() {
+        self.requestState = [:]
+    }
+    
     static func setCurrentScreen(_ screen: App.Screen) {
         if self.currentScreen == screen { return }
         if screen != .popup { self.previousScreen = self.currentScreen }

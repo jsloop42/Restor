@@ -18,6 +18,7 @@ public enum RecordType: String, Hashable {
     case requestData = "RequestData"
     case requestMethodData = "RequestMethodData"
     case workspace = "Workspace"
+    case history = "History"
     // CloudKit specific
     case zone = "Zone"
     
@@ -42,6 +43,8 @@ public enum RecordType: String, Hashable {
             return self.image
         case "zn":
             return self.zone
+        case "hs":
+            return self.history
         default:
             return nil
         }
@@ -67,6 +70,8 @@ public enum RecordType: String, Hashable {
             return "im"
         case .zone:
             return "zn"
+        case .history:
+            return "hs"
         }
     }
     
@@ -212,6 +217,10 @@ class CoreDataService {
     
     func imageId(_ data: Data) -> String {
         return "\(RecordType.prefix(for: .image))\(self.utils.md5(data: data))"
+    }
+    
+    func historyId() -> String {
+        return "\(RecordType.prefix(for: .history))\(self.utils.genRandomString())"
     }
     
     // MARK: - Sort
@@ -1214,6 +1223,22 @@ class CoreDataService {
         return x
     }
     
+    func getHistory(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EHistory? {
+        var x: EHistory?
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EHistory>(entityName: "EHistory")
+            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "id == %@", id)
+                : NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete!)
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error fetching history: \(error)")
+            }
+        }
+        return x
+    }
+    
     // MARK: - Entities to sync
     
     func getWorkspacesToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<EWorkspace> {
@@ -1306,11 +1331,11 @@ class CoreDataService {
             ws.desc = desc
             ws.isActive = isActive!
             ws.isSyncEnabled = isSyncEnabled
-            if !isSyncEnabled { ws.syncDisabled = ts }
+            if !isSyncEnabled { ws.syncDisabled =  ts }
             ws.created = x == nil ? ts : x!.created
             ws.modified = ts
             ws.changeTag = ts
-            ws.version = x == nil ? 0 : x!.version + 1
+            ws.version = x == nil ? 0 : x!.version
             x = ws
         }
         return x
@@ -1370,7 +1395,7 @@ class CoreDataService {
             proj.created = x == nil ? ts : x!.created
             proj.modified = ts
             proj.changeTag = ts
-            proj.version = x == nil ? 0 : x!.version + 1
+            proj.version = x == nil ? 0 : x!.version
             _ = self.genDefaultRequestMethods(proj, ctx: moc)
             ws?.addToProjects(proj)
             ws?.isActive = true
@@ -1402,7 +1427,7 @@ class CoreDataService {
             req.created = x == nil ? ts : x!.created
             req.modified = ts
             req.changeTag = ts
-            req.version = x == nil ? 0 : x!.version + 1
+            req.version = x == nil ? 0 : x!.version
             project?.addToRequests(req)
             x = req
         }
@@ -1431,7 +1456,7 @@ class CoreDataService {
             data.created = x == nil ? ts : x!.created
             data.modified = ts
             data.changeTag = ts
-            data.version = x == nil ? 0 : x!.version + 1
+            data.version = x == nil ? 0 : x!.version
             data.fieldFormat = fieldFormat.rawValue.toInt64()
             data.type = type.rawValue.toInt64()
             x = data
@@ -1464,7 +1489,7 @@ class CoreDataService {
             data.created = x == nil ? ts : x!.created
             data.modified = ts
             data.changeTag = ts
-            data.version = x == nil ? 0 : x!.version + 1
+            data.version = x == nil ? 0 : x!.version
             x = data
         }
         return x
@@ -1489,7 +1514,7 @@ class CoreDataService {
             data.created = x == nil ? ts : x!.created
             data.modified = ts
             data.changeTag = ts
-            data.version = x == nil ? 0 : x!.version + 1
+            data.version = x == nil ? 0 : x!.version
             x = data
         }
         return x
@@ -1520,7 +1545,7 @@ class CoreDataService {
             image.created = x == nil ? ts : x!.created
             image.modified = ts
             image.changeTag = ts
-            image.version = x == nil ? 0 : x!.version + 1
+            image.version = x == nil ? 0 : x!.version
             x = image
         }
         return x
@@ -1548,8 +1573,50 @@ class CoreDataService {
             file.name = name
             file.path = path
             file.type = type.rawValue.toInt64()
-            file.version = x == nil ? 0 : x!.version + 1
+            file.version = x == nil ? 0 : x!.version
             x = file
+        }
+        return x
+    }
+    
+    func createHistory(id: String, requestId: String, wsId: String, request: String, response: String, responseHeaders: String, statusCode: Int64, checkExists: Bool? = true,
+                       ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EHistory? {
+        var x: EHistory?
+        let ts = Date().currentTimeNanos()
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            if let isExists = checkExists, isExists, let data = self.getHistory(id: id, ctx: ctx) { x = data }
+            let data = x != nil ? x! : EHistory(context: moc)
+            data.id = id
+            data.wsId = wsId
+            data.requestId = requestId
+            data.request = request
+            data.response = response
+            data.responseHeaders = responseHeaders
+            data.statusCode = statusCode
+            data.created = x == nil ? ts : x!.created
+            data.modified = ts
+            data.changeTag = ts
+            data.version = x == nil ? 0 : x!.version
+            x = data
+        }
+        return x
+    }
+    
+    func createHistory(id: String, wsId: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EHistory? {
+        var x: EHistory?
+        let ts = Date().currentTimeNanos()
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            if let isExists = checkExists, isExists, let data = self.getHistory(id: id, ctx: ctx) { x = data }
+            let data = x != nil ? x! : EHistory(context: moc)
+            data.id = id
+            data.wsId = wsId
+            data.created = x == nil ? ts : x!.created
+            data.modified = ts
+            data.changeTag = ts
+            data.version = x == nil ? 0 : x!.version
+            x = data
         }
         return x
     }
@@ -1686,6 +1753,11 @@ class CoreDataService {
     func deleteImageData(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) {
         let moc = self.getMainMOC(ctx: ctx)
         self.deleteEntity(self.getImageData(id: id, includeMarkForDelete: nil, ctx: moc))
+    }
+    
+    func deleteHistory(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) {
+        let moc = self.getMainMOC(ctx: ctx)
+        self.deleteEntity(self.getHistory(id: id, includeMarkForDelete: nil, ctx: moc))
     }
     
     /// Delete the entity with the given id.

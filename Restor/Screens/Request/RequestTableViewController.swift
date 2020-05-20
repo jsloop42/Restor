@@ -13,7 +13,6 @@ extension Notification.Name {
     static let editRequestVCShouldPresent = Notification.Name("edit-request-vc-should-present")
 }
 
-
 class RequestTableViewController: RestorTableViewController {
     private let app = App.shared
     private lazy var localdb = { CoreDataService.shared }()
@@ -43,6 +42,7 @@ class RequestTableViewController: RestorTableViewController {
     @IBOutlet weak var binaryTextFieldView: UIView!
     @IBOutlet weak var binaryImageView: UIImageView!
     @IBOutlet weak var binaryCollectionView: UICollectionView!
+    private unowned var reqMan: RequestManager?
     
     enum CellId: Int {
         case spaceAfterTop = 0
@@ -69,6 +69,8 @@ class RequestTableViewController: RestorTableViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         AppState.setCurrentScreen(.request)
+        self.initManager()
+        self.reloadAllTableViews()
     }
     
     override func viewDidLoad() {
@@ -79,6 +81,17 @@ class RequestTableViewController: RestorTableViewController {
         self.initEvents()
         self.updateData()
         self.reloadAllTableViews()
+    }
+    
+    func initManager() {
+        if let req = self.request {
+            self.reqMan = AppState.getFromRequestState(req.getId())
+            if self.reqMan == nil {
+                let man = RequestManager(request: req)
+                AppState.addToRequestState(man)
+                self.reqMan = man
+            }
+        }
     }
     
     func initData() {
@@ -183,6 +196,10 @@ class RequestTableViewController: RestorTableViewController {
     
     @IBAction func goButtonDidTap(_ sender: Any) {
         Log.debug("go button did tap")
+        self.initManager()
+        guard let man = self.reqMan else { return }
+        man.start()
+        // TODO: update play button to stop button
     }
     
     func viewEditRequestVC() {

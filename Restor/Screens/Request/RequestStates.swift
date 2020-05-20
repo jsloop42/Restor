@@ -54,6 +54,7 @@ class RequestSendState: GKState {
 class RequestResponseState: GKState {
     unowned var request: ERequest
     var data: Data?
+    var urlRequest: URLRequest?
     var response: HTTPURLResponse?
     var error: Error?
     let nc = NotificationCenter.default
@@ -66,16 +67,17 @@ class RequestResponseState: GKState {
     }
     
     override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-        return false
+        return stateClass == RequestPrepareState.self
     }
     
     override func didEnter(from previousState: GKState?) {
         Log.debug("[state] did enter - request response")
         guard let fsm = self.stateMachine as? RequestStateMachine, let man = fsm.manager, let result = self.result else { return }
-        man.responseDidObtain(result)
+        man.responseDidObtain(result, request: self.urlRequest!)
     }
 }
 
+/// User cancels the request
 class RequestCancelState: GKState {
     unowned var request: ERequest
     
@@ -85,7 +87,7 @@ class RequestCancelState: GKState {
     }
     
     override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-        return false
+        return stateClass == RequestPrepareState.self
     }
     
     override func didEnter(from previousState: GKState?) {

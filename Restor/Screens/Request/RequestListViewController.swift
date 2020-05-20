@@ -104,6 +104,7 @@ class RequestListViewController: RestorViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
+        // TODO: update
         if AppState.editRequest == nil {
             let name = self.app.getNewRequestName()
             if let proj = self.project, let wsId = proj.workspace?.getId(),

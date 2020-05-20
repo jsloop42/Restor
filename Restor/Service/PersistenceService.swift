@@ -118,6 +118,7 @@ class PersistenceService {
     private var reqMethodDataDelFrc: NSFetchedResultsController<ERequestMethodData>!
     private var fileDelFrc: NSFetchedResultsController<EFile>!
     private var imageDelFrc: NSFetchedResultsController<EImage>!
+    private var histDelFrc: NSFetchedResultsController<EHistory>!
     private var wsSyncIdx = 0
     private var projSyncIdx = 0
     private var reqSyncIdx = 0
@@ -128,6 +129,7 @@ class PersistenceService {
     private var reqMethodDataDelSyncIdx = 0
     private var fileDelSyncIdx = 0
     private var imageDelSyncIdx = 0
+    private var historyDelSyncIdx = 0
     private var hasMoreZonesToQuery = false
     private var zonesToSync: [CKRecord] = []
     private var zonesToSyncInProgress: Set<CKRecord> = Set()
@@ -146,11 +148,13 @@ class PersistenceService {
         case workspaceChange = "workspace-change"
         case zoneChange = "zone-change"  // default zone change
         case databaseChange = "database-change"
+        case historyChange = "history-change"
         
         static var allCases: [String] {
             return [SubscriptionId.fileChange.rawValue, SubscriptionId.imageChange.rawValue, SubscriptionId.projectChange.rawValue,
                     SubscriptionId.requestChange.rawValue, SubscriptionId.requestBodyChange.rawValue, SubscriptionId.requestDataChange.rawValue,
-                    SubscriptionId.requestMethodChange.rawValue, SubscriptionId.workspaceChange.rawValue, SubscriptionId.databaseChange.rawValue]
+                    SubscriptionId.requestMethodChange.rawValue, SubscriptionId.workspaceChange.rawValue, SubscriptionId.databaseChange.rawValue,
+                    SubscriptionId.historyChange.rawValue]
         }
     }
     
@@ -164,6 +168,7 @@ class PersistenceService {
         case file = "file-cursor-key"
         case image = "image-cursor-key"
         case zone = "zone-cursor-key"
+        case history = "history-cursor-key"
         
         init(type: RecordType) {
             switch type {
@@ -185,6 +190,8 @@ class PersistenceService {
                 self = .image
             case .zone:
                 self = .zone
+            case .history:
+                self = .history
             }
         }
     }
@@ -381,7 +388,7 @@ class PersistenceService {
             return self.fileCache.get(entityId)
         case .image:
             return self.imageCache.get(entityId)
-        case .zone:
+        case .zone, .history:
             return nil
         }
     }
@@ -404,7 +411,7 @@ class PersistenceService {
             self.fileCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
         case .image:
             self.imageCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .zone:
+        case .zone, .history:
             break
         }
     }
@@ -541,7 +548,7 @@ class PersistenceService {
                     if count == 3 { break }
                     count += 1
                 }
-                if done && self.reqSyncIdx < len  { done = false }
+                if done && self.reqSyncIdx < len { done = false }
             }
         }
         // Delete entites marked for delete
@@ -567,7 +574,7 @@ class PersistenceService {
                     if count == 7 { break }
                     count += 1
                 }
-                if done && self.projDelSyncIdx < len  { done = false }
+                if done && self.projDelSyncIdx < len { done = false }
             }
         }
         deleteEntities()
@@ -586,7 +593,7 @@ class PersistenceService {
                     if count == 7 { break }
                     count += 1
                 }
-                if done && self.reqDelSyncIdx < len  { done = false }
+                if done && self.reqDelSyncIdx < len { done = false }
             }
         }
         deleteEntities()
@@ -605,7 +612,7 @@ class PersistenceService {
                     if count == 7 { break }
                     count += 1
                 }
-                if done && self.reqDataDelSyncIdx < len  { done = false }
+                if done && self.reqDataDelSyncIdx < len { done = false }
             }
         }
         deleteEntities()
@@ -624,7 +631,7 @@ class PersistenceService {
                     if count == 7 { break }
                     count += 1
                 }
-                if done && self.reqBodyDataDelSyncIdx < len  { done = false }
+                if done && self.reqBodyDataDelSyncIdx < len { done = false }
             }
         }
         deleteEntities()
@@ -643,7 +650,7 @@ class PersistenceService {
                     if count == 7 { break }
                     count += 1
                 }
-                if done && self.reqMethodDataDelSyncIdx < len  { done = false }
+                if done && self.reqMethodDataDelSyncIdx < len { done = false }
             }
         }
         deleteEntities()
@@ -662,7 +669,7 @@ class PersistenceService {
                     if count == 7 { break }
                     count += 1
                 }
-                if done && self.fileDelSyncIdx < len  { done = false }
+                if done && self.fileDelSyncIdx < len { done = false }
             }
         }
         deleteEntities()
@@ -681,7 +688,26 @@ class PersistenceService {
                     if count == 7 { break }
                     count += 1
                 }
-                if done && self.imageDelSyncIdx < len  { done = false }
+                if done && self.imageDelSyncIdx < len { done = false }
+            }
+        }
+        deleteEntities()
+        // History
+        if self.histDelFrc == nil { self.histDelFrc = self.localdb.getDataMarkedForDelete(obj: EHistory.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<EHistory> }
+        self.syncToCloudCtx.perform {
+            if self.histDelFrc != nil, let xs = self.histDelFrc.fetchedObjects {
+                start = self.historyDelSyncIdx
+                len = xs.count
+                var history: EHistory!
+                for i in start..<len {
+                    history = xs[i]
+                    delxs.append(history)
+                    self.syncToCloudDeleteIds.insert(history.getId())
+                    self.historyDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.historyDelSyncIdx < len { done = false }
             }
         }
         self.deleteEntitesFromCloud(delxs, ctx: self.syncToCloudCtx)
@@ -797,6 +823,8 @@ class PersistenceService {
             self.updateFileDataFromCloud(record)
         case .image:
             self.updateImageDataFromCloud(record)
+        case .history:
+            self.updateHistoryFromCloud(record)
         case .none:
             Log.error("Unknown record: \(record)")
         }
@@ -834,6 +862,8 @@ class PersistenceService {
             return SubscriptionId.workspaceChange.rawValue
         case .zone:
             return SubscriptionId.zoneChange.rawValue
+        case .history:
+            return SubscriptionId.historyChange.rawValue
         }
     }
     
@@ -878,6 +908,10 @@ class PersistenceService {
         return self.isServerLatest(local: local, server: server) ? server : local
     }
     
+    func mergeHistory(local: CKRecord, server: CKRecord) -> CKRecord {
+        return self.isServerLatest(local: local, server: server) ? server : local
+    }
+    
     func mergeRecords(local: CKRecord?, server: CKRecord?, recordType: String) -> CKRecord? {
         guard let client = local, let remote = server, let type = RecordType(rawValue: recordType) else { return nil }
         switch type {
@@ -899,6 +933,8 @@ class PersistenceService {
             return self.mergeImageData(local: client, server: remote)
         case .zone:
             return server
+        case .history:
+            return self.mergeHistory(local: client, server: remote)
         }
     }
     
@@ -921,7 +957,7 @@ class PersistenceService {
                 ws.isActive = true
                 self.localdb.saveMainContext()
                 Log.debug("Workspace synced")
-                self.nc.post(Notification(name: .workspaceDidSync))
+                self.nc.post(name: .workspaceDidSync, object: self)
             }
         }
     }
@@ -945,7 +981,7 @@ class PersistenceService {
                 proj.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Project synced")
-                self.nc.post(Notification(name: .projectDidSync))
+                self.nc.post(name: .projectDidSync, object: self)
             }
         }
     }
@@ -967,7 +1003,7 @@ class PersistenceService {
                 req.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Request synced")
-                self.nc.post(Notification(name: .requestDidSync))
+                self.nc.post(name: .requestDidSync, object: self)
             }
         }
     }
@@ -988,7 +1024,7 @@ class PersistenceService {
                 reqBodyData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Request body synced")
-                self.nc.post(Notification(name: .requestBodyDataDidSync))
+                self.nc.post(name: .requestBodyDataDidSync, object: self)
             }
         }
     }
@@ -1011,7 +1047,7 @@ class PersistenceService {
                 reqData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Request data synced")
-                self.nc.post(Notification(name: .requestDataDidSync))
+                self.nc.post(name: .requestDataDidSync, object: self)
             }
         }
     }
@@ -1032,7 +1068,7 @@ class PersistenceService {
                 reqMethodData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Request method data synced")
-                self.nc.post(Notification(name: .requestMethodDataDidSync))
+                self.nc.post(name: .requestMethodDataDidSync, object: self)
             }
         }
     }
@@ -1053,7 +1089,7 @@ class PersistenceService {
                 fileData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("File data synced")
-                self.nc.post(Notification(name: .fileDataDidSync))
+                self.nc.post(name: .fileDataDidSync, object: self)
             }
         }
     }
@@ -1074,7 +1110,29 @@ class PersistenceService {
                 imageData.isSynced = true
                 self.localdb.saveMainContext()
                 Log.debug("Image data synced")
-                self.nc.post(Notification(name: .imageDataDidSync))
+                self.nc.post(name: .imageDataDidSync, object: self)
+            }
+        }
+    }
+    
+    func updateHistoryFromCloud(_ record: CKRecord) {
+        let ctx = self.syncFromCloudCtx!
+        ctx.performAndWait {
+            let histId = record.id()
+            let wsId = record.getWsId()
+            var hist = self.localdb.getHistory(id: histId, ctx: ctx)
+            var isNew = false
+            if hist == nil {
+                hist = self.localdb.createHistory(id: histId, wsId: wsId, checkExists: false, ctx: ctx)
+                isNew = true
+            }
+            guard let histData = hist else { return }
+            if isNew || histData.changeTag < record.changeTag {  // => server has new copy
+                histData.updateFromCKRecord(record, ctx: ctx)
+                histData.isSynced = true
+                self.localdb.saveMainContext()
+                Log.debug("History data synced")
+                self.nc.post(name: .historyDidSync, object: self)
             }
         }
     }
@@ -1100,6 +1158,8 @@ class PersistenceService {
             self.updateImageDataFromCloud(record)
         case .zone:
             self.updateWorkspaceFromCloud(record)
+        case .history:
+            self.updateHistoryFromCloud(record)
         case .none:
             Log.error("Unknown record: \(record)")
         }
@@ -1156,6 +1216,11 @@ class PersistenceService {
         self.localdb.deleteImageData(id: id, ctx: ctx)
     }
     
+    func historyDidDeleteFromCloud(_ id: String) {
+        let ctx = self.syncFromCloudCtx!
+        self.localdb.deleteHistory(id: id, ctx: ctx)
+    }
+    
     func cloudRecordDidDelete(_ recordID: CKRecord.ID) {
         Log.debug("cloud record did delete: \(recordID)")
         let id = self.ck.entityID(recordID: recordID)
@@ -1177,6 +1242,8 @@ class PersistenceService {
             self.fileDataDidDeleteFromCloud(id)
         case .image:
             self.imageDataDidDeleteFromCloud(id)
+        case .history:
+            self.historyDidDeleteFromCloud(id)
         case .zone:
             break
         case .none:
@@ -1207,7 +1274,6 @@ class PersistenceService {
             App.shared.clearEditRequestDeleteObjects()
         }
     }
-    
     
     /// Delete the record and nested records. Here if a parent entity is marked for delete, the child entites are not marked, but we need to delete them as well.
     /// - Parameters:
@@ -1600,6 +1666,16 @@ class PersistenceService {
                     }
                 }
             }
+        }
+    }
+    
+    func saveHistoryToCloud(_ hist: EHistory) {
+        hist.managedObjectContext?.perform {
+            let zoneID = self.ck.zoneID(workspaceId: hist.getWsId())
+            let ckHistID = self.ck.recordID(entityId: hist.getId(), zoneID: zoneID)
+            let ckHist = self.ck.createRecord(recordID: ckHistID, recordType: hist.recordType)
+            hist.updateCKRecord(ckHist)
+            self.saveToCloud(record: ckHist, entity: hist)
         }
     }
     

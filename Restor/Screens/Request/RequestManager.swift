@@ -18,6 +18,7 @@ extension Notification.Name {
 struct ResponseData {
     var status: Bool
     var request: ERequest
+    var urlRequest: URLRequest
     var response: HTTPURLResponse?
     var error: Error?
     var data: Data?
@@ -58,45 +59,84 @@ class RequestManager {
         self.http.process(request: urlReq, completion: { result in
             let state = self.fsm.state(forClass: RequestResponseState.self)
             state?.result = result
+            state?.urlRequest = urlReq
+            state?.result = result
             self.fsm.enter(RequestResponseState.self)
         })
         self.nc.post(name: .requestDidSend, object: self, userInfo: ["request": self.request])
     }
     
-    func responseDidObtain(_ result: Result<(Data, HTTPURLResponse), Error>) {
+    func responseDidObtain(_ result: Result<(Data, HTTPURLResponse), Error>, request: URLRequest) {
+        Log.debug("[req-man] response-did-obtain")
         if let _ = self.fsm.currentState as? RequestCancelState { return }
         guard let state = self.fsm.state(forClass: RequestResponseState.self) else { return }
         switch result {
         case .success(let (data, resp)):
             Log.debug("[req-man] resp; \(resp) - data: \(data)")
-            state.data = data
             state.response = resp
+            state.data = data
             state.success = (200..<300) ~= resp.statusCode
         case .failure(let err):
             Log.error("[req-man] error: \(err)")
             state.error = err
         }
-        let info = ResponseData(status: state.success, request: self.request, response: state.response, error: state.error, data: state.data)
-        if let ws = self.localdb.getWorkspace(id: self.request.getWsId()), ws.saveResponse { self.saveResponse(info) }
+        let info = ResponseData(status: state.success, request: self.request, urlRequest: state.urlRequest!, response: state.response, error: state.error, data: state.data)
+        self.saveResponse(info)
         self.nc.post(name: .responseDidReceive, object: self, userInfo: ["data": info])
     }
     
     func saveResponse(_ info: ResponseData) {
-        Log.debug("save response: \(info)")
-        // TODO:
+        let ctx = self.localdb.mainMOC
+        ctx.performAndWait {
+            Log.debug("[req-man] save-response - \(info)")
+            guard let ws = self.localdb.getWorkspace(id: self.request.getWsId()) else { return }
+            
+            var history: EHistory!
+            // Save history if save response is enabled
+            if ws.saveResponse {
+                let histId = self.localdb.historyId()
+                let req = info.request
+                let resp = info.response
+                let urlReq = info.urlRequest
+                let data: String = {
+                    guard let rdata = info.data else { return "" }
+                    return String(data: rdata, encoding: .utf8) ?? ""
+                }()
+                history = self.localdb.createHistory(id: histId, requestId: req.getId(), wsId: req.getWsId(), request: urlReq.toString(), response: data,
+                                                     responseHeaders: URLRequest.headersToString(resp?.allHeaderFields), statusCode: resp?.statusCode.toInt64() ?? 0,
+                                                     checkExists: true, ctx: ctx)
+            } else {
+                // Save only basic info
+                let histId = self.localdb.historyId()
+                history = self.localdb.createHistory(id: histId, wsId: info.request.getWsId(), ctx: ctx)
+                if history != nil {
+                    history.statusCode = info.response?.statusCode.toInt64() ?? 0
+                    let req = info.urlRequest
+                    history.request = "\(req.httpMethod ?? "") \(req.url?.path ?? "") HTTP/1.1"
+                }
+            }
+            if history != nil {
+                self.localdb.saveMainContext()
+                if let ws = self.localdb.getWorkspace(id: history.getWsId()), ws.isSyncEnabled { PersistenceService.shared.saveHistoryToCloud(history!) }
+            }
+            AppState.requestState.removeValue(forKey: request.getId())
+        }
     }
     
     func cancelRequest() {
+        Log.debug("[req-man] cancel-request")
         self.fsm.enter(RequestCancelState.self)
     }
     
     /// The request is cancelled and the FSM is now in cancelled state. Performs clean up.
     func requestDidCancel() {
+        Log.debug("[req-man] request-did-cancel")
         self.nc.post(name: .requestDidCancel, object: self, userInfo: ["request": self.request])
-        
+        // TODO:
     }
     
     func requestToURLRequest(_ req: ERequest) -> URLRequest? {
+        Log.debug("[req-man] request-to-url-request")
         guard let projId = request.project?.getId() else { return nil }
         guard let _url = req.url, let url = URL(string: _url) else { return nil }
         guard var urlComp = URLComponents(string: url.absoluteString) else { return nil }
@@ -144,6 +184,7 @@ class RequestManager {
     }
     
     func getFormData(_ req: ERequest, urlReq: URLRequest) -> URLRequest {
+        Log.debug("[req-man] get-form-data")
         guard let body = req.body else { return urlReq }
         let bodyId = body.getId()
         let forms = self.localdb.getFormRequestData(bodyId, type: .form)
@@ -184,6 +225,7 @@ class RequestManager {
     }
     
     func getMultipartData(_ req: ERequest, urlReq: URLRequest) -> URLRequest {
+        Log.debug("[req-man] get-multipart-data")
         guard let body = req.body else { return urlReq }
         let bodyId = body.getId()
         let mpart = self.localdb.getFormRequestData(bodyId, type: .multipart)
@@ -200,6 +242,7 @@ class RequestManager {
     }
     
     func getBinaryData(_ req: ERequest, urlReq: URLRequest) -> URLRequest {
+        Log.debug("[req-man] get-binary-data")
         guard let body = req.body, let bin = body.binary else { return urlReq }
         var _urlReq = urlReq
         if let file = (bin.files?.allObjects as? [EFile])?.first, let data = file.data {

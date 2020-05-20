@@ -77,6 +77,7 @@
 		9EC1F94C2426565B005BDD0A /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EC1F94B2426565B005BDD0A /* CloudKit.framework */; };
 		9EC1F94E2426995A005BDD0A /* EACloudKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC1F94D2426995A005BDD0A /* EACloudKit.swift */; };
 		9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC33FB323EEBF1A006C5B37 /* EATextView.swift */; };
+		9ED1255924755DA9005E2AD7 /* EHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED1255824755DA9005E2AD7 /* EHistory.swift */; };
 		9ED7C8C5246C0D4C00936701 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED7C8C4246C0D4C00936701 /* AppCoordinator.swift */; };
 		9ED7C8C8246C155E00936701 /* ProjectListCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED7C8C7246C155E00936701 /* ProjectListCoordinator.swift */; };
 		9ED7C8CA246C157700936701 /* EACoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED7C8C9246C157700936701 /* EACoordinator.swift */; };
@@ -189,6 +190,7 @@
 		9EC1F94B2426565B005BDD0A /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		9EC1F94D2426995A005BDD0A /* EACloudKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACloudKit.swift; sourceTree = "<group>"; };
 		9EC33FB323EEBF1A006C5B37 /* EATextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextView.swift; sourceTree = "<group>"; };
+		9ED1255824755DA9005E2AD7 /* EHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EHistory.swift; sourceTree = "<group>"; };
 		9ED7C8C4246C0D4C00936701 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
 		9ED7C8C7246C155E00936701 /* ProjectListCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListCoordinator.swift; sourceTree = "<group>"; };
 		9ED7C8C9246C157700936701 /* EACoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACoordinator.swift; sourceTree = "<group>"; };
@@ -244,6 +246,7 @@
 		9E538DAF2399536B0025C14C /* Model */ = {
 			isa = PBXGroup;
 			children = (
+				9ED1255824755DA9005E2AD7 /* EHistory.swift */,
 				9E1B2DE32427992B00994233 /* EFile.swift */,
 				9E1B2DE52427994000994233 /* EImage.swift */,
 				9E1B2DDD242798D700994233 /* EProject.swift */,
@@ -636,6 +639,7 @@
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
 				9EFA58BB2445E0F0003C8AEA /* EASystem.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
+				9ED1255924755DA9005E2AD7 /* EHistory.swift in Sources */,
 				9E1B2DDC242798BB00994233 /* EWorkspace.swift in Sources */,
 				9EB4DC40246061230077DF2A /* RequestTabBarViewController.swift in Sources */,
 				9E1B2DEA242799AF00994233 /* ERequestData.swift in Sources */,

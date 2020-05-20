@@ -445,16 +445,32 @@ extension URLRequest {
     public func curl(pretty: Bool? = false) -> String {
         let pretty = pretty ?? false
         var data = ""
-        let complement = pretty ? "\\\n" : ""
-        let method = "-X \(self.httpMethod ?? "GET") \(complement)"
+        let delim = pretty ? "\\\n" : ""
+        let method = "-X \(self.httpMethod ?? "GET") \(delim)"
         let url = "\"\(self.url?.absoluteString ?? "")\""
         let header = self.allHTTPHeaderFields?.reduce("", { (acc, arg) -> String in
             let (key, value) = arg
-            return acc + "-H \"\(key): \(value)\" \(complement)"
+            return acc + "-H \"\(key): \(value)\" \(delim)"
         }) ?? ""
         if let bodyData = self.httpBody, let bodyString = String(data:bodyData, encoding:.utf8) {
-            data = "-d \"\(bodyString)\" \(complement)"
+            data = "-d \"\(bodyString)\" \(delim)"
         }
-        return "curl -i \(complement)\(method)\(header)\(data)\(url)"
+        return "curl -i \(delim)\(method)\(header)\(data)\(url)"
+    }
+    
+    func toString() -> String {
+        let method = self.httpMethod ?? ""
+        let url = self.url?.absoluteString ?? ""
+        let delim = "\n"
+        let headers = URLRequest.headersToString(self.allHTTPHeaderFields)
+        if let data = self.httpBody, let body = String(data: data, encoding: .utf8) { return "\(method) \(url)\(delim)\(headers)\(delim)\(delim)\(body)" }
+        return "\(method) \(url)\(delim)\(headers)"
+    }
+    
+    static func headersToString(_ hm: [AnyHashable: Any]?) -> String {
+        return hm?.reduce("", { (acc, arg) -> String in
+            let (key, value) = arg
+            return acc + "\(key): \(value)\" \n"
+        }) ?? ""
     }
 }
