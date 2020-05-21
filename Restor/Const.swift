@@ -29,8 +29,10 @@ struct Const {
     /// The action for the data (add, delete, etc.).
     static let optionDataActionKey = "optionDataActionKey"
     
-    // User defaults kets
+    // User defaults keys
     static let selectedWorkspaceIdKey = "selectedWorkspaceId"
+    /// The selected segment index in response screen.
+    static let responseSegmentIndexKey = "responseSegmentIndex"
     
     /// The default number of methods added (`GET`, `POST`, `PUT`, `PATCH` and `DELETE`).
     static let defaultRequestMethodsCount = 5

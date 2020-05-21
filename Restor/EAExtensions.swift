@@ -300,6 +300,12 @@ public extension Data {
     }
 }
 
+public extension DispatchTime {
+    func elapsedTime() -> Int {
+        return Int(round(TimeInterval(DispatchTime.now().uptimeNanoseconds - self.uptimeNanoseconds) / 1e6))
+    }
+}
+
 public extension Error {
     var code: Int { return (self as NSError).code }
     var domain: String { return (self as NSError).domain }

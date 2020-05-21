@@ -60,6 +60,8 @@ class RequestResponseState: GKState {
     let nc = NotificationCenter.default
     var result: Result<(Data, HTTPURLResponse), Error>?
     var success: Bool = false
+    var elapsed: Int = 0  // ms
+    var statusCode: Int = 0
     
     init(_ request: ERequest) {
         self.request = request

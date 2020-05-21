@@ -377,8 +377,7 @@ public class EAHTTPClient: NSObject {
     
     public func process(request: URLRequest, completion: @escaping (Result<(Data, HTTPURLResponse), Error>) -> Void) {
         let task = self.session.dataTask(with: request) { data, resp, err in
-            guard let data = data, let resp = resp as? HTTPURLResponse,
-                (200..<300) ~= resp.statusCode, err == nil else {
+            guard let data = data, let resp = resp as? HTTPURLResponse, err == nil else {
                 Log.error("http-client - response error: \(err!)")
                 completion(.failure(err!))
                 return
@@ -472,5 +471,149 @@ extension URLRequest {
             let (key, value) = arg
             return acc + "\(key): \(value)\" \n"
         }) ?? ""
+    }
+}
+
+public enum HTTPStatusCode: Int {
+    // 1xx informational
+    case c100_continue = 100
+    case c101_switchingProtocols = 101
+    case c102_processing = 102
+    // 2xx success
+    case c200_ok = 200
+    case c201_created = 201
+    case c202_accepted = 202
+    case c203_nonAuthoritativeInformation = 203
+    case c204_noContent = 204
+    case c205_resetContent = 205
+    case c206_partialContent = 206
+    case c207_multiStatus = 207
+    case c208_alreadyReported = 208
+    case c226_imUsed = 226
+    // 3xx redirection
+    case c300_multipleChoices = 300
+    case c301_movedPermanently = 301
+    case c302_found = 302
+    case c303_seeOther = 303
+    case c304_notModified = 304
+    case c305_useProxy = 305
+    case c307_temporaryRedirect = 307
+    case c308_permanentRedirect = 308
+    // 4xx client error
+    case c400_badRequest = 400
+    case c401_unauthorized = 401
+    case c402_paymentRequired = 402
+    case c403_forbidden = 403
+    case c404_notFound = 404
+    case c405_methodNotAllowed = 405
+    case c406_notAcceptable = 406
+    case c407_proxyAuthenticationRequired = 407
+    case c408_requestTimeout = 408
+    case c409_conflict = 409
+    case c410_gone = 410
+    case c411_lengthRequired = 411
+    case c412_preconditionFailed = 412
+    case c413_payloadTooLarge = 413
+    case c414_requestURITooLong = 414
+    case c415_unsupportedMediaType = 415
+    case c416_requestedRangeNotSatisfiable = 416
+    case c417_expectationFailed = 417
+    case c418_iAmATeampot = 418
+    case c421_misdirectedRequest = 421
+    case c422_unprocessableEntity = 422
+    case c423_locked = 423
+    case c424_failedDependency = 424
+    case c426_upgradeRequired = 426
+    case c428_preconditionRequired = 428
+    case c429_tooManyRequests = 429
+    case c431_requestHeaderFieldsTooLarge = 431
+    case c444_connectionClosedWithoutResponse = 444
+    case c451_unavailableForLegalReasons = 451
+    case c499_clientClosedRequest = 499
+    // 5xx server error
+    case c500_internalServerError = 500
+    case c501_notImplemented = 501
+    case c502_badGateway = 502
+    case c503_serviceUnavailable = 503
+    case c504_gatewayTimeout = 504
+    case c505_httpVersionNotSupported = 505
+    case c506_variantAlsoNegotiates = 506
+    case c507_insufficientStorage = 507
+    case c508_loopDetected = 508
+    case c510_notExtended = 510
+    case c511_networkAuthenticationRequired = 511
+    case c599_networkConnectionAuthenticationError = 599
+    
+    func toString() -> String {
+        switch self {
+        // 1xx informational
+        case .c100_continue: return "Continue"
+        case .c101_switchingProtocols: return "Switching Protocols"
+        case .c102_processing: return "Processing"
+        // 2xx success
+        case .c200_ok: return "OK"
+        case .c201_created: return "Created"
+        case .c202_accepted: return "Accepted"
+        case .c203_nonAuthoritativeInformation: return "Non-authoritative Information"
+        case .c204_noContent: return "No content"
+        case .c205_resetContent: return "Reset content"
+        case .c206_partialContent: return "Partial Content"
+        case .c207_multiStatus: return "Multi-Status"
+        case .c208_alreadyReported: return "Already Reported"
+        case .c226_imUsed: return "IM Used"
+        // 3xx redirection
+        case .c300_multipleChoices: return "Multiple Choices"
+        case .c301_movedPermanently: return "Moved Permanently"
+        case .c302_found: return "Found"
+        case .c303_seeOther: return "See Other"
+        case .c304_notModified: return "Not Modified"
+        case .c305_useProxy: return "Use Proxy"
+        case .c307_temporaryRedirect: return "Temporary Redirect"
+        case .c308_permanentRedirect: return "Permanent Redirect"
+        // 4xx client error
+        case .c400_badRequest: return "Bad Request"
+        case .c401_unauthorized: return "Unauthorized"
+        case .c402_paymentRequired: return "Payment Required"
+        case .c403_forbidden: return "Forbidden"
+        case .c404_notFound: return "Not Found"
+        case .c405_methodNotAllowed: return "Method Not Allowed"
+        case .c406_notAcceptable: return "Not Acceptable"
+        case .c407_proxyAuthenticationRequired: return "Proxy Authentication Required"
+        case .c408_requestTimeout: return "Request Timeout"
+        case .c409_conflict: return "Conflict"
+        case .c410_gone: return "Gone"
+        case .c411_lengthRequired: return "Length Required"
+        case .c412_preconditionFailed: return "Precondition Failed"
+        case .c413_payloadTooLarge: return "Payload Too Large"
+        case .c414_requestURITooLong: return "Request URI Too Long"
+        case .c415_unsupportedMediaType: return "Unsupported Media Type"
+        case .c416_requestedRangeNotSatisfiable: return "Requested Range Not Satisfiable"
+        case .c417_expectationFailed: return "Expectation Failed"
+        case .c418_iAmATeampot: return "I'm a Teampot"
+        case .c421_misdirectedRequest: return "Misdirected Request"
+        case .c422_unprocessableEntity: return "Unprocessable Entity"
+        case .c423_locked: return "Locked"
+        case .c424_failedDependency: return "Failed Dependency"
+        case .c426_upgradeRequired: return "Upgrade Required"
+        case .c428_preconditionRequired: return "Precondition Required"
+        case .c429_tooManyRequests: return "Too Many Requests"
+        case .c431_requestHeaderFieldsTooLarge: return "Request Header Fields Too Large"
+        case .c444_connectionClosedWithoutResponse: return "Connection Closed Without Response"
+        case .c451_unavailableForLegalReasons: return "Unavailable For Legal Reasons"
+        case .c499_clientClosedRequest: return "Client Closed Request"
+        // 5xx server error
+        case .c500_internalServerError: return "Internal Server Error"
+        case .c501_notImplemented: return "Not Implemented"
+        case .c502_badGateway: return "Bad Gateway"
+        case .c503_serviceUnavailable: return "Service Unavailable"
+        case .c504_gatewayTimeout: return "Gateway Timeout"
+        case .c505_httpVersionNotSupported: return "Http Version Not Supported"
+        case .c506_variantAlsoNegotiates: return "Variant Also Negotiates"
+        case .c507_insufficientStorage: return "Insufficient Storage"
+        case .c508_loopDetected: return "Loop Detected"
+        case .c510_notExtended: return "Not Extended"
+        case .c511_networkAuthenticationRequired: return "Network Authentication Required"
+        case .c599_networkConnectionAuthenticationError: return "Network Connection Authentication Error"
+        }
     }
 }

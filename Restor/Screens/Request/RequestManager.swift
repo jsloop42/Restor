@@ -15,13 +15,32 @@ extension Notification.Name {
     static let responseDidReceive = Notification.Name("response-did-receive")
 }
 
-struct ResponseData {
+struct ResponseData: CustomDebugStringConvertible {
     var status: Bool
+    var statusCode: Int
     var request: ERequest
     var urlRequest: URLRequest
     var response: HTTPURLResponse?
     var error: Error?
     var data: Data?
+    var elapsed: Int
+    var size: Int
+    
+    var debugDescription: String {
+        return
+            """
+            \(type(of: self)))
+            status: \(self.status)
+            statusCode: \(self.statusCode)
+            request: \(self.request)
+            urlRequest: \(self.urlRequest)
+            response: \(String(describing: self.response))
+            error: \(String(describing: self.error))
+            data: \(String(describing: self.data))
+            elapsed: \(self.elapsed)
+            size: \(self.size)
+            """
+    }
 }
 
 class RequestManager {
@@ -56,11 +75,14 @@ class RequestManager {
     
     func sendRequest(_ urlReq: URLRequest) {
         Log.debug("[req-man] send-request")
+        let start = DispatchTime.now()
         self.http.process(request: urlReq, completion: { result in
+            let elapsed = start.elapsedTime()
             let state = self.fsm.state(forClass: RequestResponseState.self)
             state?.result = result
             state?.urlRequest = urlReq
             state?.result = result
+            state?.elapsed = elapsed
             self.fsm.enter(RequestResponseState.self)
         })
         self.nc.post(name: .requestDidSend, object: self, userInfo: ["request": self.request])
@@ -76,13 +98,21 @@ class RequestManager {
             state.response = resp
             state.data = data
             state.success = (200..<300) ~= resp.statusCode
+            state.statusCode = resp.statusCode
         case .failure(let err):
             Log.error("[req-man] error: \(err)")
             state.error = err
         }
-        let info = ResponseData(status: state.success, request: self.request, urlRequest: state.urlRequest!, response: state.response, error: state.error, data: state.data)
+        var size = 0
+        if let sizeMap = state.response?.allHeaderFields.first(where: { (key: AnyHashable, value: Any) -> Bool in
+            if let key = key as? String { return key.lowercased() == "content-length" }
+            return false
+        }) {
+            size = Int(sizeMap.value as? String ?? "0") ?? 0
+        }
+        let info = ResponseData(status: state.success, statusCode: state.statusCode, request: self.request, urlRequest: state.urlRequest!, response: state.response, error: state.error,
+                                data: state.data, elapsed: state.elapsed, size: size)
         self.saveResponse(info)
-        self.nc.post(name: .responseDidReceive, object: self, userInfo: ["data": info])
     }
     
     func saveResponse(_ info: ResponseData) {
@@ -90,7 +120,6 @@ class RequestManager {
         ctx.performAndWait {
             Log.debug("[req-man] save-response - \(info)")
             guard let ws = self.localdb.getWorkspace(id: self.request.getWsId()) else { return }
-            
             var history: EHistory!
             // Save history if save response is enabled
             if ws.saveResponse {
@@ -103,14 +132,16 @@ class RequestManager {
                     return String(data: rdata, encoding: .utf8) ?? ""
                 }()
                 history = self.localdb.createHistory(id: histId, requestId: req.getId(), wsId: req.getWsId(), request: urlReq.toString(), response: data,
-                                                     responseHeaders: URLRequest.headersToString(resp?.allHeaderFields), statusCode: resp?.statusCode.toInt64() ?? 0,
-                                                     checkExists: true, ctx: ctx)
+                                                     responseHeaders: URLRequest.headersToString(resp?.allHeaderFields), statusCode: info.statusCode.toInt64(),
+                                                     elapsed: info.elapsed.toInt64(), size: info.size.toInt64(), checkExists: true, ctx: ctx)
             } else {
                 // Save only basic info
                 let histId = self.localdb.historyId()
                 history = self.localdb.createHistory(id: histId, wsId: info.request.getWsId(), ctx: ctx)
                 if history != nil {
-                    history.statusCode = info.response?.statusCode.toInt64() ?? 0
+                    history.statusCode = info.statusCode.toInt64()
+                    history.elapsed = info.elapsed.toInt64()
+                    history.size = info.size.toInt64()
                     let req = info.urlRequest
                     history.request = "\(req.httpMethod ?? "") \(req.url?.path ?? "") HTTP/1.1"
                 }
@@ -120,6 +151,7 @@ class RequestManager {
                 if let ws = self.localdb.getWorkspace(id: history.getWsId()), ws.isSyncEnabled { PersistenceService.shared.saveHistoryToCloud(history!) }
             }
             AppState.requestState.removeValue(forKey: request.getId())
+            self.nc.post(name: .responseDidReceive, object: self, userInfo: ["data": info, "historyId": history.getId()])
         }
     }
     

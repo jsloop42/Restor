@@ -187,6 +187,14 @@ class EAUtils {
     func addressHeap<T: AnyObject>(o: T) -> Int {
         return unsafeBitCast(o, to: Int.self)
     }
+    
+    /// Returns the given bytes in a readable format string
+    func bytesToReadable(_ bytes: Int64) -> String {
+        let bcf = ByteCountFormatter()
+        bcf.allowedUnits = [.useBytes, .useKB, .useMB, .useGB]
+        bcf.countStyle = .binary
+        return bcf.string(fromByteCount: bytes)
+    }
 }
 
 class Log {

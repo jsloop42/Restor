@@ -69,6 +69,7 @@ class RequestTableViewController: RestorTableViewController {
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         AppState.setCurrentScreen(.request)
+        self.tabbarController.hideNavbarSegment()
         self.initManager()
         self.reloadAllTableViews()
     }
@@ -124,6 +125,7 @@ class RequestTableViewController: RestorTableViewController {
     }
     
     func initUI() {
+        self.tabbarController.hideNavbarSegment()
         self.app.updateViewBackground(self.view)
         self.app.updateNavigationControllerBackground(self.navigationController)
         self.view.backgroundColor = App.Color.tableViewBg
@@ -131,22 +133,13 @@ class RequestTableViewController: RestorTableViewController {
         self.initParamsTableViewManager()
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
-        self.addNavigationBarEditButton()
         self.bodyRawLabel.font = App.Font.monospace13
         self.renderTheme()
     }
     
     func initEvents() {
         self.nc.addObserver(self, selector: #selector(self.requestDidChange(_:)), name: .requestDidChange, object: nil)
-    }
-    
-    /// Display Edit button in navigation bar
-    func addNavigationBarEditButton() {
-        let editBtn = UIButton(type: .custom)
-        editBtn.setTitle("Edit", for: .normal)
-        editBtn.setTitleColor(editBtn.tintColor, for: .normal)
-        editBtn.addTarget(self, action: #selector(self.editButtonDidTap(_:)), for: .touchUpInside)
-        self.tabbarController.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: editBtn)
+        self.nc.addObserver(self, selector: #selector(self.editButtonDidTap(_:)), name: .editRequestDidTap, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -177,8 +170,9 @@ class RequestTableViewController: RestorTableViewController {
         self.reloadData()
     }
     
-    @objc func editButtonDidTap(_ sender: Any) {
+    @objc func editButtonDidTap(_ notif: Notification) {
         Log.debug("edit button did tap")
+        guard let info = notif.userInfo, let req = info["request"] as? ERequest, req.getId() == self.request?.getId() else { return }
         self.viewEditRequestVC()
     }
     
