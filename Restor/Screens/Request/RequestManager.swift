@@ -132,8 +132,8 @@ class RequestManager {
                     return String(data: rdata, encoding: .utf8) ?? ""
                 }()
                 history = self.localdb.createHistory(id: histId, requestId: req.getId(), wsId: req.getWsId(), request: urlReq.toString(), response: data,
-                                                     responseHeaders: URLRequest.headersToString(resp?.allHeaderFields), statusCode: info.statusCode.toInt64(),
-                                                     elapsed: info.elapsed.toInt64(), size: info.size.toInt64(), checkExists: true, ctx: ctx)
+                                                     responseHeaders: URLRequest.headersToData(resp?.allHeaderFields), statusCode: info.statusCode.toInt64(),
+                                                     elapsed: info.elapsed.toInt64(), responseBodySize: info.size.toInt64(), checkExists: true, ctx: ctx)
             } else {
                 // Save only basic info
                 let histId = self.localdb.historyId()
@@ -141,7 +141,7 @@ class RequestManager {
                 if history != nil {
                     history.statusCode = info.statusCode.toInt64()
                     history.elapsed = info.elapsed.toInt64()
-                    history.size = info.size.toInt64()
+                    history.responseBodySize = info.size.toInt64()
                     let req = info.urlRequest
                     history.request = "\(req.httpMethod ?? "") \(req.url?.path ?? "") HTTP/1.1"
                 }

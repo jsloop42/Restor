@@ -27,6 +27,10 @@
 		9E1B2DEC242799E700994233 /* ETag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1B2DEB242799E700994233 /* ETag.swift */; };
 		9E223D532436261600229855 /* EACloudOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D522436261600229855 /* EACloudOperation.swift */; };
 		9E223D55243626E000229855 /* EACommon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D54243626E000229855 /* EACommon.swift */; };
+		9E2C64082477EE1700048B1A /* TwoColumnCollectionView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E2C64072477EE1700048B1A /* TwoColumnCollectionView.xib */; };
+		9E2C640A2477F03100048B1A /* TwoColumnCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E2C64092477F03100048B1A /* TwoColumnCollectionView.swift */; };
+		9E2C640D2477F39300048B1A /* TwoColumnCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E2C640C2477F39300048B1A /* TwoColumnCollectionViewCell.xib */; };
+		9E2C640F2477F3A900048B1A /* TwoColumnCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E2C640E2477F3A900048B1A /* TwoColumnCollectionViewCell.swift */; };
 		9E36C412246BEA5F00946726 /* EAUIStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C411246BEA5F00946726 /* EAUIStateMachine.swift */; };
 		9E36C415246BEBEC00946726 /* ProjectListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C414246BEBEC00946726 /* ProjectListState.swift */; };
 		9E36C417246BEC3B00946726 /* RequestListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C416246BEC3B00946726 /* RequestListState.swift */; };
@@ -45,7 +49,7 @@
 		9E568E3C24308C67003150EC /* EAUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3B24308C67003150EC /* EAUtilsTests.swift */; };
 		9E568E3F2430B576003150EC /* Zone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3E2430B576003150EC /* Zone.swift */; };
 		9E70D4B924605DBB00B33CF1 /* RequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */; };
-		9E70D4BB24605E2700B33CF1 /* ResponseViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E70D4BA24605E2700B33CF1 /* ResponseViewController.swift */; };
+		9E70D4BB24605E2700B33CF1 /* ResponseTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E70D4BA24605E2700B33CF1 /* ResponseTableViewController.swift */; };
 		9E732EE9246694E9004A3E4D /* EADynamicSizeTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E732EE8246694E9004A3E4D /* EADynamicSizeTableView.swift */; };
 		9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7585F123A2B27B00AD6E8B /* EATextField.swift */; };
 		9E769AFA242147AB005B18C3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E769AF9242147AB005B18C3 /* Models.swift */; };
@@ -133,6 +137,10 @@
 		9E1B2DEB242799E700994233 /* ETag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETag.swift; sourceTree = "<group>"; };
 		9E223D522436261600229855 /* EACloudOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACloudOperation.swift; sourceTree = "<group>"; };
 		9E223D54243626E000229855 /* EACommon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACommon.swift; sourceTree = "<group>"; };
+		9E2C64072477EE1700048B1A /* TwoColumnCollectionView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TwoColumnCollectionView.xib; sourceTree = "<group>"; };
+		9E2C64092477F03100048B1A /* TwoColumnCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoColumnCollectionView.swift; sourceTree = "<group>"; };
+		9E2C640C2477F39300048B1A /* TwoColumnCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TwoColumnCollectionViewCell.xib; sourceTree = "<group>"; };
+		9E2C640E2477F3A900048B1A /* TwoColumnCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoColumnCollectionViewCell.swift; sourceTree = "<group>"; };
 		9E36C411246BEA5F00946726 /* EAUIStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUIStateMachine.swift; sourceTree = "<group>"; };
 		9E36C414246BEBEC00946726 /* ProjectListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListState.swift; sourceTree = "<group>"; };
 		9E36C416246BEC3B00946726 /* RequestListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListState.swift; sourceTree = "<group>"; };
@@ -152,7 +160,7 @@
 		9E568E3B24308C67003150EC /* EAUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUtilsTests.swift; sourceTree = "<group>"; };
 		9E568E3E2430B576003150EC /* Zone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone.swift; sourceTree = "<group>"; };
 		9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTableViewController.swift; sourceTree = "<group>"; };
-		9E70D4BA24605E2700B33CF1 /* ResponseViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseViewController.swift; sourceTree = "<group>"; };
+		9E70D4BA24605E2700B33CF1 /* ResponseTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseTableViewController.swift; sourceTree = "<group>"; };
 		9E732EE8246694E9004A3E4D /* EADynamicSizeTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EADynamicSizeTableView.swift; sourceTree = "<group>"; };
 		9E7585F123A2B27B00AD6E8B /* EATextField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextField.swift; sourceTree = "<group>"; };
 		9E769AF9242147AB005B18C3 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
@@ -234,6 +242,17 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9E2C640B2477F03B00048B1A /* Two-Column Collection View */ = {
+			isa = PBXGroup;
+			children = (
+				9E2C64072477EE1700048B1A /* TwoColumnCollectionView.xib */,
+				9E2C64092477F03100048B1A /* TwoColumnCollectionView.swift */,
+				9E2C640C2477F39300048B1A /* TwoColumnCollectionViewCell.xib */,
+				9E2C640E2477F3A900048B1A /* TwoColumnCollectionViewCell.swift */,
+			);
+			path = "Two-Column Collection View";
+			sourceTree = "<group>";
+		};
 		9E36C413246BEBBD00946726 /* UI State + Coordinator */ = {
 			isa = PBXGroup;
 			children = (
@@ -281,6 +300,7 @@
 				9E926F9923945E79002DF561 /* Main.storyboard */,
 				9EEAAEC823EE81410022A72F /* OptionsPickerViewController.swift */,
 				9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */,
+				9E2C640B2477F03B00048B1A /* Two-Column Collection View */,
 				9E538DAB239951790025C14C /* UI.swift */,
 			);
 			path = View;
@@ -427,7 +447,7 @@
 				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
 				9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */,
 				9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */,
-				9E70D4BA24605E2700B33CF1 /* ResponseViewController.swift */,
+				9E70D4BA24605E2700B33CF1 /* ResponseTableViewController.swift */,
 				9EFFF1C9246FEA50003D7CA8 /* RequestManager.swift */,
 				9EFFF1CB246FEA83003D7CA8 /* RequestStates.swift */,
 				9E4CE932246FED560088621D /* RequestStateMachine.swift */,
@@ -564,7 +584,9 @@
 				9EBE4CA6245DF6C700CEBEB1 /* LICENSE.txt in Resources */,
 				9E926FA323945E7D002DF561 /* LaunchScreen.storyboard in Resources */,
 				9E926FA023945E7D002DF561 /* Assets.xcassets in Resources */,
+				9E2C640D2477F39300048B1A /* TwoColumnCollectionViewCell.xib in Resources */,
 				9E926F9B23945E79002DF561 /* Main.storyboard in Resources */,
+				9E2C64082477EE1700048B1A /* TwoColumnCollectionView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -629,6 +651,7 @@
 				9E18F171246DC051003C888C /* EditRequestState.swift in Sources */,
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
 				9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */,
+				9E2C640A2477F03100048B1A /* TwoColumnCollectionView.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectListViewController.swift in Sources */,
 				9E36C419246BEC7A00946726 /* WorkspaceListState.swift in Sources */,
 				9E568E3F2430B576003150EC /* Zone.swift in Sources */,
@@ -637,6 +660,7 @@
 				9E1B2DE82427997E00994233 /* ERequestBodyData.swift in Sources */,
 				9E4CE933246FED560088621D /* RequestStateMachine.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
+				9E2C640F2477F3A900048B1A /* TwoColumnCollectionViewCell.swift in Sources */,
 				9EFA58BB2445E0F0003C8AEA /* EASystem.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
 				9ED1255924755DA9005E2AD7 /* EHistory.swift in Sources */,
@@ -651,7 +675,7 @@
 				9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */,
 				9E18F173246DC0E5003C888C /* EditRequestCoordinator.swift in Sources */,
 				9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */,
-				9E70D4BB24605E2700B33CF1 /* ResponseViewController.swift in Sources */,
+				9E70D4BB24605E2700B33CF1 /* ResponseTableViewController.swift in Sources */,
 				9E1B2DE42427992B00994233 /* EFile.swift in Sources */,
 				9E49EC022402FF1F00DAA260 /* EADocumentPicker.swift in Sources */,
 				9E18F16B246D9CE9003C888C /* RequestCoordinator.swift in Sources */,

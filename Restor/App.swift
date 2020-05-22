@@ -293,6 +293,27 @@ class App {
         return text!.isEmpty ? " " : text!
     }
     
+    /// Format response elapsed time to readable string.
+    func formatElapsed(_ elapsed: Int64) -> String {
+        var ts = "\(elapsed) ms"
+        if elapsed > 60000 {  // minutes
+            ts = String(format: "%.2f m", Double(elapsed) / 60000.0)
+        } else if elapsed > 1000 {  // second
+            ts = String(format: "%.2f s", Double(elapsed) / 1000)
+        }
+        let xs = ts.components(separatedBy: " ")
+        var str = ts
+        print("ts: \(ts)")
+        print("xs: \(xs)")
+        if xs[0].contains(".00") {
+            str = "\(xs[0].prefix(xs[0].count - 3)) \(xs[1])"
+        }
+        if xs[0].suffix(1) == "0" {
+            str = "\(xs[0].prefix(xs[0].count - 1)) \(xs[1])"
+        }
+        return str
+    }
+    
     // MARK: - Mark entity for delete
     
     func addEditRequestDeleteObject(_ obj: Entity?) {

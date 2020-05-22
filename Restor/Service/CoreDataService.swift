@@ -1239,6 +1239,24 @@ class CoreDataService {
         return x
     }
     
+    func getLatestHistory(reqId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EHistory? {
+        var x: EHistory?
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EHistory>(entityName: "EHistory")
+            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "requestId == %@", reqId)
+                : NSPredicate(format: "requestId == %@ AND markForDelete == %hhd", reqId, includeMarkForDelete!)
+            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: false)]
+            fr.fetchLimit = 1
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error fetching latest history: \(error)")
+            }
+        }
+        return x
+    }
+    
     // MARK: - Entities to sync
     
     func getWorkspacesToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<EWorkspace> {
@@ -1579,8 +1597,8 @@ class CoreDataService {
         return x
     }
     
-    func createHistory(id: String, requestId: String, wsId: String, request: String, response: String, responseHeaders: String, statusCode: Int64, elapsed: Int64,
-                       size: Int64, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EHistory? {
+    func createHistory(id: String, requestId: String, wsId: String, request: String, response: String, responseHeaders: Data?, statusCode: Int64, elapsed: Int64,
+                       responseBodySize: Int64, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EHistory? {
         var x: EHistory?
         let ts = Date().currentTimeNanos()
         let moc = self.getMainMOC(ctx: ctx)
@@ -1595,7 +1613,7 @@ class CoreDataService {
             data.responseHeaders = responseHeaders
             data.statusCode = statusCode
             data.elapsed = elapsed
-            data.size = size
+            data.responseBodySize = responseBodySize
             data.created = x == nil ? ts : x!.created
             data.modified = ts
             data.changeTag = ts

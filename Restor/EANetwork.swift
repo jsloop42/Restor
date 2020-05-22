@@ -472,6 +472,12 @@ extension URLRequest {
             return acc + "\(key): \(value)\" \n"
         }) ?? ""
     }
+    
+    static func headersToData(_ hm: [AnyHashable: Any]?) -> Data? {
+        guard let hm = hm else { return nil }
+        if let data = try? JSONSerialization.data(withJSONObject: hm, options: .fragmentsAllowed) { return data }
+        return nil
+    }
 }
 
 public enum HTTPStatusCode: Int {

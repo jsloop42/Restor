@@ -74,7 +74,7 @@ public class EHistory: NSManagedObject, Entity {
             record["request"] = (self.request ?? "") as CKRecordValue
             record["requestId"] = (self.requestId ?? "") as CKRecordValue
             record["response"] = (self.response ?? "") as CKRecordValue
-            record["responseHeaders"] = (self.responseHeaders ?? "") as CKRecordValue
+            if let data = self.responseHeaders { record["responseHeaders"] = data as CKRecordValue }
             record["statusCode"] = self.statusCode as CKRecordValue
             record["version"] = self.version as CKRecordValue
             record["wsId"] = self.getWsId() as CKRecordValue
@@ -91,7 +91,7 @@ public class EHistory: NSManagedObject, Entity {
                 if let x = record["request"] as? String { self.request = x }
                 if let x = record["requestId"] as? String { self.requestId = x }
                 if let x = record["response"] as? String { self.response = x }
-                if let x = record["responseHeaders"] as? String { self.responseHeaders = x }
+                if let x = record["responseHeaders"] as? String { self.responseHeaders = x.data(using: .utf8) }
                 if let x = record["statusCode"] as? Int64 { self.statusCode = x }
                 if let x = record["version"] as? Int64 { self.version = x }
                 if let x = record["wsId"] as? String { self.wsId = x }

@@ -28,12 +28,17 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
         case request
         case response
     }
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        _ = self.segmentControl()
+    }
        
     override func viewDidLoad() {
         Log.debug("request tab bar controller")
-        _ = self.segmentControl()
         self.addNavigationBarEditButton()
         self.delegate = self
+        self.selectedIndex = 1
     }
     
     /// Display Edit button in navigation bar
@@ -61,15 +66,15 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     
     func segmentControl() -> UISegmentedControl {
         if self.segView != nil { return self.segView }
-        self.segView = UISegmentedControl(items: ["Raw", "Preview"])
-        self.segView.selectedSegmentIndex = self.ck.getValue(key: Const.responseSegmentIndexKey) as? Int ?? 1
+        self.segView = UISegmentedControl(items: ResponseMode.allCases)
+        self.segView.selectedSegmentIndex = self.ck.getValue(key: Const.responseSegmentIndexKey) as? Int ?? ResponseMode.info.rawValue
         self.segView.sizeToFit()
         self.segView.addTarget(self, action: #selector(self.segmentDidChange(_:)), for: .valueChanged)
         return self.segView!
     }
     
     func viewNavbarSegment() {
-        self.segView.selectedSegmentIndex = self.ck.getValue(key: Const.responseSegmentIndexKey) as? Int ?? 1
+        self.segView.selectedSegmentIndex = self.ck.getValue(key: Const.responseSegmentIndexKey) as? Int ?? ResponseMode.info.rawValue
         self.navigationItem.titleView = self.segView
     }
     
