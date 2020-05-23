@@ -68,6 +68,11 @@ class RequestManager {
     func prepareRequest() {
         Log.debug("[req-man] prepare-request")
         let urlReq = self.requestToURLRequest(self.request)
+        if urlReq == nil {
+            Log.debug("urlrequest is nil -> moving to cancel state")
+            self.fsm.enter(RequestCancelState.self)
+            return
+        }
         let state = self.fsm.state(forClass: RequestSendState.self)
         state?.urlReq = urlReq
         self.fsm.enter(RequestSendState.self)
@@ -122,6 +127,11 @@ class RequestManager {
             guard let ws = self.localdb.getWorkspace(id: self.request.getWsId()) else { return }
             var history: EHistory!
             // Save history if save response is enabled
+            
+            // TODO: test
+            ws.saveResponse = true
+            // TODO: end test
+            
             if ws.saveResponse {
                 let histId = self.localdb.historyId()
                 let req = info.request
@@ -142,6 +152,7 @@ class RequestManager {
                     history.statusCode = info.statusCode.toInt64()
                     history.elapsed = info.elapsed.toInt64()
                     history.responseBodySize = info.size.toInt64()
+                    history.requestId = info.request.getId()
                     let req = info.urlRequest
                     history.request = "\(req.httpMethod ?? "") \(req.url?.path ?? "") HTTP/1.1"
                 }
@@ -167,10 +178,16 @@ class RequestManager {
         // TODO:
     }
     
+    func getURL(_ str: String?) -> URL? {
+        guard var str = str else { return nil }
+        if !str.starts(with: "http://") || !str.starts(with: "https://") { str = "http://\(str)" }
+        return URL(string: str)
+    }
+    
     func requestToURLRequest(_ req: ERequest) -> URLRequest? {
         Log.debug("[req-man] request-to-url-request")
         guard let projId = request.project?.getId() else { return nil }
-        guard let _url = req.url, let url = URL(string: _url) else { return nil }
+        guard let url = self.getURL(req.url) else { return nil }
         guard var urlComp = URLComponents(string: url.absoluteString) else { return nil }
         let qp = self.localdb.getParamsRequestData(request.getId())
         if !qp.isEmpty {

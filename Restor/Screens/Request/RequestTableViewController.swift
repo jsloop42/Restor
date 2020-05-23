@@ -179,7 +179,9 @@ class RequestTableViewController: RestorTableViewController {
     @objc func requestDidChange(_ notif: Notification) {
         Log.debug("request did change notif")
         DispatchQueue.main.async {
-            if let info = notif.userInfo as? [String: String], let reqId = info["requestId"], reqId == self.request?.getId() {
+            if let info = notif.userInfo as? [String: Any], let req = info["request"] as? ERequest, req.getId() == self.request?.getId() {
+                self.request = req
+                self.tabbarController.request = req
                 Log.debug("current request did change - reloading views")
                 self.initData()
                 self.updateData()

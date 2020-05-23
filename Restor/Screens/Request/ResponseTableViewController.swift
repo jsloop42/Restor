@@ -89,23 +89,24 @@ class ResponseInfoCell: UITableViewCell {
     }
 }
 
-class ResponseCollectionViewCell: UITableViewCell, UICollectionViewDelegate, UICollectionViewDataSource {
+enum ResponseKVTableType: String {
+    case header = "response-header-table-view"
+    case details = "response-details-table-view"
+}
+
+class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegate {
+    @IBOutlet weak var tableView: EADynamicSizeTableView!
     var isInit = false
-    var collectionView: TwoColumnCollectionView!
     var request: ERequest?
     var history: EHistory?
     let cellId = "twoColumnCell"
-    var cellType: CellType = .header
+    var tableType: ResponseKVTableType = .header
     var headers: [String: String] = [:]
-    
-    enum CellType {
-        case header
-        case details
-    }
+    var headerKeys: [String] = []
+    var heightMap: [Int: CGFloat] = [:] // [Row: Height]
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
-        self.bootstrap()
     }
     
     override func awakeFromNib() {
@@ -121,26 +122,77 @@ class ResponseCollectionViewCell: UITableViewCell, UICollectionViewDelegate, UIC
     }
     
     func initUI() {
-        if self.collectionView == nil {
-            self.collectionView = UINib(nibName: "TwoColumnCollectionView", bundle: nil).instantiate(withOwner: self, options: nil)[0] as? TwoColumnCollectionView
-            self.collectionView.delegate = self
-            self.collectionView.dataSource = self
-        }
+//        if self.tableView == nil {
+//            self.tableView = EADynamicSizeTableView(frame: self.contentView.frame, style: .plain)
+//            self.tableView.translatesAutoresizingMaskIntoConstraints = false
+//            self.contentView.addSubview(self.tableView)
+//            NSLayoutConstraint.activate([
+//                self.tableView.topAnchor.constraint(equalTo: self.contentView.topAnchor),
+//                self.tableView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor),
+//                self.tableView.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor),
+//                self.tableView.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor)
+//            ])
+//            self.tableView.register(UINib(nibName: "KVCell", bundle: nil), forCellReuseIdentifier: "kvCell")
+//            self.tableView.delegate = self
+//            self.tableView.dataSource = self
+//            self.tableView.estimatedRowHeight = 44
+//            self.tableView.rowHeight = UITableView.automaticDimension
+//            self.tableView.separatorStyle = .none
+//        }
+        self.tableView.tableViewId = ResponseKVTableType.header.rawValue
+        self.tableView.register(UINib(nibName: "KVCell", bundle: nil), forCellReuseIdentifier: "kvCell")
+        self.tableView.delegate = self
+        self.tableView.dataSource = self
+        self.tableView.estimatedRowHeight = 44
+        self.tableView.rowHeight = UITableView.automaticDimension
+    }
+    
+    func updateUI() {
+        self.updateData()
+        self.tableView.reloadData()
     }
     
     func updateData() {
         guard let history = self.history, let headers = history.responseHeaders else { return }
         if let hm = try? JSONSerialization.jsonObject(with: headers, options: .allowFragments) as? [String: String] {
             self.headers = hm
+            self.headerKeys = self.headers.allKeys().sorted()
         }
     }
+
+    // MARK: - Table view
     
-    func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-        self.cellType == .header ? self.headers.count : 12
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return self.tableType == .header ? self.headerKeys.count : 12
     }
     
-    func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        return collectionView.dequeueReusableCell(withReuseIdentifier: self.cellId, for: indexPath)
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "kvCell", for: indexPath) as! KVCell
+        let row = indexPath.row
+        if self.tableType == .header {
+            let key = self.headerKeys[row]
+            cell.keyLabel.text = key
+            cell.valueLabel.text = self.headers[key]
+            row == self.headerKeys.count - 1 ? cell.hideBottomBorder() : cell.displayBottomBorder()
+        }
+        return cell
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        let row = indexPath.row
+        if self.tableType == .header {
+            let key = self.headerKeys[row]
+            let val = self.headers[key] ?? ""
+            let text = val.count >= key.count ? val : key
+            Log.debug("text: \(text)")
+            let width = tableView.frame.width / 2 - 32
+            var h = UI.getTextHeight(text, width: width, font: UIFont.systemFont(ofSize: 14))
+            Log.debug("header cell height h: \(h)")
+            if h < 55 { h = 55 }
+            self.tableView.setHeight(h, forRowAt: indexPath)
+            return h
+        }
+        return 44
     }
 }
 
@@ -161,10 +213,14 @@ class ResponseTableViewController: RestorTableViewController {
     var mode: ResponseMode = .preview
     @IBOutlet weak var infoCell: ResponseInfoCell!
     @IBOutlet weak var headerTitleCell: KVHeaderCell!
-    @IBOutlet weak var headersViewCell: UITableViewCell!
+    @IBOutlet weak var headersViewCell: ResponseKVCell!
     @IBOutlet weak var detailsTitleCell: KVHeaderCell!
     @IBOutlet weak var detailsViewCell: UITableViewCell!
     @IBOutlet weak var helpCell: ResponseInfoCell!
+    private var headerCellHeight: CGFloat = 0.0
+    private var detailsCellHeight: CGFloat = 0.0
+    private var previousHeaderCellHeight: CGFloat = 0.0
+    private var previousDetailsCellHeight: CGFloat = 0.0
     
     var request: ERequest?
     var history: EHistory?
@@ -189,6 +245,9 @@ class ResponseTableViewController: RestorTableViewController {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        self.initData()
+        self.updateUI()
+        self.tableView.reloadData()
     }
     
     override func viewDidLoad() {
@@ -209,19 +268,23 @@ class ResponseTableViewController: RestorTableViewController {
         }
         self.infoCell.request = req
         self.infoCell.history = self.history
+        self.headersViewCell.request = req
+        self.headersViewCell.history = self.history
     }
     
     func initUI() {
         if let tb = self.tabBarController as? RequestTabBarController {
-            self.mode = ResponseMode(rawValue: tb.segView.selectedSegmentIndex) ?? .preview
+            self.mode = ResponseMode(rawValue: tb.segView.selectedSegmentIndex) ?? .info
             tb.viewNavbarSegment()
         }
+        
     }
     
     func initEvents() {
         self.nc.addObserver(self, selector: #selector(self.segmentDidChange(_:)), name: .responseSegmentDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.viewRequestHistoryDidTap(_:)), name: .viewRequestHistoryDidTap, object: nil)
         self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.dynamicSizeTableViewHeightDidChange(_:)), name: .dynamicSizeTableViewHeightDidChange, object: nil)
     }
     
     func updateUI() {
@@ -229,21 +292,39 @@ class ResponseTableViewController: RestorTableViewController {
         if self.history == nil { return }
         if self.mode == .info {
             self.infoCell.updateUI()
+            self.headersViewCell.updateUI()
         }
-//        if self.mode == .info {
-//            if self.history == nil {
-//                UIView.animate(withDuration: 0.3) {
-//                    [self.infoCell, self.headerTitleCell, self.headersViewCell, self.detailsTitleCell, self.detailsViewCell].forEach { $0?.isHidden = true }
-//                    self.helpCell.isHidden = false
-//                }
-//            } else {
-//                UIView.animate(withDuration: 0.3) {
-//                    [self.infoCell, self.headerTitleCell, self.headersViewCell, self.detailsTitleCell, self.detailsViewCell].forEach { $0?.isHidden = false }
-//                    self.helpCell.isHidden = true
-//                    self.infoCell.updateUI()
-//                }
-//            }
-//        }
+    }
+    
+    /// Get the dynamic height of the inner table view
+    func setHeight(_ height: CGFloat, type: ResponseKVTableType) {
+        if type == .header {
+            self.headerCellHeight = height
+            // Once the height changes, reload the outer table view. Also prevents continuous reloading of the table view.
+            if self.headerCellHeight != self.previousHeaderCellHeight {
+                self.previousHeaderCellHeight = self.headerCellHeight
+                self.tableView.reloadData()
+            }
+        } else if type == .details {
+            self.detailsCellHeight = height
+        }
+    }
+    
+    @objc func dynamicSizeTableViewHeightDidChange(_ notif: Notification) {
+        Log.debug("dynamic size table view height did change notification")
+        if let info = notif.userInfo as? [String: Any], let tableViewId = info["tableViewId"] as? String, let type = ResponseKVTableType(rawValue: tableViewId),
+            let height = info["height"] as? CGFloat {
+            switch type {
+            case .header:
+                self.headerCellHeight = height
+                self.headersViewCell.tableView.shouldReload = false
+                self.tableView.reloadData()
+                self.headersViewCell.tableView.shouldReload = true
+            case .details:
+                break
+            }
+            
+        }
     }
     
     @objc func segmentDidChange(_ notif: Notification) {
@@ -311,7 +392,10 @@ extension ResponseTableViewController {
                     case .headerTitleCell:
                         return 44
                     case .headersViewCell:
-                        return 44
+                        self.headersViewCell.tableView.invalidateIntrinsicContentSize()
+                        self.headersViewCell.invalidateIntrinsicContentSize()
+                        if (self.history?.responseHeaders) == nil { return 0 }
+                        return self.headerCellHeight == 0 ? UITableView.automaticDimension : self.headerCellHeight
                     case .detailsTitleCell:
                         return 44
                     case .detailsViewCell:

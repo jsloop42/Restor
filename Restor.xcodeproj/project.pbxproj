@@ -27,10 +27,6 @@
 		9E1B2DEC242799E700994233 /* ETag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1B2DEB242799E700994233 /* ETag.swift */; };
 		9E223D532436261600229855 /* EACloudOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D522436261600229855 /* EACloudOperation.swift */; };
 		9E223D55243626E000229855 /* EACommon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D54243626E000229855 /* EACommon.swift */; };
-		9E2C64082477EE1700048B1A /* TwoColumnCollectionView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E2C64072477EE1700048B1A /* TwoColumnCollectionView.xib */; };
-		9E2C640A2477F03100048B1A /* TwoColumnCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E2C64092477F03100048B1A /* TwoColumnCollectionView.swift */; };
-		9E2C640D2477F39300048B1A /* TwoColumnCollectionViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E2C640C2477F39300048B1A /* TwoColumnCollectionViewCell.xib */; };
-		9E2C640F2477F3A900048B1A /* TwoColumnCollectionViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E2C640E2477F3A900048B1A /* TwoColumnCollectionViewCell.swift */; };
 		9E36C412246BEA5F00946726 /* EAUIStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C411246BEA5F00946726 /* EAUIStateMachine.swift */; };
 		9E36C415246BEBEC00946726 /* ProjectListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C414246BEBEC00946726 /* ProjectListState.swift */; };
 		9E36C417246BEC3B00946726 /* RequestListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C416246BEC3B00946726 /* RequestListState.swift */; };
@@ -55,6 +51,8 @@
 		9E769AFA242147AB005B18C3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E769AF9242147AB005B18C3 /* Models.swift */; };
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
 		9E7B5848242A9BAB00997302 /* EALFUCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7B5847242A9BAB00997302 /* EALFUCache.swift */; };
+		9E7CE91224794F2500C18C1A /* KVCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = 9E7CE91124794F2500C18C1A /* KVCell.xib */; };
+		9E7CE9142479509800C18C1A /* KVCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7CE9132479509800C18C1A /* KVCell.swift */; };
 		9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */; };
 		9E85FE48240E9CDB002821F2 /* main.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE47240E9CDB002821F2 /* main.swift */; };
 		9E85FE4A240E9D23002821F2 /* AppDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */; };
@@ -137,10 +135,6 @@
 		9E1B2DEB242799E700994233 /* ETag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETag.swift; sourceTree = "<group>"; };
 		9E223D522436261600229855 /* EACloudOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACloudOperation.swift; sourceTree = "<group>"; };
 		9E223D54243626E000229855 /* EACommon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACommon.swift; sourceTree = "<group>"; };
-		9E2C64072477EE1700048B1A /* TwoColumnCollectionView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TwoColumnCollectionView.xib; sourceTree = "<group>"; };
-		9E2C64092477F03100048B1A /* TwoColumnCollectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoColumnCollectionView.swift; sourceTree = "<group>"; };
-		9E2C640C2477F39300048B1A /* TwoColumnCollectionViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TwoColumnCollectionViewCell.xib; sourceTree = "<group>"; };
-		9E2C640E2477F3A900048B1A /* TwoColumnCollectionViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TwoColumnCollectionViewCell.swift; sourceTree = "<group>"; };
 		9E36C411246BEA5F00946726 /* EAUIStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUIStateMachine.swift; sourceTree = "<group>"; };
 		9E36C414246BEBEC00946726 /* ProjectListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListState.swift; sourceTree = "<group>"; };
 		9E36C416246BEC3B00946726 /* RequestListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListState.swift; sourceTree = "<group>"; };
@@ -166,6 +160,8 @@
 		9E769AF9242147AB005B18C3 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
 		9E7B5847242A9BAB00997302 /* EALFUCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EALFUCache.swift; sourceTree = "<group>"; };
+		9E7CE91124794F2500C18C1A /* KVCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = KVCell.xib; sourceTree = "<group>"; };
+		9E7CE9132479509800C18C1A /* KVCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KVCell.swift; sourceTree = "<group>"; };
 		9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentGroupViewController.swift; sourceTree = "<group>"; };
 		9E85FE47240E9CDB002821F2 /* main.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = main.swift; sourceTree = "<group>"; };
 		9E85FE49240E9D23002821F2 /* AppDelegateMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegateMock.swift; sourceTree = "<group>"; };
@@ -242,17 +238,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		9E2C640B2477F03B00048B1A /* Two-Column Collection View */ = {
-			isa = PBXGroup;
-			children = (
-				9E2C64072477EE1700048B1A /* TwoColumnCollectionView.xib */,
-				9E2C64092477F03100048B1A /* TwoColumnCollectionView.swift */,
-				9E2C640C2477F39300048B1A /* TwoColumnCollectionViewCell.xib */,
-				9E2C640E2477F3A900048B1A /* TwoColumnCollectionViewCell.swift */,
-			);
-			path = "Two-Column Collection View";
-			sourceTree = "<group>";
-		};
 		9E36C413246BEBBD00946726 /* UI State + Coordinator */ = {
 			isa = PBXGroup;
 			children = (
@@ -300,8 +285,9 @@
 				9E926F9923945E79002DF561 /* Main.storyboard */,
 				9EEAAEC823EE81410022A72F /* OptionsPickerViewController.swift */,
 				9EBCAA9E2424F3E100C82508 /* PopupViewController.swift */,
-				9E2C640B2477F03B00048B1A /* Two-Column Collection View */,
 				9E538DAB239951790025C14C /* UI.swift */,
+				9E7CE91124794F2500C18C1A /* KVCell.xib */,
+				9E7CE9132479509800C18C1A /* KVCell.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -584,9 +570,8 @@
 				9EBE4CA6245DF6C700CEBEB1 /* LICENSE.txt in Resources */,
 				9E926FA323945E7D002DF561 /* LaunchScreen.storyboard in Resources */,
 				9E926FA023945E7D002DF561 /* Assets.xcassets in Resources */,
-				9E2C640D2477F39300048B1A /* TwoColumnCollectionViewCell.xib in Resources */,
+				9E7CE91224794F2500C18C1A /* KVCell.xib in Resources */,
 				9E926F9B23945E79002DF561 /* Main.storyboard in Resources */,
-				9E2C64082477EE1700048B1A /* TwoColumnCollectionView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -637,6 +622,7 @@
 				9ED7C8CA246C157700936701 /* EACoordinator.swift in Sources */,
 				9E9DE8CC246C7DCD0068F8CE /* RestorViewController.swift in Sources */,
 				9E9CFA86246F3C1D009D870E /* EACrypto.swift in Sources */,
+				9E7CE9142479509800C18C1A /* KVCell.swift in Sources */,
 				9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */,
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
 				9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */,
@@ -651,7 +637,6 @@
 				9E18F171246DC051003C888C /* EditRequestState.swift in Sources */,
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
 				9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */,
-				9E2C640A2477F03100048B1A /* TwoColumnCollectionView.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectListViewController.swift in Sources */,
 				9E36C419246BEC7A00946726 /* WorkspaceListState.swift in Sources */,
 				9E568E3F2430B576003150EC /* Zone.swift in Sources */,
@@ -660,7 +645,6 @@
 				9E1B2DE82427997E00994233 /* ERequestBodyData.swift in Sources */,
 				9E4CE933246FED560088621D /* RequestStateMachine.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
-				9E2C640F2477F3A900048B1A /* TwoColumnCollectionViewCell.swift in Sources */,
 				9EFA58BB2445E0F0003C8AEA /* EASystem.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
 				9ED1255924755DA9005E2AD7 /* EHistory.swift in Sources */,

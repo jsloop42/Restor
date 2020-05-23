@@ -416,24 +416,50 @@ extension UIView {
     }
 }
 
-extension UILabel {
+public extension UILabel {
     func textWidth() -> CGFloat {
         return UILabel.textWidth(label: self)
     }
     
-    class func textWidth(label: UILabel) -> CGFloat {
+    static func textWidth(label: UILabel) -> CGFloat {
         return textWidth(label: label, text: label.text!)
     }
     
-    class func textWidth(label: UILabel, text: String) -> CGFloat {
+    static func textWidth(label: UILabel, text: String) -> CGFloat {
         return textWidth(font: label.font, text: text)
     }
     
-    class func textWidth(font: UIFont, text: String) -> CGFloat {
+    static func textWidth(font: UIFont, text: String) -> CGFloat {
         let myText = text as NSString
         let rect = CGSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         let labelSize = myText.boundingRect(with: rect, options: .usesLineFragmentOrigin, attributes: [NSAttributedString.Key.font: font], context: nil)
         return ceil(labelSize.width)
+    }
+    
+    func textHeight(width: CGFloat) -> CGFloat {
+        guard let text = text else { return 0 }
+        return text.height(width: width, font: font)
+    }
+
+    func attributedTextHeight(width: CGFloat) -> CGFloat {
+        guard let attributedText = attributedText else { return 0 }
+        return attributedText.height(width: width)
+    }
+}
+
+extension String {
+    func height(width: CGFloat, font: UIFont) -> CGFloat {
+        let maxSize = CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+        let actualSize = self.boundingRect(with: maxSize, options: [.usesLineFragmentOrigin], attributes: [.font : font], context: nil)
+        return actualSize.height
+    }
+}
+
+extension NSAttributedString {
+    func height(width: CGFloat) -> CGFloat {
+        let maxSize = CGSize(width: width, height: CGFloat.greatestFiniteMagnitude)
+        let actualSize = boundingRect(with: maxSize, options: [.usesLineFragmentOrigin], context: nil)
+        return actualSize.height
     }
 }
 

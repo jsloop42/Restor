@@ -39,6 +39,7 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
         self.addNavigationBarEditButton()
         self.delegate = self
         self.selectedIndex = 1
+        self.viewNavbarSegment()
     }
     
     /// Display Edit button in navigation bar
@@ -75,7 +76,9 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     
     func viewNavbarSegment() {
         self.segView.selectedSegmentIndex = self.ck.getValue(key: Const.responseSegmentIndexKey) as? Int ?? ResponseMode.info.rawValue
-        self.navigationItem.titleView = self.segView
+        if self.selectedTab == .response {
+            self.navigationItem.titleView = self.segView
+        }
     }
     
     func hideNavbarSegment() {
@@ -89,6 +92,7 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {
         self.selectedTab = Tab(rawValue: tabBarController.selectedIndex) ?? .request
+        self.viewNavbarSegment()
         self.updateBarButtonText()
     }
 }
