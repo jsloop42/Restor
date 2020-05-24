@@ -44,6 +44,11 @@ class RequestTableViewController: RestorTableViewController {
     @IBOutlet weak var binaryCollectionView: UICollectionView!
     private unowned var reqMan: RequestManager?
     
+    enum TableType: String {
+        case header = "request-header-table-view"
+        case param = "request-param-table-view"
+    }
+    
     enum CellId: Int {
         case spaceAfterTop = 0
         case url = 1
@@ -81,7 +86,6 @@ class RequestTableViewController: RestorTableViewController {
         self.initUI()
         self.initEvents()
         self.updateData()
-        self.reloadAllTableViews()
     }
     
     func initManager() {
@@ -97,31 +101,6 @@ class RequestTableViewController: RestorTableViewController {
     
     func initData() {
         self.request = self.tabbarController.request
-        guard let request = self.request else { return }
-        let reqId = request.getId()
-        self.headers = self.localdb.getHeadersRequestData(reqId)
-        self.params = self.localdb.getParamsRequestData(reqId)
-        self.requestBody = request.body
-        guard let body = self.requestBody else { return }
-        guard let bodyType = RequestBodyType(rawValue: body.selected.toInt()) else { return }
-        self.bodyForms = []
-        self.multipart = []
-        self.binaryCollectionView.delegate = nil
-        self.binaryCollectionView.dataSource = nil
-        self.binaryImageView.isHidden = true
-        if bodyType == .form {
-            self.bodyForms = self.localdb.getFormRequestData(body.getId(), type: .form)
-        } else if bodyType == .multipart {
-            self.multipart = self.localdb.getFormRequestData(body.getId(), type: .multipart)
-        } else if bodyType == .binary {
-            if let bin = body.binary {
-                self.binary = bin
-                if let files = bin.files, !files.isEmpty {
-                    self.binaryFiles = self.localdb.getFiles(bin.getId(), type: .binary)
-                }
-            }
-        }
-        self.setBodyTitleLabel(RequestBodyType.toString(body.selected.toInt()))
     }
     
     func initUI() {
@@ -140,9 +119,11 @@ class RequestTableViewController: RestorTableViewController {
     func initEvents() {
         self.nc.addObserver(self, selector: #selector(self.requestDidChange(_:)), name: .requestDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.editButtonDidTap(_:)), name: .editRequestDidTap, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.dynamicSizeTableViewHeightDidChange(_:)), name: .dynamicSizeTableViewHeightDidChange, object: nil)
     }
     
     func initHeadersTableViewManager() {
+        self.headersTableView.tableViewId = TableType.header.rawValue
         self.headerKVTableViewManager.request = self.request
         self.headerKVTableViewManager.kvTableView = self.headersTableView
         self.headerKVTableViewManager.delegate = self
@@ -152,6 +133,7 @@ class RequestTableViewController: RestorTableViewController {
     }
     
     func initParamsTableViewManager() {
+        self.paramsTableView.tableViewId = TableType.param.rawValue
         self.paramsKVTableViewManager.request = self.request
         self.paramsKVTableViewManager.kvTableView = self.paramsTableView
         self.paramsKVTableViewManager.delegate = self
@@ -169,6 +151,25 @@ class RequestTableViewController: RestorTableViewController {
             self.headerKVTableViewManager.reloadData()
             self.paramsKVTableViewManager.reloadData()
             self.reloadData()
+        }
+    }
+    
+    @objc func dynamicSizeTableViewHeightDidChange(_ notif: Notification) {
+        Log.debug("request screen - dynamic table view height did change")
+        if let info = notif.userInfo as? [String: Any], let tableViewId = info["tableViewId"] as? String, let height = info["height"] as? CGFloat,
+            let tableType = TableType(rawValue: tableViewId) {
+            switch tableType {
+            case .header:
+                Log.debug("request header cell height updated: \(height)")
+                self.headersTableView.shouldReload = false
+                self.reloadAllTableViews()
+                self.headersTableView.shouldReload = true
+            case .param:
+                Log.debug("request param cell height updated: \(height)")
+                self.paramsTableView.shouldReload = false
+                self.reloadAllTableViews()
+                self.paramsTableView.shouldReload = true
+            }
         }
     }
     
@@ -207,17 +208,44 @@ class RequestTableViewController: RestorTableViewController {
     
     func updateData() {
         Log.debug("request vc - \(String(describing: self.request))")
-        guard let req = self.request, let proj = req.project else { return }
-        if let method = self.localdb.getRequestMethodData(at: req.selectedMethodIndex.toInt(), projId: proj.getId()) {
+        guard let request = self.request else { return }
+        let reqId = request.getId()
+        self.headers = self.localdb.getHeadersRequestData(reqId)
+        self.params = self.localdb.getParamsRequestData(reqId)
+        self.headerKVTableViewManager.kvTableView?.resetMeta()
+        self.paramsKVTableViewManager.kvTableView?.resetMeta()
+        self.requestBody = request.body
+        guard let body = self.requestBody else { return }
+        guard let bodyType = RequestBodyType(rawValue: body.selected.toInt()) else { return }
+        self.bodyForms = []
+        self.multipart = []
+        self.binaryCollectionView.delegate = nil
+        self.binaryCollectionView.dataSource = nil
+        self.binaryImageView.isHidden = true
+        if bodyType == .form {
+            self.bodyForms = self.localdb.getFormRequestData(body.getId(), type: .form)
+        } else if bodyType == .multipart {
+            self.multipart = self.localdb.getFormRequestData(body.getId(), type: .multipart)
+        } else if bodyType == .binary {
+            if let bin = body.binary {
+                self.binary = bin
+                if let files = bin.files, !files.isEmpty {
+                    self.binaryFiles = self.localdb.getFiles(bin.getId(), type: .binary)
+                }
+            }
+        }
+        self.setBodyTitleLabel(RequestBodyType.toString(body.selected.toInt()))
+        guard let proj = request.project else { return }
+        if let method = self.localdb.getRequestMethodData(at: request.selectedMethodIndex.toInt(), projId: proj.getId()) {
             self.methodLabel.text = method.name
         } else {
             self.methodLabel.text = "GET"
         }
-        self.urlLabel.text = req.url
+        self.urlLabel.text = request.url
         // self.urlLabel.text = "https://example.com/api/image/2458C0A7-538A-4A4B-9788-971BD38934BD/olive/imCJHoKQhHRWStsT3MkGiPbg.jpg"
-        self.nameLabel.text = req.name
+        self.nameLabel.text = request.name
         self.nameLabel.sizeToFit()
-        self.descLabel.text = req.desc
+        self.descLabel.text = request.desc
         self.descLabel.text =
         """
         There's a place in my mind
@@ -266,6 +294,7 @@ class RequestTableViewController: RestorTableViewController {
 //            self.descBorderView.isHidden = true
 //        }
         self.updateBodyCell()
+        self.reloadAllTableViews()
     }
     
     func updateBodyCell() {
@@ -396,6 +425,7 @@ extension RequestTableViewController {
                 height = 0
             } else {
                 height = self.paramsKVTableViewManager.getHeight()
+                //height = self.paramCellHeight
             }
         } else if indexPath.row == CellId.bodyTitle.rawValue {
             if self.requestBody == nil { return 0 }
@@ -461,7 +491,7 @@ extension RequestTableViewController: KVTableViewManagerDelegate {
     }
     
     func reloadData() {
-        self.updateData()
+        //self.updateData()
         self.tableView.reloadData()
     }
 }
@@ -635,18 +665,16 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     weak var request: ERequest?
     weak var delegate: KVTableViewManagerDelegate?
     private let app = App.shared
+    private let labelFont = UIFont.systemFont(ofSize: 14)
     
     func bootstrap() {
         self.kvTableView?.estimatedRowHeight = 44
     }
     
     func getHeight() -> CGFloat {
-        let height: CGFloat = 44
-        guard let tv = self.kvTableView else { return height }
-        tv.layoutIfNeeded()
-        let h = tv.contentSize.height
-        Log.debug("kvtableview content size: \(h)")
-        return h > 0 ? h + 4 : height
+        var height = self.kvTableView?.height ?? 0
+        if height == 0 { height = self.kvTableView?.contentSize.height ?? 1 }  // A positive height is set so that the table view renders properly later on.
+        return height
     }
     
     func reloadData() {
@@ -681,26 +709,39 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
         }
     }
     
-    func updateCell(_ cell: KVContentCell, indexPath: IndexPath) {
+    func getElem(_ indexPath: IndexPath) -> ERequestData? {
+        var elem: ERequestData?
         let row = indexPath.row
-        cell.keyLabel.clear()
-        cell.valueLabel.clear()
         switch self.tableViewType {
         case .header:
-            if let xs = self.delegate?.getHeaders() {
-                let elem = xs[row]
-                cell.keyLabel.text = self.app.getKVText(elem.key)
-                //cell.keyLabel.text = "The sacrifice is hard son, but you're no stranger to it. The sacrifice is hard son, but you're no stranger to it. "
-                cell.valueLabel.text = self.app.getKVText(elem.value)
-            }
+            if let xs = self.delegate?.getHeaders() { elem = xs[row] }
         case .params:
-            if let xs = self.delegate?.getParams() {
-                let elem = xs[row]
-                cell.keyLabel.text = self.app.getKVText(elem.key)
-                cell.valueLabel.text = self.app.getKVText(elem.value)
-            }
+            if let xs = self.delegate?.getParams() { elem = xs[row] }
         default:
             break
+        }
+        return elem
+    }
+    
+    func getHeight(_ indexPath: IndexPath, tableView: UITableView) -> CGFloat {
+        var height: CGFloat = 0.0
+        if let elem = self.getElem(indexPath) {
+            let key = self.app.getKVText(elem.key)
+            let value = self.app.getKVText(elem.value)
+            // compute height
+            let width = tableView.frame.width
+            height = 85 + UI.getTextHeight(key, width: width, font: labelFont) + UI.getTextHeight(value, width: width, font: labelFont)  // 85 is the padding around UI elements
+        }
+        return height
+    }
+    
+    /// Returns the height of the cell.
+    func updateCell(_ cell: KVContentCell, indexPath: IndexPath) {
+        cell.keyLabel.clear()
+        cell.valueLabel.clear()
+        if let elem = self.getElem(indexPath) {
+            cell.keyLabel.text = self.app.getKVText(elem.key)
+            cell.valueLabel.text = self.app.getKVText(elem.value)
         }
     }
     
@@ -711,6 +752,9 @@ class KVTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return UITableView.automaticDimension
+        let height: CGFloat = self.getHeight(indexPath, tableView: tableView)
+        Log.debug("computed height: \(height)")
+        self.kvTableView!.setHeight(height, forRowAt: indexPath)
+        return height
     }
 }

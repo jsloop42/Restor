@@ -18,15 +18,13 @@ public extension Notification.Name {
 /// In the cell height delegate return `UITableView.automaticDimension` and on bootstrap, set the `estimatedRowHeight` to `44`.
 public class EADynamicSizeTableView: UITableView {
     public override var intrinsicContentSize: CGSize { self.contentSize }
-    private var heightMap: [Int: CGFloat] = [:]
-    public var height: CGFloat { self.heightMap.allValues().reduce(into: 0.0) { (acc, x) in acc = acc + x } }
+    /// Returns height of the whole table view.
+    public var height: CGFloat { self.heightForAllSections() }
     private var previousHeight: CGFloat = 0.0
     public var tableViewId: String = "dynamic-size-tableview"
     public var nc = NotificationCenter.default
     public var shouldReload = true {
-        didSet {
-            Log.debug("table view: \(self.tableViewId) should reload: \(self.shouldReload)")
-        }
+        didSet { Log.debug("table view: \(self.tableViewId) should reload: \(self.shouldReload)") }
     }
     private var isInit = false
     /// Draw top and bottom borders.
@@ -34,6 +32,19 @@ public class EADynamicSizeTableView: UITableView {
         didSet { self._drawBorders() }
     }
     private let bottomBorderId = "ea-bottom-border"
+    private var heightInfo: [Int: HeightInfo] = [:]  // [Section: [Row: Height]]
+    
+    private struct HeightInfo {
+        var section: Int = 0
+        var height: CGFloat = 0.0
+        var previousHeight: CGFloat = 0.0
+        var heightMap: [Int: CGFloat] = [:]
+        var numberOfRows = 0
+        /// Indicates whether the height for all rows has been computed
+        var computed = false
+        /// If the meta related to the model has been set, like the model count.
+        var isMetaSet = false
+    }
     
     public required init?(coder: NSCoder) {
         super.init(coder: coder)
@@ -59,6 +70,7 @@ public class EADynamicSizeTableView: UITableView {
     
     public func initUI() {
         self._drawBorders()
+        self.estimatedRowHeight = 44
     }
     
     private func _drawBorders() {
@@ -66,13 +78,13 @@ public class EADynamicSizeTableView: UITableView {
             self.borderColor = UIColor(named: "cell-separator-bg")
             self.borderWidth = 0.8
             self.addTopBorderWithColor(color: self.borderColor!, width: self.borderWidth)
-            self.addBottomBorder()
+            self.updateBottomBorder()
         } else {
             self.removeBorder()
         }
     }
     
-    func addBottomBorder() {
+    func updateBottomBorder() {
         if self.drawBorders {
             self.removeBottomBorder(name: self.bottomBorderId)
             self.addBottomBorderWithColor(color: self.borderColor!, width: self.borderWidth, name: self.bottomBorderId)
@@ -95,19 +107,65 @@ public class EADynamicSizeTableView: UITableView {
     /// Set the `shouldReload` to `false` when reloading so that we avoid duplicate computation and once the parent table view completes the reload, toggle this
     /// back.
     public func setHeight(_ height: CGFloat, forRowAt indexPath: IndexPath) {
-        self.heightMap[indexPath.row] = height
-        self.addBottomBorder()
-        if self.numberOfRows(inSection: indexPath.section) == self.heightMap.count {
-            let h = self.height
-            if self.previousHeight != h {
-                self.addBottomBorder()
+        self.updateBottomBorder()
+        if self.computedHeight(forIndexPath: indexPath) != nil { return }
+        let section = indexPath.section
+        let row = indexPath.row
+        var secMap = self.heightInfo[section] ?? HeightInfo()
+        secMap.section = section
+        secMap.heightMap[row] = height
+        self.heightInfo[section] = secMap
+        if !secMap.isMetaSet { secMap.numberOfRows = self.numberOfRows(inSection: section); secMap.isMetaSet = true }
+        if secMap.numberOfRows == secMap.heightMap.count {
+            let h = secMap.heightMap.allValues().reduce(into: 0.0, { acc, height in acc += height })
+            secMap.height = h
+            if secMap.previousHeight != h {
+                self.updateBottomBorder()
+                secMap.computed = true
                 self.nc.post(name: .dynamicSizeTableViewHeightDidChange, object: self, userInfo: ["tableViewId": self.tableViewId, "height": h])
-                self.previousHeight = h
+                secMap.previousHeight = h
+                self.heightInfo[section] = secMap
             }
         }
     }
     
+    /// Returns the height for the given section.
+    public func height(forSection section: Int) -> CGFloat {
+        var height: CGFloat = 0.0
+        if let secMap = self.heightInfo[section] { height = secMap.heightMap.allValues().reduce(into: 0.0) { acc, height in acc +=  height } }
+        if height == 0.0 && self.numberOfRows(inSection: section) > 0 { return self.estimatedRowHeight }
+        return height
+    }
+    
+    /// Returns the height for all sections of the table view, same as height of the table view.
+    public func heightForAllSections() -> CGFloat {
+        var isEmptyTable = true
+        let height: CGFloat = self.heightInfo.allValues().reduce(into: 0.0) { height, secMap in
+            if isEmptyTable { isEmptyTable = self.numberOfRows(inSection: secMap.section) == 0 }
+            height += secMap.heightMap.allValues().reduce(into: 0.0) { acc, height in acc +=  height }
+        }
+        return height == 0 && !isEmptyTable ? self.estimatedRowHeight : height
+    }
+    
+    /// If the model did not change and all height had been already computed once, then the height need not be computed again.
+    /// Returns the height if it's already computed or nil.
+    /// NB: When using this in heightForRow there is a mismatch of one item being short on table view reload. So it's used internally.
+    private func computedHeight(forIndexPath indexPath: IndexPath) -> CGFloat? {
+        if let secMap = self.heightInfo[indexPath.section], secMap.computed { return secMap.height }
+        return nil
+    }
+    
+    /// When underlying model data changes, invoke this so that we get updated meta like, height info.
+    public func resetMeta() {
+        self.heightInfo = [:]
+    }
+    
     public override func reloadData() {
-        if self.shouldReload { super.reloadData() }
+        if self.shouldReload {
+            let offset = self.contentOffset  // Save the offset so that after reload, the table view maintains the same scroll offset
+            super.reloadData()
+            let offsetY = self.contentSize.height >= offset.y ? offset.y : self.contentSize.height
+            self.setContentOffset(CGPoint(x: 0, y: offsetY), animated: false)
+        }
     }
 }
