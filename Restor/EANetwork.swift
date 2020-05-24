@@ -275,7 +275,7 @@ public class EAHTTPClient: NSObject {
     private lazy var queue: OperationQueue = {
         let q = OperationQueue()
         q.name = "com.estoapps.ios.network-queue"
-        q.qualityOfService = .utility
+        q.qualityOfService = .userInitiated
         return q
     }()
     private var session: URLSession!
@@ -313,19 +313,19 @@ public class EAHTTPClient: NSObject {
     
     public override init() {
         super.init()
-        self.session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: self.queue)
+        self.session = URLSession(configuration: .ephemeral, delegate: self, delegateQueue: self.queue)
         self.bootstrap()
     }
     
     public init(config: URLSessionConfiguration) {
         super.init()
-        self.session = URLSession(configuration: config, delegate: nil, delegateQueue: self.queue)
+        self.session = URLSession(configuration: config, delegate: self, delegateQueue: self.queue)
         self.bootstrap()
     }
     
     public init(url: URL, method: Method) {
         super.init()
-        self.session = URLSession(configuration: .ephemeral, delegate: nil, delegateQueue: self.queue)
+        self.session = URLSession(configuration: .ephemeral, delegate: self, delegateQueue: self.queue)
         self.url = url
         self.method = method
         self.bootstrap()
@@ -437,6 +437,12 @@ extension EAHTTPClient: URLSessionDelegate {
         } else {
             completionHandler(.cancelAuthenticationChallenge, nil)
         }
+    }
+}
+
+extension EAHTTPClient: URLSessionDataDelegate {
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
+        Log.debug("url-session metrics: \(metrics)")
     }
 }
 

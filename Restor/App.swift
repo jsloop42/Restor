@@ -296,8 +296,8 @@ class App {
     /// Format response elapsed time to readable string.
     func formatElapsed(_ elapsed: Int64) -> String {
         var ts = "\(elapsed) ms"
-        if elapsed > 60000 {  // minutes
-            ts = String(format: "%.2f m", Double(elapsed) / 60000.0)
+        if elapsed > 60_000 {  // minutes
+            ts = String(format: "%.2f m", Double(elapsed) / 60_000.0)
         } else if elapsed > 1000 {  // second
             ts = String(format: "%.2f s", Double(elapsed) / 1000)
         }

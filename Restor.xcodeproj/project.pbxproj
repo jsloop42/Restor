@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9E0AD513247AC4A50099B9A5 /* ResponseData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0AD512247AC4A50099B9A5 /* ResponseData.swift */; };
 		9E145F92241BD9D200962A19 /* EARescheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E145F91241BD9D200962A19 /* EARescheduler.swift */; };
 		9E145F94241C118800962A19 /* EAReschedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E145F93241C118800962A19 /* EAReschedulerTests.swift */; };
 		9E18F16B246D9CE9003C888C /* RequestCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E18F16A246D9CE9003C888C /* RequestCoordinator.swift */; };
@@ -115,6 +116,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9E0AD512247AC4A50099B9A5 /* ResponseData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseData.swift; sourceTree = "<group>"; };
 		9E145F91241BD9D200962A19 /* EARescheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARescheduler.swift; sourceTree = "<group>"; };
 		9E145F93241C118800962A19 /* EAReschedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAReschedulerTests.swift; sourceTree = "<group>"; };
 		9E18F16A246D9CE9003C888C /* RequestCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestCoordinator.swift; sourceTree = "<group>"; };
@@ -238,6 +240,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		9E0AD514247ACB4C0099B9A5 /* Response */ = {
+			isa = PBXGroup;
+			children = (
+				9E70D4BA24605E2700B33CF1 /* ResponseTableViewController.swift */,
+			);
+			path = Response;
+			sourceTree = "<group>";
+		};
 		9E36C413246BEBBD00946726 /* UI State + Coordinator */ = {
 			isa = PBXGroup;
 			children = (
@@ -263,6 +273,7 @@
 				9E769AF9242147AB005B18C3 /* Models.swift */,
 				9E568E3E2430B576003150EC /* Zone.swift */,
 				9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */,
+				9E0AD512247AC4A50099B9A5 /* ResponseData.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -382,6 +393,7 @@
 			children = (
 				9EFF1FFC24229D8D00E97632 /* Project */,
 				9EE34CA423D9F6C800CA08F2 /* Request */,
+				9E0AD514247ACB4C0099B9A5 /* Response */,
 				9E538DB6239958A10025C14C /* Workspace */,
 				9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */,
 				9E18F16C246D9DB1003C888C /* RestorTableViewController.swift */,
@@ -433,7 +445,6 @@
 				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
 				9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */,
 				9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */,
-				9E70D4BA24605E2700B33CF1 /* ResponseTableViewController.swift */,
 				9EFFF1C9246FEA50003D7CA8 /* RequestManager.swift */,
 				9EFFF1CB246FEA83003D7CA8 /* RequestStates.swift */,
 				9E4CE932246FED560088621D /* RequestStateMachine.swift */,
@@ -601,6 +612,7 @@
 				9EC1F94E2426995A005BDD0A /* EACloudKit.swift in Sources */,
 				9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */,
 				9EFFF1CC246FEA83003D7CA8 /* RequestStates.swift in Sources */,
+				9E0AD513247AC4A50099B9A5 /* ResponseData.swift in Sources */,
 				9EFA58BD2445EBA8003C8AEA /* EAOperationQueue.swift in Sources */,
 				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,
 				9E223D532436261600229855 /* EACloudOperation.swift in Sources */,

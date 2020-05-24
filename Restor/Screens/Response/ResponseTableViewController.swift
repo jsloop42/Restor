@@ -10,6 +10,8 @@ import Foundation
 import UIKit
 import WebKit
 
+// MARK: - ResponseInfoCell
+
 class ResponseInfoCell: UITableViewCell {
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var urlLabel: UILabel!
@@ -95,6 +97,8 @@ enum ResponseKVTableType: String {
     case details = "response-details-table-view"
 }
 
+// MARK: - ResponseKVCell
+
 class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegate {
     //@IBOutlet weak var tableView: EADynamicSizeTableView!
     var tableView: EADynamicSizeTableView!
@@ -165,7 +169,7 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
     // MARK: - Table view
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.tableType == .header ? self.headerKeys.count : 12
+        return self.tableType == .header ? self.headerKeys.count : 12  // TODO: update 12
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -190,9 +194,8 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
             let text = val.count >= key.count ? val : key
             Log.debug("text: \(text)")
             let width = tableView.frame.width / 2 - 32
-            var h = UI.getTextHeight(text, width: width, font: UIFont.systemFont(ofSize: 14)) + 20
+            let h = max(UI.getTextHeight(text, width: width, font: UIFont.systemFont(ofSize: 14)) + 20, 55)
             Log.debug("header cell height h: \(h)")
-            if h < 55 { h = 55 }
             self.tableView.setHeight(h, forRowAt: indexPath)
             return h
         }
@@ -207,6 +210,8 @@ enum ResponseMode: Int {
     
     static var allCases = ["Info", "Raw", "Preview"]
 }
+
+// MARK: - ResponseTableViewController
 
 class ResponseTableViewController: RestorTableViewController {
     private let nc = NotificationCenter.default
@@ -381,6 +386,8 @@ class ResponseTableViewController: RestorTableViewController {
         }
     }
 }
+
+// MARK: - ResponseTableViewController TableView Delegate
 
 extension ResponseTableViewController {
     override func numberOfSections(in tableView: UITableView) -> Int {

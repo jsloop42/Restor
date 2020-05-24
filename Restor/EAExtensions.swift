@@ -33,6 +33,39 @@ public extension Date {
     func currentTimeNanos() -> Int64 {
         return Int64(self.timeIntervalSince1970 * 1000000)
     }
+    
+    /// Returns the difference between the given dates in milliseconds (ms)
+    static func msDiff(start: Date, end: Date) -> Double {
+        return TimeInterval(end.currentTimeNanos() - start.currentTimeNanos()) / 1000.0
+    }
+    
+    /// Returns the difference between the given dates in seconds (s)
+    static func secondsDiff(start: Date, end: Date) -> Double {
+        return TimeInterval(end.currentTimeNanos() - start.currentTimeNanos()) / 1_000_000.0
+    }
+    
+    /// Returns the difference between the given dates in minutes (min)
+    static func minuteDiff(start: Date, end: Date) -> Double {
+        return TimeInterval(end.currentTimeNanos() - start.currentTimeNanos()) / 60_000_000.0
+    }
+    
+    var startOfDay: Date {
+        return Calendar.current.startOfDay(for: self)
+    }
+    
+    var endOfDay: Date {
+        let cal = Calendar.current
+        var comp = DateComponents()
+        comp.day = 1
+        return cal.date(byAdding: comp, to: self.startOfDay)!.addingTimeInterval(-1)
+    }
+    
+    /// The percentage of the day elapsed for the current date.
+    var percentageOfDay: Double {
+        let totalSec = self.endOfDay.timeIntervalSince(self.startOfDay) + 1
+        let sec = self.timeIntervalSince(self.startOfDay)
+        return max(min(sec / totalSec, 1.0), 0.0) * 100
+    }
 }
 
 public extension String {

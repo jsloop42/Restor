@@ -406,8 +406,7 @@ extension RequestTableViewController {
         } else if indexPath.row == CellId.spacerAfterUrl.rawValue {
             height = 12
         } else if indexPath.row == CellId.name.rawValue {
-            let h = self.nameLabel.frame.size.height + self.descLabel.frame.size.height + 93.5
-            height = h > 167 ? h : 167  // 167
+            height = max(self.nameLabel.frame.size.height + self.descLabel.frame.size.height + 93.5, 167)
         } else if indexPath.row == CellId.headerTitle.rawValue {
             height = 44
             if self.headers.isEmpty { height = 0 }
@@ -440,8 +439,7 @@ extension RequestTableViewController {
                 height = UITableView.automaticDimension
             case .form, .multipart:
                 self.bodyFieldTableView.layoutIfNeeded()
-                height = self.bodyFieldTableView.contentSize.height
-                height = height < 54 ? 54 : height
+                height = max(self.bodyFieldTableView.contentSize.height, 54)
             case .binary:
                 height = 54
             }
