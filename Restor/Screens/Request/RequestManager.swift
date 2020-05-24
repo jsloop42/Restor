@@ -180,7 +180,7 @@ class RequestManager {
     
     func getURL(_ str: String?) -> URL? {
         guard var str = str else { return nil }
-        if !str.starts(with: "http://") || !str.starts(with: "https://") { str = "http://\(str)" }
+        if !str.starts(with: "http://") && !str.starts(with: "https://") { str = "http://\(str)" }
         return URL(string: str)
     }
     

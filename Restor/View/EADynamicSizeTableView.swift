@@ -28,6 +28,58 @@ public class EADynamicSizeTableView: UITableView {
             Log.debug("table view: \(self.tableViewId) should reload: \(self.shouldReload)")
         }
     }
+    private var isInit = false
+    /// Draw top and bottom borders.
+    public var drawBorders = false {
+        didSet { self._drawBorders() }
+    }
+    private let bottomBorderId = "ea-bottom-border"
+    
+    public required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        self.bootstrap()
+    }
+    
+    public override init(frame: CGRect, style: UITableView.Style) {
+        super.init(frame: frame, style: style)
+        self.bootstrap()
+    }
+    
+    public override func awakeFromNib() {
+        super.awakeFromNib()
+        self.bootstrap()
+    }
+    
+    public func bootstrap() {
+        if !self.isInit {
+            self.initUI()
+            self.isInit = true
+        }
+    }
+    
+    public func initUI() {
+        self._drawBorders()
+    }
+    
+    private func _drawBorders() {
+        if self.drawBorders {
+            self.borderColor = UIColor(named: "cell-separator-bg")
+            self.borderWidth = 0.8
+            self.addTopBorderWithColor(color: self.borderColor!, width: self.borderWidth)
+            self.addBottomBorder()
+        } else {
+            self.removeBorder()
+        }
+    }
+    
+    func addBottomBorder() {
+        if self.drawBorders {
+            self.removeBottomBorder(name: self.bottomBorderId)
+            self.addBottomBorderWithColor(color: self.borderColor!, width: self.borderWidth, name: self.bottomBorderId)
+        } else {
+            self.removeBottomBorder(name: self.bottomBorderId)
+        }
+    }
     
     public override func layoutSubviews() {
         super.layoutSubviews()
@@ -44,9 +96,11 @@ public class EADynamicSizeTableView: UITableView {
     /// back.
     public func setHeight(_ height: CGFloat, forRowAt indexPath: IndexPath) {
         self.heightMap[indexPath.row] = height
+        self.addBottomBorder()
         if self.numberOfRows(inSection: indexPath.section) == self.heightMap.count {
             let h = self.height
             if self.previousHeight != h {
+                self.addBottomBorder()
                 self.nc.post(name: .dynamicSizeTableViewHeightDidChange, object: self, userInfo: ["tableViewId": self.tableViewId, "height": h])
                 self.previousHeight = h
             }

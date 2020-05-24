@@ -165,9 +165,11 @@ class RequestTableViewController: RestorTableViewController {
     }
     
     func reloadAllTableViews() {
-        self.headerKVTableViewManager.reloadData()
-        self.paramsKVTableViewManager.reloadData()
-        self.reloadData()
+        DispatchQueue.main.async {
+            self.headerKVTableViewManager.reloadData()
+            self.paramsKVTableViewManager.reloadData()
+            self.reloadData()
+        }
     }
     
     @objc func editButtonDidTap(_ notif: Notification) {
