@@ -15,34 +15,6 @@ extension Notification.Name {
     static let responseDidReceive = Notification.Name("response-did-receive")
 }
 
-struct ResponseData: CustomDebugStringConvertible {
-    var status: Bool
-    var statusCode: Int
-    var request: ERequest
-    var urlRequest: URLRequest
-    var response: HTTPURLResponse?
-    var error: Error?
-    var data: Data?
-    var elapsed: Int
-    var size: Int
-    
-    var debugDescription: String {
-        return
-            """
-            \(type(of: self)))
-            status: \(self.status)
-            statusCode: \(self.statusCode)
-            request: \(self.request)
-            urlRequest: \(self.urlRequest)
-            response: \(String(describing: self.response))
-            error: \(String(describing: self.error))
-            data: \(String(describing: self.data))
-            elapsed: \(self.elapsed)
-            size: \(self.size)
-            """
-    }
-}
-
 class RequestManager {
     var request: ERequest
     var fsm: RequestStateMachine
@@ -115,8 +87,13 @@ class RequestManager {
         }) {
             size = Int(sizeMap.value as? String ?? "0") ?? 0
         }
-        let info = ResponseData(status: state.success, statusCode: state.statusCode, request: self.request, urlRequest: state.urlRequest!, response: state.response, error: state.error,
-                                data: state.data, elapsed: state.elapsed, size: size)
+        var info: ResponseData!
+        if let err = state.error {
+            info = ResponseData(error: err, elapsed: state.elapsed.toInt64())
+        }
+        if let resp = state.response {
+            info = ResponseData(response: resp, request: state.request, urlRequest: request, responseData: state.data, elapsed: state.elapsed.toInt64(), responseSize: size.toInt64())
+        }
         self.saveResponse(info)
     }
     
@@ -134,27 +111,25 @@ class RequestManager {
             
             if ws.saveResponse {
                 let histId = self.localdb.historyId()
-                let req = info.request
-                let resp = info.response
                 let urlReq = info.urlRequest
-                let data: String = {
-                    guard let rdata = info.data else { return "" }
-                    return String(data: rdata, encoding: .utf8) ?? ""
-                }()
-                history = self.localdb.createHistory(id: histId, requestId: req.getId(), wsId: req.getWsId(), request: urlReq.toString(), response: data,
-                                                     responseHeaders: URLRequest.headersToData(resp?.allHeaderFields), statusCode: info.statusCode.toInt64(),
-                                                     elapsed: info.elapsed.toInt64(), responseBodySize: info.size.toInt64(), checkExists: true, ctx: ctx)
+                history = self.localdb.createHistory(id: histId, requestId: info.requestId, wsId: info.wsId, request: urlReq?.toString() ?? "",
+                                                     responseData: info.responseData, responseHeaders: URLRequest.headersToData(info.getResponseHeaders()),
+                                                     statusCode: info.statusCode.toInt64(), elapsed: info.connectionInfo.elapsed,
+                                                     responseBodySize: info.responseSize.toInt64(), url: info.url, method: info.method, isSecure: info.isSecure,
+                                                     checkExists: false, ctx: ctx)
             } else {
                 // Save only basic info
                 let histId = self.localdb.historyId()
-                history = self.localdb.createHistory(id: histId, wsId: info.request.getWsId(), ctx: ctx)
+                history = self.localdb.createHistory(id: histId, wsId: info.wsId, ctx: ctx)
                 if history != nil {
                     history.statusCode = info.statusCode.toInt64()
-                    history.elapsed = info.elapsed.toInt64()
-                    history.responseBodySize = info.size.toInt64()
-                    history.requestId = info.request.getId()
-                    let req = info.urlRequest
-                    history.request = "\(req.httpMethod ?? "") \(req.url?.path ?? "") HTTP/1.1"
+                    history.elapsed = info.connectionInfo.elapsed
+                    history.responseBodySize = info.responseSize.toInt64()
+                    history.requestId = info.requestId
+                    history.url = info.url
+                    history.isSecure = info.isSecure
+                    history.method = info.method
+                    history.request = "\(info.method) \(info.url) HTTP/1.1"
                 }
             }
             if history != nil {

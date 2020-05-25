@@ -269,6 +269,7 @@ private class EAReachabilityBridge {
 public protocol EAHTTPClientDelegate: class {
     /// Returns the certificate data and the password associated with it
     func getClientCertificate() -> (Data, String)
+    func shouldValidateSSL() -> Bool
 }
 
 public class EAHTTPClient: NSObject {
@@ -417,6 +418,11 @@ extension EAHTTPClient: URLSessionDelegate {
     public func urlSession(_ session: URLSession, didReceive challenge: URLAuthenticationChallenge, completionHandler: @escaping (URLSession.AuthChallengeDisposition, URLCredential?) -> Void) {
         let protectionSpace = challenge.protectionSpace
         if protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
+            let flag = self.delegate?.shouldValidateSSL() ?? true
+            if flag {
+                completionHandler(.performDefaultHandling, nil)
+                return
+            }
             if let trust = protectionSpace.serverTrust {
                 let cred = URLCredential(trust: trust)
                 completionHandler(.useCredential, cred)

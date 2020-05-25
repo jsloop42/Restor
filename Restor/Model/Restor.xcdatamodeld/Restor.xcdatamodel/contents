@@ -32,6 +32,7 @@
     <entity name="EHistory" representedClassName=".EHistory" syncable="YES" codeGenerationType="category">
         <attribute name="changeTag" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="connectionTime" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="cookies" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="dnsResolutionTime" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="elapsed" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -40,18 +41,20 @@
         <attribute name="isSecure" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="isSynced" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="markForDelete" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="method" attributeType="String" defaultValueString=""/>
         <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="remoteHostIP" attributeType="String" defaultValueString=""/>
         <attribute name="request" optional="YES" attributeType="String"/>
         <attribute name="requestId" optional="YES" attributeType="String"/>
-        <attribute name="response" optional="YES" attributeType="String"/>
         <attribute name="responseBodySize" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="responseCompression" attributeType="String" defaultValueString=""/>
+        <attribute name="responseData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="responseHeaders" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="sessionName" optional="YES" attributeType="String"/>
         <attribute name="sslHandshakeTime" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="sslPeerName" attributeType="String" defaultValueString=""/>
         <attribute name="statusCode" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="url" attributeType="String" defaultValueString=""/>
         <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="wsId" optional="YES" attributeType="String"/>
         <fetchIndex name="byRequestId">

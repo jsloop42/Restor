@@ -68,14 +68,44 @@ public class EHistory: NSManagedObject, Entity {
     public func updateCKRecord(_ record: CKRecord) {
         self.managedObjectContext?.performAndWait {
             record["created"] = self.created as CKRecordValue
-            record["modified"] = self.modified as CKRecordValue
             record["changeTag"] = self.changeTag as CKRecordValue
+            record["modified"] = self.modified as CKRecordValue
+            if let id = self.id, let data = self.cookies {
+                let url = EAFileManager.getTemporaryURL(id)
+                do {
+                    try data.write(to: url)
+                    record["cookies"] = CKAsset(fileURL: url)
+                } catch let error {
+                    Log.error("Error: \(error)")
+                }
+            }
+            record["elapsed"] = self.elapsed as CKRecordValue
             record["id"] = self.getId() as CKRecordValue
+            record["isSecure"] = self.isSecure as CKRecordValue
             record["request"] = (self.request ?? "") as CKRecordValue
             record["requestId"] = (self.requestId ?? "") as CKRecordValue
-            record["response"] = (self.response ?? "") as CKRecordValue
-            if let data = self.responseHeaders { record["responseHeaders"] = data as CKRecordValue }
+            record["responseBodySize"] = self.responseBodySize as CKRecordValue
+            if let id = self.id, let data = self.responseData {
+                let url = EAFileManager.getTemporaryURL(id)
+                do {
+                    try data.write(to: url)
+                    record["responseData"] = CKAsset(fileURL: url)
+                } catch let error {
+                    Log.error("Error: \(error)")
+                }
+            }
+            if let id = self.id, let data = self.responseHeaders {
+                let url = EAFileManager.getTemporaryURL(id)
+                do {
+                    try data.write(to: url)
+                    record["responseHeaders"] = CKAsset(fileURL: url)
+                } catch let error {
+                    Log.error("Error: \(error)")
+                }
+            }
             record["statusCode"] = self.statusCode as CKRecordValue
+            record["url"] = (self.url ?? "") as CKRecordValue
+            record["method"] = (self.method ?? "") as CKRecordValue
             record["version"] = self.version as CKRecordValue
             record["wsId"] = self.getWsId() as CKRecordValue
         }
@@ -87,11 +117,18 @@ public class EHistory: NSManagedObject, Entity {
                 if let x = record["created"] as? Int64 { self.created = x }
                 if let x = record["modified"] as? Int64 { self.modified = x }
                 if let x = record["changeTag"] as? Int64 { self.changeTag = x }
+                if let x = record["cookies"] as? CKAsset, let url = x.fileURL {
+                    do { self.cookies = try Data(contentsOf: url) } catch let error { Log.error("Error getting data from file url: \(error)") }
+                }
                 if let x = record["id"] as? String { self.id = x }
                 if let x = record["request"] as? String { self.request = x }
                 if let x = record["requestId"] as? String { self.requestId = x }
-                if let x = record["response"] as? String { self.response = x }
-                if let x = record["responseHeaders"] as? String { self.responseHeaders = x.data(using: .utf8) }
+                if let x = record["responseData"] as? CKAsset, let url = x.fileURL {
+                    do { self.responseData = try Data(contentsOf: url) } catch let error { Log.error("Error getting data from file url: \(error)") }
+                }
+                if let x = record["responseHeaders"] as? CKAsset, let url = x.fileURL {
+                    do { self.responseHeaders = try Data(contentsOf: url) } catch let error { Log.error("Error getting data from file url: \(error)") }
+                }
                 if let x = record["statusCode"] as? Int64 { self.statusCode = x }
                 if let x = record["version"] as? Int64 { self.version = x }
                 if let x = record["wsId"] as? String { self.wsId = x }

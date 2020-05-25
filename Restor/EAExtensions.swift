@@ -339,6 +339,30 @@ public extension DispatchTime {
     }
 }
 
+public extension HTTPCookie {
+    static func fromData(_ x: Data) -> [HTTPCookie] {
+        do {
+            return try NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSArray.self, HTTPCookie.self], from: x) as? [HTTPCookie] ?? []
+        } catch let error {
+            Log.error("Error decoding from data: \(error)")
+        }
+        return []
+    }
+        
+    static func toData(_ cookies: [HTTPCookie]) -> Data? {
+        do {
+            try NSKeyedArchiver.archivedData(withRootObject: cookies as NSArray, requiringSecureCoding: true)
+        } catch let error {
+            Log.error("Error encoding cookies: \(error)")
+        }
+        return nil
+    }
+    
+    static func toData(_ cookie: HTTPCookie) -> Data? {
+        return try? NSKeyedArchiver.archivedData(withRootObject: cookie, requiringSecureCoding: true)
+    }
+}
+
 public extension Error {
     var code: Int { return (self as NSError).code }
     var domain: String { return (self as NSError).domain }
