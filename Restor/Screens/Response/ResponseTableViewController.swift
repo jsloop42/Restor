@@ -21,8 +21,7 @@ class ResponseInfoCell: UITableViewCell {
     @IBOutlet weak var statusSizeLabel: UILabel!
     @IBOutlet weak var infoView: UIView!
     var mode: ResponseMode = .preview
-    var history: EHistory?
-    var request: ERequest?
+    var data: ResponseData?
     private lazy var app = { App.shared }()
     private lazy var utils = { EAUtils.shared }()
     
@@ -32,16 +31,9 @@ class ResponseInfoCell: UITableViewCell {
     }
     
     func updateUI() {
-        guard let req = self.request, let history = self.history else { return }
-//        UIView.animate(withDuration: 0.3) {
-//            self.topBorderView.isHidden = false
-//            self.infoView.isHidden = false
-//            self.bottomBorderView.isHidden = false
-//            self.helpMsgView.isHidden = true
-//        }
-        
+        guard let data = self.data, let req = data.request else { return }
         self.nameLabel.text = req.name
-        self.urlLabel.text = req.url // TODO: change this to consider env var
+        self.urlLabel.text = "\(data.method) \(data.url)"
         
         //self.nameLabel.text = "Get the list of all users filtered by active sorted by first name grouped by location joined by demographics segemented by geolocation"
         //self.urlLabel.text = "https://piperway.com/rest/list/user/sort/filter/group?param=search&name=first"
@@ -49,34 +41,39 @@ class ResponseInfoCell: UITableViewCell {
         //self.urlLabel.text = "https://piperway.com/test/list/user"
         
         var color: UIColor!
-        if history.statusCode > 0 {
-            self.statusCodeLabel.text = "\(history.statusCode)"
-            self.statusMessageLabel.text = HTTPStatusCode(rawValue: history.statusCode.toInt())?.toString() ?? ""
-            if history.statusCode == 200 {
+        if data.statusCode > 0 {
+            self.statusCodeLabel.text = "\(data.statusCode)"
+            self.statusMessageLabel.text = HTTPStatusCode(rawValue: data.statusCode)?.toString() ?? ""
+            if data.statusCode == 200 {
                 self.statusMessageLabel.textAlignment = .center
             } else {
                 self.statusMessageLabel.textAlignment = .right
             }
             var is200 = false
-            if (200..<299) ~= history.statusCode {
+            if (200..<299) ~= data.statusCode {
                 color = UIColor(named: "http-status-200")
                 is200 = true
-            } else if (300..<399) ~= history.statusCode {
+            } else if (300..<399) ~= data.statusCode {
                 color = UIColor(named: "http-status-300")
-            } else if (400..<500) ~= history.statusCode {
+            } else if (400..<500) ~= data.statusCode {
                 color = UIColor(named: "http-status-400")
-            } else if (500..<600) ~= history.statusCode {
+            } else if (500..<600) ~= data.statusCode {
                 color = UIColor(named: "http-status-500")
             }
             self.statusCodeView.backgroundColor = color
             self.statusMessageLabel.textColor = is200 ? UIColor(named: "http-status-text-200") : color
+        } else if data.statusCode == -1 {  // error
+            self.statusCodeView.backgroundColor = UIColor(named: "http-status-error")
+            self.statusMessageLabel.textColor = UIColor(named: "http-status-error")
+            self.statusCodeLabel.text = "Error"
+            self.statusMessageLabel.text = ""
         } else {
             self.statusCodeView.backgroundColor = UIColor(named: "http-status-none")
             self.statusMessageLabel.textColor = UIColor(named: "help-text-fg")
         }
-        let ts = history.elapsed > 0 ? self.app.formatElapsed(history.elapsed) : ""
-        if history.responseBodySize > 0 {
-            self.statusSizeLabel.text = "\(ts), \(self.utils.bytesToReadable(history.responseBodySize))"
+        let ts = data.connectionInfo.elapsed > 0 ? self.app.formatElapsed(data.connectionInfo.elapsed) : ""
+        if data.responseSize > 0 {
+            self.statusSizeLabel.text = "\(!ts.isEmpty ? "\(ts), " : "")\(self.utils.bytesToReadable(data.responseSize.toInt64()))"
         } else {
             self.statusSizeLabel.text = "\(ts)"
         }
@@ -103,8 +100,7 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
     //@IBOutlet weak var tableView: EADynamicSizeTableView!
     var tableView: EADynamicSizeTableView!
     var isInit = false
-    var request: ERequest?
-    var history: EHistory?
+    var data: ResponseData?
     let cellId = "twoColumnCell"
     var tableType: ResponseKVTableType = .header {
         didSet {
@@ -159,11 +155,9 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
     }
     
     func updateData() {
-        guard let history = self.history, let headers = history.responseHeaders else { return }
-        if let hm = try? JSONSerialization.jsonObject(with: headers, options: .allowFragments) as? [String: String] {
-            self.headers = hm
-            self.headerKeys = self.headers.allKeys().sorted()
-        }
+        guard let data = self.data else { return }
+        self.headers = data.getResponseHeaders()
+        self.headerKeys = data.getResponseHeaderKeys()
     }
 
     // MARK: - Table view
@@ -181,6 +175,8 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
             //cell.keyLabel.text = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
             cell.valueLabel.text = self.headers[key]
             row == self.headerKeys.count - 1 ? cell.hideBottomBorder() : cell.displayBottomBorder()
+        } else if self.tableType == .cookies {
+            
         }
         return cell
     }
@@ -194,7 +190,7 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
             let text = val.count >= key.count ? val : key
             Log.debug("text: \(text)")
             let width = tableView.frame.width / 2 - 32
-            let h = max(UI.getTextHeight(text, width: width, font: UIFont.systemFont(ofSize: 14)) + 20, 55)
+            let h = max(UI.getTextHeight(text, width: width, font: UIFont.systemFont(ofSize: 14)) + 28, 55)
             Log.debug("header cell height h: \(h)")
             self.tableView.setHeight(h, forRowAt: indexPath)
             return h
@@ -231,9 +227,7 @@ class ResponseTableViewController: RestorTableViewController {
     private var previousHeaderCellHeight: CGFloat = 0.0
     private var previousCookieCellHeight: CGFloat = 0.0
     private var previousDetailsCellHeight: CGFloat = 0.0
-    
-    var request: ERequest?
-    var history: EHistory?
+    var data: ResponseData?
     
     enum InfoCellId: Int {
         case spacerBeforeInfoCell
@@ -265,42 +259,42 @@ class ResponseTableViewController: RestorTableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         Log.debug("response vc did load")
-        self.request = self.tabbarController.request
-        self.initData()
         self.initUI()
         self.initEvents()
-        self.updateUI()
-        self.tableView.reloadData()
     }
     
     func initData() {
-        guard let req = self.request else { return }
-        if self.history == nil {
-            self.history = self.localdb.getLatestHistory(reqId: req.getId(), includeMarkForDelete: nil, ctx: self.localdb.mainMOC)
+        if self.data == nil {
+            self.data = self.tabbarController.responseData
+            if self.data == nil, let req = self.tabbarController.request {
+                if let history = self.localdb.getLatestHistory(reqId: req.getId(), includeMarkForDelete: nil, ctx: self.localdb.mainMOC) {
+                    self.data = ResponseData(history: history)
+                    self.data?.history = history
+                    self.data?.request = req
+                }
+            }
         }
+        if self.data == nil {
+            self.data = tabbarController.responseData
+            self.data?.request = self.tabbarController.request
+        }
+        Log.debug("response data: \(String(describing: self.data))")
         // info cell
-        self.infoCell.request = req
-        self.infoCell.history = self.history
+        self.infoCell.data = self.data
         // headers cell
         self.headersViewCell.tableType = .header
-        self.headersViewCell.request = req
-        self.headersViewCell.history = self.history
+        self.headersViewCell.data = self.data
         // cookies cell
         self.cookiesViewCell.tableType = .cookies
-        self.cookiesViewCell.request = req
-        self.cookiesViewCell.history = self.history
+        self.cookiesViewCell.data = self.data
         // details cell
         self.detailsViewCell.tableType = .details
-        self.detailsViewCell.request = req
-        self.detailsViewCell.history = self.history
+        self.detailsViewCell.data = self.data
     }
     
     func initUI() {
-        if let tb = self.tabBarController as? RequestTabBarController {
-            self.mode = ResponseMode(rawValue: tb.segView.selectedSegmentIndex) ?? .info
-            tb.viewNavbarSegment()
-        }
-        
+        self.mode = ResponseMode(rawValue: self.tabbarController.segView.selectedSegmentIndex) ?? .info
+        self.tabbarController.viewNavbarSegment()
     }
     
     func initEvents() {
@@ -312,7 +306,7 @@ class ResponseTableViewController: RestorTableViewController {
     
     func updateUI() {
         Log.debug("update UI")
-        if self.history == nil { return }
+        if self.data == nil { return }
         if self.mode == .info {
             self.infoCell.updateUI()
             self.headersViewCell.updateUI()
@@ -365,6 +359,7 @@ class ResponseTableViewController: RestorTableViewController {
             self.ck.saveValue(key: Const.responseSegmentIndexKey, value: idx)
             self.mode = ResponseMode(rawValue: idx) ?? .info
             Log.debug("response mode changed: \(self.mode)")
+            self.initData()
             self.updateUI()
             self.tableView.reloadData()
         }
@@ -372,7 +367,7 @@ class ResponseTableViewController: RestorTableViewController {
     
     @objc func viewRequestHistoryDidTap(_ notif: Notification) {
         Log.debug("view request history did tap")
-        guard let info = notif.userInfo, let req = info["request"] as? ERequest, req.getId() == self.request?.getId() else { return }
+        guard let info = notif.userInfo, let req = info["request"] as? ERequest, let data = self.data, req.getId() == data.request?.getId() else { return }
         // TODO: display history page
     }
     
@@ -380,7 +375,10 @@ class ResponseTableViewController: RestorTableViewController {
         Log.debug("response did receieve")
         if let info = notif.userInfo as? [String: Any], let histId = info["historyId"] as? String {
             DispatchQueue.main.async {
-                self.history = self.localdb.getHistory(id: histId, ctx: self.localdb.mainMOC)
+                if let history = self.localdb.getHistory(id: histId, ctx: self.localdb.mainMOC) {
+                    self.data = ResponseData(history: history)
+                    DispatchQueue.main.async { self.tableView.reloadData() }
+                }
                 //self.updateUI()
             }
         }
@@ -413,10 +411,11 @@ extension ResponseTableViewController {
         switch indexPath.section {
         case 0:
             if self.mode == .info {
-                if self.history == nil {
+                if self.data == nil {  // For requests which has not been sent once
                     if indexPath.row == InfoCellId.helpCell.rawValue { return 44 }
                     return 0
                 } else {
+                    guard let data = self.data else { return 0 }
                     let cellId = InfoCellId(rawValue: indexPath.row)
                     switch cellId {
                     case .spacerBeforeInfoCell:
@@ -424,17 +423,21 @@ extension ResponseTableViewController {
                     case .infoCell:
                         return 81
                     case .headerTitleCell:
-                        if (self.history?.responseHeaders) == nil || self.history?.responseHeaders?.count == 0 { return 0 }
+                        if data.getResponseHeaders().isEmpty { return 0 }
                         return 44
                     case .headersViewCell:
+                        if data.getResponseHeaders().isEmpty { return 0 }
                         self.headersViewCell.tableView.invalidateIntrinsicContentSize()
                         self.headersViewCell.invalidateIntrinsicContentSize()
-                        if (self.history?.responseHeaders) == nil || self.history?.responseHeaders!.count == 0 { return 0 }
                         return self.headerCellHeight == 0 ? UITableView.automaticDimension : self.headerCellHeight
                     case .cookiesTitleCell:
+                        if data.cookies.isEmpty { return 0 }
                         return 44
                     case .cookiesViewCell:
-                        return 44
+                        if data.cookies.isEmpty { return 0 }
+                        self.cookiesViewCell.tableView.invalidateIntrinsicContentSize()
+                        self.cookiesViewCell.invalidateIntrinsicContentSize()
+                        return self.headerCellHeight == 0 ? UITableView.automaticDimension : self.headerCellHeight
                     case .detailsTitleCell:
                         return 44
                     case .detailsViewCell:

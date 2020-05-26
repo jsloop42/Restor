@@ -54,18 +54,13 @@ class RequestManager {
         Log.debug("[req-man] send-request")
         let start = DispatchTime.now()
         self.http.process(request: urlReq, completion: { result in
-            let elapsed = start.elapsedTime()
-            let state = self.fsm.state(forClass: RequestResponseState.self)
-            state?.result = result
-            state?.urlRequest = urlReq
-            state?.result = result
-            state?.elapsed = elapsed
-            self.fsm.enter(RequestResponseState.self)
+            let elapsed = start.elapsedTime().toInt64()
+            self.responseDidObtain(result, request: urlReq, elapsed: elapsed)
         })
         self.nc.post(name: .requestDidSend, object: self, userInfo: ["request": self.request])
     }
     
-    func responseDidObtain(_ result: Result<(Data, HTTPURLResponse), Error>, request: URLRequest) {
+    func responseDidObtain(_ result: Result<(Data, HTTPURLResponse), Error>, request: URLRequest, elapsed: Int64) {
         Log.debug("[req-man] response-did-obtain")
         if let _ = self.fsm.currentState as? RequestCancelState { return }
         guard let state = self.fsm.state(forClass: RequestResponseState.self) else { return }
@@ -73,9 +68,7 @@ class RequestManager {
         case .success(let (data, resp)):
             Log.debug("[req-man] resp; \(resp) - data: \(data)")
             state.response = resp
-            state.data = data
-            state.success = (200..<300) ~= resp.statusCode
-            state.statusCode = resp.statusCode
+            state.responseBodyData = data
         case .failure(let err):
             Log.error("[req-man] error: \(err)")
             state.error = err
@@ -87,14 +80,20 @@ class RequestManager {
         }) {
             size = Int(sizeMap.value as? String ?? "0") ?? 0
         }
-        var info: ResponseData!
-        if let err = state.error {
-            info = ResponseData(error: err, elapsed: state.elapsed.toInt64())
+        DispatchQueue.main.async {
+            var info: ResponseData!
+            if let err = state.error {
+                info = ResponseData(error: err, elapsed: elapsed, request: state.request)
+            }
+            if let resp = state.response {
+                info = ResponseData(response: resp, request: state.request, urlRequest: request, responseData: state.responseBodyData,
+                                    elapsed: elapsed, responseSize: size.toInt64())
+            }
+            self.saveResponse(info)
+            let state = self.fsm.state(forClass: RequestResponseState.self)
+            state?.data = info
+            self.fsm.enter(RequestResponseState.self)
         }
-        if let resp = state.response {
-            info = ResponseData(response: resp, request: state.request, urlRequest: request, responseData: state.data, elapsed: state.elapsed.toInt64(), responseSize: size.toInt64())
-        }
-        self.saveResponse(info)
     }
     
     func saveResponse(_ info: ResponseData) {
@@ -137,8 +136,11 @@ class RequestManager {
                 if let ws = self.localdb.getWorkspace(id: history.getWsId()), ws.isSyncEnabled { PersistenceService.shared.saveHistoryToCloud(history!) }
             }
             AppState.requestState.removeValue(forKey: request.getId())
-            self.nc.post(name: .responseDidReceive, object: self, userInfo: ["data": info, "historyId": history.getId()])
         }
+    }
+    
+    func viewResponseScreen(data: ResponseData) {
+        self.nc.post(name: .responseDidReceive, object: self, userInfo: ["data": data])
     }
     
     func cancelRequest() {

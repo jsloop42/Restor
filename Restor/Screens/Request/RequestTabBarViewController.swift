@@ -18,6 +18,7 @@ extension Notification.Name {
 
 class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     var request: ERequest?
+    var responseData: ResponseData?
     var segView: UISegmentedControl!
     private let ck = EACloudKit.shared
     private let nc = NotificationCenter.default
@@ -38,7 +39,7 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
         Log.debug("request tab bar controller")
         self.addNavigationBarEditButton()
         self.delegate = self
-        self.selectedIndex = 1
+        self.selectedIndex = 0
         self.viewNavbarSegment()
     }
     
@@ -87,7 +88,14 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     
     @objc func segmentDidChange(_ sender: Any) {
         Log.debug("segment did change")
-        self.nc.post(name: .responseSegmentDidChange, object: self, userInfo: ["index": self.segView!.selectedSegmentIndex])
+        //self.nc.post(name: .responseSegmentDidChange, object: self, userInfo: ["index": self.segView!.selectedSegmentIndex])
+    }
+    
+    /// Display the view change with an animation effect.
+    func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
+        guard let fromView = self.selectedViewController?.view, let toView = viewController.view else { return false }
+        UIView.transition(from: fromView, to: toView, duration: 0.3, options: [.transitionCrossDissolve], completion: nil)
+        return true
     }
     
     func tabBarController(_ tabBarController: UITabBarController, didSelect viewController: UIViewController) {

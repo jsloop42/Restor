@@ -53,15 +53,14 @@ class RequestSendState: GKState {
 /// The response has been obtained.
 class RequestResponseState: GKState {
     unowned var request: ERequest
-    var data: Data?
     var urlRequest: URLRequest?
     var response: HTTPURLResponse?
     var error: Error?
     let nc = NotificationCenter.default
     var result: Result<(Data, HTTPURLResponse), Error>?
-    var success: Bool = false
     var elapsed: Int = 0  // ms
-    var statusCode: Int = 0
+    var responseBodyData: Data?  // response body data
+    var data: ResponseData?
     
     init(_ request: ERequest) {
         self.request = request
@@ -74,8 +73,8 @@ class RequestResponseState: GKState {
     
     override func didEnter(from previousState: GKState?) {
         Log.debug("[state] did enter - request response")
-        guard let fsm = self.stateMachine as? RequestStateMachine, let man = fsm.manager, let result = self.result else { return }
-        man.responseDidObtain(result, request: self.urlRequest!)
+        guard let fsm = self.stateMachine as? RequestStateMachine, let man = fsm.manager, let data = self.data else { return }
+        man.viewResponseScreen(data: data)
     }
 }
 

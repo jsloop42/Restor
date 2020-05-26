@@ -9,6 +9,7 @@
 import Foundation
 
 struct ResponseData: CustomDebugStringConvertible {
+    private lazy var localdb = { CoreDataService.shared }()
     var status: Bool = false
     var mode: Mode = .memory
     var statusCode: Int = 0
@@ -63,11 +64,20 @@ struct ResponseData: CustomDebugStringConvertible {
         case history
     }
     
-    init(error: Error, elapsed: Int64) {
+    init(error: Error, elapsed: Int64, request: ERequest) {
         self.error = error
         self.mode = .memory
         self.status = false
         self.connectionInfo.elapsed = elapsed
+        self.statusCode = -1
+        self.request = request
+        self.url = request.url ?? ""
+        self.isSecure = self.isHTTPS(url: self.url)
+        self.wsId = request.getWsId()
+        self.requestId = request.getId()
+        if let proj = request.project {
+            self.method = self.localdb.getRequestMethodData(at: request.selectedMethodIndex.toInt(), projId: proj.getId())?.name ?? ""
+        }
     }
     
     init(history: EHistory) {
@@ -81,10 +91,11 @@ struct ResponseData: CustomDebugStringConvertible {
         self.urlRequestString = history.request ?? ""
         self.method = history.method ?? ""
         self.url = history.url ?? ""
-        self.isSecure = self.url.starts(with: "https")
+        self.isSecure = self.isHTTPS(url: self.url)
         self.requestId = history.requestId ?? ""
         self.wsId = history.wsId ?? ""
         self.responseData = history.responseData
+        self.statusCode = history.statusCode.toInt()
         self.status = (200..<299) ~= self.statusCode
         self.responseSize = history.responseBodySize.toInt()
         self.connectionInfo.elapsed = elapsed
@@ -105,7 +116,7 @@ struct ResponseData: CustomDebugStringConvertible {
         self.urlRequestString = urlRequest.toString()
         self.method = urlRequest.httpMethod ?? ""
         self.url = urlRequest.url?.absoluteString ?? ""
-        self.isSecure = self.url.starts(with: "https")
+        self.isSecure = self.isHTTPS(url: self.url)
         self.requestId = request.getId()
         self.wsId = request.getWsId()
         self.responseData = data
@@ -115,6 +126,10 @@ struct ResponseData: CustomDebugStringConvertible {
         self.connectionInfo.elapsed = elapsed
         self.updateResponseHeaders()
         self.updateCookies()
+    }
+    
+    func isHTTPS(url: String?) -> Bool {
+        return url?.starts(with: "https") ?? false
     }
     
     mutating func updateMetrics() {

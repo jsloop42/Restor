@@ -76,6 +76,8 @@ class RequestTableViewController: RestorTableViewController {
         AppState.setCurrentScreen(.request)
         self.tabbarController.hideNavbarSegment()
         self.initManager()
+        self.initData()
+        self.updateData()
         self.reloadAllTableViews()
     }
     
@@ -120,6 +122,7 @@ class RequestTableViewController: RestorTableViewController {
         self.nc.addObserver(self, selector: #selector(self.requestDidChange(_:)), name: .requestDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.editButtonDidTap(_:)), name: .editRequestDidTap, object: nil)
         self.nc.addObserver(self, selector: #selector(self.dynamicSizeTableViewHeightDidChange(_:)), name: .dynamicSizeTableViewHeightDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -151,6 +154,14 @@ class RequestTableViewController: RestorTableViewController {
             self.headerKVTableViewManager.reloadData()
             self.paramsKVTableViewManager.reloadData()
             self.reloadData()
+        }
+    }
+    
+    @objc func responseDidReceive(_ notif: Notification) {
+        DispatchQueue.main.async {
+            guard let info = notif.userInfo as? [String: Any], let data = info["data"] as? ResponseData else { return }
+            self.tabbarController.responseData = data
+            self.tabbarController.selectedIndex = 1
         }
     }
     
@@ -214,27 +225,6 @@ class RequestTableViewController: RestorTableViewController {
         self.params = self.localdb.getParamsRequestData(reqId)
         self.headerKVTableViewManager.kvTableView?.resetMeta()
         self.paramsKVTableViewManager.kvTableView?.resetMeta()
-        self.requestBody = request.body
-        guard let body = self.requestBody else { return }
-        guard let bodyType = RequestBodyType(rawValue: body.selected.toInt()) else { return }
-        self.bodyForms = []
-        self.multipart = []
-        self.binaryCollectionView.delegate = nil
-        self.binaryCollectionView.dataSource = nil
-        self.binaryImageView.isHidden = true
-        if bodyType == .form {
-            self.bodyForms = self.localdb.getFormRequestData(body.getId(), type: .form)
-        } else if bodyType == .multipart {
-            self.multipart = self.localdb.getFormRequestData(body.getId(), type: .multipart)
-        } else if bodyType == .binary {
-            if let bin = body.binary {
-                self.binary = bin
-                if let files = bin.files, !files.isEmpty {
-                    self.binaryFiles = self.localdb.getFiles(bin.getId(), type: .binary)
-                }
-            }
-        }
-        self.setBodyTitleLabel(RequestBodyType.toString(body.selected.toInt()))
         guard let proj = request.project else { return }
         if let method = self.localdb.getRequestMethodData(at: request.selectedMethodIndex.toInt(), projId: proj.getId()) {
             self.methodLabel.text = method.name
@@ -293,6 +283,27 @@ class RequestTableViewController: RestorTableViewController {
 //            self.descTextView.isHidden = true
 //            self.descBorderView.isHidden = true
 //        }
+        self.requestBody = request.body
+        guard let body = self.requestBody else { return }
+        guard let bodyType = RequestBodyType(rawValue: body.selected.toInt()) else { return }
+        self.bodyForms = []
+        self.multipart = []
+        self.binaryCollectionView.delegate = nil
+        self.binaryCollectionView.dataSource = nil
+        self.binaryImageView.isHidden = true
+        if bodyType == .form {
+            self.bodyForms = self.localdb.getFormRequestData(body.getId(), type: .form)
+        } else if bodyType == .multipart {
+            self.multipart = self.localdb.getFormRequestData(body.getId(), type: .multipart)
+        } else if bodyType == .binary {
+            if let bin = body.binary {
+                self.binary = bin
+                if let files = bin.files, !files.isEmpty {
+                    self.binaryFiles = self.localdb.getFiles(bin.getId(), type: .binary)
+                }
+            }
+        }
+        self.setBodyTitleLabel(RequestBodyType.toString(body.selected.toInt()))
         self.updateBodyCell()
         self.reloadAllTableViews()
     }
