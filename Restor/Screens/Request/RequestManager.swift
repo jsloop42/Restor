@@ -132,6 +132,7 @@ class RequestManager {
                 }
             }
             if history != nil {
+                history.cookies = info.cookiesData
                 self.localdb.saveMainContext()
                 if let ws = self.localdb.getWorkspace(id: history.getWsId()), ws.isSyncEnabled { PersistenceService.shared.saveHistoryToCloud(history!) }
             }

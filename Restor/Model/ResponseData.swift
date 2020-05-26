@@ -27,7 +27,7 @@ struct ResponseData: CustomDebugStringConvertible {
     var error: Error?
     var data: Data?
     var cookiesData: Data?
-    var cookies: [HTTPCookie] = []
+    var cookies: [EAHTTPCookie] = []
     var responseSize: Int = 0
     var isSecure = false
     private var responseHeaders: [String: String] = [:] {
@@ -187,14 +187,14 @@ struct ResponseData: CustomDebugStringConvertible {
     mutating func updateCookies() {
         if self.mode == .memory {
             if let url = self.urlRequest?.url {
-                self.cookies = HTTPCookie.cookies(withResponseHeaderFields: self.responseHeaders, for: url)
-                self.cookiesData = HTTPCookie.toData(self.cookies)
+                self.cookies = EAHTTPCookie.from(headers: self.responseHeaders, for: url)
+                self.cookiesData = try? JSONEncoder().encode(self.cookies)
             }
         } else if self.mode == .history {
             self.cookiesData = self.history?.cookies
-        }
-        if let cookies = self.cookiesData {
-            self.cookies = HTTPCookie.fromData(cookies)
+            if let data = self.cookiesData, let xs = try? JSONDecoder().decode([EAHTTPCookie].self, from: data) {
+                self.cookies = xs
+            }
         }
     }
     
@@ -207,10 +207,12 @@ struct ResponseData: CustomDebugStringConvertible {
             request: \(String(describing: self.request))
             urlRequest: \(String(describing: self.urlRequest))
             response: \(String(describing: self.response))
+            cookies: \(String(describing: self.cookies))
             error: \(String(describing: self.error))
             data: \(String(describing: self.data))
             elapsed: \(self.connectionInfo.elapsed)
             size: \(self.responseSize)
+            mode: \(self.mode)
             """
     }
 }

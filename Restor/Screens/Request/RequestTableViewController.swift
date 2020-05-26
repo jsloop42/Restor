@@ -122,7 +122,6 @@ class RequestTableViewController: RestorTableViewController {
         self.nc.addObserver(self, selector: #selector(self.requestDidChange(_:)), name: .requestDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.editButtonDidTap(_:)), name: .editRequestDidTap, object: nil)
         self.nc.addObserver(self, selector: #selector(self.dynamicSizeTableViewHeightDidChange(_:)), name: .dynamicSizeTableViewHeightDidChange, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -154,14 +153,6 @@ class RequestTableViewController: RestorTableViewController {
             self.headerKVTableViewManager.reloadData()
             self.paramsKVTableViewManager.reloadData()
             self.reloadData()
-        }
-    }
-    
-    @objc func responseDidReceive(_ notif: Notification) {
-        DispatchQueue.main.async {
-            guard let info = notif.userInfo as? [String: Any], let data = info["data"] as? ResponseData else { return }
-            self.tabbarController.responseData = data
-            self.tabbarController.selectedIndex = 1
         }
     }
     

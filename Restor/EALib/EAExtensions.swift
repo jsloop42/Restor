@@ -339,7 +339,7 @@ public extension DispatchTime {
     }
 }
 
-public extension HTTPCookie {
+extension HTTPCookie {
     static func fromData(_ x: Data) -> [HTTPCookie] {
         do {
             return try NSKeyedUnarchiver.unarchivedObject(ofClasses: [NSArray.self, HTTPCookie.self], from: x) as? [HTTPCookie] ?? []
@@ -350,12 +350,7 @@ public extension HTTPCookie {
     }
         
     static func toData(_ cookies: [HTTPCookie]) -> Data? {
-        do {
-            try NSKeyedArchiver.archivedData(withRootObject: cookies as NSArray, requiringSecureCoding: true)
-        } catch let error {
-            Log.error("Error encoding cookies: \(error)")
-        }
-        return nil
+        return try? NSKeyedArchiver.archivedData(withRootObject: cookies, requiringSecureCoding: true)
     }
     
     static func toData(_ cookie: HTTPCookie) -> Data? {

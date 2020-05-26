@@ -98,15 +98,11 @@ enum ResponseKVTableType: String {
 
 class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegate {
     //@IBOutlet weak var tableView: EADynamicSizeTableView!
-    var tableView: EADynamicSizeTableView!
+     var tableView: EADynamicSizeTableView!
     var isInit = false
     var data: ResponseData?
     let cellId = "twoColumnCell"
-    var tableType: ResponseKVTableType = .header {
-        didSet {
-            self.tableView.tableViewId = self.tableType.rawValue
-        }
-    }
+    var tableType: ResponseKVTableType = .header
     var headers: [String: String] = [:]
     var headerKeys: [String] = []
     var heightMap: [Int: CGFloat] = [:] // [Row: Height]
@@ -128,25 +124,23 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
     }
     
     func initUI() {
-        if self.tableView == nil {
-            self.tableView = EADynamicSizeTableView(frame: self.contentView.frame, style: .plain)
-            self.tableView.drawBorders = true
-            self.tableView.translatesAutoresizingMaskIntoConstraints = false
-            self.contentView.addSubview(self.tableView)
-            NSLayoutConstraint.activate([
-                self.tableView.topAnchor.constraint(equalTo: self.contentView.topAnchor),
-                self.tableView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor),
-                self.tableView.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor),
-                self.tableView.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor)
-            ])
-            self.tableView.tableViewId = ResponseKVTableType.header.rawValue
-            self.tableView.register(UINib(nibName: "KVCell", bundle: nil), forCellReuseIdentifier: "kvCell")
-            self.tableView.delegate = self
-            self.tableView.dataSource = self
-            self.tableView.estimatedRowHeight = 44
-            self.tableView.rowHeight = UITableView.automaticDimension
-            self.tableView.separatorStyle = .none
-        }
+        self.tableView = EADynamicSizeTableView(frame: self.contentView.frame, style: .plain)
+        self.tableView.tableViewId = self.tableType.rawValue
+        self.tableView.register(UINib(nibName: "KVCell", bundle: nil), forCellReuseIdentifier: "kvCell")
+        self.tableView.drawBorders = false
+        self.tableView.translatesAutoresizingMaskIntoConstraints = false
+        self.contentView.addSubview(self.tableView)
+        NSLayoutConstraint.activate([
+            self.tableView.topAnchor.constraint(equalTo: self.contentView.topAnchor),
+            self.tableView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor),
+            self.tableView.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor),
+            self.tableView.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor)
+        ])
+        self.tableView.delegate = self
+        self.tableView.dataSource = self
+        self.tableView.estimatedRowHeight = 44
+        self.tableView.rowHeight = UITableView.automaticDimension
+        self.tableView.separatorStyle = .none
     }
     
     func updateUI() {
@@ -163,7 +157,14 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
     // MARK: - Table view
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.tableType == .header ? self.headerKeys.count : 12  // TODO: update 12
+        switch self.tableType {
+        case .header:
+            return self.headerKeys.count
+        case .cookies:
+            return self.data?.cookies.count ?? 0
+        case .details:
+            return 12
+        }
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -174,28 +175,42 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
             cell.keyLabel.text = key
             //cell.keyLabel.text = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
             cell.valueLabel.text = self.headers[key]
-            row == self.headerKeys.count - 1 ? cell.hideBottomBorder() : cell.displayBottomBorder()
+            (row == self.headerKeys.count - 1) ? cell.hideBottomBorder() : cell.displayBottomBorder()
         } else if self.tableType == .cookies {
+            if let data = self.data {
+                let cookie = data.cookies[row]
+                cell.keyLabel.text = cookie.name
+                cell.valueLabel.text = cookie.value
+                (row == data.cookies.count - 1) ? cell.hideBottomBorder() : cell.displayBottomBorder()
+            }
+        } else if self.tableType == .details {
             
         }
+        
         return cell
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         let row = indexPath.row
+        var key = ""
+        var val = ""
         if self.tableType == .header {
-            let key = self.headerKeys[row]
-            let val = self.headers[key] ?? ""
-            //key = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
-            let text = val.count >= key.count ? val : key
-            Log.debug("text: \(text)")
-            let width = tableView.frame.width / 2 - 32
-            let h = max(UI.getTextHeight(text, width: width, font: UIFont.systemFont(ofSize: 14)) + 28, 55)
-            Log.debug("header cell height h: \(h)")
-            self.tableView.setHeight(h, forRowAt: indexPath)
-            return h
+            key = self.headerKeys[row]
+            val = self.headers[key] ?? ""
+        } else if self.tableType == .cookies {
+            if let cookie = self.data?.cookies[row] {
+                key = cookie.name
+                val = cookie.value
+            }
         }
-        return 44
+        //key = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
+        let text = val.count >= key.count ? val : key
+        Log.debug("text: \(text)")
+        let width = tableView.frame.width / 2 - 32
+        let h = max(UI.getTextHeight(text, width: width, font: UIFont.systemFont(ofSize: 14)) + 28, 55)
+        Log.debug("header cell height h: \(h)")
+        self.tableView.setHeight(h, forRowAt: indexPath)
+        return h
     }
 }
 
@@ -217,9 +232,15 @@ class ResponseTableViewController: RestorTableViewController {
     private lazy var tabbarController = { self.tabBarController as! RequestTabBarController }()
     var mode: ResponseMode = .info
     @IBOutlet weak var infoCell: ResponseInfoCell!
-    @IBOutlet weak var headersViewCell: ResponseKVCell!
-    @IBOutlet weak var cookiesViewCell: ResponseKVCell!
-    @IBOutlet weak var detailsViewCell: ResponseKVCell!
+    @IBOutlet weak var headersViewCell: ResponseKVCell! {
+        didSet { self.headersViewCell.tableType = .header }
+    }
+    @IBOutlet weak var cookiesViewCell: ResponseKVCell! {
+        didSet { self.cookiesViewCell.tableType = .cookies }
+    }
+    @IBOutlet weak var detailsViewCell: ResponseKVCell! {
+        didSet { self.detailsViewCell.tableType = .details }
+    }
     @IBOutlet weak var helpCell: ResponseInfoCell!
     private var headerCellHeight: CGFloat = 0.0
     private var cookieCellHeight: CGFloat = 0.0
@@ -277,6 +298,9 @@ class ResponseTableViewController: RestorTableViewController {
         if self.data == nil {
             self.data = tabbarController.responseData
             self.data?.request = self.tabbarController.request
+            if self.data != nil, self.data!.cookiesData != nil, self.data!.cookies.isEmpty {
+                self.data!.updateCookies()
+            }
         }
         Log.debug("response data: \(String(describing: self.data))")
         // info cell
@@ -322,11 +346,19 @@ class ResponseTableViewController: RestorTableViewController {
             // Once the height changes, reload the outer table view. Also prevents continuous reloading of the table view.
             if self.headerCellHeight != self.previousHeaderCellHeight {
                 self.previousHeaderCellHeight = self.headerCellHeight
-                self.tableView.reloadData()
+            }
+        } else if type == .cookies {
+            self.cookieCellHeight = height
+            if self.cookieCellHeight != self.previousCookieCellHeight {
+                self.previousCookieCellHeight = self.cookieCellHeight
             }
         } else if type == .details {
             self.detailsCellHeight = height
+            if self.detailsCellHeight != self.previousDetailsCellHeight {
+                self.previousDetailsCellHeight = self.detailsCellHeight
+            }
         }
+        self.tableView.reloadData()
     }
     
     @objc func dynamicSizeTableViewHeightDidChange(_ notif: Notification) {
@@ -431,17 +463,20 @@ extension ResponseTableViewController {
                         self.headersViewCell.invalidateIntrinsicContentSize()
                         return self.headerCellHeight == 0 ? UITableView.automaticDimension : self.headerCellHeight
                     case .cookiesTitleCell:
+                        Log.debug("cookies: \(String(describing: self.data?.cookies))")
                         if data.cookies.isEmpty { return 0 }
                         return 44
                     case .cookiesViewCell:
                         if data.cookies.isEmpty { return 0 }
                         self.cookiesViewCell.tableView.invalidateIntrinsicContentSize()
                         self.cookiesViewCell.invalidateIntrinsicContentSize()
-                        return self.headerCellHeight == 0 ? UITableView.automaticDimension : self.headerCellHeight
+                        return self.cookieCellHeight == 0 ? UITableView.automaticDimension : self.cookieCellHeight
                     case .detailsTitleCell:
                         return 44
                     case .detailsViewCell:
-                        return 44
+                        self.detailsViewCell.tableView.invalidateIntrinsicContentSize()
+                        self.detailsViewCell.invalidateIntrinsicContentSize()
+                        return self.detailsCellHeight == 0 ? UITableView.automaticDimension : self.detailsCellHeight
                     default:
                         return 0
                     }

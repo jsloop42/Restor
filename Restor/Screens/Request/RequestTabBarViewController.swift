@@ -30,6 +30,10 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
         case response
     }
     
+    deinit {
+        self.nc.removeObserver(self)
+    }
+    
     override func awakeFromNib() {
         super.awakeFromNib()
         _ = self.segmentControl()
@@ -37,10 +41,24 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
        
     override func viewDidLoad() {
         Log.debug("request tab bar controller")
+        self.initEvents()
         self.addNavigationBarEditButton()
         self.delegate = self
         self.selectedIndex = 0
         self.viewNavbarSegment()
+    }
+    
+    func initEvents() {
+        self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
+    }
+    
+    @objc func responseDidReceive(_ notif: Notification) {
+        DispatchQueue.main.async {
+            guard let info = notif.userInfo as? [String: Any], let data = info["data"] as? ResponseData else { return }
+            self.responseData = data
+            self.selectedIndex = 1
+            if let vc = self.viewControllers?.last as? ResponseTableViewController { vc.data = data }
+        }
     }
     
     /// Display Edit button in navigation bar
