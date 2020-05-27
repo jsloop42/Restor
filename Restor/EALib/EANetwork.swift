@@ -285,6 +285,7 @@ public class EAHTTPClient: NSObject {
     private var url: URL?
     private var method: Method = .get
     public weak var delegate: EAHTTPClientDelegate?
+    private var metrics: URLSessionTaskMetrics?
     
     public enum Method {
         case get
@@ -368,7 +369,7 @@ public class EAHTTPClient: NSObject {
         req.httpMethod = method.rawValue
         self.process(request: req) { result in
             switch result {
-            case .success(let (data, _)):
+            case .success(let (data, _, _)):
                 completion(.success(data))
             case .failure(let err):
                 completion(.failure(err))
@@ -376,14 +377,14 @@ public class EAHTTPClient: NSObject {
         }
     }
     
-    public func process(request: URLRequest, completion: @escaping (Result<(Data, HTTPURLResponse), Error>) -> Void) {
+    public func process(request: URLRequest, completion: @escaping (Result<(Data, HTTPURLResponse, URLSessionTaskMetrics?), Error>) -> Void) {
         let task = self.session.dataTask(with: request) { data, resp, err in
             guard let data = data, let resp = resp as? HTTPURLResponse, err == nil else {
                 Log.error("http-client - response error: \(err!)")
                 completion(.failure(err!))
                 return
             }
-            completion(.success((data, resp)))
+            completion(.success((data, resp, self.metrics)))
         }
         task.resume()
     }
@@ -449,6 +450,7 @@ extension EAHTTPClient: URLSessionDelegate {
 extension EAHTTPClient: URLSessionDataDelegate {
     public func urlSession(_ session: URLSession, task: URLSessionTask, didFinishCollecting metrics: URLSessionTaskMetrics) {
         Log.debug("url-session metrics: \(metrics)")
+        self.metrics = metrics
     }
 }
 

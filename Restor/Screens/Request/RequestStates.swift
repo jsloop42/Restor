@@ -55,9 +55,10 @@ class RequestResponseState: GKState {
     unowned var request: ERequest
     var urlRequest: URLRequest?
     var response: HTTPURLResponse?
+    var metrics: URLSessionTaskMetrics?
     var error: Error?
     let nc = NotificationCenter.default
-    var result: Result<(Data, HTTPURLResponse), Error>?
+    var result: Result<(Data, HTTPURLResponse, URLSessionTaskMetrics?), Error>?
     var elapsed: Int = 0  // ms
     var responseBodyData: Data?  // response body data
     var data: ResponseData?

@@ -60,34 +60,28 @@ class RequestManager {
         self.nc.post(name: .requestDidSend, object: self, userInfo: ["request": self.request])
     }
     
-    func responseDidObtain(_ result: Result<(Data, HTTPURLResponse), Error>, request: URLRequest, elapsed: Int64) {
+    func responseDidObtain(_ result: Result<(Data, HTTPURLResponse, URLSessionTaskMetrics?), Error>, request: URLRequest, elapsed: Int64) {
         Log.debug("[req-man] response-did-obtain")
         if let _ = self.fsm.currentState as? RequestCancelState { return }
         guard let state = self.fsm.state(forClass: RequestResponseState.self) else { return }
         switch result {
-        case .success(let (data, resp)):
+        case .success(let (data, resp, metrics)):
             Log.debug("[req-man] resp; \(resp) - data: \(data)")
             state.response = resp
             state.responseBodyData = data
+            state.metrics = metrics
         case .failure(let err):
             Log.error("[req-man] error: \(err)")
             state.error = err
         }
-        var size = 0
-        if let sizeMap = state.response?.allHeaderFields.first(where: { (key: AnyHashable, value: Any) -> Bool in
-            if let key = key as? String { return key.lowercased() == "content-length" }
-            return false
-        }) {
-            size = Int(sizeMap.value as? String ?? "0") ?? 0
-        }
         DispatchQueue.main.async {
             var info: ResponseData!
             if let err = state.error {
-                info = ResponseData(error: err, elapsed: elapsed, request: state.request)
+                info = ResponseData(error: err, elapsed: elapsed, request: state.request, metrics: state.metrics)
             }
             if let resp = state.response {
                 info = ResponseData(response: resp, request: state.request, urlRequest: request, responseData: state.responseBodyData,
-                                    elapsed: elapsed, responseSize: size.toInt64())
+                                    elapsed: elapsed, metrics: state.metrics)
             }
             self.saveResponse(info)
             let state = self.fsm.state(forClass: RequestResponseState.self)
@@ -114,7 +108,7 @@ class RequestManager {
                 history = self.localdb.createHistory(id: histId, requestId: info.requestId, wsId: info.wsId, request: urlReq?.toString() ?? "",
                                                      responseData: info.responseData, responseHeaders: URLRequest.headersToData(info.getResponseHeaders()),
                                                      statusCode: info.statusCode.toInt64(), elapsed: info.connectionInfo.elapsed,
-                                                     responseBodySize: info.responseSize.toInt64(), url: info.url, method: info.method, isSecure: info.isSecure,
+                                                     responseBodySize: info.connectionInfo.responseBodyBytesReceived, url: info.url, method: info.method, isSecure: info.isSecure,
                                                      checkExists: false, ctx: ctx)
             } else {
                 // Save only basic info
@@ -123,7 +117,7 @@ class RequestManager {
                 if history != nil {
                     history.statusCode = info.statusCode.toInt64()
                     history.elapsed = info.connectionInfo.elapsed
-                    history.responseBodySize = info.responseSize.toInt64()
+                    history.responseBodySize = info.connectionInfo.responseBodyBytesReceived
                     history.requestId = info.requestId
                     history.url = info.url
                     history.isSecure = info.isSecure

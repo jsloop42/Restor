@@ -71,9 +71,9 @@ class ResponseInfoCell: UITableViewCell {
             self.statusCodeView.backgroundColor = UIColor(named: "http-status-none")
             self.statusMessageLabel.textColor = UIColor(named: "help-text-fg")
         }
-        let ts = data.connectionInfo.elapsed > 0 ? self.app.formatElapsed(data.connectionInfo.elapsed) : ""
-        if data.responseSize > 0 {
-            self.statusSizeLabel.text = "\(!ts.isEmpty ? "\(ts), " : "")\(self.utils.bytesToReadable(data.responseSize.toInt64()))"
+        let ts = data.connectionInfo.elapsed > 0 ? self.utils.formatElapsed(data.connectionInfo.elapsed) : ""
+        if data.connectionInfo.responseBodyBytesReceived > 0 {
+            self.statusSizeLabel.text = "\(!ts.isEmpty ? "\(ts), " : "")\(self.utils.bytesToReadable(data.connectionInfo.responseBodyBytesReceived))"
         } else {
             self.statusSizeLabel.text = "\(ts)"
         }
@@ -91,6 +91,7 @@ class ResponseInfoCell: UITableViewCell {
 enum ResponseKVTableType: String {
     case header = "response-header-table-view"
     case cookies = "response-cookies-table-view"
+    case metrics = "response-metrics-table-view"
     case details = "response-details-table-view"
 }
 
@@ -107,6 +108,10 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
     var headers: [String: String] = [:]
     var headerKeys: [String] = []
     var heightMap: [Int: CGFloat] = [:] // [Row: Height]
+    var metrics: [String: String]  = [:]
+    var metricsKeys: [String] = []
+    var details: [String: String] = [:]
+    var detailsKeys: [String] = []
     
     required init?(coder: NSCoder) {
         super.init(coder: coder)
@@ -152,8 +157,10 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
             return self.headerKeys.count
         case .cookies:
             return self.data?.cookies.count ?? 0
+        case .metrics:
+            return self.metrics.count
         case .details:
-            return 12
+            return self.details.count
         }
     }
     
@@ -171,8 +178,18 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
                 cell.keyLabel.text = cookie.name
                 cell.valueLabel.text = cookie.value
             }
+        } else if self.tableType == .metrics {
+            let key = self.metricsKeys[row]
+            if let val = self.metrics[key] {
+                cell.keyLabel.text = key
+                cell.valueLabel.text = val
+            }
         } else if self.tableType == .details {
-            
+            let key = self.detailsKeys[row]
+            if let val = self.details[key] {
+                cell.keyLabel.text = key
+                cell.valueLabel.text = val
+            }
         }
         return cell
     }
@@ -188,6 +205,18 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
             if let cookie = self.data?.cookies[row] {
                 key = cookie.name
                 val = cookie.value
+            }
+        } else if self.tableType == .metrics {
+            let _key = self.metricsKeys[row]
+            if let _val = self.metrics[_key] {
+                key = _key
+                val = _val
+            }
+        } else if self.tableType == .details {
+            let _key = self.detailsKeys[row]
+            if let _val = self.details[_key] {
+                key = _key
+                val = _val
             }
         }
         //key = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
@@ -225,15 +254,20 @@ class ResponseTableViewController: RestorTableViewController {
     @IBOutlet weak var cookiesViewCell: ResponseKVCell! {
         didSet { self.cookiesViewCell.tableType = .cookies }
     }
+    @IBOutlet weak var metricsViewCell: ResponseKVCell! {
+        didSet { self.metricsViewCell.tableType = .details }
+    }
     @IBOutlet weak var detailsViewCell: ResponseKVCell! {
         didSet { self.detailsViewCell.tableType = .details }
     }
     @IBOutlet weak var helpCell: ResponseInfoCell!
     private var headerCellHeight: CGFloat = 0.0
     private var cookieCellHeight: CGFloat = 0.0
+    private var metricsCellHeight: CGFloat = 0.0
     private var detailsCellHeight: CGFloat = 0.0
     private var previousHeaderCellHeight: CGFloat = 0.0
     private var previousCookieCellHeight: CGFloat = 0.0
+    private var previousMetricsCellHeight: CGFloat = 0.0
     private var previousDetailsCellHeight: CGFloat = 0.0
     var data: ResponseData?
     
@@ -244,6 +278,8 @@ class ResponseTableViewController: RestorTableViewController {
         case headersViewCell
         case cookiesTitleCell
         case cookiesViewCell
+        case metricsTitleCell
+        case metricsViewCell
         case detailsTitleCell
         case detailsViewCell
         case helpCell
@@ -298,9 +334,16 @@ class ResponseTableViewController: RestorTableViewController {
         // cookies cell
         self.cookiesViewCell.tableType = .cookies
         self.cookiesViewCell.data = self.data
+        // metrics cell
+        self.metricsViewCell.tableType = .metrics
+        self.metricsViewCell.data = self.data
+        self.metricsViewCell.metrics = self.data?.getMetricsMap() ?? [:]
+        self.metricsViewCell.metricsKeys = self.data?.getMetricsKeys() ?? []
         // details cell
         self.detailsViewCell.tableType = .details
         self.detailsViewCell.data = self.data
+        self.detailsViewCell.details = self.data?.getDetailsMap() ?? [:]
+        self.detailsViewCell.detailsKeys = self.data?.getDetailsKeys() ?? []
     }
     
     func initUI() {
@@ -322,6 +365,7 @@ class ResponseTableViewController: RestorTableViewController {
             self.infoCell.updateUI()
             self.headersViewCell.updateUI()
             self.cookiesViewCell.updateUI()
+            self.metricsViewCell.updateUI()
             self.detailsViewCell.updateUI()
         }
     }
@@ -338,6 +382,11 @@ class ResponseTableViewController: RestorTableViewController {
             self.cookieCellHeight = height
             if self.cookieCellHeight != self.previousCookieCellHeight {
                 self.previousCookieCellHeight = self.cookieCellHeight
+            }
+        } else if type == .metrics {
+            self.metricsCellHeight = height
+            if self.metricsCellHeight != self.previousMetricsCellHeight {
+                self.previousMetricsCellHeight = self.metricsCellHeight
             }
         } else if type == .details {
             self.detailsCellHeight = height
@@ -363,6 +412,11 @@ class ResponseTableViewController: RestorTableViewController {
                 self.cookiesViewCell.tableView.shouldReload = false
                 self.tableView.reloadData()
                 self.cookiesViewCell.tableView.shouldReload = true
+            case .metrics:
+                self.metricsCellHeight = height
+                self.metricsViewCell.tableView.shouldReload = false
+                self.tableView.reloadData()
+                self.metricsViewCell.tableView.shouldReload = true
             case .details:
                 self.detailsCellHeight = height
                 self.detailsViewCell.tableView.shouldReload = false
@@ -412,7 +466,7 @@ extension ResponseTableViewController {
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if self.mode == .info && section == 0 { return 7 }
+        if self.mode == .info && section == 0 { return 11 }
         if self.mode == .raw && section == 1 { return 2 }
         if self.mode == .preview && section == 2 { return 2 }
         return 0
@@ -458,6 +512,12 @@ extension ResponseTableViewController {
                         self.cookiesViewCell.tableView.invalidateIntrinsicContentSize()
                         self.cookiesViewCell.invalidateIntrinsicContentSize()
                         return self.cookieCellHeight == 0 ? UITableView.automaticDimension : self.cookieCellHeight
+                    case .metricsTitleCell:
+                        return 44
+                    case .metricsViewCell:
+                        self.metricsViewCell.tableView.invalidateIntrinsicContentSize()
+                        self.metricsViewCell.invalidateIntrinsicContentSize()
+                        return self.metricsCellHeight == 0 ? UITableView.automaticDimension : self.metricsCellHeight
                     case .detailsTitleCell:
                         return 44
                     case .detailsViewCell:

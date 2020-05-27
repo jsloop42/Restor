@@ -10,20 +10,32 @@ import Foundation
 import UIKit
 import CoreData
 
+public extension Calendar.Component {
+    static let allCases: [Calendar.Component] = [.year, .month, .day, .hour, .minute, .second, .weekday, .weekdayOrdinal, .weekOfYear]
+}
+
 public extension Date {
-    func day() -> Int {
-        return Calendar.current.component(.day, from: self)
-    }
+    /// Returns the year from the date.
+    var year: Int { Calendar.current.component(.year, from: self) }
     
     /// Returns month as `Int` starting from `1...12`.
-    func month() -> Int {
-        return Calendar.current.component(.month, from: self)
-    }
+    var month: Int { Calendar.current.component(.month, from: self) }
     
-    /// Returns the year from the date.
-    func year() -> Int {
-        return Calendar.current.component(.year, from: self)
-    }
+    var week: Int { Calendar.current.component(.weekOfYear, from: self) }
+    
+    var weekday: Int { Calendar.current.component(.weekday, from: self) }
+    
+    var weekOfMonth: Int { Calendar.current.component(.weekOfMonth, from: self) }
+    
+    var day: Int { Calendar.current.component(.day, from: self) }
+    
+    var hour: Int { Calendar.current.component(.hour, from: self) }
+    
+    var minute: Int { Calendar.current.component(.minute, from: self) }
+    
+    var second: Int { Calendar.current.component(.second, from: self) }
+    
+    var nanos: Int { Calendar.current.component(.nanosecond, from: self) }
     
     /// Get timestamp
     func currentTimeMillis() -> Int64 {
@@ -33,6 +45,13 @@ public extension Date {
     func currentTimeNanos() -> Int64 {
         return Int64(self.timeIntervalSince1970 * 1000000)
     }
+    
+    // Intervals in seconds
+    static let minuteInSeconds: Double = 60
+    static let hourInSeconds: Double = 3600
+    static let dayInSeconds: Double = 86400
+    static let weekInSeconds: Double = 604800
+    static let yearInSeconds: Double = 31556926
     
     /// Returns the difference between the given dates in milliseconds (ms)
     static func msDiff(start: Date, end: Date) -> Double {
@@ -65,6 +84,224 @@ public extension Date {
         let totalSec = self.endOfDay.timeIntervalSince(self.startOfDay) + 1
         let sec = self.timeIntervalSince(self.startOfDay)
         return max(min(sec / totalSec, 1.0), 0.0) * 100
+    }
+    
+    var fmt_YYYY_MM_dd_HH_mm_ss: String { self.fmt("YYYY-MM-dd HH:mm:ss") }
+    
+    private func fmt(_ str: String) -> String {
+        let df = DateFormatter()
+        df.timeZone = TimeZone.current
+        df.dateFormat = str
+        return df.string(from: self)
+    }
+    
+    enum DateComparisonType {
+        // Day
+        /// Checks if date today.
+        case isToday
+        /// Checks if date is tomorrow.
+        case isTomorrow
+        /// Checks if date is yesterday.
+        case isYesterday
+        /// Checks if the days are the same
+        case isSameDay(as: Date)
+        
+        // Week
+        /// Checks if the date is in this week.
+        case isThisWeek
+        /// Checks if the date is in next week.
+        case isNextWeek
+        /// Checks if the date is in last week.
+        case isLastWeek
+        /// Checks if the given date has the same week.
+        case isSameWeek(as: Date)
+        
+        // Month
+        /// Checks if the date is in this month.
+        case isThisMonth
+        /// Checks if the date is in next month.
+        case isNextMonth
+        /// Checks if the date is in last month.
+        case isLastMonth
+        /// Checks if the given months are the same
+        case isSameMonth(as: Date)
+        
+        // Year
+        /// Checks if the date is in this year.
+        case isThisYear
+        /// Checks if the date is in the next year.
+        case isNextYear
+        /// Checks if the date is in the last year.
+        case isLastYear
+        /// Checks if the given date has the same year.
+        case isSameYear(as: Date)
+        
+        // Relative Time
+        /// Checks if the fate is in the future.
+        case isInTheFuture
+        /// Checks if the date is in the past.
+        case isInThePast
+        /// Checks if the date is earlier than the given date.
+        case isEarlier(than: Date)
+        /// Checks if the date is in the future compared to the given date.
+        case isLater(than: Date)
+        /// Checks if the date is a weekday
+        case isWeekday
+        /// Checks if the date is a weekend
+        case isWeekend
+    }
+    
+    static func components(_ date: Date) -> DateComponents {
+        return Calendar.current.dateComponents(Set(Calendar.Component.allCases), from: date)
+    }
+    
+    func adjust(_ type: Calendar.Component, offset: Int) -> Date {
+        var comp = DateComponents()
+        comp.setValue(offset, for: type)
+        return Calendar.current.date(byAdding: comp, to: self)!
+    }
+    
+    func adjust(second: Int?, minute: Int?, hour: Int?, day: Int? = nil, month: Int? = nil) -> Date {
+        var comp = Date.components(self)
+        if let x = second { comp.second = x  }
+        if let x = minute { comp.minute = x }
+        if let x = hour { comp.hour = x }
+        if let x = day { comp.day = x }
+        if let x = month { comp.month = x }
+        return Calendar.current.date(from: comp)!
+    }
+
+    func compare(_ type: DateComparisonType) -> Bool {
+        switch type {
+            case .isToday:
+                return compare(.isSameDay(as: Date()))
+            case .isTomorrow:
+                let comp = Date().adjust(.day, offset:1)
+                return compare(.isSameDay(as: comp))
+            case .isYesterday:
+                let comparison = Date().adjust(.day, offset: -1)
+                return compare(.isSameDay(as: comparison))
+            case .isSameDay(let date):
+                let comp = Date.components(date)
+                return comp.year == date.year && comp.month == date.month && comp.day == date.day
+            case .isThisWeek:
+                return self.compare(.isSameWeek(as: Date()))
+            case .isNextWeek:
+                let comparison = Date().adjust(.weekOfYear, offset: 1)
+                return compare(.isSameWeek(as: comparison))
+            case .isLastWeek:
+                let comparison = Date().adjust(.weekOfYear, offset: -1)
+                return compare(.isSameWeek(as: comparison))
+            case .isSameWeek(let date):
+                if self.week != date.week { return false }
+                // Check if time interval is under a week
+                return abs(self.timeIntervalSince(date)) < Date.weekInSeconds
+            case .isThisMonth:
+                return self.compare(.isSameMonth(as: Date()))
+            case .isNextMonth:
+                let comp = Date().adjust(.month, offset: 1)
+                return compare(.isSameMonth(as: comp))
+            case .isLastMonth:
+                let comp = Date().adjust(.month, offset: -1)
+                return compare(.isSameMonth(as: comp))
+            case .isSameMonth(let date):
+                return self.year == date.year && self.month == date.month
+            case .isThisYear:
+                return self.compare(.isSameYear(as: Date()))
+            case .isNextYear:
+                let comp = Date().adjust(.year, offset: 1)
+                return compare(.isSameYear(as: comp))
+            case .isLastYear:
+                let comp = Date().adjust(.year, offset: -1)
+                return compare(.isSameYear(as: comp))
+            case .isSameYear(let date):
+                return self.year == date.year
+            case .isInTheFuture:
+                return self.compare(.isLater(than: Date()))
+            case .isInThePast:
+                return self.compare(.isEarlier(than: Date()))
+            case .isEarlier(let date):
+                return (self as NSDate).earlierDate(date) == self
+            case .isLater(let date):
+                return (self as NSDate).laterDate(date) == self
+        case .isWeekday:
+            return !compare(.isWeekend)
+        case .isWeekend:
+            let range = Calendar.current.maximumRange(of: Calendar.Component.weekday)!
+            return self.weekday == range.lowerBound || self.weekday == range.upperBound - range.lowerBound
+        }
+    }
+    
+    func since(_ date: Date, in component: Calendar.Component) -> Int64 {
+        let cal = Calendar.current
+        switch component {
+        case .second:
+            return self.timeIntervalSince(date).toInt64()
+        case .minute:
+            return (self.timeIntervalSince(date) / Date.minuteInSeconds).toInt64()
+        case .hour:
+            return (self.timeIntervalSince(date) / Date.hourInSeconds).toInt64()
+        case .day:
+            let end = cal.ordinality(of: .day, in: .era, for: self)
+            let start = cal.ordinality(of: .day, in: .era, for: date)
+            return (end! - start!).toInt64()
+        case .weekday:
+            let end = cal.ordinality(of: .weekday, in: .era, for: self)
+            let start = cal.ordinality(of: .weekday, in: .era, for: date)
+            return (end! - start!).toInt64()
+        case .weekOfYear:
+            let end = cal.ordinality(of: .weekOfYear, in: .era, for: self)
+            let start = cal.ordinality(of: .weekOfYear, in: .era, for: date)
+            return (end! - start!).toInt64()
+        case .month:
+            let end = cal.ordinality(of: .month, in: .era, for: self)
+            let start = cal.ordinality(of: .month, in: .era, for: date)
+            return (end! - start!).toInt64()
+        case .year:
+            let end = cal.ordinality(of: .year, in: .era, for: self)
+            let start = cal.ordinality(of: .year, in: .era, for: date)
+            return (end! - start!).toInt64()
+        default:
+            return 0
+        }
+    }
+    
+    func toRelativeFormat() -> String {
+        let ts = self.timeIntervalSince1970
+        let now = Date().timeIntervalSince1970
+        let isPast = now - ts > 0
+        
+        let sec: Double = abs(now - ts)
+        let min: Double = round(sec / 60)
+        let hour: Double = round(min / 60)
+        let day: Double = round(hour / 24)
+        
+        if sec < 60 {
+            if sec < 10 { return isPast ? "just now" : "in a few seconds" }
+            return String(format: isPast ? "%.f seconds ago" : "in %.f seconds", sec)
+        }
+        if min < 60 {
+            if min == 1 { return isPast ? "1 minute ago" : "in 1 minute" }
+            return String(format: isPast ? "%.f minutes ago" : "in %.f minutes", min)
+        }
+        if hour < 24 {
+            if hour == 1 { return isPast ? "last hour" : "next hour" }
+            return String(format: isPast ? "%.f hours ago" : "in %.f hours", hour)
+        }
+        if day < 7 {
+            if day == 1 { return isPast ? "yesterday" : "tomorrow" }
+            return String(format: isPast ? "%.f days ago" : "in %.f days", day)
+        }
+        if day < 28 {
+            if isPast { return compare(.isLastWeek) ? "last week" : String(format: "%.f weeks ago", Double(abs(since(Date(), in: .weekOfYear)))) }
+            return compare(.isNextWeek) ? "next week" : String(format: "in %.f weeks", Double(abs(since(Date(), in: .weekOfYear))))
+        }
+        if compare(.isThisYear) {
+            if isPast { return compare(.isLastMonth) ? "last month" : String(format: "%.f months ago", Double(abs(since(Date(), in: .month)))) }
+            return compare(.isNextMonth) ? "next month" : String(format: "in %.f months", Double(abs(since(Date(), in: .month))))
+        }
+        if isPast { return compare(.isLastYear) ? "last year" : String(format: "%.f years ago", Double(abs(since(Date(), in: .year)))) }
+        return compare(.isNextYear) ? "next year" : String(format: "in %.f years", Double(abs(since(Date(), in: .year))))
     }
 }
 
@@ -277,6 +514,49 @@ public extension Float {
         return Double(self)
     }
 }
+
+public extension Double {
+    func toUInt8() -> UInt8 {
+        return UInt8(self)
+    }
+    
+    func toUInt32() -> UInt32 {
+        return UInt32(self)
+    }
+    
+    func toUInt() -> UInt {
+        return UInt(self)
+    }
+    
+    func toInt() -> Int {
+        return Int(self)
+    }
+    
+    func toInt32() -> Int32 {
+        return Int32(self)
+    }
+    
+    func toInt64() -> Int64 {
+        return Int64(self)
+    }
+    
+    func toFloat() -> Float {
+        return Float(self)
+    }
+    
+    func toFloat32() -> Float32 {
+        return Float32(self)
+    }
+    
+    func toFloat64() -> Float64 {
+        return Float64(self)
+    }
+    
+    func toFloat80() -> Float80 {
+        return Float80(self)
+    }
+}
+
 
 public extension Set {
     var isEmpty: Bool { self.first == nil }
