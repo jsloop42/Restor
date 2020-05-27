@@ -74,22 +74,20 @@ public class EADynamicSizeTableView: UITableView {
     }
     
     private func _drawBorders() {
+        self.updateBottomBorder()
         if self.drawBorders {
             self.borderColor = UIColor(named: "cell-separator-bg")
-            self.borderWidth = 0.8
+            self.borderWidth = 0.5
             self.addTopBorderWithColor(color: self.borderColor!, width: self.borderWidth)
-            self.updateBottomBorder()
         } else {
             self.removeBorder()
         }
     }
     
     func updateBottomBorder() {
+        self.removeBottomBorder(name: self.bottomBorderId)
         if self.drawBorders {
-            self.removeBottomBorder(name: self.bottomBorderId)
             self.addBottomBorderWithColor(color: self.borderColor!, width: self.borderWidth, name: self.bottomBorderId)
-        } else {
-            self.removeBottomBorder(name: self.bottomBorderId)
         }
     }
     
@@ -97,6 +95,7 @@ public class EADynamicSizeTableView: UITableView {
         super.layoutSubviews()
         if self.bounds.size != self.intrinsicContentSize {
             self.invalidateIntrinsicContentSize()
+            self.updateBottomBorder()
         }
     }
     

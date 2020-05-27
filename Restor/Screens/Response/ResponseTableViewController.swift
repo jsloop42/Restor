@@ -97,8 +97,9 @@ enum ResponseKVTableType: String {
 // MARK: - ResponseKVCell
 
 class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegate {
-    //@IBOutlet weak var tableView: EADynamicSizeTableView!
-     var tableView: EADynamicSizeTableView!
+    @IBOutlet weak var tableView: EADynamicSizeTableView!
+    @IBOutlet weak var tvView: UIView!
+    //var tableView: EADynamicSizeTableView!
     var isInit = false
     var data: ResponseData?
     let cellId = "twoColumnCell"
@@ -124,23 +125,12 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
     }
     
     func initUI() {
-        self.tableView = EADynamicSizeTableView(frame: self.contentView.frame, style: .plain)
         self.tableView.tableViewId = self.tableType.rawValue
-        self.tableView.register(UINib(nibName: "KVCell", bundle: nil), forCellReuseIdentifier: "kvCell")
-        self.tableView.drawBorders = false
-        self.tableView.translatesAutoresizingMaskIntoConstraints = false
-        self.contentView.addSubview(self.tableView)
-        NSLayoutConstraint.activate([
-            self.tableView.topAnchor.constraint(equalTo: self.contentView.topAnchor),
-            self.tableView.leadingAnchor.constraint(equalTo: self.contentView.leadingAnchor),
-            self.tableView.trailingAnchor.constraint(equalTo: self.contentView.trailingAnchor),
-            self.tableView.bottomAnchor.constraint(equalTo: self.contentView.bottomAnchor)
-        ])
         self.tableView.delegate = self
         self.tableView.dataSource = self
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
-        self.tableView.separatorStyle = .none
+        self.tableView.tableFooterView = UIView()
     }
     
     func updateUI() {
@@ -175,18 +165,15 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
             cell.keyLabel.text = key
             //cell.keyLabel.text = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
             cell.valueLabel.text = self.headers[key]
-            (row == self.headerKeys.count - 1) ? cell.hideBottomBorder() : cell.displayBottomBorder()
         } else if self.tableType == .cookies {
             if let data = self.data {
                 let cookie = data.cookies[row]
                 cell.keyLabel.text = cookie.name
                 cell.valueLabel.text = cookie.value
-                (row == data.cookies.count - 1) ? cell.hideBottomBorder() : cell.displayBottomBorder()
             }
         } else if self.tableType == .details {
             
         }
-        
         return cell
     }
     
@@ -492,17 +479,3 @@ extension ResponseTableViewController {
         return UITableView.automaticDimension
     }
 }
-
-//extension ResponseViewController: UITableViewDelegate, UITableViewDataSource {
-//    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-//        return 1
-//    }
-//
-//    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-//        let cell = tableView.dequeueReusableCell(withIdentifier: "responseCell", for: indexPath) as! ResponseCell
-//        cell.history = self.history
-//        cell.mode = self.mode
-//        cell.updateUI()
-//        return cell
-//    }
-//}

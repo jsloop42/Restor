@@ -182,6 +182,7 @@ struct ResponseData: CustomDebugStringConvertible {
     
     mutating func updateResponseHeaderKeys() {
         self.responseHeaderKeys = self.responseHeaders.allKeys()
+        self.responseHeaderKeys.sort { (a, b) in a.lowercased() <= b.lowercased() }
     }
     
     mutating func updateCookies() {
@@ -196,6 +197,7 @@ struct ResponseData: CustomDebugStringConvertible {
                 self.cookies = xs
             }
         }
+        self.cookies.sort { (a, b) in a.name.lowercased() <= b.name.lowercased() }
     }
     
     var debugDescription: String {
