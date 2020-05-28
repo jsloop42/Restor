@@ -11,6 +11,54 @@ import CoreData
 import CloudKit
 
 public class EHistory: NSManagedObject, Entity {
+    
+    static func initFromResponseData(_ respData: ResponseData) -> EHistory {
+        let history = EHistory(context: CoreDataService.shared.mainMOC)
+        let ts = Date().currentTimeNanos()
+        history.changeTag = ts
+        history.created = ts
+        history.modified = ts
+        history.connection = respData.connectionInfo.connection
+        history.connectionTime = respData.connectionInfo.connectionTime
+        history.cookies = respData.cookiesData
+        history.dnsResolutionTime = respData.connectionInfo.dnsTime
+        history.elapsed = respData.connectionInfo.elapsed
+        history.fetchStartTime = respData.connectionInfo.fetchStart
+        history.hasRequestBody = respData.hasRequestBody
+        history.id = CoreDataService.shared.historyId()
+        history.isCellular = respData.connectionInfo.isCellular
+        history.isMultipath = respData.connectionInfo.isMultipath
+        history.isProxyConnection = respData.connectionInfo.isProxyConnection
+        history.isReusedConnection = respData.connectionInfo.isReusedConnection
+        history.isSecure = respData.isSecure
+        history.isSynced = false
+        history.localAddress = respData.connectionInfo.localAddress
+        history.localPort = respData.connectionInfo.localPort
+        history.method = respData.method
+        history.networkProtocolName = respData.connectionInfo.networkProtocolName
+        history.remoteAddress = respData.connectionInfo.remoteAddress
+        history.remotePort = respData.connectionInfo.remotePort
+        history.request = respData.urlRequest?.toString() ?? ""
+        history.requestBodyBytes = respData.connectionInfo.requestBodyBytesSent
+        history.requestHeaderBytes = respData.connectionInfo.requestHeaderBytesSent
+        history.requestId = respData.requestId
+        history.requestTime = respData.connectionInfo.requestTime
+        history.responseBodyBytes = respData.connectionInfo.responseBodyBytesReceived
+        history.responseData = respData.responseData
+        history.responseHeaderBytes = respData.connectionInfo.responseHeaderBytesReceived
+        // history.responseHeaders = respData.
+        history.responseTime = respData.connectionInfo.responseTime
+        history.secureConnectionTime = respData.connectionInfo.secureConnectionTime
+        //history.sessionName = respData.connectionInfo.s
+        history.statusCode = respData.statusCode.toInt64()
+        history.tlsCipherSuite = respData.connectionInfo.negotiatedTLSCipherSuite
+        history.tlsProtocolVersion = respData.connectionInfo.negotiatedTLSProtocolVersion
+        history.url = respData.url
+        history.version = 0
+        history.wsId = respData.wsId
+        return history
+    }
+    
     public var recordType: String { return "History" }
     
     public func getId() -> String {
@@ -82,9 +130,9 @@ public class EHistory: NSManagedObject, Entity {
             record["elapsed"] = self.elapsed as CKRecordValue
             record["id"] = self.getId() as CKRecordValue
             record["isSecure"] = self.isSecure as CKRecordValue
-            record["request"] = (self.request ?? "") as CKRecordValue
+            record["request"] = (self.request ?? "") as CKRecordValue  // urlRequestString
             record["requestId"] = (self.requestId ?? "") as CKRecordValue
-            record["responseBodySize"] = self.responseBodySize as CKRecordValue
+            record["responseBodyBytes"] = self.responseBodyBytes as CKRecordValue
             if let id = self.id, let data = self.responseData {
                 let url = EAFileManager.getTemporaryURL(id)
                 do {

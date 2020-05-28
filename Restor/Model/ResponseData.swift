@@ -26,7 +26,6 @@ struct ResponseData: CustomDebugStringConvertible {
     var responseData: Data?
     var metrics: URLSessionTaskMetrics?
     var error: Error?
-    var data: Data?
     var cookiesData: Data?
     var cookies: [EAHTTPCookie] = []
     var isSecure = false
@@ -107,7 +106,7 @@ struct ResponseData: CustomDebugStringConvertible {
         self.connectionInfo.elapsed = history.elapsed
         self.updateResponseHeaders()
         self.updateCookies()
-        self.updateMetrics(history)
+        self.updateMetricsDetails(history)
     }
     
     init(response: HTTPURLResponse, request: ERequest, urlRequest: URLRequest, responseData: Data?, metrics: URLSessionTaskMetrics? = nil) {
@@ -127,7 +126,7 @@ struct ResponseData: CustomDebugStringConvertible {
         self.requestId = request.getId()
         self.wsId = request.getWsId()
         self.hasRequestBody = request.body != nil
-        self.responseData = data
+        self.responseData = responseData
         self.statusCode = response.statusCode
         self.status = (200..<299) ~= self.statusCode
         self.connectionInfo.elapsed = elapsed
@@ -140,8 +139,35 @@ struct ResponseData: CustomDebugStringConvertible {
         return url?.starts(with: "https") ?? false
     }
     
-    func updateMetrics(_ history: EHistory) {
-        // TODO:
+    /// Updates metrics, details from the given history object.
+    mutating func updateMetricsDetails(_ history: EHistory) {
+        var cinfo = self.connectionInfo
+        cinfo.connectionTime = history.connectionTime
+        cinfo.dnsTime = history.dnsResolutionTime
+        cinfo.elapsed = history.elapsed
+        cinfo.fetchStart = history.fetchStartTime
+        cinfo.requestTime = history.requestTime
+        cinfo.responseTime = history.responseTime
+        cinfo.secureConnectionTime = history.secureConnectionTime
+        cinfo.networkProtocolName = history.networkProtocolName ?? ""
+        cinfo.isProxyConnection = history.isProxyConnection
+        cinfo.isReusedConnection = history.isReusedConnection
+        cinfo.requestHeaderBytesSent = history.requestHeaderBytes
+        cinfo.requestBodyBytesSent = history.requestBodyBytes
+        cinfo.responseHeaderBytesReceived = history.responseHeaderBytes
+        cinfo.responseBodyBytesReceived = history.responseBodyBytes
+        cinfo.localAddress = history.localAddress ?? ""
+        cinfo.localPort = history.localPort
+        cinfo.remoteAddress = history.remoteAddress ?? ""
+        cinfo.remotePort = history.remotePort
+        cinfo.isCellular = history.isCellular
+        cinfo.connection = history.connection ?? ""
+        cinfo.isMultipath = history.isMultipath
+        cinfo.negotiatedTLSCipherSuite = history.tlsCipherSuite ?? ""
+        cinfo.negotiatedTLSProtocolVersion = history.tlsProtocolVersion ?? ""
+        self.connectionInfo = cinfo
+        self.updateMetricsMap()
+        self.updateDetailsMap()
     }
     
     mutating func updateFromMetrics() {
@@ -272,7 +298,7 @@ struct ResponseData: CustomDebugStringConvertible {
         self.metricsMap["Request Time"] = self.utils.formatElapsed(cinfo.requestTime.toInt64())
         self.metricsMap["Response Time"] = self.utils.formatElapsed(cinfo.responseTime.toInt64())
         if self.isSecure {
-            self.metricsMap["SSL Handshake Time"] = self.utils.formatElapsed(cinfo.secureConnectionTime.toInt64())
+            self.metricsMap["   q Handshake Time"] = self.utils.formatElapsed(cinfo.secureConnectionTime.toInt64())
         }
         if #available(iOS 13.0, *) {
             self.metricsMap["Request Header Size"] = self.utils.bytesToReadable(cinfo.requestHeaderBytesSent)
@@ -328,7 +354,6 @@ struct ResponseData: CustomDebugStringConvertible {
             response: \(String(describing: self.response))
             cookies: \(String(describing: self.cookies))
             error: \(String(describing: self.error))
-            data: \(String(describing: self.data))
             elapsed: \(self.connectionInfo.elapsed)
             size: \(self.connectionInfo.responseBodyBytesReceived)
             mode: \(self.mode)

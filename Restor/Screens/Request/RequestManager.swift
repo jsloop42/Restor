@@ -103,13 +103,7 @@ class RequestManager {
             // TODO: end test
             
             if ws.saveResponse {
-                let histId = self.localdb.historyId()
-                let urlReq = info.urlRequest
-                history = self.localdb.createHistory(id: histId, requestId: info.requestId, wsId: info.wsId, request: urlReq?.toString() ?? "",
-                                                     responseData: info.responseData, responseHeaders: URLRequest.headersToData(info.getResponseHeaders()),
-                                                     statusCode: info.statusCode.toInt64(), elapsed: info.connectionInfo.elapsed,
-                                                     responseBodySize: info.connectionInfo.responseBodyBytesReceived, url: info.url, method: info.method, isSecure: info.isSecure,
-                                                     checkExists: false, ctx: ctx)
+                history = EHistory.initFromResponseData(info)
             } else {
                 // Save only basic info
                 let histId = self.localdb.historyId()
@@ -117,7 +111,7 @@ class RequestManager {
                 if history != nil {
                     history.statusCode = info.statusCode.toInt64()
                     history.elapsed = info.connectionInfo.elapsed
-                    history.responseBodySize = info.connectionInfo.responseBodyBytesReceived
+                    history.responseBodyBytes = info.connectionInfo.responseBodyBytesReceived
                     history.requestId = info.requestId
                     history.url = info.url
                     history.isSecure = info.isSecure

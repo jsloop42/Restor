@@ -32,30 +32,43 @@
     <entity name="EHistory" representedClassName=".EHistory" syncable="YES" codeGenerationType="category">
         <attribute name="changeTag" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="connection" attributeType="String" defaultValueString=""/>
-        <attribute name="connectionTime" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="connectionTime" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="cookies" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
         <attribute name="created" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="dnsResolutionTime" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="dnsResolutionTime" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="elapsed" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="fetchStartTime" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="hasRequestBody" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
-        <attribute name="headersResponseTime" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
+        <attribute name="isCellular" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="isMultipath" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="isProxyConnection" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="isReusedConnection" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
         <attribute name="isSecure" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="isSynced" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="localAddress" attributeType="String" defaultValueString=""/>
+        <attribute name="localPort" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="markForDelete" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="method" attributeType="String" defaultValueString=""/>
         <attribute name="modified" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="remoteHostIP" attributeType="String" defaultValueString=""/>
+        <attribute name="networkProtocolName" attributeType="String" defaultValueString=""/>
+        <attribute name="remoteAddress" attributeType="String" defaultValueString=""/>
+        <attribute name="remotePort" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="request" optional="YES" attributeType="String"/>
+        <attribute name="requestBodyBytes" attributeType="Integer 64" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="requestHeaderBytes" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="requestId" optional="YES" attributeType="String"/>
-        <attribute name="responseBodySize" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="responseCompression" attributeType="String" defaultValueString=""/>
+        <attribute name="requestTime" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="responseBodyBytes" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="responseData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="responseHeaderBytes" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="responseHeaders" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="responseTime" optional="YES" attributeType="Double" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="secureConnectionTime" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
         <attribute name="sessionName" optional="YES" attributeType="String"/>
-        <attribute name="sslHandshakeTime" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
-        <attribute name="sslPeerName" attributeType="String" defaultValueString=""/>
         <attribute name="statusCode" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="tlsCipherSuite" attributeType="String" defaultValueString=""/>
+        <attribute name="tlsProtocolVersion" attributeType="String" defaultValueString=""/>
         <attribute name="url" attributeType="String" defaultValueString=""/>
         <attribute name="version" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="wsId" optional="YES" attributeType="String"/>
@@ -335,7 +348,7 @@
     </entity>
     <elements>
         <element name="EFile" positionX="36" positionY="126" width="128" height="238"/>
-        <element name="EHistory" positionX="-9" positionY="135" width="128" height="478"/>
+        <element name="EHistory" positionX="-9" positionY="135" width="128" height="673"/>
         <element name="EImage" positionX="-9" positionY="90" width="128" height="238"/>
         <element name="EProject" positionX="-54" positionY="-9" width="128" height="238"/>
         <element name="ERequest" positionX="-36" positionY="9" width="128" height="313"/>

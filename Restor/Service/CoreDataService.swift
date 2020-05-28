@@ -1598,7 +1598,7 @@ class CoreDataService {
     }
     
     func createHistory(id: String, requestId: String, wsId: String, request: String, responseData: Data?, responseHeaders: Data?, statusCode: Int64, elapsed: Int64,
-                       responseBodySize: Int64, url: String, method: String, isSecure: Bool, checkExists: Bool? = true,
+                       responseBodyBytes: Int64, url: String, method: String, isSecure: Bool, checkExists: Bool? = true,
                        ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EHistory? {
         var x: EHistory?
         let ts = Date().currentTimeNanos()
@@ -1614,7 +1614,7 @@ class CoreDataService {
             data.responseHeaders = responseHeaders
             data.statusCode = statusCode
             data.elapsed = elapsed
-            data.responseBodySize = responseBodySize
+            data.responseBodyBytes = responseBodyBytes
             data.url = url
             data.method = method
             data.isSecure = isSecure
