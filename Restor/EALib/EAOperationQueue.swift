@@ -9,7 +9,7 @@
 import Foundation
 
 /// An operation queue class to work with operation objects with dynamic limits.
-public class EAOperationQueue {
+public final class EAOperationQueue {
     private var opqueue: OperationQueue!
     public var count: Int { opqueue.operationCount }
     

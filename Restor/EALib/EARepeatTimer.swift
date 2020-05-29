@@ -9,7 +9,7 @@
 import Foundation
 
 /// A class that repeats the given block which uses DispatchSourceTimer
-class EARepeatTimer {
+public final class EARepeatTimer {
     let interval: TimeInterval
     private lazy var timer: DispatchSourceTimer = {
         let t = DispatchSource.makeTimerSource()

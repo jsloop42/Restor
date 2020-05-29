@@ -9,7 +9,7 @@
 import Foundation
 
 /// A queue implementation which dequeues based on time elapsed since enqueue.
-public class EAQueue<T> {
+public final class EAQueue<T> {
     private var queue: [T] = []
     private var timer: DispatchSourceTimer?  // timer
     private var interval: TimeInterval = 4.0  // seconds

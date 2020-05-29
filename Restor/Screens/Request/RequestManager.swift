@@ -15,7 +15,7 @@ extension Notification.Name {
     static let responseDidReceive = Notification.Name("response-did-receive")
 }
 
-class RequestManager {
+final class RequestManager {
     var request: ERequest
     var fsm: RequestStateMachine
     private let localdb = CoreDataService.shared

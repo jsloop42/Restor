@@ -20,7 +20,7 @@ public enum EAReachabilityError: Error {
 }
 
 /// A class used to check if internet connectivity is present.
-public class EAReachability {
+public final class EAReachability {
     static let shared = EAReachability()
     
     static func isConnectedToNetwork() -> Bool {
@@ -257,7 +257,7 @@ extension SCNetworkReachabilityFlags {
  of the notifier on `deinit`.
  */
 
-private class EAReachabilityBridge {
+private final class EAReachabilityBridge {
     weak var reachability: EAReachability?
     init(reachability: EAReachability) {
         self.reachability = reachability
@@ -272,7 +272,7 @@ public protocol EAHTTPClientDelegate: class {
     func shouldValidateSSL() -> Bool
 }
 
-public class EAHTTPClient: NSObject {
+public final class EAHTTPClient: NSObject {
     private lazy var queue: OperationQueue = {
         let q = OperationQueue()
         q.name = "com.estoapps.ios.network-queue"

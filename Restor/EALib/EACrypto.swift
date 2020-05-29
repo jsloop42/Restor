@@ -8,7 +8,7 @@
 
 import Foundation
 
-public class PKCS12 {
+public final class PKCS12 {
     var label: String?
     var keyID: Data?
     var trust: SecTrust?

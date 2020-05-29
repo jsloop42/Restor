@@ -52,7 +52,7 @@ public struct EAReschedulerFn: Equatable, Hashable {
 }
 
 /// A class which provides a scheduler which gets rescheduled if invoked before the schedule.
-public class EARescheduler: EAReschedulable {
+public final class EARescheduler: EAReschedulable {
     public typealias EAEquatable = String
     private var timer: DispatchSourceTimer!
     public var interval: TimeInterval = 0.3

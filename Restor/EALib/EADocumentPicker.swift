@@ -12,7 +12,7 @@ import MobileCoreServices
 import AVFoundation
 import Photos
 
-class EADocumentPicker: NSObject {
+final class EADocumentPicker: NSObject {
     static let shared = EADocumentPicker()
     let docTypes = ["com.apple.iwork.pages.pages", "com.apple.iwork.numbers.numbers",
                     "com.apple.iwork.keynote.key", "public.image", "com.apple.application", "public.item",

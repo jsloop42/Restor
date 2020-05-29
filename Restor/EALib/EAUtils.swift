@@ -10,7 +10,7 @@ import Foundation
 import UIKit
 import CommonCrypto
 
-class EAUtils {
+public final class EAUtils {
     static let shared: EAUtils = EAUtils()
     private let userDefaults = UserDefaults.standard
     

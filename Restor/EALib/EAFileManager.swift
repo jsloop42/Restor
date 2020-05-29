@@ -18,7 +18,7 @@ public enum FileIOMode {
 /// A result type of `Data`.
 public typealias EADataResultCallback = ((Result<Data, Error>) -> Void)
 
-public class EAFileManager: NSObject {
+public final class EAFileManager: NSObject {
     private let url: URL!
     private var callback: EADataResultCallback?
     private var data: Data?

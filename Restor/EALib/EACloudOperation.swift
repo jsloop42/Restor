@@ -10,7 +10,7 @@ import Foundation
 import CloudKit
 
 /// A class to work with CloudKit record fetch using Operation.
-public class EACloudOperation: Operation, NSSecureCoding {
+public final class EACloudOperation: Operation, NSSecureCoding {
     private var parentId: String = ""
     private var record: CKRecord?
     private var savedRecords: [CKRecord] = []

@@ -33,7 +33,7 @@ public protocol EACacheListValue: class {
     func setAccessCount(_ c: Int)
 }
 
-private class CacheListValue: EACacheListValue {
+private final class CacheListValue: EACacheListValue {
     private var _key: String
     private var _accessCount: Int
 
