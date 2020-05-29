@@ -57,7 +57,9 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
             guard let info = notif.userInfo as? [String: Any], let data = info["data"] as? ResponseData else { return }
             self.responseData = data
             self.selectedIndex = 1
+            self.selectedTab = .response
             if let vc = self.viewControllers?.last as? ResponseTableViewController { vc.data = data }
+            self.viewNavbarSegment()
         }
     }
     
@@ -106,7 +108,7 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     
     @objc func segmentDidChange(_ sender: Any) {
         Log.debug("segment did change")
-        //self.nc.post(name: .responseSegmentDidChange, object: self, userInfo: ["index": self.segView!.selectedSegmentIndex])
+        self.nc.post(name: .responseSegmentDidChange, object: self, userInfo: ["index": self.segView!.selectedSegmentIndex])
     }
     
     /// Display the view change with an animation effect.

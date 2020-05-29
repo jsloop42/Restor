@@ -10,9 +10,77 @@ import Foundation
 import UIKit
 import WebKit
 
+// MARK: - ResponseWebViewCell
+
+final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDelegate {
+    @IBOutlet weak var webView: WKWebView!
+    var data: ResponseData?
+    var doneLoading = false
+    let nc = NotificationCenter.default
+    var height: CGFloat = 44
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        self.webView.navigationDelegate = self
+        self.webView.uiDelegate = self
+        self.initUI()
+    }
+    
+    func initUI() {
+        self.webView.scrollView.isScrollEnabled = false
+    }
+    
+    func getHtmlSource(_ html: String) -> String {
+        return html.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#039;").replacingOccurrences(of: "\n", with: "<br>")
+    }
+
+    func updateUI() {
+        guard let data = self.data, let respData = data.responseData else { return }
+        self.doneLoading = false
+        var str = ""
+        if let json = try? JSONSerialization.jsonObject(with: respData, options: .allowFragments) {
+            str = String(describing: json)
+        } else {
+            str = String(data: respData, encoding: .utf8) ?? ""
+        }
+        self.webView.loadHTMLString(self.getHtmlSource(str), baseURL: nil)
+    }
+    
+    func updateHeight() {
+        self.webView.evaluateJavaScript("document.readyState", completionHandler: { complete, error in
+            if complete != nil {
+                self.webView.evaluateJavaScript("document.body.scrollHeight", completionHandler: { height, error in
+                    if let h = height as? CGFloat {
+                        self.height = h
+                        DispatchQueue.main.async {
+                            self.nc.post(name: .responseTableViewShouldReload, object: self)
+                        }
+                    }
+                })
+            }
+        })
+    }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard !self.doneLoading else { return }
+        Log.debug("web view did finish load")
+        self.webView.scrollView.isScrollEnabled = true
+        var frame = self.webView.frame
+        frame.size.width = self.contentView.frame.width
+        frame.size.height = 1
+        self.webView.frame = frame
+        frame.size.height = self.webView.scrollView.contentSize.height
+        Log.debug("webview frame: \(frame)")
+        self.webView.frame = frame;
+        self.doneLoading = true
+        self.updateHeight()
+    }
+}
+
 // MARK: - ResponseInfoCell
 
-class ResponseInfoCell: UITableViewCell {
+final class ResponseInfoCell: UITableViewCell {
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var urlLabel: UILabel!
     @IBOutlet weak var statusCodeView: UIView!
@@ -97,7 +165,7 @@ enum ResponseKVTableType: String {
 
 // MARK: - ResponseKVCell
 
-class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegate {
+final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegate {
     @IBOutlet weak var tableView: EADynamicSizeTableView!
     @IBOutlet weak var tvView: UIView!
     //var tableView: EADynamicSizeTableView!
@@ -244,6 +312,10 @@ enum ResponseMode: Int {
 
 // MARK: - ResponseTableViewController
 
+extension Notification.Name {
+    static let responseTableViewShouldReload = Notification.Name("response-table-view-should-reload")
+}
+
 class ResponseTableViewController: RestorTableViewController {
     private let nc = NotificationCenter.default
     private lazy var ck = { EACloudKit.shared }()
@@ -265,6 +337,8 @@ class ResponseTableViewController: RestorTableViewController {
         didSet { self.detailsViewCell.tableType = .details }
     }
     @IBOutlet weak var helpCell: ResponseInfoCell!
+    @IBOutlet weak var rawCell: ResponseWebViewCell!
+    @IBOutlet weak var previewCell: ResponseWebViewCell!
     private var headerCellHeight: CGFloat = 0.0
     private var cookieCellHeight: CGFloat = 0.0
     private var metricsCellHeight: CGFloat = 0.0
@@ -287,6 +361,16 @@ class ResponseTableViewController: RestorTableViewController {
         case detailsTitleCell
         case detailsViewCell
         case helpCell
+    }
+    
+    enum RawCellId: Int {
+        case spacerBeforeRawCell
+        case rawCell
+    }
+    
+    enum PreviewCellId: Int {
+        case spacerBeforePreviewCell
+        case previewCell
     }
     
     deinit {
@@ -351,6 +435,10 @@ class ResponseTableViewController: RestorTableViewController {
         self.detailsViewCell.data = self.data
         self.detailsViewCell.details = self.data?.getDetailsMap() ?? [:]
         self.detailsViewCell.detailsKeys = self.data?.getDetailsKeys() ?? []
+        
+        // Raw section - cell
+        self.rawCell.data = self.data
+        self.rawCell.updateUI()
     }
     
     func initUI() {
@@ -361,8 +449,8 @@ class ResponseTableViewController: RestorTableViewController {
     func initEvents() {
         self.nc.addObserver(self, selector: #selector(self.segmentDidChange(_:)), name: .responseSegmentDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.viewRequestHistoryDidTap(_:)), name: .viewRequestHistoryDidTap, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
         self.nc.addObserver(self, selector: #selector(self.dynamicSizeTableViewHeightDidChange(_:)), name: .dynamicSizeTableViewHeightDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.responseTableViewShouldReload(_:)), name: .responseTableViewShouldReload, object: nil)
     }
     
     func updateUI() {
@@ -374,6 +462,12 @@ class ResponseTableViewController: RestorTableViewController {
             self.cookiesViewCell.updateUI()
             self.metricsViewCell.updateUI()
             self.detailsViewCell.updateUI()
+        } else if self.mode == .raw {
+            self.rawCell.data = self.data
+            self.rawCell.updateUI()
+        } else if self.mode == .preview {
+            self.previewCell.data = self.data
+            self.previewCell.updateUI()
         }
     }
     
@@ -451,16 +545,10 @@ class ResponseTableViewController: RestorTableViewController {
         // TODO: display history page
     }
     
-    @objc func responseDidReceive(_ notif: Notification) {
-        Log.debug("response did receieve")
-        if let info = notif.userInfo as? [String: Any], let histId = info["historyId"] as? String {
-            DispatchQueue.main.async {
-                if let history = self.localdb.getHistory(id: histId, ctx: self.localdb.mainMOC) {
-                    self.data = ResponseData(history: history)
-                    DispatchQueue.main.async { self.tableView.reloadData() }
-                }
-                //self.updateUI()
-            }
+    @objc func responseTableViewShouldReload(_ notif: Notification) {
+        Log.debug("response table view should reload receieve")
+        DispatchQueue.main.async {
+            self.tableView.reloadData()
         }
     }
 }
@@ -489,7 +577,7 @@ extension ResponseTableViewController {
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         switch indexPath.section {
-        case 0:
+        case 0:  // info section
             if self.mode == .info {
                 if self.data == nil {  // For requests which has not been sent once
                     if indexPath.row == InfoCellId.helpCell.rawValue { return 44 }
@@ -536,10 +624,18 @@ extension ResponseTableViewController {
                     }
                 }
             }
-        case 1:
-            return 0
-        case 2:
-            return 0
+        case 1:  // raw section
+            if indexPath.row == RawCellId.spacerBeforeRawCell.rawValue {
+                return 44
+            }
+            let h = UIScreen.main.nativeBounds.height - 64
+            Log.debug("raw webview cell height: \(h) - webview height: \(self.rawCell.webView.frame.size.height)")
+            return h
+        case 2:  // preview section
+            if indexPath.row == PreviewCellId.spacerBeforePreviewCell.rawValue {
+                return 44
+            }
+            return max(self.previewCell.webView.frame.height, 44)
         default:
             return 0
         }

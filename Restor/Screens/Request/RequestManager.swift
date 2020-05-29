@@ -83,16 +83,17 @@ final class RequestManager {
                 info = ResponseData(response: resp, request: state.request, urlRequest: request, responseData: state.responseBodyData,
                                     elapsed: elapsed, metrics: state.metrics)
             }
-            self.saveResponse(info)
+            self.saveResponse(&info)
             let state = self.fsm.state(forClass: RequestResponseState.self)
             state?.data = info
             self.fsm.enter(RequestResponseState.self)
         }
     }
     
-    func saveResponse(_ info: ResponseData) {
+    func saveResponse(_ info: inout ResponseData) {
         let ctx = self.localdb.mainMOC
         ctx.performAndWait {
+            var info = info
             Log.debug("[req-man] save-response - \(info)")
             guard let ws = self.localdb.getWorkspace(id: self.request.getWsId()) else { return }
             var history: EHistory!
@@ -120,6 +121,7 @@ final class RequestManager {
                 }
             }
             if history != nil {
+                info.history = history
                 history.cookies = info.cookiesData
                 self.localdb.saveMainContext()
                 if let ws = self.localdb.getWorkspace(id: history.getWsId()), ws.isSyncEnabled { PersistenceService.shared.saveHistoryToCloud(history!) }
