@@ -40,6 +40,7 @@ struct ResponseData: CustomDebugStringConvertible {
     private var detailsMap: [String: String] = [:]
     private var detailsKeys: [String] = []
     var hasRequestBody = false
+    var sessionName = "Default"
     
     struct ConnectionInfo {
         var elapsed: Int64 = 0  // Total response time
@@ -87,6 +88,7 @@ struct ResponseData: CustomDebugStringConvertible {
         self.hasRequestBody = request.body != nil
         if let proj = request.project { self.method = self.localdb.getRequestMethodData(at: request.selectedMethodIndex.toInt(), projId: proj.getId())?.name ?? "" }
         if let x = metrics { self.updateFromMetrics(x) }
+        self.updateDetailsMap()
     }
         
     init(history: EHistory) {
@@ -104,9 +106,11 @@ struct ResponseData: CustomDebugStringConvertible {
         self.statusCode = history.statusCode.toInt()
         self.status = (200..<299) ~= self.statusCode
         self.connectionInfo.elapsed = history.elapsed
-        self.updateResponseHeaders()
+        self.sessionName = history.sessionName ?? "Default"
+        self.updateResponseHeadersMap()
         self.updateCookies()
         self.updateMetricsDetails(history)
+        self.updateDetailsMap()
     }
     
     init(response: HTTPURLResponse, request: ERequest, urlRequest: URLRequest, responseData: Data?, metrics: URLSessionTaskMetrics? = nil) {
@@ -130,9 +134,10 @@ struct ResponseData: CustomDebugStringConvertible {
         self.statusCode = response.statusCode
         self.status = (200..<299) ~= self.statusCode
         self.connectionInfo.elapsed = elapsed
-        self.updateResponseHeaders()
+        self.updateResponseHeadersMap()
         self.updateCookies()
         if let x = metrics { self.updateFromMetrics(x) }
+        self.updateDetailsMap()
     }
     
     func isHTTPS(url: String?) -> Bool {
@@ -167,7 +172,6 @@ struct ResponseData: CustomDebugStringConvertible {
         cinfo.negotiatedTLSProtocolVersion = history.tlsProtocolVersion ?? ""
         self.connectionInfo = cinfo
         self.updateMetricsMap()
-        self.updateDetailsMap()
     }
     
     mutating func updateFromMetrics() {
@@ -178,61 +182,60 @@ struct ResponseData: CustomDebugStringConvertible {
     mutating func updateFromMetrics(_ metrics: URLSessionTaskMetrics) {
         var cInfo = self.connectionInfo
         Log.debug("elapsed: \(self.connectionInfo.elapsed) - duration: \(metrics.taskInterval.duration)")
+        let elapsed = self.connectionInfo.elapsed
         if metrics.transactionMetrics.isEmpty { return }
         let hasMany = metrics.transactionMetrics.count > 1
-        switch self.mode {
-        case .memory:
-            if hasMany {
-                
-            } else {  // only one transaction metrics
-                guard let tmetrics = metrics.transactionMetrics.first else { return }
-                if let d1 = tmetrics.connectStartDate, let d2 = tmetrics.connectEndDate {
-                    cInfo.connectionTime = Date.msDiff(start: d1, end: d2)
-                }
-                if let d1 = tmetrics.domainLookupStartDate, let d2 = tmetrics.domainLookupEndDate {
-                    cInfo.dnsTime = Date.msDiff(start: d1, end: d2)
-                }
-                if let x = tmetrics.fetchStartDate {
-                    cInfo.fetchStart = x.currentTimeNanos()
-                }
-                if let d1 = tmetrics.requestStartDate, let d2 = tmetrics.requestEndDate {
-                    cInfo.requestTime = Date.msDiff(start: d1, end: d2)
-                }
-                if let d1 = tmetrics.responseStartDate, let d2 = tmetrics.responseEndDate {
-                    cInfo.responseTime = Date.msDiff(start: d1, end: d2)
-                }
-                if let d1 = tmetrics.secureConnectionStartDate, let d2 = tmetrics.secureConnectionEndDate {
-                    cInfo.secureConnectionTime = Date.msDiff(start: d1, end: d2)
-                }
-                cInfo.networkProtocolName = tmetrics.networkProtocolName ?? ""
-                cInfo.isProxyConnection = tmetrics.isProxyConnection
-                cInfo.isReusedConnection = tmetrics.isReusedConnection
-                if #available(iOS 13.0, *) {
-                    cInfo.requestHeaderBytesSent = tmetrics.countOfRequestHeaderBytesSent
-                    cInfo.requestBodyBytesSent = tmetrics.countOfRequestBodyBytesSent
-                    cInfo.responseHeaderBytesReceived = tmetrics.countOfResponseHeaderBytesReceived
-                    cInfo.responseBodyBytesReceived = tmetrics.countOfResponseBodyBytesReceived
-                    cInfo.localAddress = tmetrics.localAddress ?? ""
-                    cInfo.remoteAddress = tmetrics.remoteAddress ?? ""
-                    cInfo.localPort = (tmetrics.localPort ?? 0).toInt64()
-                    cInfo.remotePort = (tmetrics.remotePort ?? 0).toInt64()
-                    cInfo.isCellular = tmetrics.isCellular
-                    cInfo.connection = (tmetrics.isCellular || tmetrics.isExpensive || tmetrics.isConstrained) ? EAReachability.Connection.cellular.description
-                        : EAReachability.Connection.wifi.description
-                    cInfo.isMultipath = tmetrics.isMultipath
-                    if let x = tmetrics.negotiatedTLSCipherSuite?.rawValue {
-                        cInfo.negotiatedTLSCipherSuite = EATLSCipherSuite(x)?.toString() ?? ""
-                    }
-                    if let x = tmetrics.negotiatedTLSProtocolVersion {
-                        cInfo.negotiatedTLSProtocolVersion = EATLSProtocolVersion(x.rawValue)?.toString() ?? ""
-                    }
-                } else {
-                    self.updateResponseBodySizeFromHeaders()
-                }
+        if hasMany {
+            
+        } else {  // only one transaction metrics
+            guard let tmetrics = metrics.transactionMetrics.first else { return }
+            if let d1 = tmetrics.connectStartDate, let d2 = tmetrics.connectEndDate {
+                cInfo.connectionTime = Date.msDiff(start: d1, end: d2)
             }
-            break
-        case .history:
-            break
+            if let d1 = tmetrics.domainLookupStartDate, let d2 = tmetrics.domainLookupEndDate {
+                cInfo.dnsTime = Date.msDiff(start: d1, end: d2)
+            }
+            if let x = tmetrics.fetchStartDate {
+                cInfo.fetchStart = x.currentTimeNanos()
+            }
+            if let d1 = tmetrics.requestStartDate, let d2 = tmetrics.requestEndDate {
+                cInfo.requestTime = Date.msDiff(start: d1, end: d2)
+            }
+            if let d1 = tmetrics.responseStartDate, let d2 = tmetrics.responseEndDate {
+                cInfo.responseTime = Date.msDiff(start: d1, end: d2)
+            }
+            if let d1 = tmetrics.secureConnectionStartDate, let d2 = tmetrics.secureConnectionEndDate {
+                cInfo.secureConnectionTime = Date.msDiff(start: d1, end: d2)
+            }
+            if let d1 = tmetrics.fetchStartDate, let d2 = tmetrics.responseEndDate {
+                cInfo.elapsed = Date.msDiff(start: d1, end: d2).toInt64()
+            }
+            if cInfo.elapsed == 0 && elapsed > 0 { cInfo.elapsed = elapsed }
+            cInfo.networkProtocolName = tmetrics.networkProtocolName ?? ""
+            cInfo.isProxyConnection = tmetrics.isProxyConnection
+            cInfo.isReusedConnection = tmetrics.isReusedConnection
+            if #available(iOS 13.0, *) {
+                cInfo.requestHeaderBytesSent = tmetrics.countOfRequestHeaderBytesSent
+                cInfo.requestBodyBytesSent = tmetrics.countOfRequestBodyBytesSent
+                cInfo.responseHeaderBytesReceived = tmetrics.countOfResponseHeaderBytesReceived
+                cInfo.responseBodyBytesReceived = tmetrics.countOfResponseBodyBytesReceived
+                cInfo.localAddress = tmetrics.localAddress ?? ""
+                cInfo.remoteAddress = tmetrics.remoteAddress ?? ""
+                cInfo.localPort = (tmetrics.localPort ?? 0).toInt64()
+                cInfo.remotePort = (tmetrics.remotePort ?? 0).toInt64()
+                cInfo.isCellular = (tmetrics.isCellular || tmetrics.isExpensive || tmetrics.isConstrained)
+                cInfo.connection = (tmetrics.isCellular || tmetrics.isExpensive || tmetrics.isConstrained) ? EAReachability.Connection.cellular.description
+                    : EAReachability.Connection.wifi.description
+                cInfo.isMultipath = tmetrics.isMultipath
+                if let x = tmetrics.negotiatedTLSCipherSuite?.rawValue {
+                    cInfo.negotiatedTLSCipherSuite = EATLSCipherSuite(x)?.toString() ?? ""
+                }
+                if let x = tmetrics.negotiatedTLSProtocolVersion {
+                    cInfo.negotiatedTLSProtocolVersion = EATLSProtocolVersion(x.rawValue)?.toString() ?? ""
+                }
+            } else {
+                self.updateResponseBodySizeFromHeaders()
+            }
         }
         self.connectionInfo = cInfo
     }
@@ -256,7 +259,7 @@ struct ResponseData: CustomDebugStringConvertible {
         return self.responseHeaderKeys
     }
     
-    mutating func updateResponseHeaders() {
+    mutating func updateResponseHeadersMap() {
         if self.mode == .memory {
             self.responseHeaders = self.response?.allHeaderFields as? [String : String] ?? [:]
         } else if self.mode == .history {
@@ -290,15 +293,14 @@ struct ResponseData: CustomDebugStringConvertible {
     mutating func updateMetricsMap() {
         let cinfo = self.connectionInfo
         if cinfo.elapsed > 0 {
-            self.metricsMap["Elapsed"] = self.utils.formatElapsed(cinfo.elapsed)
+            self.metricsMap["Elapsed"] = self.utils.millisToReadable(cinfo.elapsed.toDouble())
         }
-        self.metricsMap["Total Response Time"] = self.utils.formatElapsed(cinfo.responseTime.toInt64())
-        self.metricsMap["DNS Resolution Time"] = self.utils.formatElapsed(cinfo.dnsTime.toInt64())
-        self.metricsMap["Connection Time"] = self.utils.formatElapsed(cinfo.connectionTime.toInt64())
-        self.metricsMap["Request Time"] = self.utils.formatElapsed(cinfo.requestTime.toInt64())
-        self.metricsMap["Response Time"] = self.utils.formatElapsed(cinfo.responseTime.toInt64())
+        self.metricsMap["DNS Resolution Time"] = self.utils.millisToReadable(cinfo.dnsTime)
+        self.metricsMap["Connection Time"] = self.utils.millisToReadable(cinfo.connectionTime)
+        self.metricsMap["Request Time"] = self.utils.millisToReadable(cinfo.requestTime)
+        self.metricsMap["Response Time"] = self.utils.millisToReadable(cinfo.responseTime)
         if self.isSecure {
-            self.metricsMap["   q Handshake Time"] = self.utils.formatElapsed(cinfo.secureConnectionTime.toInt64())
+            self.metricsMap["SSL Handshake Time"] = self.utils.millisToReadable(cinfo.secureConnectionTime)
         }
         if #available(iOS 13.0, *) {
             self.metricsMap["Request Header Size"] = self.utils.bytesToReadable(cinfo.requestHeaderBytesSent)
@@ -321,7 +323,7 @@ struct ResponseData: CustomDebugStringConvertible {
     
     mutating func updateDetailsMap() {
         let cinfo = self.connectionInfo
-        self.detailsMap["Date"] = Date(timeIntervalSince1970: TimeInterval(self.created)).fmt_YYYY_MM_dd_HH_mm_ss
+        self.detailsMap["Date"] = Date(timeIntervalSince1970: TimeInterval(self.created / 1000_000)).fmt_YYYY_MM_dd_HH_mm_ss
         self.detailsMap["Local Address"] = cinfo.localAddress
         self.detailsMap["Local Port"] = "\(cinfo.localPort)"
         self.detailsMap["Remote Address"] = cinfo.remoteAddress
@@ -357,6 +359,8 @@ struct ResponseData: CustomDebugStringConvertible {
             elapsed: \(self.connectionInfo.elapsed)
             size: \(self.connectionInfo.responseBodyBytesReceived)
             mode: \(self.mode)
+            sessionName: \(self.sessionName)
+            connectionInfo: \(self.connectionInfo)
             """
     }
 }

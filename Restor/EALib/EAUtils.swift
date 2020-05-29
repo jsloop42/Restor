@@ -196,22 +196,27 @@ class EAUtils {
         return bcf.string(fromByteCount: bytes)
     }
     
-    /// Format response elapsed time to readable string. Eg: 300 ms, 1.2 s, 4 m.
-    func formatElapsed(_ elapsed: Int64) -> String {
-        var ts = "\(elapsed) ms"
-        if elapsed > 60_000 {  // minutes
-            ts = String(format: "%.2f m", Double(elapsed) / 60_000.0)
-        } else if elapsed > 1000 {  // second
-            ts = String(format: "%.2f s", Double(elapsed) / 1000)
+    /// Format time in milliseconds to readable string. Eg: 300 ms, 1.2 s, 4 m.
+    /// Example: 1345 -> 1.34 s
+    func millisToReadable(_ elapsed: Double) -> String {
+        let elapsed = elapsed.rounded(2)
+        var ts = ""
+        if elapsed > 60_000.0 {  // minutes
+            ts = String(format: "%.2f m", elapsed / 60_000.0)
+        } else if elapsed > 1000.0 {  // second
+            ts = String(format: "%.2f s", elapsed / 1000)
+        } else if elapsed > 0.0 {  // millis
+            ts = "\(elapsed) ms"
         }
         let xs = ts.components(separatedBy: " ")
         var str = ts
         print("ts: \(ts)")
         print("xs: \(xs)")
-        if xs[0].contains(".00") {
+        if xs[0].ends(with: ".00") {
             str = "\(xs[0].prefix(xs[0].count - 3)) \(xs[1])"
-        }
-        if xs[0].suffix(1) == "0" {
+        } else if xs[0].ends(with: ".0") {
+            str = "\(xs[0].prefix(xs[0].count - 2)) \(xs[1])"
+        } else if xs[0].ends(with: "0") {
             str = "\(xs[0].prefix(xs[0].count - 1)) \(xs[1])"
         }
         return str

@@ -327,6 +327,11 @@ public extension String {
     func trim() -> String {
         return self.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+    
+    func ends(with string: String) -> Bool {
+        let count = string.count
+        return self.suffix(count) == string
+    }
 }
 
 public extension UIImage {
@@ -555,8 +560,19 @@ public extension Double {
     func toFloat80() -> Float80 {
         return Float80(self)
     }
+    
+    /// Returns the double rounded to `n` decimal places
+    func rounded(_ n: Int) -> Double {
+        let m = pow(10, n).toDouble()
+        return (self * m).rounded() / m
+    }
 }
 
+extension Decimal {
+    func toDouble() -> Double {
+        return NSDecimalNumber(decimal: self).doubleValue
+    }
+}
 
 public extension Set {
     var isEmpty: Bool { self.first == nil }

@@ -71,7 +71,7 @@ class ResponseInfoCell: UITableViewCell {
             self.statusCodeView.backgroundColor = UIColor(named: "http-status-none")
             self.statusMessageLabel.textColor = UIColor(named: "help-text-fg")
         }
-        let ts = data.connectionInfo.elapsed > 0 ? self.utils.formatElapsed(data.connectionInfo.elapsed) : ""
+        let ts = data.connectionInfo.elapsed > 0 ? self.utils.millisToReadable(data.connectionInfo.elapsed.toDouble()) : ""
         if data.connectionInfo.responseBodyBytesReceived > 0 {
             self.statusSizeLabel.text = "\(!ts.isEmpty ? "\(ts), " : "")\(self.utils.bytesToReadable(data.connectionInfo.responseBodyBytesReceived))"
         } else {
@@ -147,6 +147,10 @@ class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewDelegat
         guard let data = self.data else { return }
         self.headers = data.getResponseHeaders()
         self.headerKeys = data.getResponseHeaderKeys()
+        self.metrics = data.getMetricsMap()
+        self.metricsKeys = data.getMetricsKeys()
+        self.details = data.getDetailsMap()
+        self.detailsKeys = data.getDetailsKeys()
     }
 
     // MARK: - Table view
@@ -325,6 +329,9 @@ class ResponseTableViewController: RestorTableViewController {
                 self.data!.updateCookies()
             }
         }
+        self.data?.updateResponseHeadersMap()
+        self.data?.updateMetricsMap()
+        self.data?.updateDetailsMap()
         Log.debug("response data: \(String(describing: self.data))")
         // info cell
         self.infoCell.data = self.data
