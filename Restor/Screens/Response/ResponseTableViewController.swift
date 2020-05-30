@@ -351,6 +351,7 @@ class ResponseTableViewController: RestorTableViewController {
         case metricsViewCell
         case detailsTitleCell
         case detailsViewCell
+        case spacerAfterDetailsCell
         case helpCell
     }
     
@@ -552,7 +553,7 @@ extension ResponseTableViewController {
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if self.mode == .info && section == 0 { return 11 }
+        if self.mode == .info && section == 0 { return 12 }
         if self.mode == .raw && section == 1 { return 2 }
         if self.mode == .preview && section == 2 { return 2 }
         return 0
@@ -610,6 +611,8 @@ extension ResponseTableViewController {
                         self.detailsViewCell.tableView.invalidateIntrinsicContentSize()
                         self.detailsViewCell.invalidateIntrinsicContentSize()
                         return self.detailsCellHeight == 0 ? UITableView.automaticDimension : self.detailsCellHeight
+                    case .spacerAfterDetailsCell:
+                        return 24
                     default:
                         return 0
                     }
