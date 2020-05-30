@@ -557,10 +557,6 @@ public extension Double {
         return Float64(self)
     }
     
-    func toFloat80() -> Float80 {
-        return Float80(self)
-    }
-    
     /// Returns the double rounded to `n` decimal places
     func rounded(_ n: Int) -> Double {
         let m = pow(10, n).toDouble()

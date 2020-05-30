@@ -60,6 +60,7 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
             self.selectedTab = .response
             if let vc = self.viewControllers?.last as? ResponseTableViewController { vc.data = data }
             self.viewNavbarSegment()
+            self.updateBarButtonText()
         }
     }
     

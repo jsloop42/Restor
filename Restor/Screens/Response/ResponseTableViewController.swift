@@ -27,7 +27,8 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
     
     func initUI() {
-        self.webView.scrollView.isScrollEnabled = false
+        self.webView.scrollView.isScrollEnabled = true
+        self.webView.backgroundColor = UIColor(named: "table-view-cell-bg")
     }
     
     func getHtmlSource(_ html: String) -> String {
@@ -53,6 +54,7 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
                 self.webView.evaluateJavaScript("document.body.scrollHeight", completionHandler: { height, error in
                     if let h = height as? CGFloat {
                         self.height = h
+                        Log.debug("web view content height: \(h)")
                         DispatchQueue.main.async {
                             self.nc.post(name: .responseTableViewShouldReload, object: self)
                         }
@@ -63,18 +65,7 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        guard !self.doneLoading else { return }
         Log.debug("web view did finish load")
-        self.webView.scrollView.isScrollEnabled = true
-        var frame = self.webView.frame
-        frame.size.width = self.contentView.frame.width
-        frame.size.height = 1
-        self.webView.frame = frame
-        frame.size.height = self.webView.scrollView.contentSize.height
-        Log.debug("webview frame: \(frame)")
-        self.webView.frame = frame;
-        self.doneLoading = true
-        self.updateHeight()
     }
 }
 
@@ -626,10 +617,11 @@ extension ResponseTableViewController {
             }
         case 1:  // raw section
             if indexPath.row == RawCellId.spacerBeforeRawCell.rawValue {
-                return 44
+                return 24
             }
-            let h = UIScreen.main.nativeBounds.height - 64
-            Log.debug("raw webview cell height: \(h) - webview height: \(self.rawCell.webView.frame.size.height)")
+            let h: CGFloat = UIScreen.main.bounds.height - (48 + self.tabbarController.tabBar.frame.height + self.navigationController!.navigationBar.frame.height +
+                UIApplication.shared.keyWindow!.safeAreaInsets.top)
+            Log.debug("view height: \(h) - 832?")
             return h
         case 2:  // preview section
             if indexPath.row == PreviewCellId.spacerBeforePreviewCell.rawValue {
