@@ -19,7 +19,7 @@ public enum FileIOMode {
 public typealias EADataResultCallback = ((Result<Data, Error>) -> Void)
 
 public final class EAFileManager: NSObject {
-    private let url: URL!
+    public let url: URL!
     private var callback: EADataResultCallback?
     private var data: Data?
     private let fm = FileManager.default
@@ -27,9 +27,11 @@ public final class EAFileManager: NSObject {
     private var fileHandle: FileHandle?
     private let queue = EACommon.userInitiatedQueue
     var isFileOpened = false
+    private let writeLock = NSLock()
 
     deinit {
         Log.debug("EAFileManager deinit")
+        self.fileHandle?.closeFile()
     }
     
     init(url: URL) {
@@ -80,6 +82,18 @@ public final class EAFileManager: NSObject {
         }
     }
     
+    /// Delete a file at the given URL.
+    public static func delete(url: URL?) -> Bool {
+        guard let url = url else { return true }
+        do {
+            try FileManager.default.removeItem(at: url)
+        } catch let error {
+            Log.error("Error deleting file: \(error)")
+            return false
+        }
+        return true
+    }
+    
     /// Open an existing file with the given mode, which can be for reading, writing or for appending.
     public func openFile(for mode: FileIOMode) {
         switch mode {
@@ -104,5 +118,53 @@ public final class EAFileManager: NSObject {
                 if let cb = completion { cb(.failure(AppError.fileRead)) }
             }
         }
+    }
+    
+    func write(_ string: String) {
+        self.write(string.data(using: .utf8))
+    }
+    
+    func write(_ data: Data?) {
+        if let data = data, let fh = self.fileHandle {
+            self.writeLock.lock()
+            fh.write(data)
+            self.writeLock.unlock()
+            fh.closeFile()
+        }
+    }
+}
+
+struct EATemporaryFile {
+    let dirURL: URL
+    let fileURL: URL
+    
+    init(fileName: String) throws {
+        self.dirURL = try FileManager.default.urlForUniqueTemporaryDirectory()
+        self.fileURL = dirURL.appendingPathComponent(fileName)
+    }
+    
+    func delete() -> Bool {
+        return EAFileManager.delete(url: self.dirURL)
+    }
+}
+
+extension FileManager {
+    func urlForUniqueTemporaryDirectory(_ name: String? = nil) throws -> URL {
+        let rootName = name ?? UUID().uuidString
+        var count = 0
+        var createdDirURL: URL? = nil
+        while (true) {
+            do {
+                let subDirName = count == 0 ? rootName : "\(rootName)-\(count)"
+                let subDirURL = self.temporaryDirectory.appendingPathComponent(subDirName, isDirectory: true)
+                try self.createDirectory(at: subDirURL, withIntermediateDirectories: false)
+                createdDirURL = subDirURL
+                break
+            } catch CocoaError.fileWriteFileExists {
+                Log.error("Error - file exists")
+                count += 1
+            }
+        }
+        return createdDirURL!
     }
 }

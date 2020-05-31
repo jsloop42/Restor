@@ -14,16 +14,49 @@ import WebKit
 
 final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDelegate {
     @IBOutlet weak var webView: WKWebView!
-    var data: ResponseData?
+    var data: ResponseData? {
+        didSet {
+            if self.responseCache == nil {
+                let reqId = self.data!.requestId
+                if let cache = AppState.getResponseCache(reqId) {
+                    self.responseCache = cache
+                } else {
+                    self.responseCache = ResponseCache()
+                    AppState.setResponseCache(self.responseCache, for: reqId)
+                }
+            }
+        }
+    }
     var doneLoading = false
     let nc = NotificationCenter.default
     var height: CGFloat = 44
+    var template = ""
+    var responseCache: ResponseCache!
     
     override func awakeFromNib() {
         super.awakeFromNib()
         self.webView.navigationDelegate = self
         self.webView.uiDelegate = self
+        self.loadTemplate()
         self.initUI()
+    }
+    
+    func loadTemplate() {
+        guard self.template.isEmpty else { return }
+        if let templateURL = Bundle.main.url(forResource: "raw-view", withExtension: "html") {
+            let fm = EAFileManager.init(url: templateURL)
+            fm.openFile(for: .read)
+            fm.readToEOF { result in
+                switch result {
+                case .success(let data):
+                    if let template = String(data: data, encoding: .utf8), !template.isEmpty {
+                        self.template = template
+                    }
+                case .failure(let err):
+                    Log.error("Error loading template: \(err)")
+                }
+            }
+        }
     }
     
     func initUI() {
@@ -31,21 +64,59 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
         self.webView.backgroundColor = UIColor(named: "table-view-cell-bg")
     }
     
-    func getHtmlSource(_ html: String) -> String {
-        return html.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
+    func getHtmlSource(_ data: Data) -> URL? {
+        if let url = self.responseCache.getURL(data) { return url }
+        guard var html = String(data: data, encoding: .utf8) else { return nil }
+        html = html.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
             .replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#039;").replacingOccurrences(of: "\n", with: "<br>")
+        let renderedHtml = self.template.replacingOccurrences(of: "#_restor-extrapolate-texts", with: html)
+        let hash = self.responseCache.addData(renderedHtml)
+        return self.responseCache.getURL(hash)
+    }
+    
+    func getHtmlSource(_ html: String) -> String {
+        let html =  html.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
+            .replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#039;").replacingOccurrences(of: "\n", with: "<br>")
+        return """
+        \(html)
+        <style>
+        :root {
+            color-scheme: light dark;
+        }
+        @font-face { font-family: "Source Code Pro"; src: url("SourceCodePro-Regular.ttf"); }
+        html, body {
+            font-family: "Source Code Pro";
+            font-size: 24;
+        }
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: rgb(26, 28, 30) !important;
+                color: white !important;
+            }
+        }
+        </style>
+        """
     }
 
     func updateUI() {
-        guard let data = self.data, let respData = data.responseData else { return }
+        guard !self.template.isEmpty, let data = self.data, let respData = data.responseData else { return }
         self.doneLoading = false
         var str = ""
         if let json = try? JSONSerialization.jsonObject(with: respData, options: .allowFragments) {
             str = String(describing: json)
-        } else {
-            str = String(data: respData, encoding: .utf8) ?? ""
+            self.webView.loadHTMLString(self.getHtmlSource(str), baseURL: nil)
+            return
         }
-        self.webView.loadHTMLString(self.getHtmlSource(str), baseURL: nil)
+        if let url = self.getHtmlSource(respData) {
+            //self.webView.loadFileURL(url, allowingReadAccessTo: url)
+            var req = URLRequest(url: url)
+            do {
+                self.webView.load(req)
+                //self.webView.load(try Data(contentsOf: url), mimeType: "text/html", characterEncodingName: "UTF8", baseURL: url)
+            } catch let error {
+                Log.error("Error: \(error)")
+            }
+        }
     }
     
     func updateHeight() {
