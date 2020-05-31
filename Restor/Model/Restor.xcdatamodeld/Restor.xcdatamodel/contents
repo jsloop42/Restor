@@ -159,6 +159,7 @@
         <attribute name="name" attributeType="String" defaultValueString=""/>
         <attribute name="selectedMethodIndex" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="url" attributeType="String" defaultValueString=""/>
+        <attribute name="validateSSL" attributeType="Boolean" defaultValueString="YES" usesScalarValueType="YES"/>
         <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="wsId" attributeType="String" defaultValueString=""/>
         <relationship name="body" optional="YES" maxCount="1" deletionRule="Cascade" destinationEntity="ERequestBodyData" inverseName="request" inverseEntity="ERequestBodyData"/>
@@ -351,7 +352,7 @@
         <element name="EHistory" positionX="-9" positionY="135" width="128" height="673"/>
         <element name="EImage" positionX="-9" positionY="90" width="128" height="238"/>
         <element name="EProject" positionX="-54" positionY="-9" width="128" height="238"/>
-        <element name="ERequest" positionX="-36" positionY="9" width="128" height="313"/>
+        <element name="ERequest" positionX="-36" positionY="9" width="128" height="328"/>
         <element name="ERequestBodyData" positionX="0" positionY="45" width="128" height="283"/>
         <element name="ERequestData" positionX="18" positionY="63" width="128" height="358"/>
         <element name="ERequestMethodData" positionX="-18" positionY="27" width="128" height="238"/>

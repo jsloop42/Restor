@@ -74,6 +74,7 @@ public class ERequest: NSManagedObject, Entity {
             record["id"] = self.getId() as CKRecordValue
             record["wsId"] = self.getWsId() as CKRecordValue
             record["name"] = self.name! as CKRecordValue
+            record["validateSSL"] = self.validateSSL as CKRecordValue
             record["selectedMethodIndex"] = self.selectedMethodIndex as CKRecordValue
             record["url"] = (self.url ?? "") as CKRecordValue
             record["version"] = self.version as CKRecordValue
@@ -120,6 +121,7 @@ public class ERequest: NSManagedObject, Entity {
                 if let x = record["id"] as? String { self.id = x }
                 if let x = record["desc"] as? String { self.desc = x }
                 if let x = record["name"] as? String { self.name = x }
+                if let x = record["validateSSL"] as? Bool { self.validateSSL = x }
                 if let x = record["selectedMethodIndex"] as? Int64 { self.selectedMethodIndex = x }
                 if let x = record["url"] as? String { self.url = x }
                 if let x = record["version"] as? Int64 { self.version = x }

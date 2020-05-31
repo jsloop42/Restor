@@ -21,12 +21,15 @@ final class RequestManager {
     private let localdb = CoreDataService.shared
     private let http: EAHTTPClient
     private let nc = NotificationCenter.default
+    private var validateSSL = true
     
     init(request: ERequest) {
         self.request = request
         self.http = EAHTTPClient()
         self.fsm = RequestStateMachine(states: RequestManager.getAllRequestStates(request), request: request)
         self.fsm.manager = self
+        self.http.delegate = self
+        self.validateSSL = self.request.validateSSL
     }
     
     private static func getAllRequestStates(_ req: ERequest) -> [GKState] {
@@ -268,5 +271,15 @@ final class RequestManager {
             _urlReq.httpBody = data
         }
         return _urlReq
+    }
+}
+
+extension RequestManager: EAHTTPClientDelegate {
+    func shouldValidateSSL() -> Bool {
+        return self.validateSSL
+    }
+    
+    func getClientCertificate() -> (Data, String) {
+        return (Data(count: 0), "")
     }
 }

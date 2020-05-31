@@ -462,6 +462,7 @@ class App {
         self.addEditRequestEntity(x)
         if x.markForDelete != request["markForDelete"] as? Bool { x.isSynced = false; x.setChangeTagWithEditTs(); return true }
         if x.url == nil || x.url!.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return false }
+        if x.validateSSL != request["validateSSL"] as? Bool { x.setChangeTagWithEditTs(); return true }
         if self.didRequestURLChangeImp(x.url ?? "", request: request) { x.setChangeTagWithEditTs(); return true }
         if self.didRequestMetaChangeImp(name: x.name ?? "", desc: x.desc ?? "", request: request) { x.setChangeTagWithEditTs(); return true }
         if self.didRequestMethodIndexChangeImp(x.selectedMethodIndex, request: request) { x.setChangeTagWithEditTs(); return true }

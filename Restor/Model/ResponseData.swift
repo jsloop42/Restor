@@ -42,6 +42,20 @@ struct ResponseData: CustomDebugStringConvertible {
     var hasRequestBody = false
     var sessionName = "Default"
     
+    enum ErrorCode: Int {
+        case error = -1
+        case sslCert = -2
+        case offline = -3
+        
+        func toString() -> String {
+            switch self {
+            case .error: return "Error"
+            case .sslCert: return "SSL certificate error"
+            case .offline: return "Offline"
+            }
+        }
+    }
+    
     struct ConnectionInfo {
         var elapsed: Int64 = 0  // Total response time
         var dnsTime: Double = 0  // DNS Resolution Time
@@ -53,10 +67,10 @@ struct ResponseData: CustomDebugStringConvertible {
         var networkProtocolName: String = ""
         var isProxyConnection: Bool = false
         var isReusedConnection: Bool = false
-        var requestHeaderBytesSent: Int64 = -1
-        var requestBodyBytesSent: Int64 = -1
-        var responseHeaderBytesReceived: Int64 = -1
-        var responseBodyBytesReceived: Int64 = -1
+        var requestHeaderBytesSent: Int64 = 0
+        var requestBodyBytesSent: Int64 = 0
+        var responseHeaderBytesReceived: Int64 = 0
+        var responseBodyBytesReceived: Int64 = 0
         var localAddress: String = ""
         var localPort: Int64 = 0
         var remoteAddress: String = ""
@@ -75,11 +89,12 @@ struct ResponseData: CustomDebugStringConvertible {
     }
     
     init(error: Error, elapsed: Int64, request: ERequest, metrics: URLSessionTaskMetrics?) {
+        self.created = Date().currentTimeNanos()
         self.error = error
         self.mode = .memory
         self.status = false
         self.connectionInfo.elapsed = elapsed
-        self.statusCode = -1
+        self.statusCode = ErrorCode.error.rawValue
         self.request = request
         self.url = request.url ?? ""
         self.isSecure = self.isHTTPS(url: self.url)
@@ -88,6 +103,11 @@ struct ResponseData: CustomDebugStringConvertible {
         self.hasRequestBody = request.body != nil
         if let proj = request.project { self.method = self.localdb.getRequestMethodData(at: request.selectedMethodIndex.toInt(), projId: proj.getId())?.name ?? "" }
         if let x = metrics { self.updateFromMetrics(x) }
+        if error.code == -1202 {  // Bad SSL certificate
+            self.statusCode = ErrorCode.sslCert.rawValue
+        } else if error.code == -1009 { // Offline
+            self.statusCode = ErrorCode.offline.rawValue
+        }
         self.updateDetailsMap()
     }
         
@@ -292,23 +312,34 @@ struct ResponseData: CustomDebugStringConvertible {
     
     mutating func updateMetricsMap() {
         let cinfo = self.connectionInfo
+        var res = ""
         if cinfo.elapsed > 0 {
-            self.metricsMap["Elapsed"] = self.utils.millisToReadable(cinfo.elapsed.toDouble())
+            res = self.utils.millisToReadable(cinfo.elapsed.toDouble())
+            if !res.isEmpty { self.metricsMap["Elapsed"] = res }
         }
-        self.metricsMap["DNS Resolution Time"] = self.utils.millisToReadable(cinfo.dnsTime)
-        self.metricsMap["Connection Time"] = self.utils.millisToReadable(cinfo.connectionTime)
-        self.metricsMap["Request Time"] = self.utils.millisToReadable(cinfo.requestTime)
-        self.metricsMap["Response Time"] = self.utils.millisToReadable(cinfo.responseTime)
+        res = self.utils.millisToReadable(cinfo.dnsTime)
+        if !res.isEmpty { self.metricsMap["DNS Resolution Time"] = res }
+        res = self.utils.millisToReadable(cinfo.connectionTime)
+        if !res.isEmpty { self.metricsMap["Connection Time"] = res }
+        res = self.utils.millisToReadable(cinfo.requestTime)
+        if !res.isEmpty { self.metricsMap["Request Time"] = res }
+        res = self.utils.millisToReadable(cinfo.responseTime)
+        if !res.isEmpty { self.metricsMap["Response Time"] = res }
         if self.isSecure {
-            self.metricsMap["SSL Handshake Time"] = self.utils.millisToReadable(cinfo.secureConnectionTime)
+            res = self.utils.millisToReadable(cinfo.secureConnectionTime)
+            if !res.isEmpty { self.metricsMap["SSL Handshake Time"] = res }
         }
         if #available(iOS 13.0, *) {
-            self.metricsMap["Request Header Size"] = self.utils.bytesToReadable(cinfo.requestHeaderBytesSent)
+            res = self.utils.bytesToReadable(cinfo.requestHeaderBytesSent)
+            if !res.isEmpty && !res.starts(with: "Zero") { self.metricsMap["Request Header Size"] = res }
             if self.hasRequestBody {
-                self.metricsMap["Request Body Size"] = self.utils.bytesToReadable(cinfo.requestBodyBytesSent)
+                res = self.utils.bytesToReadable(cinfo.requestBodyBytesSent)
+                if !res.isEmpty && !res.starts(with: "Zero") { self.metricsMap["Request Body Size"] = res }
             }
-            self.metricsMap["Response Header Size"] = self.utils.bytesToReadable(cinfo.responseHeaderBytesReceived)
-            self.metricsMap["Response Body Size"] = self.utils.bytesToReadable(cinfo.responseBodyBytesReceived)
+            res = self.utils.bytesToReadable(cinfo.responseHeaderBytesReceived)
+            if !res.isEmpty && !res.starts(with: "Zero") { self.metricsMap["Response Header Size"] = res }
+            res = self.utils.bytesToReadable(cinfo.responseBodyBytesReceived)
+            if !res.isEmpty && !res.starts(with: "Zero") { self.metricsMap["Response Body Size"] = res }
         }
         self.metricsKeys = self.metricsMap.allKeys().sorted()
     }
@@ -323,16 +354,22 @@ struct ResponseData: CustomDebugStringConvertible {
     
     mutating func updateDetailsMap() {
         let cinfo = self.connectionInfo
-        self.detailsMap["Date"] = Date(timeIntervalSince1970: TimeInterval(self.created / 1000_000)).fmt_YYYY_MM_dd_HH_mm_ss
-        self.detailsMap["Local Address"] = cinfo.localAddress
-        self.detailsMap["Local Port"] = "\(cinfo.localPort)"
-        self.detailsMap["Remote Address"] = cinfo.remoteAddress
-        self.detailsMap["Remote Port"] = "\(cinfo.remotePort)"
+        self.detailsMap["Date"] = Date(timeIntervalSince1970: TimeInterval((self.created > 0 ? self.created : Date().currentTimeNanos()) / 1000_000)).fmt_YYYY_MM_dd_HH_mm_ss
+        var x = cinfo.localAddress
+        if !x.isEmpty { self.detailsMap["Local Address"] = x }
+        x = "\(cinfo.localPort)"
+        if !x.isEmpty && x != "0" { self.detailsMap["Local Port"] = x }
+        x = cinfo.remoteAddress
+        if !x.isEmpty { self.detailsMap["Remote Address"] = x }
+        x = "\(cinfo.remotePort)"
+        if !x.isEmpty && x != "0" { self.detailsMap["Remote Port"] = x }
         if !cinfo.connection.isEmpty { self.detailsMap["Connection"] = "\(cinfo.connection)" }
         if cinfo.isMultipath { self.detailsMap["Routing"] = "Multipath" }
         if self.isSecure {
-            self.detailsMap["SSL Cipher Suite"] = cinfo.negotiatedTLSCipherSuite
-            self.detailsMap["TLS"] = cinfo.negotiatedTLSProtocolVersion
+            x = cinfo.negotiatedTLSCipherSuite
+            if !x.isEmpty { self.detailsMap["SSL Cipher Suite"] = x }
+            x = cinfo.negotiatedTLSProtocolVersion
+            if !x.isEmpty { self.detailsMap["TLS"] = x }
         }
         self.detailsKeys = self.detailsMap.allKeys().sorted()
     }

@@ -13,7 +13,19 @@ import CoreData
 typealias RequestVC = EditRequestTableViewController
 
 extension Notification.Name {
-     static let requestDidChange = Notification.Name("request-did-change")
+    static let requestDidChange = Notification.Name("request-did-change")
+    static let validateSSLDidChange = Notification.Name("validate-ssl-did-change")
+}
+
+class ValidateSSLCell: UITableViewCell {
+    @IBOutlet weak var validateSwitch: UISwitch!
+    private let nc = NotificationCenter.default
+    var requestId = ""
+    
+    @IBAction func validateSwitchDidChange(_ sender: Any) {
+        Log.debug("validate switch did change: \(self.validateSwitch.isOn)")
+        self.nc.post(name: .validateSSLDidChange, object: self, userInfo: ["requestId": self.requestId, "shouldValidateSSL": self.validateSwitch.isOn])
+    }
 }
 
 class EditRequestTableViewController: RestorTableViewController, UITextFieldDelegate, UITextViewDelegate {
@@ -39,6 +51,8 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     @IBOutlet weak var headerCell: UITableViewCell!
     @IBOutlet weak var paramsCell: UITableViewCell!
     @IBOutlet weak var bodyCell: UITableViewCell!
+    @IBOutlet weak var validateSSLCell: ValidateSSLCell!
+    
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     private let nc = NotificationCenter.default
@@ -73,6 +87,8 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         case spacerAfterParams = 8
         case body = 9
         case spacerAfterBody = 10
+        case validateSSL = 11
+        case spacerAfterValidateSSL = 12
     }
     
     deinit {
@@ -180,6 +196,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         self.headerCell.borderColor = .clear
         self.paramsCell.borderColor = .clear
         self.bodyCell.borderColor = .clear
+        self.validateSSLCell.borderColor = .clear
         // end clear
         self.reqName = AppState.editRequest?.name ?? ""
         self.renderTheme()
@@ -203,10 +220,12 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         self.nc.addObserver(self, selector: #selector(self.presentDocumentMenuPicker(_:)), name: .documentPickerMenuShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: .documentPickerShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentImagePicker(_:)), name: .imagePickerShouldPresent, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.validateSSLDidChange(_:)), name: .validateSSLDidChange, object: nil)
     }
 
     func updateData() {
         if let data = AppState.editRequest, let ctx = data.managedObjectContext {
+            self.validateSSLCell.requestId = data.getId()
             self.urlTextField.text = data.url
             self.nameTextField.text = data.name
             self.descTextView.text = data.desc
@@ -283,6 +302,14 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
             self.endEditing()
             self.destroy()
             self.navigationController?.popViewController(animated: true)
+        }
+    }
+    
+    @objc func validateSSLDidChange(_ notif: Notification) {
+        Log.debug("validate ssl did change")
+        if let info = notif.userInfo, let reqId = info["requestId"] as? String, reqId == AppState.editRequest?.getId(), let shouldValidateSSL = info["shouldValidateSSL"] as? Bool {
+            AppState.editRequest!.validateSSL = shouldValidateSSL
+            self.app.didRequestChange(AppState.editRequest!, request: self.entityDict, callback: { [weak self] status in self?.updateDoneButton(status) })
         }
     }
     
@@ -513,6 +540,10 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
             }
             height = self.bodyKVTableViewManager.getHeight()
         } else if indexPath.row == CellId.spacerAfterBody.rawValue {
+            height = 12
+        } else if indexPath.row == CellId.validateSSL.rawValue {
+            height = 54
+        } else if indexPath.row == CellId.spacerAfterValidateSSL.rawValue {
             height = 12
         } else {
             height = UITableView.automaticDimension

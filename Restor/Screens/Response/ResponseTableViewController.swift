@@ -192,11 +192,15 @@ final class ResponseInfoCell: UITableViewCell {
             }
             self.statusCodeView.backgroundColor = color
             self.statusMessageLabel.textColor = is200 ? UIColor(named: "http-status-text-200") : color
-        } else if data.statusCode == -1 {  // error
+        } else if data.statusCode <= -1 {  // error
             self.statusCodeView.backgroundColor = UIColor(named: "http-status-error")
             self.statusMessageLabel.textColor = UIColor(named: "http-status-error")
             self.statusCodeLabel.text = "Error"
-            self.statusMessageLabel.text = ""
+            if data.statusCode <= -2 {
+                self.statusMessageLabel.text = ResponseData.ErrorCode(rawValue: data.statusCode)?.toString() ?? ""
+            } else {
+                self.statusMessageLabel.text = ""
+            }
         } else {
             self.statusCodeView.backgroundColor = UIColor(named: "http-status-none")
             self.statusMessageLabel.textColor = UIColor(named: "help-text-fg")
