@@ -14,4 +14,15 @@ import UIKit
 class KVCell: UITableViewCell {
     @IBOutlet weak var keyLabel: UILabel!
     @IBOutlet weak var valueLabel: UILabel!
+    @IBOutlet weak var borderView: UIView!
+    
+    func hideBorder() {
+        if self.borderView == nil { return }
+        self.borderView.isHidden = true
+    }
+    
+    func showBorder() {
+        if self.borderView == nil { return }
+        self.borderView.isHidden = false
+    }
 }

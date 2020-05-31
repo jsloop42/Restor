@@ -9,10 +9,6 @@
 import Foundation
 import UIKit
 
-extension Notification.Name {
-    static let editRequestVCShouldPresent = Notification.Name("edit-request-vc-should-present")
-}
-
 class RequestTableViewController: RestorTableViewController {
     private let app = App.shared
     private lazy var localdb = { CoreDataService.shared }()
@@ -75,8 +71,8 @@ class RequestTableViewController: RestorTableViewController {
         super.viewWillAppear(animated)
         AppState.setCurrentScreen(.request)
         self.tabbarController.hideNavbarSegment()
-        self.initManager()
         self.initData()
+        self.initManager()
         self.updateData()
         self.reloadAllTableViews()
     }
@@ -188,6 +184,11 @@ class RequestTableViewController: RestorTableViewController {
                 self.request = req
                 self.tabbarController.request = req
                 Log.debug("current request did change - reloading views")
+                if let reqMan = AppState.getFromRequestState(req.getId()) {  // On edit request, cancel existing one and remove the current manager from state
+                    reqMan.cancelRequest()
+                    self.reqMan = nil
+                    AppState.removeFromRequestState(req.getId())
+                }
                 self.initData()
                 self.updateData()
                 self.reloadAllTableViews()

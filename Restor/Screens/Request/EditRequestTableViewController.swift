@@ -15,6 +15,7 @@ typealias RequestVC = EditRequestTableViewController
 extension Notification.Name {
     static let requestDidChange = Notification.Name("request-did-change")
     static let validateSSLDidChange = Notification.Name("validate-ssl-did-change")
+    static let editRequestVCShouldPresent = Notification.Name("edit-request-vc-should-present")
 }
 
 class ValidateSSLCell: UITableViewCell {
@@ -226,6 +227,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     func updateData() {
         if let data = AppState.editRequest, let ctx = data.managedObjectContext {
             self.validateSSLCell.requestId = data.getId()
+            self.validateSSLCell.validateSwitch.isOn = data.validateSSL
             self.urlTextField.text = data.url
             self.nameTextField.text = data.name
             self.descTextView.text = data.desc
@@ -325,19 +327,20 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
                     if method.shouldDelete { self.app.markEntityForDelete(reqMethodData: method, ctx: method.managedObjectContext) }
                 }
             }
-            let timer = DispatchSource.makeTimerSource()
-            timer.schedule(deadline: .now() + .milliseconds(300))
-            timer.setEventHandler {
+            self.nc.post(name: .requestDidChange, object: self, userInfo: ["request": data])
+            //let timer = DispatchSource.makeTimerSource()
+            //timer.schedule(deadline: .now() + .milliseconds(300))
+            //timer.setEventHandler {
                 Log.debug("edit req in save timer")
                 self.localdb.saveMainContext()
                 self.isDirty = false
+                if let tabvc = self.tabBarController as? RequestTabBarController { tabvc.request = data }
                 self.db.saveRequestToCloud(data)
                 self.db.deleteDataMarkedForDelete(self.app.editReqDelete)
-                self.nc.post(name: .requestDidChange, object: self, userInfo: ["request": data])
                 self.close()
-                timer.cancel()
-            }
-            timer.resume()
+                //timer.cancel()
+            //}
+            //timer.resume()
         }
     }
     

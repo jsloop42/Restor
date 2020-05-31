@@ -33,6 +33,7 @@ public class EADynamicSizeTableView: UITableView {
     }
     private let bottomBorderId = "ea-bottom-border"
     private var heightInfo: [Int: HeightInfo] = [:]  // [Section: [Row: Height]]
+    private var reloadCount = 0
     
     private struct HeightInfo {
         var section: Int = 0
@@ -118,12 +119,13 @@ public class EADynamicSizeTableView: UITableView {
         if secMap.numberOfRows == secMap.heightMap.count {
             let h = secMap.heightMap.allValues().reduce(into: 0.0, { acc, height in acc += height })
             secMap.height = h
-            if secMap.previousHeight != h {
+            if secMap.previousHeight != h || self.reloadCount < 2 {
                 self.updateBottomBorder()
                 secMap.computed = true
                 self.nc.post(name: .dynamicSizeTableViewHeightDidChange, object: self, userInfo: ["tableViewId": self.tableViewId, "height": h])
                 secMap.previousHeight = h
                 self.heightInfo[section] = secMap
+                self.reloadCount += 1
             }
         }
     }
@@ -156,6 +158,7 @@ public class EADynamicSizeTableView: UITableView {
     
     /// When underlying model data changes, invoke this so that we get updated meta like, height info.
     public func resetMeta() {
+        self.reloadCount = 0
         self.heightInfo = [:]
     }
     

@@ -13,7 +13,9 @@ class WorkspaceListState: GKState {
     var coord: WorkspaceListCoordinator?
     
     override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-        return stateClass == ProjectListState.self
+        let status = stateClass == ProjectListState.self
+        if !status { Log.debug("[state] workspace -> invalid state (\(stateClass))") }
+        return status
     }
     
     override func didEnter(from previousState: GKState?) {

@@ -14,7 +14,9 @@ class RequestListState: GKState {
     var project: EProject?
     
     override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-        return stateClass == ProjectListState.self || stateClass == RequestState.self
+        let status = stateClass == ProjectListState.self || stateClass == RequestState.self || stateClass == EditRequestState.self
+        if !status { Log.debug("[state] request list -> invalid state (\(stateClass))") }
+        return status
     }
     
     override func didEnter(from previousState: GKState?) {

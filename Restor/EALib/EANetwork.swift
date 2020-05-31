@@ -421,9 +421,11 @@ extension EAHTTPClient: URLSessionDelegate {
         if protectionSpace.authenticationMethod == NSURLAuthenticationMethodServerTrust {
             let flag = self.delegate?.shouldValidateSSL() ?? true
             if flag {
+                Log.debug("SSL validation enabled")
                 completionHandler(.performDefaultHandling, nil)
                 return
             }
+            Log.debug("SSL validation disabled")
             if let trust = protectionSpace.serverTrust {
                 let cred = URLCredential(trust: trust)
                 completionHandler(.useCredential, cred)

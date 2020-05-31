@@ -78,6 +78,14 @@ class AppCoordinator: EACoordinator {
         }
     }
     
+    func editRequestVCShouldPresent(request: ERequest) {
+        DispatchQueue.main.async {
+            guard let state = self.fsm.state(forClass: EditRequestState.self) else { return }
+            state.request = request
+            self.fsm.enter(EditRequestState.self)
+        }
+    }
+    
     @objc func didNavigateBackToProjectListVC(_ notif: Notification) {
         Log.debug("did navigated to project list vc")
         self.fsm.enter(ProjectListState.self)

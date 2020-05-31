@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct ResponseData: CustomDebugStringConvertible {
+struct ResponseData: CustomDebugStringConvertible, Equatable {
     private lazy var localdb = { CoreDataService.shared }()
     private lazy var utils = { EAUtils.shared }()
     var status: Bool = false
@@ -204,10 +204,10 @@ struct ResponseData: CustomDebugStringConvertible {
         Log.debug("elapsed: \(self.connectionInfo.elapsed) - duration: \(metrics.taskInterval.duration)")
         let elapsed = self.connectionInfo.elapsed
         if metrics.transactionMetrics.isEmpty { return }
-        let hasMany = metrics.transactionMetrics.count > 1
-        if hasMany {
-            
-        } else {  // only one transaction metrics
+        //let hasMany = metrics.transactionMetrics.count > 1
+        //if hasMany {
+            // TODO: handle multiple metrices
+        //} else {  // only one transaction metrics
             guard let tmetrics = metrics.transactionMetrics.first else { return }
             if let d1 = tmetrics.connectStartDate, let d2 = tmetrics.connectEndDate {
                 cInfo.connectionTime = Date.msDiff(start: d1, end: d2)
@@ -256,7 +256,7 @@ struct ResponseData: CustomDebugStringConvertible {
             } else {
                 self.updateResponseBodySizeFromHeaders()
             }
-        }
+        //}
         self.connectionInfo = cInfo
     }
     
@@ -399,5 +399,9 @@ struct ResponseData: CustomDebugStringConvertible {
             sessionName: \(self.sessionName)
             connectionInfo: \(self.connectionInfo)
             """
+    }
+    
+    static func == (lhs: ResponseData, rhs: ResponseData) -> Bool {
+        return lhs.requestId == rhs.requestId && lhs.statusCode == rhs.statusCode && lhs.created == rhs.created
     }
 }

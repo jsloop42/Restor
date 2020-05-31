@@ -236,7 +236,9 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
     @IBOutlet weak var tvView: UIView!
     //var tableView: EADynamicSizeTableView!
     var isInit = false
-    var data: ResponseData?
+    var data: ResponseData? {
+        didSet { self.updateData() }
+    }
     let cellId = "twoColumnCell"
     var tableType: ResponseKVTableType = .header
     var headers: [String: String] = [:]
@@ -265,6 +267,9 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
     
     func initUI() {
         self.tableView.tableViewId = self.tableType.rawValue
+        self.tableView.drawBorders = false
+        self.tableView.separatorStyle = .none
+        self.tableView.separatorColor = .clear
         self.tableView.delegate = self
         self.tableView.dataSource = self
         self.tableView.estimatedRowHeight = 44
@@ -273,6 +278,7 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
     }
     
     func updateUI() {
+        self.tableView.resetMeta()  // so that for a new request, the height for the previous index gets removed.
         self.updateData()
         self.tableView.reloadData()
     }
@@ -285,6 +291,7 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
         self.metricsKeys = data.getMetricsKeys()
         self.details = data.getDetailsMap()
         self.detailsKeys = data.getDetailsKeys()
+        self.tableView.reloadData()
     }
 
     // MARK: - Table view
@@ -310,23 +317,47 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
             cell.keyLabel.text = key
             //cell.keyLabel.text = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
             cell.valueLabel.text = self.headers[key]
+            if row == self.headers.count - 1 {
+                cell.hideBorder()
+            } else {
+                cell.showBorder()
+            }
         } else if self.tableType == .cookies {
             if let data = self.data {
                 let cookie = data.cookies[row]
                 cell.keyLabel.text = cookie.name
                 cell.valueLabel.text = cookie.value
+                if row == data.cookies.count - 1 {
+                    cell.hideBorder()
+                } else {
+                    cell.showBorder()
+                }
+            } else {
+                cell.hideBorder()
             }
         } else if self.tableType == .metrics {
             let key = self.metricsKeys[row]
             if let val = self.metrics[key] {
                 cell.keyLabel.text = key
                 cell.valueLabel.text = val
+                if row == self.metrics.count - 1 {
+                    cell.hideBorder()
+                } else {
+                    cell.showBorder()
+                }
+            } else {
+                cell.hideBorder()
             }
         } else if self.tableType == .details {
             let key = self.detailsKeys[row]
             if let val = self.details[key] {
                 cell.keyLabel.text = key
                 cell.valueLabel.text = val
+            }
+            if row == self.detailsKeys.count - 1 {
+                cell.hideBorder()
+            } else {
+                cell.showBorder()
             }
         }
         return cell
@@ -361,7 +392,7 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
         let text = val.count >= key.count ? val : key
         Log.debug("text: \(text)")
         let width = tableView.frame.width / 2 - 32
-        let h = max(UI.getTextHeight(text, width: width, font: UIFont.systemFont(ofSize: 14)) + 28, 55)
+        let h = max(UI.getTextHeight(text, width: width, font: UIFont.systemFont(ofSize: 14)) + 28, 55)  // For texts greater than the default 55, 28 padding is required for the cell
         Log.debug("header cell height h: \(h)")
         self.tableView.setHeight(h, forRowAt: indexPath)
         return h
@@ -397,7 +428,7 @@ class ResponseTableViewController: RestorTableViewController {
         didSet { self.cookiesViewCell.tableType = .cookies }
     }
     @IBOutlet weak var metricsViewCell: ResponseKVCell! {
-        didSet { self.metricsViewCell.tableType = .details }
+        didSet { self.metricsViewCell.tableType = .metrics }
     }
     @IBOutlet weak var detailsViewCell: ResponseKVCell! {
         didSet { self.detailsViewCell.tableType = .details }
@@ -463,24 +494,20 @@ class ResponseTableViewController: RestorTableViewController {
     }
     
     func initData() {
+        Log.debug("response vc - initData")
+        guard let req = self.tabbarController.request else { return }
+        self.data = self.tabbarController.responseData
         if self.data == nil {
-            self.data = self.tabbarController.responseData
-            if self.data == nil, let req = self.tabbarController.request {
-                if let history = self.localdb.getLatestHistory(reqId: req.getId(), includeMarkForDelete: nil, ctx: self.localdb.mainMOC) {
-                    self.data = ResponseData(history: history)
-                    self.data?.history = history
-                    self.data?.request = req
-                }
-            }
-        }
-        if self.data == nil {
-            self.data = tabbarController.responseData
-            self.data?.request = self.tabbarController.request
-            if self.data != nil, self.data!.cookiesData != nil, self.data!.cookies.isEmpty {
-                self.data!.updateCookies()
+            if let history = self.localdb.getLatestHistory(reqId: req.getId(), includeMarkForDelete: nil, ctx: self.localdb.mainMOC) {
+                self.data = ResponseData(history: history)
+                self.data?.history = history
+                self.data?.request = req
             }
         }
         self.data?.updateResponseHeadersMap()
+        if self.data != nil, self.data!.cookiesData != nil, self.data!.cookies.isEmpty {
+            self.data!.updateCookies()
+        }
         self.data?.updateMetricsMap()
         self.data?.updateDetailsMap()
         Log.debug("response data: \(String(describing: self.data))")
@@ -575,21 +602,25 @@ class ResponseTableViewController: RestorTableViewController {
                 self.headersViewCell.tableView.shouldReload = false
                 self.tableView.reloadData()
                 self.headersViewCell.tableView.shouldReload = true
+                self.headersViewCell.tableView.reloadData()
             case .cookies:
                 self.cookieCellHeight = height
                 self.cookiesViewCell.tableView.shouldReload = false
                 self.tableView.reloadData()
                 self.cookiesViewCell.tableView.shouldReload = true
+                self.cookiesViewCell.tableView.reloadData()
             case .metrics:
                 self.metricsCellHeight = height
                 self.metricsViewCell.tableView.shouldReload = false
                 self.tableView.reloadData()
                 self.metricsViewCell.tableView.shouldReload = true
+                self.metricsViewCell.tableView.reloadData()
             case .details:
                 self.detailsCellHeight = height
                 self.detailsViewCell.tableView.shouldReload = false
                 self.tableView.reloadData()
                 self.detailsViewCell.tableView.shouldReload = true
+                self.detailsViewCell.tableView.reloadData()
             }
         }
     }
@@ -664,6 +695,7 @@ extension ResponseTableViewController {
                         if data.getResponseHeaders().isEmpty { return 0 }
                         self.headersViewCell.tableView.invalidateIntrinsicContentSize()
                         self.headersViewCell.invalidateIntrinsicContentSize()
+                        self.headersViewCell.tableView.reloadData()
                         return self.headerCellHeight == 0 ? UITableView.automaticDimension : self.headerCellHeight
                     case .cookiesTitleCell:
                         Log.debug("cookies: \(String(describing: self.data?.cookies))")
@@ -673,18 +705,21 @@ extension ResponseTableViewController {
                         if data.cookies.isEmpty { return 0 }
                         self.cookiesViewCell.tableView.invalidateIntrinsicContentSize()
                         self.cookiesViewCell.invalidateIntrinsicContentSize()
+                        self.cookiesViewCell.tableView.reloadData()
                         return self.cookieCellHeight == 0 ? UITableView.automaticDimension : self.cookieCellHeight
                     case .metricsTitleCell:
                         return 44
                     case .metricsViewCell:
                         self.metricsViewCell.tableView.invalidateIntrinsicContentSize()
                         self.metricsViewCell.invalidateIntrinsicContentSize()
+                        self.metricsViewCell.tableView.reloadData()
                         return self.metricsCellHeight == 0 ? UITableView.automaticDimension : self.metricsCellHeight
                     case .detailsTitleCell:
                         return 44
                     case .detailsViewCell:
                         self.detailsViewCell.tableView.invalidateIntrinsicContentSize()
                         self.detailsViewCell.invalidateIntrinsicContentSize()
+                        self.detailsViewCell.tableView.reloadData()
                         return self.detailsCellHeight == 0 ? UITableView.automaticDimension : self.detailsCellHeight
                     case .spacerAfterDetailsCell:
                         return 24

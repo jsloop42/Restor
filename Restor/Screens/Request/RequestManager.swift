@@ -87,9 +87,6 @@ final class RequestManager {
                                     elapsed: elapsed, metrics: state.metrics)
             }
             self.saveResponse(&info)
-            let state = self.fsm.state(forClass: RequestResponseState.self)
-            state?.data = info
-            self.fsm.enter(RequestResponseState.self)
         }
     }
     
@@ -129,7 +126,10 @@ final class RequestManager {
                 self.localdb.saveMainContext()
                 if let ws = self.localdb.getWorkspace(id: history.getWsId()), ws.isSyncEnabled { PersistenceService.shared.saveHistoryToCloud(history!) }
             }
-            AppState.requestState.removeValue(forKey: request.getId())
+            AppState.requestState.removeValue(forKey: self.request.getId())
+            let state = self.fsm.state(forClass: RequestResponseState.self)
+            state?.data = info
+            self.fsm.enter(RequestResponseState.self)
         }
     }
     

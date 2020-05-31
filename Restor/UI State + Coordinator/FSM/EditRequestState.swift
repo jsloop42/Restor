@@ -14,12 +14,14 @@ class EditRequestState: GKState {
     var request: ERequest?
     
     override func isValidNextState(_ stateClass: AnyClass) -> Bool {
-        return stateClass == RequestState.self
+        let status = stateClass == RequestState.self || stateClass == RequestListState.self
+        if !status { Log.debug("[state] edit request -> invalid state (\(stateClass))") }
+        return status
     }
     
     override func didEnter(from previousState: GKState?) {
         Log.debug("[state] did enter - request")
-        if previousState?.classForCoder == RequestState.self {
+        if previousState?.classForCoder == RequestState.self || previousState?.classForCoder == RequestListState.self {
             guard let fsm = self.stateMachine as? EAUIStateMachine else { return }
             guard let req = self.request else { return }
             self.coord = EditRequestCoordinator(presenter: fsm.presenter, request: req)

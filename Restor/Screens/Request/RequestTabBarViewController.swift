@@ -73,7 +73,7 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     }
     
     func updateBarButtonText() {
-        self.barBtn.setTitle(self.selectedTab == .request ? "Edit" : "History", for: .normal)
+        self.barBtn.setTitle(self.selectedTab == .request ? "Edit" : "", for: .normal)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: self.barBtn)
     }
     
@@ -83,7 +83,7 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
         if self.selectedTab == .request {
             self.nc.post(name: .editRequestDidTap, object: self, userInfo: ["request": req])
         } else if self.selectedTab == .response {
-            self.nc.post(name: .viewRequestHistoryDidTap, object: self, userInfo: ["request": req])
+            // self.nc.post(name: .viewRequestHistoryDidTap, object: self, userInfo: ["request": req])  // TODO: history button v1.1
         }
     }
     
@@ -114,6 +114,8 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     
     /// Display the view change with an animation effect.
     func tabBarController(_ tabBarController: UITabBarController, shouldSelect viewController: UIViewController) -> Bool {
+        if (self.selectedTab == .request && self.viewControllers?.first == viewController) ||
+            (self.selectedTab == .response && self.viewControllers?.last == viewController) { return false }
         guard let fromView = self.selectedViewController?.view, let toView = viewController.view else { return false }
         UIView.transition(from: fromView, to: toView, duration: 0.3, options: [.transitionCrossDissolve], completion: nil)
         return true

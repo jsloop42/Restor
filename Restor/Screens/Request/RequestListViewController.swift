@@ -104,14 +104,11 @@ class RequestListViewController: RestorViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add btn did tap")
-        // TODO: update
         if AppState.editRequest == nil {
             let name = self.app.getNewRequestName()
             if let proj = self.project, let wsId = proj.workspace?.getId(),
                 let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: self.localdb.mainMOC) {
-                AppState.editRequest = req
-                self.project?.addToRequests(req)
-                UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.editRequestVC.rawValue)
+                self.nc.post(name: .editRequestVCShouldPresent, object: self, userInfo: ["request": req])
             }
         }
     }
