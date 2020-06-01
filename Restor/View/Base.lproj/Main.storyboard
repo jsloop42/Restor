@@ -2316,20 +2316,20 @@
                                                     </constraints>
                                                 </view>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="5tK-po-xUi">
-                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="54"/>
+                                                    <rect key="frame" x="0.0" y="0.5" width="414" height="53"/>
                                                     <subviews>
                                                         <stackView opaque="NO" contentMode="scaleToFill" distribution="equalCentering" alignment="center" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="JTd-Cf-vic">
-                                                            <rect key="frame" x="18" y="0.0" width="378" height="54"/>
+                                                            <rect key="frame" x="18" y="0.0" width="378" height="53"/>
                                                             <subviews>
                                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Validate SSL" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="3lP-vq-AhH">
-                                                                    <rect key="frame" x="0.0" y="18.5" width="81" height="17"/>
+                                                                    <rect key="frame" x="0.0" y="18" width="81" height="17"/>
                                                                     <color key="backgroundColor" name="table-view-cell-bg"/>
                                                                     <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                                     <nil key="textColor"/>
                                                                     <nil key="highlightedColor"/>
                                                                 </label>
                                                                 <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" on="YES" translatesAutoresizingMaskIntoConstraints="NO" id="sge-BJ-bO3">
-                                                                    <rect key="frame" x="329" y="11.5" width="51" height="31"/>
+                                                                    <rect key="frame" x="329" y="11" width="51" height="31"/>
                                                                     <color key="backgroundColor" name="table-view-cell-bg"/>
                                                                     <connections>
                                                                         <action selector="validateSwitchDidChange:" destination="zWF-kJ-ET2" eventType="valueChanged" id="YEq-SX-G5e"/>
@@ -2357,7 +2357,7 @@
                                             <color key="backgroundColor" name="table-view-cell-bg"/>
                                             <constraints>
                                                 <constraint firstAttribute="trailing" secondItem="iUV-UH-iFU" secondAttribute="trailing" id="1UV-Lh-SK0"/>
-                                                <constraint firstItem="5tK-po-xUi" firstAttribute="top" secondItem="hpI-zm-Nn7" secondAttribute="top" id="4Au-x0-Hsx"/>
+                                                <constraint firstItem="5tK-po-xUi" firstAttribute="top" secondItem="hpI-zm-Nn7" secondAttribute="top" constant="0.5" id="4Au-x0-Hsx"/>
                                                 <constraint firstAttribute="trailing" secondItem="5tK-po-xUi" secondAttribute="trailing" id="IyA-XJ-X7L"/>
                                                 <constraint firstItem="NV9-h7-LNt" firstAttribute="leading" secondItem="hpI-zm-Nn7" secondAttribute="leading" id="JI1-8n-oer"/>
                                                 <constraint firstItem="iUV-UH-iFU" firstAttribute="leading" secondItem="hpI-zm-Nn7" secondAttribute="leading" id="Maw-b1-Hnf"/>
@@ -2365,7 +2365,7 @@
                                                 <constraint firstAttribute="trailing" secondItem="NV9-h7-LNt" secondAttribute="trailing" id="O0E-81-gnU"/>
                                                 <constraint firstItem="iUV-UH-iFU" firstAttribute="top" secondItem="hpI-zm-Nn7" secondAttribute="top" id="VkA-5i-Vj9"/>
                                                 <constraint firstAttribute="bottom" secondItem="NV9-h7-LNt" secondAttribute="bottom" id="XVu-dU-Ooe"/>
-                                                <constraint firstAttribute="bottom" secondItem="5tK-po-xUi" secondAttribute="bottom" id="qC5-lM-AuH"/>
+                                                <constraint firstAttribute="bottom" secondItem="5tK-po-xUi" secondAttribute="bottom" constant="0.59999999999999998" id="qC5-lM-AuH"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <userDefinedRuntimeAttributes>
