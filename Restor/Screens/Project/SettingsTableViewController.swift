@@ -18,8 +18,6 @@ class SettingsTableViewController: RestorTableViewController {
         case spacerAfterWorkspace
         case toolsTitle
         case base64
-        case base64Separator
-        case jwt
         case spacerAfterTools
     }
     
@@ -60,10 +58,6 @@ class SettingsTableViewController: RestorTableViewController {
         case CellId.toolsTitle.rawValue:
             return 24
         case CellId.base64.rawValue:
-            return 44
-        case CellId.base64Separator.rawValue:
-            return 1
-        case CellId.jwt.rawValue:
             return 44
         case CellId.spacerAfterTools.rawValue:
             return 24
