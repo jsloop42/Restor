@@ -1,0 +1,25 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "Sourceful",
+        "repositoryURL": "git@github.com:twostraws/Sourceful.git",
+        "state": {
+          "branch": null,
+          "revision": "442989f8e9d290f9c3b893d907a90937b80870c3",
+          "version": "0.3.0"
+        }
+      },
+      {
+        "package": "SwiftRichString",
+        "repositoryURL": "git@github.com:malcommac/SwiftRichString.git",
+        "state": {
+          "branch": null,
+          "revision": "d2fd671674a86cd53afdaf2485f4575ce92e4da6",
+          "version": "3.7.1"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
