@@ -20,10 +20,9 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         Log.debug("scene delegate - will connect to")
         guard let windowScene = (scene as? UIWindowScene) else { return }
         guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
-        //self.window = appDelegate.window
         if AppState.appCoord == nil { AppState.appCoord = AppCoordinator(window: appDelegate.window!) }
-        appDelegate.window!.windowScene = windowScene
-        //UI.setGlobalStyle()
+        appDelegate.window!.windowScene = windowScene  // This order matters. First we set the window scene and make it key and visible. Else copy paste menu won't appear.
+        appDelegate.window?.makeKeyAndVisible()
         self.app.didFinishLaunching(scene: scene, window: appDelegate.window!, appCoord: AppState.appCoord!)
     }
 

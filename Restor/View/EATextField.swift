@@ -16,6 +16,14 @@ class EATextField: UITextField {
     /// To add more padding to the bottom border
     var borderOffsetY: CGFloat = 0
     
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+    }
+    
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+    }
+    
     override var tintColor: UIColor! {
         didSet {
             setNeedsDisplay()
@@ -40,5 +48,9 @@ class EATextField: UITextField {
     
     override var canResignFirstResponder: Bool {
         return self.canResign
+    }
+    
+    override func canPerformAction(_ action: Selector, withSender sender: Any?) -> Bool {
+        return super.canPerformAction(action, withSender: sender)
     }
 }
