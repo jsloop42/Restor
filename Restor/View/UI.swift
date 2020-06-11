@@ -69,7 +69,7 @@ class UI {
         }
     }
     
-    static func isDarkMode() -> Bool {
+    static var isDarkMode: Bool {
         if #available(iOS 12.0, *) {
             return UIScreen.main.traitCollection.userInterfaceStyle == .dark
         }
@@ -469,4 +469,21 @@ extension UITableView {
 //            completion()
 //        })
 //    }
+}
+
+extension UIColor {
+    public static func randomColors(_ count: Int) -> [UIColor] {
+        return (0..<count).map { _ -> UIColor in
+            randomColor()
+        }
+    }
+    
+    public static func randomColor() -> UIColor {
+        let redValue = CGFloat.random(in: 0...1)
+        let greenValue = CGFloat.random(in: 0...1)
+        let blueValue = CGFloat.random(in: 0...1)
+        
+        let randomColor = UIColor(red: redValue, green: greenValue, blue: blueValue, alpha: 1.0)
+        return randomColor
+    }
 }

@@ -9,78 +9,10 @@
 import Foundation
 import UIKit
 import WebKit
-import Highlightr
-import SwiftRichString
-import Sourceful
-
-//open class MyXMLDynamicAttributesResolver: XMLDynamicAttributesResolver {
-//    public func applyDynamicAttributes(to attributedString: inout AttributedString, xmlStyle: XMLDynamicStyle, fromStyle: StyleXML) {
-//        let finalStyleToApply = Style()
-//        xmlStyle.enumerateAttributes { key, value  in
-//            switch key {
-//                case "color": // color support
-//                    finalStyleToApply.color = Color(hexString: value)
-//                default:
-//                    break
-//            }
-//        }
-//
-//        attributedString.add(style: finalStyleToApply)
-//    }
-//
-//    public func styleForUnknownXMLTag(_ tag: String, to attributedString: inout AttributedString, attributes: [String : String]?, fromStyle: StyleXML) {
-//        if tag == "rainbow" {
-//            let colors = UIColor.randomColors(attributedString.length)
-//            for i in 0..<attributedString.length {
-//                attributedString.add(style: Style({
-//                    $0.color = colors[i]
-//                }), range: NSMakeRange(i, 1))
-//            }
-//        }
-//    }
-//}
-
-
-public class MyXMLDynamicAttributesResolver: StandardXMLAttributesResolver {
-    
-    public override func styleForUnknownXMLTag(_ tag: String, to attributedString: inout AttributedString, attributes: [String : String]?, fromStyle forStyle: StyleXML) {
-        super.styleForUnknownXMLTag(tag, to: &attributedString, attributes: attributes, fromStyle: forStyle)
-        
-        if tag == "rainbow" {
-            let colors = UIColor.randomColors(attributedString.length)
-            for i in 0..<attributedString.length {
-                attributedString.add(style: Style({
-                    $0.color = colors[i]
-                }), range: NSMakeRange(i, 1))
-            }
-        }
-        
-    }
-    
-}
-
-extension UIColor {
-    public static func randomColors(_ count: Int) -> [UIColor] {
-        return (0..<count).map { _ -> UIColor in
-            randomColor()
-        }
-    }
-    
-    public static func randomColor() -> UIColor {
-        let redValue = CGFloat.random(in: 0...1)
-        let greenValue = CGFloat.random(in: 0...1)
-        let blueValue = CGFloat.random(in: 0...1)
-        
-        let randomColor = UIColor(red: redValue, green: greenValue, blue: blueValue, alpha: 1.0)
-        return randomColor
-    }
-}
 
 final class ResponseRawViewCell: UITableViewCell {
     @IBOutlet weak var rawTextView: UITextView!
-    @IBOutlet weak var textView: SyntaxTextView!
     var data: ResponseData?
-    let sh = Highlightr()
     var rendered: NSAttributedString?
     private let nc = NotificationCenter.default
     var isDirty = true
@@ -95,79 +27,6 @@ final class ResponseRawViewCell: UITableViewCell {
     func updateUI() {
         guard let data = self.data, let respData = data.responseData, var text = String(data: respData, encoding: .utf8)?.trim() else { return }
         //self.textView.text = "Hello world"
-    }
-
-    func updateUI1() {
-//        if self.rendered != nil {
-//            self.rawTextView.attributedText = self.rendered!
-//        } else {
-            guard let data = self.data, let respData = data.responseData, var text = String(data: respData, encoding: .utf8)?.trim() else { return }
-            //self.rawTextView.text = text
-            //if !isDirty { return }
-            
-
-            // Apply a custom xml attribute resolver
-            //styleGroup.xmlAttributesResolver = MyXMLDynamicAttributesResolver()
-            let style = Style {
-                $0.font = SystemFonts.AmericanTypewriter.font(size: 15) // just pass a string, one of the SystemFonts or an UIFont
-                $0.color = "#0433FF" // you can use UIColor or HEX string!
-                $0.underline = (.patternDot, UIColor.red)
-                $0.alignment = .center
-            }
-            // Render
-        
-        let normal = Style {
-            $0.font = SystemFonts.HelveticaNeue.font(size: 15)
-            $0.color = UIColor.gray
-        }
-                
-        let bold = Style {
-            $0.font = SystemFonts.Helvetica_Bold.font(size: 20)
-            $0.color = UIColor.red
-            $0.backColor = UIColor.yellow
-        }
-                
-        let italic = normal.byAdding {
-            $0.traitVariants = .italic
-        }
-        let div  = normal.byAdding {
-            $0.color = UIColor.green
-        }
-    
-        let kwd = Style {
-            $0.font = SystemFonts.AmericanTypewriter.font(size: 14)
-            $0.color = "#0433FF"
-        }
-        
-        let html = StyleRegEx(base: normal, pattern: "html", options: .caseInsensitive) {
-            $0.color = UIColor.red
-        }
-        //let myGroup = StyleXML(base: normal, ["html": kwd, "script": kwd, "bold": bold, "italic": italic])
-        //text = "&lt;html&gt;Hello &lt;bold&gt;Daniele!&lt;/bold&gt;. You're ready to &lt;italic&gt;play with us!&lt;/italic&gt;&lt;head&gt;&lt;script&gt;foobar&lt;/script&gt;&lt;/head&gt;&lt;/html&gt;"
-        //self.rawTextView.attributedText = text.toHtml().set(style: html)
-        self.textView.text = text
-            
-            self.isDirty = false
-//            DispatchQueue.global().async {
-//                self.rendered = self.sh?.highlight(text)
-//                self.isDirty = false
-//                self.nc.post(name: .responseTableViewShouldReload, object: self, userInfo: ["id": "raw-cell"])
-//            }
-//        }
-    }
-}
-
-
-extension String {
-    func toHtml() -> AttributedString {
-        guard let data = data(using: .utf8) else { return AttributedString() }
-        
-        if let attributedString = try? AttributedString(data: data, options: [.documentType: AttributedString.DocumentType.html,
-        .characterEncoding: String.Encoding.utf8.rawValue], documentAttributes: nil) {
-            return attributedString
-        } else {
-            return AttributedString()
-        }
     }
 }
 
@@ -193,6 +52,20 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     var height: CGFloat = 44
     var template = ""
     var responseCache: ResponseCache!
+    
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        self.renderTheme()
+    }
+    
+    func renderTheme() {
+        if UI.isDarkMode {
+            Log.debug("dark mode")
+        } else {
+            Log.debug("light mode")
+        }
+        self.updateUI()
+    }
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -222,17 +95,19 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     
     func initUI() {
         self.webView.scrollView.isScrollEnabled = true
-        self.webView.backgroundColor = UIColor(named: "table-view-cell-bg")
+        let color = UIColor(named: "web-view-bg")
+        self.webView.backgroundColor = color
+        self.webView.scrollView.backgroundColor = color
+        self.contentView.backgroundColor = color
+        self.backgroundView?.backgroundColor = color
     }
     
-    func getHtmlSource(_ data: Data) -> String {
-        //if let url = self.responseCache.getURL(data) { return url }
+    func getHtmlSource(_ data: Data, lang: String, theme: String) -> String {
         guard var html = String(data: data, encoding: .utf8)?.trim() else { return "" }
         html = html.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
             .replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#039;")//.replacingOccurrences(of: "\n", with: "<br>")
         return self.template.replacingOccurrences(of: "#_restor-extrapolate-texts", with: html)
-        //let hash = self.responseCache.addData(renderedHtml)
-        //return self.responseCache.getURL(hash)
+            .replacingOccurrences(of: "#_restor-extrapolate-language", with: lang).replacingOccurrences(of: "#_restor-extrapolate-theme", with: theme)
     }
     
     func getHtmlSource(_ html: String) -> String {
@@ -270,43 +145,19 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     func updateUI() {
         guard !self.template.isEmpty, let data = self.data, let respData = data.responseData else { return }
         self.doneLoading = false
-        var str = ""
-        if let json = try? JSONSerialization.jsonObject(with: respData, options: .allowFragments) {
-            str = String(describing: json)
-            self.webView.loadHTMLString(self.getHtmlSource(str), baseURL: nil)
-            return
-        }
-//        if let text = String(data: respData, encoding: .utf8) {
-//            self.webView.loadHTMLString(self.getHtmlSource(text), baseURL: Bundle.main.bundleURL)
-//        }
-        self.webView.loadHTMLString(self.getHtmlSource(respData), baseURL: Bundle.main.bundleURL)
-        
-//        if let url = self.getHtmlSource(respData) {
-//            //self.webView.loadFileURL(url, allowingReadAccessTo: url)
-//            var req = URLRequest(url: url)
-//            do {
-//                self.webView.load(req)
-//                //self.webView.load(try Data(contentsOf: url), mimeType: "text/html", characterEncodingName: "UTF8", baseURL: url)
-//            } catch let error {
-//                Log.error("Error: \(error)")
-//            }
-//        }
-    }
-    
-    func updateHeight() {
-        self.webView.evaluateJavaScript("document.readyState", completionHandler: { complete, error in
-            if complete != nil {
-                self.webView.evaluateJavaScript("document.body.scrollHeight", completionHandler: { height, error in
-                    if let h = height as? CGFloat {
-                        self.height = h
-                        Log.debug("web view content height: \(h)")
-                        DispatchQueue.main.async {
-                            self.nc.post(name: .responseTableViewShouldReload, object: self)
-                        }
-                    }
-                })
+        if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
+            UIView.animate(withDuration: 0.3) {
+                self.webView.isHidden = true
+                self.webView.loadHTMLString(self.getHtmlSource(respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+                self.webView.isHidden = false
             }
-        })
+        } else {
+            UIView.animate(withDuration: 0.3) {
+                self.webView.isHidden = true
+                self.webView.loadHTMLString(self.getHtmlSource(respData, lang: "language-xml", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+                self.webView.isHidden = false
+            }
+        }
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -608,7 +459,7 @@ class ResponseTableViewController: RestorTableViewController {
         didSet { self.detailsViewCell.tableType = .details }
     }
     @IBOutlet weak var helpCell: ResponseInfoCell!
-    @IBOutlet weak var rawCell: ResponseRawViewCell!
+    @IBOutlet weak var rawCell: ResponseWebViewCell!
     @IBOutlet weak var previewCell: ResponseWebViewCell!
     private var headerCellHeight: CGFloat = 0.0
     private var cookieCellHeight: CGFloat = 0.0
@@ -734,7 +585,7 @@ class ResponseTableViewController: RestorTableViewController {
             self.detailsViewCell.updateUI()
         } else if self.mode == .raw {
             self.rawCell.data = self.data
-            if self.rawCell.data != self.data { self.rawCell.isDirty = true }
+            //if self.rawCell.data != self.data { self.rawCell.isDirty = true }
             self.rawCell.updateUI()
         } else if self.mode == .preview {
             self.previewCell.data = self.data

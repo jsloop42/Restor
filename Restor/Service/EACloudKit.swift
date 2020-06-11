@@ -42,11 +42,11 @@ class ZoneInfo: NSObject, NSCoding {
     }
 
     static func decode(_ data: Data) -> ZoneInfo? {
-        return NSKeyedUnarchiver.unarchiveObject(with: data) as? ZoneInfo
+        return try? NSKeyedUnarchiver.unarchivedObject(ofClass: ZoneInfo.self, from: data)
     }
     
     func encode() -> Data {
-        return NSKeyedArchiver.archivedData(withRootObject: self)
+        return (try? NSKeyedArchiver.archivedData(withRootObject: self, requiringSecureCoding: true)) ?? Data()
     }
 }
 
