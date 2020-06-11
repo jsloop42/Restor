@@ -7,7 +7,7 @@
 }
 html, body {
     font-family: "Source Code Pro", "Courier", monospace;
-    font-size: 14px;
+    font-size: 1em;
     background-color: rgb(255, 255, 255) !important;
 }
 body {
@@ -21,6 +21,9 @@ pre {
     padding: 0.75em 0.5em !important;
     top: 0;
     left: 0;
+}
+code {
+    font-size: 14px !important;
 }
 @media (prefers-color-scheme: dark) {
     html, body {

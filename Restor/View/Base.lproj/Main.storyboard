@@ -4563,62 +4563,54 @@
                                         </tableViewCellContentView>
                                         <color key="backgroundColor" name="table-view-bg"/>
                                     </tableViewCell>
-                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" rowHeight="81" id="w3l-OM-4aS" userLabel="Preview Cell" customClass="ResponseRawViewCell" customModule="Restor" customModuleProvider="target">
+                                    <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" rowHeight="81" id="ojh-ir-PQZ" userLabel="Preview Cell" customClass="ResponseWebViewCell" customModule="Restor" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="1339" width="414" height="81"/>
                                         <autoresizingMask key="autoresizingMask"/>
-                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="w3l-OM-4aS" id="qgE-8h-mp7">
+                                        <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="ojh-ir-PQZ" id="daU-Sg-pzW">
                                             <rect key="frame" x="0.0" y="0.0" width="414" height="81"/>
                                             <autoresizingMask key="autoresizingMask"/>
                                             <subviews>
-                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="AEc-rz-0pw" userLabel="Top Border View">
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="5eD-le-JCt" userLabel="Top Border View">
                                                     <rect key="frame" x="0.0" y="0.0" width="414" height="1"/>
                                                     <color key="backgroundColor" name="cell-separator-bg"/>
                                                     <constraints>
-                                                        <constraint firstAttribute="height" constant="0.80000000000000004" id="hgk-Wd-WWw"/>
+                                                        <constraint firstAttribute="height" constant="0.80000000000000004" id="hbE-Oi-YsT"/>
                                                     </constraints>
                                                 </view>
-                                                <textView hidden="YES" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="scaleToFill" textAlignment="natural" translatesAutoresizingMaskIntoConstraints="NO" id="rYG-g7-TfD">
+                                                <wkWebView opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="EHJ-dR-fSB">
                                                     <rect key="frame" x="0.0" y="1" width="414" height="79"/>
-                                                    <color key="backgroundColor" name="table-view-cell-bg"/>
-                                                    <color key="textColor" systemColor="labelColor" cocoaTouchSystemColor="darkTextColor"/>
-                                                    <fontDescription key="fontDescription" type="system" pointSize="14"/>
-                                                    <textInputTraits key="textInputTraits" autocapitalizationType="sentences"/>
-                                                </textView>
-                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="vGd-61-3zf" userLabel="TextView" customClass="SyntaxTextView" customModule="Restor" customModuleProvider="target">
-                                                    <rect key="frame" x="0.0" y="0.0" width="414" height="81"/>
-                                                    <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
-                                                </view>
-                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Q5H-7r-SWz" userLabel="Bottom Border View">
+                                                    <color key="backgroundColor" name="web-view-bg"/>
+                                                    <wkWebViewConfiguration key="configuration" allowsInlineMediaPlayback="YES" applicationNameForUserAgent="Restor">
+                                                        <dataDetectorTypes key="dataDetectorTypes" phoneNumber="YES" link="YES" address="YES" calendarEvent="YES" trackingNumber="YES" flightNumber="YES" lookupSuggestion="YES"/>
+                                                        <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" audio="YES" video="YES"/>
+                                                        <wkPreferences key="preferences"/>
+                                                    </wkWebViewConfiguration>
+                                                </wkWebView>
+                                                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="OsL-9T-MRW" userLabel="Bottom Border View">
                                                     <rect key="frame" x="0.0" y="80" width="414" height="1"/>
                                                     <color key="backgroundColor" name="cell-separator-bg"/>
                                                     <constraints>
-                                                        <constraint firstAttribute="height" constant="0.80000000000000004" id="Fmh-q8-Nl0"/>
+                                                        <constraint firstAttribute="height" constant="0.80000000000000004" id="gXY-MG-tZZ"/>
                                                     </constraints>
                                                 </view>
                                             </subviews>
-                                            <color key="backgroundColor" name="table-view-cell-bg"/>
+                                            <color key="backgroundColor" name="web-view-bg"/>
                                             <constraints>
-                                                <constraint firstAttribute="bottom" secondItem="vGd-61-3zf" secondAttribute="bottom" id="5sc-P1-XhB"/>
-                                                <constraint firstItem="Q5H-7r-SWz" firstAttribute="leading" secondItem="qgE-8h-mp7" secondAttribute="leading" id="Bvd-xH-Lje"/>
-                                                <constraint firstItem="vGd-61-3zf" firstAttribute="leading" secondItem="qgE-8h-mp7" secondAttribute="leading" id="CHa-SC-jXq"/>
-                                                <constraint firstAttribute="trailing" secondItem="rYG-g7-TfD" secondAttribute="trailing" id="EKU-FY-qU7"/>
-                                                <constraint firstAttribute="trailing" secondItem="vGd-61-3zf" secondAttribute="trailing" id="KPx-et-KNQ"/>
-                                                <constraint firstAttribute="trailing" secondItem="Q5H-7r-SWz" secondAttribute="trailing" id="Udh-N2-B0o"/>
-                                                <constraint firstAttribute="trailing" secondItem="AEc-rz-0pw" secondAttribute="trailing" id="X6H-un-dV8"/>
-                                                <constraint firstItem="rYG-g7-TfD" firstAttribute="top" secondItem="AEc-rz-0pw" secondAttribute="bottom" id="XJ2-qB-F70"/>
-                                                <constraint firstItem="vGd-61-3zf" firstAttribute="centerX" secondItem="qgE-8h-mp7" secondAttribute="centerX" id="gAm-T0-J4c"/>
-                                                <constraint firstItem="vGd-61-3zf" firstAttribute="top" secondItem="qgE-8h-mp7" secondAttribute="top" id="hPZ-aG-OGv"/>
-                                                <constraint firstItem="AEc-rz-0pw" firstAttribute="leading" secondItem="qgE-8h-mp7" secondAttribute="leading" id="ns2-VK-Kdh"/>
-                                                <constraint firstAttribute="bottom" secondItem="Q5H-7r-SWz" secondAttribute="bottom" id="oCf-Bc-LCJ"/>
-                                                <constraint firstItem="Q5H-7r-SWz" firstAttribute="top" secondItem="rYG-g7-TfD" secondAttribute="bottom" id="szP-HA-FAX"/>
-                                                <constraint firstItem="AEc-rz-0pw" firstAttribute="top" secondItem="qgE-8h-mp7" secondAttribute="top" id="vXQ-P2-Nm8"/>
-                                                <constraint firstItem="rYG-g7-TfD" firstAttribute="leading" secondItem="qgE-8h-mp7" secondAttribute="leading" id="yC6-HV-FIh"/>
-                                                <constraint firstItem="vGd-61-3zf" firstAttribute="centerY" secondItem="qgE-8h-mp7" secondAttribute="centerY" id="yNw-YL-T5m"/>
+                                                <constraint firstItem="5eD-le-JCt" firstAttribute="leading" secondItem="daU-Sg-pzW" secondAttribute="leading" id="0fH-1h-aBf"/>
+                                                <constraint firstAttribute="trailing" secondItem="5eD-le-JCt" secondAttribute="trailing" id="AsC-yz-xmr"/>
+                                                <constraint firstItem="EHJ-dR-fSB" firstAttribute="leading" secondItem="daU-Sg-pzW" secondAttribute="leading" id="BlR-V9-foe"/>
+                                                <constraint firstItem="OsL-9T-MRW" firstAttribute="top" secondItem="EHJ-dR-fSB" secondAttribute="bottom" id="DWN-K5-ggy"/>
+                                                <constraint firstItem="EHJ-dR-fSB" firstAttribute="top" secondItem="5eD-le-JCt" secondAttribute="bottom" id="Imv-jM-c32"/>
+                                                <constraint firstAttribute="bottom" secondItem="OsL-9T-MRW" secondAttribute="bottom" id="Nzp-rv-Yi1"/>
+                                                <constraint firstAttribute="trailing" secondItem="OsL-9T-MRW" secondAttribute="trailing" id="REQ-Gs-CcM"/>
+                                                <constraint firstItem="5eD-le-JCt" firstAttribute="top" secondItem="daU-Sg-pzW" secondAttribute="top" id="dKX-bb-D8M"/>
+                                                <constraint firstAttribute="trailing" secondItem="EHJ-dR-fSB" secondAttribute="trailing" id="lhh-V5-wTf"/>
+                                                <constraint firstItem="OsL-9T-MRW" firstAttribute="leading" secondItem="daU-Sg-pzW" secondAttribute="leading" id="psV-cG-Lvb"/>
                                             </constraints>
                                         </tableViewCellContentView>
-                                        <color key="backgroundColor" name="table-view-cell-bg"/>
+                                        <color key="backgroundColor" name="web-view-bg"/>
                                         <connections>
-                                            <outlet property="rawTextView" destination="rYG-g7-TfD" id="7l5-zt-rmm"/>
+                                            <outlet property="webView" destination="EHJ-dR-fSB" id="5yu-gD-ZH1"/>
                                         </connections>
                                     </tableViewCell>
                                 </cells>
@@ -4637,8 +4629,8 @@
                         <outlet property="helpCell" destination="kYL-Q8-WUg" id="vxF-Xg-yQF"/>
                         <outlet property="infoCell" destination="Crb-fg-uyD" id="U6g-lP-Kpk"/>
                         <outlet property="metricsViewCell" destination="Oou-cF-WEw" id="BTZ-o5-EIU"/>
-                        <outlet property="previewCell" destination="p0x-FJ-IYB" id="nkz-Jq-Z40"/>
-                        <outlet property="rawCell" destination="w3l-OM-4aS" id="HBe-kk-N9e"/>
+                        <outlet property="previewCell" destination="ojh-ir-PQZ" id="Qfj-uP-gLr"/>
+                        <outlet property="rawCell" destination="p0x-FJ-IYB" id="jsX-SS-0dP"/>
                     </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Ome-Y5-Cjj" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>

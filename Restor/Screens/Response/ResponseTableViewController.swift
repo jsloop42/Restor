@@ -10,26 +10,6 @@ import Foundation
 import UIKit
 import WebKit
 
-final class ResponseRawViewCell: UITableViewCell {
-    @IBOutlet weak var rawTextView: UITextView!
-    var data: ResponseData?
-    var rendered: NSAttributedString?
-    private let nc = NotificationCenter.default
-    var isDirty = true
-    
-    let baseFontSize: CGFloat = 14
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-        self.rawTextView.font = App.Font.monospace14
-    }
-    
-    func updateUI() {
-        guard let data = self.data, let respData = data.responseData, var text = String(data: respData, encoding: .utf8)?.trim() else { return }
-        //self.textView.text = "Hello world"
-    }
-}
-
 // MARK: - ResponseWebViewCell
 
 final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDelegate {
@@ -50,8 +30,15 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     var doneLoading = false
     let nc = NotificationCenter.default
     var height: CGFloat = 44
-    var template = ""
+    var rawTemplate = ""
+    var previewTemplate = ""
     var responseCache: ResponseCache!
+    var type: ResponseMode = .raw
+    
+    enum Template: String {
+        case rawview = "rawview"
+        case preview = "preview"
+    }
     
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
         super.traitCollectionDidChange(previousTraitCollection)
@@ -59,11 +46,6 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
     
     func renderTheme() {
-        if UI.isDarkMode {
-            Log.debug("dark mode")
-        } else {
-            Log.debug("light mode")
-        }
         self.updateUI()
     }
     
@@ -71,20 +53,24 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
         super.awakeFromNib()
         self.webView.navigationDelegate = self
         self.webView.uiDelegate = self
-        self.loadTemplate()
+        self.loadTemplate(.rawview)
+        if self.type == .preview { self.loadTemplate(.preview) }
         self.initUI()
     }
     
-    func loadTemplate() {
-        guard self.template.isEmpty else { return }
-        if let templateURL = Bundle.main.url(forResource: "raw-view", withExtension: "html") {
+    func loadTemplate(_ template: Template) {
+        if let templateURL = Bundle.main.url(forResource: template.rawValue, withExtension: "html") {
             let fm = EAFileManager.init(url: templateURL)
             fm.openFile(for: .read)
             fm.readToEOF { result in
                 switch result {
                 case .success(let data):
-                    if let template = String(data: data, encoding: .utf8), !template.isEmpty {
-                        self.template = template
+                    if let str = String(data: data, encoding: .utf8), !str.isEmpty {
+                        if template == .rawview {
+                            self.rawTemplate = str
+                        } else if template == .preview {
+                            self.previewTemplate = str
+                        }
                     }
                 case .failure(let err):
                     Log.error("Error loading template: \(err)")
@@ -102,62 +88,65 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
         self.backgroundView?.backgroundColor = color
     }
     
-    func getHtmlSource(_ data: Data, lang: String, theme: String) -> String {
+    func getHtmlSource(template: Template, data: Data, lang: String, theme: String) -> String {
         guard var html = String(data: data, encoding: .utf8)?.trim() else { return "" }
-        html = html.replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
-            .replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#039;")//.replacingOccurrences(of: "\n", with: "<br>")
-        return self.template.replacingOccurrences(of: "#_restor-extrapolate-texts", with: html)
+        if template == .preview { return self.rawTemplate.replacingOccurrences(of: "#_restor-extrapolate-texts", with: html) }
+        html = html.replaceAll(pattern: "\n+", with: "\n").replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;")
+            .replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#039;")
+            //.replacingOccurrences(of: "\n", with: "<br>")
+        return (template == .rawview ? self.rawTemplate : self.previewTemplate).replacingOccurrences(of: "#_restor-extrapolate-texts", with: html)
             .replacingOccurrences(of: "#_restor-extrapolate-language", with: lang).replacingOccurrences(of: "#_restor-extrapolate-theme", with: theme)
-    }
-    
-    func getHtmlSource(_ html: String) -> String {
-        let html = html.trim().replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;")
-            .replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#039;").replacingOccurrences(of: "\n", with: "<br>")
-        return """
-        <html>
-        <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <link href="themes/prism.css" rel="stylesheet" />
-            <style>
-            :root {
-                color-scheme: light dark;
-            }
-            @font-face { font-family: "Source Code Pro"; src: url("SourceCodePro-Regular.ttf"); }
-            html, body {
-                font-family: "Source Code Pro";
-                font-size: 16;
-            }
-            @media (prefers-color-scheme: dark) {
-                body {
-                    background-color: rgb(26, 28, 30) !important;
-                    color: white !important;
-                }
-            }
-            </style>
-        </head>
-        <body>
-        \(html)
-        </body>
-        </html>
-        """
     }
 
     func updateUI() {
-        guard !self.template.isEmpty, let data = self.data, let respData = data.responseData else { return }
+        if self.type == .raw {
+            self.updateRawModeUI()
+        } else if self.type == .preview {
+            self.updatePreviewModeUI()
+        }
+    }
+        
+    private func updateRawModeUI() {
+        guard !self.rawTemplate.isEmpty, let data = self.data, let respData = data.responseData else { return }
         self.doneLoading = false
         if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
             UIView.animate(withDuration: 0.3) {
                 self.webView.isHidden = true
-                self.webView.loadHTMLString(self.getHtmlSource(respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
                 self.webView.isHidden = false
             }
         } else {
             UIView.animate(withDuration: 0.3) {
                 self.webView.isHidden = true
-                self.webView.loadHTMLString(self.getHtmlSource(respData, lang: "language-xml", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: respData, lang: "language-xml", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
                 self.webView.isHidden = false
             }
         }
+    }
+    
+    private func updatePreviewModeUI() {
+        guard let data = self.data, let respData = data.responseData, let html = String(data: respData, encoding: .utf8) else { return }
+        self.webView.loadHTMLString(html, baseURL: URL(string: data.url))
+        // TODO: handle JSON type
+        
+//        guard let respData = self.data?.responseData else { return }
+//        self.webView.loadHTMLString(String(data: respData, encoding: .utf8) ?? "", baseURL: nil)
+//        self.webView.scrollView.subviews.forEach { $0.isUserInteractionEnabled = false }
+//        guard let data = self.data, let respData = data.responseData else { return }
+//        self.doneLoading = false
+//        if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
+//            UIView.animate(withDuration: 0.3) {
+//                self.webView.isHidden = true
+//                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+//                self.webView.isHidden = false
+//            }
+//        } else {
+//            UIView.animate(withDuration: 0.3) {
+//                self.webView.isHidden = true
+//                self.webView.loadHTMLString(self.getHtmlSource(template: .preview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+//                self.webView.isHidden = false
+//            }
+//        }
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -555,9 +544,11 @@ class ResponseTableViewController: RestorTableViewController {
         self.detailsViewCell.details = self.data?.getDetailsMap() ?? [:]
         self.detailsViewCell.detailsKeys = self.data?.getDetailsKeys() ?? []
         // Raw section - cell
+        self.rawCell.type = .raw
         self.rawCell.data = self.data
         self.rawCell.updateUI()
         // preview section - cell
+        self.previewCell.type = .preview
         self.previewCell.data = self.data
         self.previewCell.updateUI()
     }

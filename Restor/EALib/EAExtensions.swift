@@ -332,6 +332,17 @@ public extension String {
         let count = string.count
         return self.suffix(count) == string
     }
+    
+    func replace(pattern: String, with string: String) -> String {
+        if let regex = try? NSRegularExpression(pattern: pattern, options: .useUnixLineSeparators) {
+            return regex.stringByReplacingMatches(in: self, options: [], range: NSRange(location: 0, length: self.count), withTemplate: string)
+        }
+        return self
+    }
+    
+    func replaceAll(pattern: String, with string: String) -> String {
+        return self.replacingOccurrences(of: pattern, with: string, options: .regularExpression)
+    }
 }
 
 public extension UIImage {
