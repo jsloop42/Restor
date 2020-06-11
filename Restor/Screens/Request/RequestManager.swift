@@ -146,7 +146,6 @@ final class RequestManager {
     func requestDidCancel() {
         Log.debug("[req-man] request-did-cancel")
         self.nc.post(name: .requestDidCancel, object: self, userInfo: ["request": self.request])
-        // TODO:
     }
     
     func getURL(_ str: String?) -> URL? {

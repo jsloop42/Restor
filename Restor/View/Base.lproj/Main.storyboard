@@ -3473,6 +3473,7 @@
                         <outlet property="bodyRawLabel" destination="gp8-M8-PxE" id="Drk-1A-BMC"/>
                         <outlet property="bodyTitleLabel" destination="kkf-f8-vcf" id="T2h-wu-n9E"/>
                         <outlet property="descLabel" destination="3Ci-vT-gu3" id="jN2-lG-OJX"/>
+                        <outlet property="goBtn" destination="bDU-Cr-Hdf" id="mZr-ST-Wqe"/>
                         <outlet property="headerKVTableViewManager" destination="TWU-mz-KJL" id="kaG-YT-d7H"/>
                         <outlet property="headersTableView" destination="cEV-Bd-QMh" id="VRy-W6-9Jo"/>
                         <outlet property="methodLabel" destination="o6r-So-7Gb" id="eSg-Eq-wqP"/>

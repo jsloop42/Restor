@@ -38,7 +38,13 @@ class RequestTableViewController: RestorTableViewController {
     @IBOutlet weak var binaryTextFieldView: UIView!
     @IBOutlet weak var binaryImageView: UIImageView!
     @IBOutlet weak var binaryCollectionView: UICollectionView!
+    @IBOutlet weak var goBtn: UIButton!
     private unowned var reqMan: RequestManager?
+    private let sendImage = UIImage(named: "send")
+    private let stopImage = UIImage(named: "stop")
+    private var isRequestInProgress = false
+    lazy var activityIndicator = { UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: 20, height: 20)) }()
+    lazy var activityBarButton = { UIBarButtonItem(customView: self.activityIndicator) }()
     
     enum TableType: String {
         case header = "request-header-table-view"
@@ -118,6 +124,8 @@ class RequestTableViewController: RestorTableViewController {
         self.nc.addObserver(self, selector: #selector(self.requestDidChange(_:)), name: .requestDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.editButtonDidTap(_:)), name: .editRequestDidTap, object: nil)
         self.nc.addObserver(self, selector: #selector(self.dynamicSizeTableViewHeightDidChange(_:)), name: .dynamicSizeTableViewHeightDidChange, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.requestDidCancel(_:)), name: .requestDidCancel, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -196,12 +204,73 @@ class RequestTableViewController: RestorTableViewController {
         }
     }
     
+    @objc func responseDidReceive(_ notif: Notification) {
+        Log.debug("response did receive")
+        if let info = notif.userInfo as? [String: Any], let respData = info["data"] as? ResponseData, let reqId = self.request?.getId(), reqId == respData.requestId {
+            self.isRequestInProgress = false
+            UIView.animate(withDuration: 0.3) {
+                self.displayRequestDidCompleteUIChanges()
+            }
+        }
+    }
+    
+    @objc func requestDidCancel(_ notif: Notification) {
+        Log.debug("request did cancel")
+        if let info = notif.userInfo as? [String: Any], let request = info["request"] as? ERequest, let reqId = self.request?.getId(), request.getId() == reqId {
+            self.isRequestInProgress = false
+            UIView.animate(withDuration: 0.3) {
+                self.displayRequestDidCompleteUIChanges()
+            }
+        }
+    }
+    
     @IBAction func goButtonDidTap(_ sender: Any) {
         Log.debug("go button did tap")
-        self.initManager()
         guard let man = self.reqMan else { return }
+        if self.isRequestInProgress {
+            man.cancelRequest()
+            return
+        }
+        self.initManager()
         man.start()
-        // TODO: update play button to stop button
+        self.isRequestInProgress = true
+        UIView.animate(withDuration: 0.3) {
+            self.displayRequestInProgressUIChanges()
+        }
+    }
+    
+    func displayRequestInProgressUIChanges() {
+        self.displayCancelButton()
+        self.displayActivityIndicator()
+    }
+    
+    func displayRequestDidCompleteUIChanges() {
+        self.displaySendButton()
+        self.hideActivityIndicator()
+    }
+    
+    func displaySendButton() {
+        self.goBtn.layer.opacity = 0.5
+        self.goBtn.setImage(self.sendImage, for: .normal)
+        self.goBtn.layer.opacity = 1.0
+    }
+    
+    func displayCancelButton() {
+        self.goBtn.layer.opacity = 0.5
+        self.goBtn.setImage(self.stopImage, for: .normal)
+        self.goBtn.layer.opacity = 1.0
+    }
+    
+    func displayActivityIndicator() {
+        self.tabbarController.navigationItem.rightBarButtonItem = nil
+        self.tabbarController.navigationItem.setRightBarButton(self.activityBarButton, animated: true)
+        self.activityIndicator.startAnimating()
+    }
+    
+    func hideActivityIndicator() {
+        self.activityIndicator.stopAnimating()
+        self.tabbarController.navigationItem.rightBarButtonItem = nil
+        self.tabbarController.addNavigationBarEditButton()
     }
     
     func viewEditRequestVC() {
