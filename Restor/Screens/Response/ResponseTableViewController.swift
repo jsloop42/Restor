@@ -126,27 +126,17 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     
     private func updatePreviewModeUI() {
         guard let data = self.data, let respData = data.responseData, let html = String(data: respData, encoding: .utf8) else { return }
-        self.webView.loadHTMLString(html, baseURL: URL(string: data.url))
-        // TODO: handle JSON type
-        
-//        guard let respData = self.data?.responseData else { return }
-//        self.webView.loadHTMLString(String(data: respData, encoding: .utf8) ?? "", baseURL: nil)
-//        self.webView.scrollView.subviews.forEach { $0.isUserInteractionEnabled = false }
-//        guard let data = self.data, let respData = data.responseData else { return }
-//        self.doneLoading = false
-//        if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
-//            UIView.animate(withDuration: 0.3) {
-//                self.webView.isHidden = true
-//                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
-//                self.webView.isHidden = false
-//            }
-//        } else {
-//            UIView.animate(withDuration: 0.3) {
-//                self.webView.isHidden = true
-//                self.webView.loadHTMLString(self.getHtmlSource(template: .preview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
-//                self.webView.isHidden = false
-//            }
-//        }
+        if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
+            UIView.animate(withDuration: 0.3) {
+                self.webView.isHidden = true
+                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+                self.webView.isHidden = false
+            }
+        } else {
+            UIView.animate(withDuration: 0.3) {
+                self.webView.loadHTMLString(html, baseURL: URL(string: data.url))
+            }
+        }
     }
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
