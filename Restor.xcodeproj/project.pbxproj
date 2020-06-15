@@ -45,6 +45,9 @@
 		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
 		9E568E3C24308C67003150EC /* EAUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3B24308C67003150EC /* EAUtilsTests.swift */; };
 		9E568E3F2430B576003150EC /* Zone.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3E2430B576003150EC /* Zone.swift */; };
+		9E6298C324974F2D001B68EB /* EnvironmentEditViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6298C224974F2D001B68EB /* EnvironmentEditViewController.swift */; };
+		9E6298C52497C28C001B68EB /* EEnv.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6298C42497C28B001B68EB /* EEnv.swift */; };
+		9E6298C72497C8E7001B68EB /* SecureTransformer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E6298C62497C8E7001B68EB /* SecureTransformer.swift */; };
 		9E70D4B924605DBB00B33CF1 /* RequestTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */; };
 		9E70D4BB24605E2700B33CF1 /* ResponseTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E70D4BA24605E2700B33CF1 /* ResponseTableViewController.swift */; };
 		9E732EE9246694E9004A3E4D /* EADynamicSizeTableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E732EE8246694E9004A3E4D /* EADynamicSizeTableView.swift */; };
@@ -84,6 +87,7 @@
 		9EC1F94C2426565B005BDD0A /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9EC1F94B2426565B005BDD0A /* CloudKit.framework */; };
 		9EC1F94E2426995A005BDD0A /* EACloudKit.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC1F94D2426995A005BDD0A /* EACloudKit.swift */; };
 		9EC33FB423EEBF1A006C5B37 /* EATextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC33FB323EEBF1A006C5B37 /* EATextView.swift */; };
+		9EC4DAC52497F9D7004851D9 /* EEnvVar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EC4DAC42497F9D7004851D9 /* EEnvVar.swift */; };
 		9ED1255924755DA9005E2AD7 /* EHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED1255824755DA9005E2AD7 /* EHistory.swift */; };
 		9ED17CC1248805AA0002CA19 /* prism-light.css in Resources */ = {isa = PBXBuildFile; fileRef = 9ED17CBF248805A90002CA19 /* prism-light.css */; };
 		9ED17CC2248805AA0002CA19 /* prism-dark.css in Resources */ = {isa = PBXBuildFile; fileRef = 9ED17CC0248805AA0002CA19 /* prism-dark.css */; };
@@ -162,6 +166,9 @@
 		9E538DAD239953460025C14C /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		9E568E3B24308C67003150EC /* EAUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUtilsTests.swift; sourceTree = "<group>"; };
 		9E568E3E2430B576003150EC /* Zone.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Zone.swift; sourceTree = "<group>"; };
+		9E6298C224974F2D001B68EB /* EnvironmentEditViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentEditViewController.swift; sourceTree = "<group>"; };
+		9E6298C42497C28B001B68EB /* EEnv.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EEnv.swift; sourceTree = "<group>"; };
+		9E6298C62497C8E7001B68EB /* SecureTransformer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureTransformer.swift; sourceTree = "<group>"; };
 		9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTableViewController.swift; sourceTree = "<group>"; };
 		9E70D4BA24605E2700B33CF1 /* ResponseTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseTableViewController.swift; sourceTree = "<group>"; };
 		9E732EE8246694E9004A3E4D /* EADynamicSizeTableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EADynamicSizeTableView.swift; sourceTree = "<group>"; };
@@ -207,6 +214,7 @@
 		9EC1F94B2426565B005BDD0A /* CloudKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CloudKit.framework; path = System/Library/Frameworks/CloudKit.framework; sourceTree = SDKROOT; };
 		9EC1F94D2426995A005BDD0A /* EACloudKit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACloudKit.swift; sourceTree = "<group>"; };
 		9EC33FB323EEBF1A006C5B37 /* EATextView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EATextView.swift; sourceTree = "<group>"; };
+		9EC4DAC42497F9D7004851D9 /* EEnvVar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EEnvVar.swift; sourceTree = "<group>"; };
 		9ED1255824755DA9005E2AD7 /* EHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EHistory.swift; sourceTree = "<group>"; };
 		9ED17CBF248805A90002CA19 /* prism-light.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "prism-light.css"; sourceTree = "<group>"; };
 		9ED17CC0248805AA0002CA19 /* prism-dark.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "prism-dark.css"; sourceTree = "<group>"; };
@@ -277,6 +285,8 @@
 				9ED1255824755DA9005E2AD7 /* EHistory.swift */,
 				9E1B2DE32427992B00994233 /* EFile.swift */,
 				9E1B2DE52427994000994233 /* EImage.swift */,
+				9E6298C42497C28B001B68EB /* EEnv.swift */,
+				9EC4DAC42497F9D7004851D9 /* EEnvVar.swift */,
 				9E1B2DDD242798D700994233 /* EProject.swift */,
 				9E1B2DDF242798EF00994233 /* ERequest.swift */,
 				9E1B2DE72427997E00994233 /* ERequestBodyData.swift */,
@@ -285,6 +295,7 @@
 				9E1B2DEB242799E700994233 /* ETag.swift */,
 				9E1B2DDB242798BB00994233 /* EWorkspace.swift */,
 				9E769AF9242147AB005B18C3 /* Models.swift */,
+				9E6298C62497C8E7001B68EB /* SecureTransformer.swift */,
 				9E568E3E2430B576003150EC /* Zone.swift */,
 				9E926F9C23945E79002DF561 /* Restor.xcdatamodeld */,
 				9E0AD512247AC4A50099B9A5 /* ResponseData.swift */,
@@ -359,6 +370,9 @@
 				9ED99AFA240AF75B0064BDCC /* Service */,
 				9E538DAF2399536B0025C14C /* Model */,
 				9E9DE8CA246C7D8F0068F8CE /* Screens */,
+				9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */,
+				9E6298C224974F2D001B68EB /* EnvironmentEditViewController.swift */,
+				9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */,
 				9E36C413246BEBBD00946726 /* UI State + Coordinator */,
 				9E7585F023A2B24300AD6E8B /* View */,
 				9EE34CA223D9F67C00CA08F2 /* App.swift */,
@@ -509,8 +523,6 @@
 			isa = PBXGroup;
 			children = (
 				9EEA7A8F239EA30C00A1CA68 /* ProjectListViewController.swift */,
-				9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */,
-				9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */,
 			);
 			path = Project;
 			sourceTree = "<group>";
@@ -663,6 +675,7 @@
 				9E0AD513247AC4A50099B9A5 /* ResponseData.swift in Sources */,
 				9EFA58BD2445EBA8003C8AEA /* EAOperationQueue.swift in Sources */,
 				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,
+				9EC4DAC52497F9D7004851D9 /* EEnvVar.swift in Sources */,
 				9E223D532436261600229855 /* EACloudOperation.swift in Sources */,
 				9ED7C8C8246C155E00936701 /* ProjectListCoordinator.swift in Sources */,
 				9E8759062396C6A700F949D1 /* EAUtils.swift in Sources */,
@@ -692,6 +705,7 @@
 				9E538DAE239953460025C14C /* AppState.swift in Sources */,
 				9EFF1FFE24229DB600E97632 /* SettingsTableViewController.swift in Sources */,
 				9E9DE8C9246C2AE80068F8CE /* RequestListCoordinator.swift in Sources */,
+				9E6298C324974F2D001B68EB /* EnvironmentEditViewController.swift in Sources */,
 				9E145F92241BD9D200962A19 /* EARescheduler.swift in Sources */,
 				9EBCAA9F2424F3E100C82508 /* PopupViewController.swift in Sources */,
 				9E18F171246DC051003C888C /* EditRequestState.swift in Sources */,
@@ -707,6 +721,7 @@
 				9E4CE933246FED560088621D /* RequestStateMachine.swift in Sources */,
 				9E538DAC239951790025C14C /* UI.swift in Sources */,
 				9EFA58BB2445E0F0003C8AEA /* EASystem.swift in Sources */,
+				9E6298C72497C8E7001B68EB /* SecureTransformer.swift in Sources */,
 				9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */,
 				9ED1255924755DA9005E2AD7 /* EHistory.swift in Sources */,
 				9E1B2DDC242798BB00994233 /* EWorkspace.swift in Sources */,
@@ -724,6 +739,7 @@
 				9E1B2DE42427992B00994233 /* EFile.swift in Sources */,
 				9E49EC022402FF1F00DAA260 /* EADocumentPicker.swift in Sources */,
 				9E18F16B246D9CE9003C888C /* RequestCoordinator.swift in Sources */,
+				9E6298C52497C28C001B68EB /* EEnv.swift in Sources */,
 				9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */,
 				9E36C417246BEC3B00946726 /* RequestListState.swift in Sources */,
 				9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */,

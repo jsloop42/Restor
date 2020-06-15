@@ -1,5 +1,32 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="16119" systemVersion="19E287" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
+    <entity name="EEnv" representedClassName=".EEnv" syncable="YES" codeGenerationType="category">
+        <attribute name="changeTag" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="isSynced" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="markForDelete" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="variables" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="EEnvVar" inverseName="env" inverseEntity="EEnvVar"/>
+        <uniquenessConstraints>
+            <uniquenessConstraint>
+                <constraint value="name"/>
+            </uniquenessConstraint>
+        </uniquenessConstraints>
+    </entity>
+    <entity name="EEnvVar" representedClassName=".EEnvVar" syncable="YES" codeGenerationType="category">
+        <attribute name="changeTag" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="id" attributeType="String" defaultValueString=""/>
+        <attribute name="isSynced" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="markForDelete" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="name" attributeType="String" defaultValueString=""/>
+        <attribute name="value" optional="YES" attributeType="Transformable" valueTransformerName="Restor.SecureTransformer" defaultValueString=""/>
+        <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="env" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="EEnv" inverseName="variables" inverseEntity="EEnv"/>
+    </entity>
     <entity name="EFile" representedClassName=".EFile" syncable="YES" codeGenerationType="category">
         <attribute name="changeTag" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -348,6 +375,8 @@
         </uniquenessConstraints>
     </entity>
     <elements>
+        <element name="EEnv" positionX="-9" positionY="144" width="128" height="163"/>
+        <element name="EEnvVar" positionX="-9" positionY="153" width="128" height="193"/>
         <element name="EFile" positionX="36" positionY="126" width="128" height="238"/>
         <element name="EHistory" positionX="-9" positionY="135" width="128" height="673"/>
         <element name="EImage" positionX="-9" positionY="90" width="128" height="238"/>

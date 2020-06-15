@@ -39,7 +39,7 @@ class EATextField: UITextField {
         path.addLine(to: endingPoint)
         path.lineWidth = 0.5
         if self.isColor {
-            tintColor.setStroke()
+            UIColor(named: "cell-separator-bg")!.setStroke()
         } else {
             UIColor.clear.setStroke()
         }

@@ -7,6 +7,9 @@
 //
 
 import Foundation
+import CommonCrypto
+
+// MARK: - PKCS12
 
 public final class PKCS12 {
     var label: String?
@@ -49,6 +52,66 @@ extension URLCredential {
         } else { return nil }
     }
 }
+
+// MARK: - AES
+
+public struct AES {
+    /// A 32 bytes string data for AES256.
+    private let key: Data
+    /// A 16 bytes string data.
+    private let iv: Data
+
+    init?(key: String, iv: String) {
+        guard key.count == kCCKeySizeAES128 || key.count == kCCKeySizeAES256, let keyData = key.data(using: .utf8) else {
+            Log.error("Error setting key")
+            return nil
+        }
+        guard iv.count == kCCBlockSizeAES128, let ivData = iv.data(using: .utf8) else {
+            Log.error("Error setting initialisation vector")
+            return nil
+        }
+        self.key = keyData
+        self.iv = ivData
+    }
+
+    /// Encrypt the given string.
+    public func encrypt(string: String) -> Data? {
+        return crypt(data: string.data(using: .utf8), option: CCOperation(kCCEncrypt))
+    }
+
+    /// Decrypt the given data.
+    public func decrypt(data: Data?) -> String? {
+        guard let decryptedData = crypt(data: data, option: CCOperation(kCCDecrypt)) else { return nil }
+        return String(bytes: decryptedData, encoding: .utf8)
+    }
+
+    private func crypt(data: Data?, option: CCOperation) -> Data? {
+        guard let data = data else { return nil }
+        let cryptLen = data.count + kCCBlockSizeAES128
+        var cryptData = Data(count: cryptLen)
+        let keyLen = key.count
+        let options = CCOptions(kCCOptionPKCS7Padding)
+        var bytesLen = Int(0)
+        let status = cryptData.withUnsafeMutableBytes { cryptBytes in
+            data.withUnsafeBytes { dataBytes in
+                iv.withUnsafeBytes { ivBytes in
+                    key.withUnsafeBytes { keyBytes in
+                        CCCrypt(option, CCAlgorithm(kCCAlgorithmAES), options, keyBytes.baseAddress, keyLen, ivBytes.baseAddress, dataBytes.baseAddress,
+                                data.count, cryptBytes.baseAddress, cryptLen, &bytesLen)
+                    }
+                }
+            }
+        }
+        guard UInt32(status) == UInt32(kCCSuccess) else {
+            Log.error("Error in encrypt/decrypt data. Status \(status)")
+            return nil
+        }
+        cryptData.removeSubrange(bytesLen..<cryptData.count)
+        return cryptData
+    }
+}
+
+// MARK: - TLS
 
 /// An enum reflecting the tsl_cuphersuite_t enum from Security module.
 public enum EATLSCipherSuite: Int {

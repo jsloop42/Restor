@@ -1257,6 +1257,38 @@ class CoreDataService {
         return x
     }
     
+    func getEnv(name: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnv? {
+        var x: EEnv?
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EEnv>(entityName: "EEnv")
+            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "name == %@", name)
+                : NSPredicate(format: "name == %@ AND markForDelete == %hhd", name, includeMarkForDelete!)
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error fetching env: \(error)")
+            }
+        }
+        return x
+    }
+
+    func getEnvs(_ includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EEnv] {
+        var xs: [EEnv] = []
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EEnv>(entityName: "EEnv")
+            if includeMarkForDelete != nil { fr.predicate = NSPredicate(format: "markForDelete == %hhd", includeMarkForDelete!) }
+            fr.fetchBatchSize = self.fetchBatchSize
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error getting envs: \(error)")
+            }
+        }
+        return xs
+    }
+    
     // MARK: - Entities to sync
     
     func getWorkspacesToSync(ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<EWorkspace> {
@@ -1637,6 +1669,23 @@ class CoreDataService {
             data.id = id
             data.wsId = wsId
             data.created = x == nil ? ts : x!.created
+            data.modified = ts
+            data.changeTag = ts
+            data.version = x == nil ? 0 : x!.version
+            x = data
+        }
+        return x
+    }
+    
+    func createEnv(name: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnv? {
+        var x: EEnv?
+        let ts = Date().currentTimeNanos()
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            if let isExists = checkExists, isExists, let data = self.getEnv(name: name, ctx: ctx) { x = data }
+            let data = x != nil ? x! : EEnv(context: moc)
+            data.name = name
+            data.created = x == nil ? ts: x!.created
             data.modified = ts
             data.changeTag = ts
             data.version = x == nil ? 0 : x!.version

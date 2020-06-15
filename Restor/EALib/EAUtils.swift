@@ -85,6 +85,21 @@ public final class EAUtils {
         return self.compress(uuid: UUID()) ?? ""
     }
     
+    /// Generate random string with similar looking characters avoided.
+    /// The generated string does not have 0, o, O, i, 6
+    func genRandomString(_ len: Int = 7) -> String{
+        enum info {
+            static let chars = Array("abcdefghjklmnpqrstuvwxyz12345789")
+            static let len = UInt32(chars.count)
+        }
+        var res = [Character](repeating: "-", count: len)
+        for i in 0..<len {
+            let rand = Int(arc4random_uniform(info.len))
+            res[i] = info.chars[rand]
+        }
+        return String(res)
+    }
+    
     /// Generates a uuid with the given identifier and compresses it to return a 22 bytes string.
     func compress(id: String) -> String? {
         guard let uuid = UUID(uuidString: id) else { return nil }
