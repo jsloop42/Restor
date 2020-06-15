@@ -1039,6 +1039,10 @@
                             <outlet property="delegate" destination="qvv-DG-G6T" id="UGH-ma-aRe"/>
                         </connections>
                     </tableView>
+                    <connections>
+                        <outlet property="nameCell" destination="gEn-ld-B67" id="33d-Ci-S5N"/>
+                        <outlet property="valueCell" destination="fTu-Yc-f7r" id="edm-nk-n91"/>
+                    </connections>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="W7U-Op-Utb" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
             </objects>

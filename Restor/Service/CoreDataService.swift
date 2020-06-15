@@ -19,6 +19,8 @@ public enum RecordType: String, Hashable {
     case requestMethodData = "RequestMethodData"
     case workspace = "Workspace"
     case history = "History"
+    case env = "Env"
+    case envVar = "EnvVar"
     // CloudKit specific
     case zone = "Zone"
     
@@ -45,6 +47,10 @@ public enum RecordType: String, Hashable {
             return self.zone
         case "hs":
             return self.history
+        case "en":
+            return self.env
+        case "ev":
+            return self.envVar
         default:
             return nil
         }
@@ -72,6 +78,10 @@ public enum RecordType: String, Hashable {
             return "zn"
         case .history:
             return "hs"
+        case .env:
+            return "en"
+        case .envVar:
+            return "ev"
         }
     }
     
@@ -85,7 +95,7 @@ public enum RecordType: String, Hashable {
     
     /// All data record type
     static let allCases: [RecordType] = [RecordType.workspace, RecordType.project, RecordType.request, RecordType.requestBodyData, RecordType.requestData,
-                                         RecordType.requestMethodData, RecordType.file, RecordType.image]
+                                         RecordType.requestMethodData, RecordType.file, RecordType.image, RecordType.env, RecordType.envVar]
 }
 
 class CoreDataService {
@@ -221,6 +231,14 @@ class CoreDataService {
     
     func historyId() -> String {
         return "\(RecordType.prefix(for: .history))\(self.utils.genRandomString())"
+    }
+    
+    func envId() -> String {
+        return "\(RecordType.prefix(for: .env))\(self.utils.genRandomString())"
+    }
+    
+    func envVarId() -> String {
+        return "\(RecordType.prefix(for: .envVar))\(self.utils.genRandomString())"
     }
     
     // MARK: - Sort
@@ -1257,13 +1275,14 @@ class CoreDataService {
         return x
     }
     
-    func getEnv(name: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnv? {
+    func getEnv(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnv? {
         var x: EEnv?
         let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EEnv>(entityName: "EEnv")
-            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "name == %@", name)
-                : NSPredicate(format: "name == %@ AND markForDelete == %hhd", name, includeMarkForDelete!)
+            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "id == %@", id)
+                : NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete!)
+            fr.fetchLimit = 1
             do {
                 x = try moc.fetch(fr).first
             } catch let error {
@@ -1273,7 +1292,7 @@ class CoreDataService {
         return x
     }
 
-    func getEnvs(_ includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EEnv] {
+    func getEnvs(includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EEnv] {
         var xs: [EEnv] = []
         let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
@@ -1284,6 +1303,39 @@ class CoreDataService {
                 xs = try moc.fetch(fr)
             } catch let error {
                 Log.error("Error getting envs: \(error)")
+            }
+        }
+        return xs
+    }
+    
+    func getEnvVar(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnvVar? {
+        var x: EEnvVar?
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EEnvVar>(entityName: "EEnvVar")
+            fr.predicate = includeMarkForDelete == nil ? NSPredicate(format: "id == %@", id)
+                : NSPredicate(format: "id == %@ AND markForDelete == %hhd", id, includeMarkForDelete!)
+            fr.fetchLimit = 1
+            do {
+                x = try moc.fetch(fr).first
+            } catch let error {
+                Log.error("Error fetching env: \(error)")
+            }
+        }
+        return x
+    }
+    
+    func getEnvVars(includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EEnvVar] {
+        var xs: [EEnvVar] = []
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EEnvVar>(entityName: "EEnvVar")
+            if includeMarkForDelete != nil { fr.predicate = NSPredicate(format: "markForDelete == %hhd", includeMarkForDelete!) }
+            fr.fetchBatchSize = self.fetchBatchSize
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error getting env vars: \(error)")
             }
         }
         return xs
@@ -1682,9 +1734,31 @@ class CoreDataService {
         let ts = Date().currentTimeNanos()
         let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
-            if let isExists = checkExists, isExists, let data = self.getEnv(name: name, ctx: ctx) { x = data }
+            let envId = self.envId()
+            if let isExists = checkExists, isExists, let data = self.getEnv(id: envId, ctx: ctx) { x = data }
             let data = x != nil ? x! : EEnv(context: moc)
+            data.id = envId
             data.name = name
+            data.created = x == nil ? ts: x!.created
+            data.modified = ts
+            data.changeTag = ts
+            data.version = x == nil ? 0 : x!.version
+            x = data
+        }
+        return x
+    }
+
+    func createEnvVar(name: String, value: String, id: String? = CoreDataService.shared.envVarId(), checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnvVar? {
+        var x: EEnvVar?
+        let ts = Date().currentTimeNanos()
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            let envVarId = id == nil ? self.envVarId() : id!
+            if let isExists = checkExists, isExists, let data = self.getEnvVar(id: envVarId, ctx: ctx) { x = data }
+            let data = x != nil ? x! : EEnvVar(context: moc)
+            data.id = envVarId
+            data.name = name
+            data.value = value as NSString
             data.created = x == nil ? ts: x!.created
             data.modified = ts
             data.changeTag = ts
@@ -1831,6 +1905,16 @@ class CoreDataService {
     func deleteHistory(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) {
         let moc = self.getMainMOC(ctx: ctx)
         self.deleteEntity(self.getHistory(id: id, includeMarkForDelete: nil, ctx: moc))
+    }
+    
+    func deleteEnv(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) {
+        let moc = self.getMainMOC(ctx: ctx)
+        self.deleteEntity(self.getEnv(id: id, includeMarkForDelete: nil, ctx: moc))
+    }
+    
+    func deleteEnvVar(id: String, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) {
+        let moc = self.getMainMOC(ctx: ctx)
+        self.deleteEntity(self.getEnvVar(id: id, includeMarkForDelete: nil, ctx: moc))
     }
     
     /// Delete the entity with the given id.

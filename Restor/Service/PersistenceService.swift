@@ -149,12 +149,14 @@ class PersistenceService {
         case zoneChange = "zone-change"  // default zone change
         case databaseChange = "database-change"
         case historyChange = "history-change"
+        case envChange = "env-change"
+        case envVarChange = "env-var-change"
         
         static var allCases: [String] {
             return [SubscriptionId.fileChange.rawValue, SubscriptionId.imageChange.rawValue, SubscriptionId.projectChange.rawValue,
                     SubscriptionId.requestChange.rawValue, SubscriptionId.requestBodyChange.rawValue, SubscriptionId.requestDataChange.rawValue,
                     SubscriptionId.requestMethodChange.rawValue, SubscriptionId.workspaceChange.rawValue, SubscriptionId.databaseChange.rawValue,
-                    SubscriptionId.historyChange.rawValue]
+                    SubscriptionId.historyChange.rawValue, SubscriptionId.envChange.rawValue, SubscriptionId.envVarChange.rawValue]
         }
     }
     
@@ -169,6 +171,8 @@ class PersistenceService {
         case image = "image-cursor-key"
         case zone = "zone-cursor-key"
         case history = "history-cursor-key"
+        case env = "env-cursor-key"
+        case envVar = "env-var-cursor-key"
         
         init(type: RecordType) {
             switch type {
@@ -192,6 +196,10 @@ class PersistenceService {
                 self = .zone
             case .history:
                 self = .history
+            case .env:
+                self = .env
+            case .envVar:
+                self = .envVar
             }
         }
     }
@@ -388,7 +396,7 @@ class PersistenceService {
             return self.fileCache.get(entityId)
         case .image:
             return self.imageCache.get(entityId)
-        case .zone, .history:
+        case .zone, .history, .env, .envVar:
             return nil
         }
     }
@@ -411,7 +419,7 @@ class PersistenceService {
             self.fileCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
         case .image:
             self.imageCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .zone, .history:
+        case .zone, .history, .env, .envVar:
             break
         }
     }
@@ -825,6 +833,10 @@ class PersistenceService {
             self.updateImageDataFromCloud(record)
         case .history:
             self.updateHistoryFromCloud(record)
+        case .env:
+            self.updateEnvFromCloud(record)
+        case .envVar:
+            self.updateEnvVarFromCloud(record)
         case .none:
             Log.error("Unknown record: \(record)")
         }
@@ -864,6 +876,10 @@ class PersistenceService {
             return SubscriptionId.zoneChange.rawValue
         case .history:
             return SubscriptionId.historyChange.rawValue
+        case .env:
+            return SubscriptionId.envChange.rawValue
+        case .envVar:
+            return SubscriptionId.envVarChange.rawValue
         }
     }
     
@@ -912,6 +928,14 @@ class PersistenceService {
         return self.isServerLatest(local: local, server: server) ? server : local
     }
     
+    func mergeEnv(local: CKRecord, server: CKRecord) -> CKRecord {
+        return self.isServerLatest(local: local, server: server) ? server : local
+    }
+    
+    func mergeEnvVar(local: CKRecord, server: CKRecord) -> CKRecord {
+        return self.isServerLatest(local: local, server: server) ? server : local
+    }
+    
     func mergeRecords(local: CKRecord?, server: CKRecord?, recordType: String) -> CKRecord? {
         guard let client = local, let remote = server, let type = RecordType(rawValue: recordType) else { return nil }
         switch type {
@@ -935,6 +959,10 @@ class PersistenceService {
             return server
         case .history:
             return self.mergeHistory(local: client, server: remote)
+        case .env:
+            return self.mergeEnv(local: client, server: remote)
+        case .envVar:
+            return self.mergeEnvVar(local: client, server: remote)
         }
     }
     
@@ -1137,6 +1165,51 @@ class PersistenceService {
         }
     }
     
+    func updateEnvFromCloud(_ record: CKRecord) {
+        let ctx = self.syncFromCloudCtx!
+        ctx.performAndWait {
+            let envId = record.id()
+            let name = record["name"] as? String ?? ""
+            var env = self.localdb.getEnv(id: envId, ctx: ctx)
+            var isNew = false
+            if env == nil {
+                env = self.localdb.createEnv(name: name, checkExists: false, ctx: ctx)
+                isNew = true
+            }
+            guard let envData = env else { return }
+            if isNew || envData.changeTag < record.changeTag {  // => server has new copy
+                envData.updateFromCKRecord(record, ctx: ctx)
+                envData.isSynced = true
+                self.localdb.saveMainContext()
+                Log.debug("Env data synced")
+                self.nc.post(name: .envDidSync, object: self)
+            }
+        }
+    }
+    
+    func updateEnvVarFromCloud(_ record: CKRecord) {
+        let ctx = self.syncFromCloudCtx!
+        ctx.performAndWait {
+            let envId = record.id()
+            let name = record["name"] as? String ?? ""
+            let value = record["value"] as? String ?? ""
+            var envVar = self.localdb.getEnvVar(id: envId, ctx: ctx)
+            var isNew = false
+            if envVar == nil {
+                envVar = self.localdb.createEnvVar(name: name, value: value, id: envId, checkExists: false, ctx: ctx)
+                isNew = true
+            }
+            guard let envVarData = envVar else { return }
+            if isNew || envVarData.changeTag < record.changeTag {  // => server has new copy
+                envVarData.updateFromCKRecord(record, ctx: ctx)
+                envVarData.isSynced = true
+                self.localdb.saveMainContext()
+                Log.debug("EnvVar data synced")
+                self.nc.post(name: .envVarDidSync, object: self)
+            }
+        }
+    }
+    
     func cloudRecordDidChange(_ record: CKRecord) {
         let type = RecordType(rawValue: record.recordType)
         switch type {
@@ -1160,6 +1233,10 @@ class PersistenceService {
             self.updateWorkspaceFromCloud(record)
         case .history:
             self.updateHistoryFromCloud(record)
+        case .env:
+            self.updateEnvFromCloud(record)
+        case .envVar:
+            self.updateEnvVarFromCloud(record)
         case .none:
             Log.error("Unknown record: \(record)")
         }
@@ -1221,6 +1298,16 @@ class PersistenceService {
         self.localdb.deleteHistory(id: id, ctx: ctx)
     }
     
+    func envDidDeleteFromCloud(_ id: String) {
+        let ctx = self.syncFromCloudCtx!
+        self.localdb.deleteEnv(id: id, ctx: ctx)
+    }
+    
+    func envVarDidDeleteFromCloud(_ id: String) {
+        let ctx = self.syncFromCloudCtx!
+        self.localdb.deleteEnvVar(id: id, ctx: ctx)
+    }
+    
     func cloudRecordDidDelete(_ recordID: CKRecord.ID) {
         Log.debug("cloud record did delete: \(recordID)")
         let id = self.ck.entityID(recordID: recordID)
@@ -1244,6 +1331,10 @@ class PersistenceService {
             self.imageDataDidDeleteFromCloud(id)
         case .history:
             self.historyDidDeleteFromCloud(id)
+        case .env:
+            self.envDidDeleteFromCloud(id)
+        case .envVar:
+            self.envVarDidDeleteFromCloud(id)
         case .zone:
             break
         case .none:

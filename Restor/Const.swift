@@ -65,6 +65,8 @@ extension Notification.Name {
     static let fileDataDidSync = Notification.Name("file-data-did-sync")
     static let imageDataDidSync = Notification.Name("image-data-did-sync")
     static let historyDidSync = Notification.Name("history-did-sync")
+    static let envDidSync = Notification.Name("env-did-sync")
+    static let envVarDidSync = Notification.Name("env-var-did-sync")
     static let databaseWillUpdate = Notification.Name("database-will-update")
     static let databaseDidUpdate = Notification.Name("database-did-update")
 }

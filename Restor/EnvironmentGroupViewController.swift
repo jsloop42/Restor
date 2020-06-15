@@ -73,7 +73,8 @@ extension EnvironmentGroupViewController: UITableViewDelegate, UITableViewDataSo
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let env = self.frc.object(at: indexPath)
         if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envEditVC.rawValue) as? EnvironmentEditViewController {
-            vc.envName = env.getName()
+            vc.env = env
+            vc.mode = .viewEnv
             self.navigationController?.pushViewController(vc, animated: true)
         }
     }

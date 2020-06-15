@@ -14,7 +14,7 @@ class EEnv: NSManagedObject, Entity {
     public var recordType: String { return "Env" }
     
     public func getId() -> String {
-        return self.name ?? ""
+        return self.id ?? ""
     }
     
     public func getWsId() -> String {
@@ -71,6 +71,7 @@ class EEnv: NSManagedObject, Entity {
             record["created"] = self.created as CKRecordValue
             record["modified"] = self.modified as CKRecordValue
             record["changeTag"] = self.changeTag as CKRecordValue
+            record["id"] = (self.id ?? "") as CKRecordValue
             record["name"] = (self.name ?? "") as CKRecordValue
             record["version"] = self.version as CKRecordValue
         }
@@ -82,6 +83,7 @@ class EEnv: NSManagedObject, Entity {
                 if let x = record["created"] as? Int64 { self.created = x }
                 if let x = record["modified"] as? Int64 { self.modified = x }
                 if let x = record["changeTag"] as? Int64 { self.changeTag = x }
+                if let x = record["id"] as? String { self.id = x }
                 if let x = record["name"] as? String { self.name = x }
                 if let x = record["version"] as? Int64 { self.version = x }
             }
