@@ -54,6 +54,7 @@ class EnvEditCell: UITableViewCell, UITextFieldDelegate {
 
 class EnvironmentEditViewController: UITableViewController {
     @IBOutlet weak var nameCell: EnvEditCell!
+    @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var valueCell: EnvEditCell!
     @IBOutlet weak var doneBtn: UIButton!
     @IBOutlet weak var cancelBtn: UIButton!
@@ -111,17 +112,17 @@ class EnvironmentEditViewController: UITableViewController {
         self.view.backgroundColor = App.Color.tableViewBg
         switch self.mode {
         case .addEnv:
-            self.navigationItem.title = "Add Environment"
+            self.titleLabel.text = "Add Environment"
         case .editEnv:
-            self.navigationItem.title = "Edit Environment"
+            self.titleLabel.text = "Edit Environment"
         case .viewEnv:
-            self.navigationItem.title = ""
+            self.titleLabel.text = ""
         case .addEnvVar:
-            self.navigationItem.title = "Add a Variable"
+            self.titleLabel.text = "Add Variable"
         case .editEnvVar:
-            self.navigationItem.title = "Edit a Variable"
+            self.titleLabel.text = "Edit Variable"
         case .viewEnvVar:
-            self.navigationItem.title = ""
+            self.titleLabel.text = ""
         }
         self.disableDoneButton()
     }

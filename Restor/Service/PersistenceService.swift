@@ -111,6 +111,9 @@ class PersistenceService {
     private var wsSyncFrc: NSFetchedResultsController<EWorkspace>!
     private var projSyncFrc: NSFetchedResultsController<EProject>!
     private var reqSyncFrc: NSFetchedResultsController<ERequest>!
+    private var historySyncFrc: NSFetchedResultsController<EHistory>!
+    private var envSyncFrc: NSFetchedResultsController<EEnv>!
+    private var envVarSyncFrc: NSFetchedResultsController<EEnvVar>!
     private var projDelFrc: NSFetchedResultsController<EProject>!  // Since the back reference gets removed, we need to query them separately
     private var reqDelFrc: NSFetchedResultsController<ERequest>!
     private var reqDataDelFrc: NSFetchedResultsController<ERequestData>!
@@ -119,9 +122,14 @@ class PersistenceService {
     private var fileDelFrc: NSFetchedResultsController<EFile>!
     private var imageDelFrc: NSFetchedResultsController<EImage>!
     private var histDelFrc: NSFetchedResultsController<EHistory>!
+    private var envDelFrc: NSFetchedResultsController<EEnv>!
+    private var envVarDelFrc: NSFetchedResultsController<EEnvVar>!
     private var wsSyncIdx = 0
     private var projSyncIdx = 0
     private var reqSyncIdx = 0
+    private var historySyncIdx = 0
+    private var envSyncIdx = 0
+    private var envVarSyncIdx = 0
     private var projDelSyncIdx = 0
     private var reqDelSyncIdx = 0
     private var reqDataDelSyncIdx = 0
@@ -130,6 +138,8 @@ class PersistenceService {
     private var fileDelSyncIdx = 0
     private var imageDelSyncIdx = 0
     private var historyDelSyncIdx = 0
+    private var envDelSyncIdx = 0
+    private var envVarDelSyncIdx = 0
     private var hasMoreZonesToQuery = false
     private var zonesToSync: [CKRecord] = []
     private var zonesToSyncInProgress: Set<CKRecord> = Set()
@@ -559,6 +569,60 @@ class PersistenceService {
                 if done && self.reqSyncIdx < len { done = false }
             }
         }
+        if self.historySyncFrc == nil { self.historySyncFrc = self.localdb.getHistoriesToSync(ctx: self.syncToCloudCtx) }
+        self.syncToCloudCtx.perform {
+            if let xs = self.historySyncFrc.fetchedObjects {
+                start = self.historySyncIdx
+                len = xs.count
+                count = 0
+                var hist: EHistory!
+                for i in start..<len {
+                    hist = xs[i]
+                    self.saveHistoryToCloud(hist)
+                    self.syncToCloudSaveIds.insert(hist.getId())
+                    self.historySyncIdx += 1
+                    if count == 3 { break }
+                    count += 1
+                }
+                if done && self.historySyncIdx < len { done = false }
+            }
+        }
+        if self.envSyncFrc == nil { self.envSyncFrc = self.localdb.getEnvsToSync(ctx: self.syncToCloudCtx) }
+        self.syncToCloudCtx.perform {
+            if let xs = self.envSyncFrc.fetchedObjects {
+                start = self.envSyncIdx
+                len = xs.count
+                count = 0
+                var env: EEnv!
+                for i in start..<len {
+                    env = xs[i]
+                    self.saveEnvToCloud(env)
+                    self.syncToCloudSaveIds.insert(env.getId())
+                    self.envSyncIdx += 1
+                    if count == 3 { break }
+                    count += 1
+                }
+                if done && self.envSyncIdx < len { done = false }
+            }
+        }
+        if self.envVarSyncFrc == nil { self.envVarSyncFrc = self.localdb.getEnvVarsToSync(ctx: self.syncToCloudCtx) }
+        self.syncToCloudCtx.perform {
+            if let xs = self.envVarSyncFrc.fetchedObjects {
+                start = self.envVarSyncIdx
+                len = xs.count
+                count = 0
+                var envVar: EEnvVar!
+                for i in start..<len {
+                    envVar = xs[i]
+                    self.saveEnvVarToCloud(envVar)
+                    self.syncToCloudSaveIds.insert(envVar.getId())
+                    self.envVarSyncIdx += 1
+                    if count == 3 { break }
+                    count += 1
+                }
+                if done && self.envVarSyncIdx < len { done = false }
+            }
+        }
         // Delete entites marked for delete
         var delxs: [Entity] = []
         let deleteEntities: () -> Void = {
@@ -718,9 +782,48 @@ class PersistenceService {
                 if done && self.historyDelSyncIdx < len { done = false }
             }
         }
+        deleteEntities()
+        // Env
+        if self.envDelFrc == nil { self.envDelFrc = self.localdb.getDataMarkedForDelete(obj: EEnv.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<EEnv> }
+        self.syncToCloudCtx.perform {
+            if self.envDelFrc != nil, let xs = self.envDelFrc.fetchedObjects {
+                start = self.envDelSyncIdx
+                len = xs.count
+                var env: EEnv!
+                for i in start..<len {
+                    env = xs[i]
+                    delxs.append(env)
+                    self.syncToCloudDeleteIds.insert(env.getId())
+                    self.envDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.envDelSyncIdx < len { done = false }
+            }
+        }
+        deleteEntities()
+        // Env Variable
+        if self.envVarDelFrc == nil { self.envVarDelFrc = self.localdb.getDataMarkedForDelete(obj: EEnvVar.self, ctx: self.syncToCloudCtx) as? NSFetchedResultsController<EEnvVar> }
+        self.syncToCloudCtx.perform {
+            if self.envVarDelFrc != nil, let xs = self.envVarDelFrc.fetchedObjects {
+                start = self.envVarDelSyncIdx
+                len = xs.count
+                var envVar: EEnvVar!
+                for i in start..<len {
+                    envVar = xs[i]
+                    delxs.append(envVar)
+                    self.syncToCloudDeleteIds.insert(envVar.getId())
+                    self.envVarDelSyncIdx += 1
+                    if count == 7 { break }
+                    count += 1
+                }
+                if done && self.envVarDelSyncIdx < len { done = false }
+            }
+        }
         self.deleteEntitesFromCloud(delxs, ctx: self.syncToCloudCtx)
         delxs = []
         if done { self.isSyncToCloudInProgress = false }
+        // TODO: delete env, env vars
         Log.debug("sync to cloud queued - saves: \(self.syncToCloudSaveIds.count), deletes: \(self.syncToCloudDeleteIds.count)")
         self.checkSyncToCloudState()
     }

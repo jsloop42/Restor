@@ -53,7 +53,10 @@ class EnvironmentGroupViewController: UIViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add button did tap")
-        UI.pushScreen(self.navigationController!, storyboard: self.storyboard!, storyboardId: StoryboardId.envEditVC.rawValue)
+        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envEditVC.rawValue) as? EnvironmentEditViewController {
+            vc.mode = .addEnv
+            self.present(vc, animated: true, completion: nil)
+        }
     }
 }
 

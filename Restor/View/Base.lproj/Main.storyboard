@@ -883,6 +883,7 @@
                                                         <constraint firstItem="Gt9-cs-KGp" firstAttribute="top" secondItem="MjF-5n-F30" secondAttribute="top" constant="16" id="PXm-ks-LFh"/>
                                                         <constraint firstItem="Jpe-Ei-fqD" firstAttribute="firstBaseline" secondItem="Gt9-cs-KGp" secondAttribute="firstBaseline" constant="1" id="RnG-qK-4kr"/>
                                                         <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="Jpe-Ei-fqD" secondAttribute="trailing" constant="20" symbolic="YES" id="cxc-gd-cLE"/>
+                                                        <constraint firstItem="4Jw-hS-yIA" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="Gt9-cs-KGp" secondAttribute="trailing" constant="8" symbolic="YES" id="dX8-lZ-bFB"/>
                                                         <constraint firstItem="Gt9-cs-KGp" firstAttribute="centerX" secondItem="MjF-5n-F30" secondAttribute="centerX" id="kaY-mw-r5Z"/>
                                                         <constraint firstAttribute="trailing" secondItem="4Jw-hS-yIA" secondAttribute="trailing" constant="21" id="uJi-h5-TK7"/>
                                                         <constraint firstItem="Jpe-Ei-fqD" firstAttribute="leading" secondItem="MjF-5n-F30" secondAttribute="leading" constant="21" id="zfz-6Z-ias"/>
@@ -1097,6 +1098,7 @@
                         <outlet property="cancelBtn" destination="Jpe-Ei-fqD" id="0yh-oW-dMG"/>
                         <outlet property="doneBtn" destination="4Jw-hS-yIA" id="7ol-ok-OAL"/>
                         <outlet property="nameCell" destination="gEn-ld-B67" id="33d-Ci-S5N"/>
+                        <outlet property="titleLabel" destination="Gt9-cs-KGp" id="Fpn-zn-Am3"/>
                         <outlet property="valueCell" destination="fTu-Yc-f7r" id="edm-nk-n91"/>
                     </connections>
                 </tableViewController>
