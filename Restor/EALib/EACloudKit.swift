@@ -69,7 +69,9 @@ class EACloudKit {
     private let zonesKey = "zones-key"
     private let dbChangeTokenKey = "db-change-token"
     private let defaultZoneName = "_defaultZone"
+    private let appZoneName = "appZoneEAx"
     private var _defaultZoneID: CKRecordZone.ID!
+    private var _appZoneID: CKRecordZone.ID!
     /// Number of retry operations currently active. This is used for circuit breaking.
     private var networkRetryOpsCount = 0
     /// Maximum number of retry operations before which circuit breaker trips.
@@ -235,7 +237,14 @@ class EACloudKit {
     func zoneID(subscriptionID: CKSubscription.ID) -> CKRecordZone.ID {
         return self.zoneID(with: subscriptionID.components(separatedBy: ".").last ?? "")
     }
-    
+
+    /// Returns the app zone ID `_appZone`
+    func appZoneID() -> CKRecordZone.ID {
+        if self._appZoneID == nil { self._appZoneID = CKRecordZone.ID(zoneName: self.appZoneName, ownerName: self.currentUsername()) }
+        return self._appZoneID
+    }
+
+    /// Returns the default zone ID `_defaultZone`
     func defaultZoneID() -> CKRecordZone.ID {
         if self._defaultZoneID == nil { self._defaultZoneID = CKRecordZone.ID(zoneName: self.defaultZoneName, ownerName: self.currentUsername()) }
         return self._defaultZoneID
@@ -947,7 +956,28 @@ class EACloudKit {
         if isForce! { op.savePolicy = .changedKeys }
         let handleError: (Error?) -> Void = { error in
             if let err = error as? CKError {
-                if err.isNetworkFailure() {
+                if err.isZoneNotFound() {  // Zone not found, create one
+                    self.createZone(recordZoneId: records.first!.recordID.zoneID) { result in
+                        switch result {
+                        case .success(_):
+                            self.saveRecords(records, completion: completion)
+                        case .failure(let error):
+                            completion(.failure(error)); return
+                        }
+                    }
+                } else if err.isRecordExists() {
+                    Log.error("CK: Error saving record. Record already exists.")
+                    if count! >= 2 { completion(.failure(err)); return }  // Tried three time.
+                    // Merge in the changes, save the new record
+                    let (local, server) = err.getMergeRecords()
+                    if let merged = PersistenceService.shared.mergeRecords(local: local, server: server, recordType: local?.recordType ?? "") {
+                        var xs: [CKRecord] = records.filter { record -> Bool in record.recordID != merged.recordID }
+                        xs.append(merged)
+                        self.saveRecords(xs, count: count! + 1, isForce: true, completion: completion)
+                    } else {
+                        completion(.failure(err))
+                    }
+                } else if err.isNetworkFailure() {
                     if RetryTimer.saveRecords == nil && self.canRetry() {
                         RetryTimer.saveRecords = EARepeatTimer(block: {
                             if !self.isOffline { self.saveRecords(records, count: count, isForce: isForce, completion: completion) }
@@ -974,33 +1004,10 @@ class EACloudKit {
             Log.debug("CK: saved record \(record)")
             lock.unlock()
         }
-        op.modifyRecordsCompletionBlock = { [unowned self] _, _, error in
+        op.modifyRecordsCompletionBlock = { _, _, error in
             guard error == nil else {
                 guard let ckerror = error as? CKError else { completion(.failure(error!)); return }
-                if ckerror.isZoneNotFound() {  // Zone not found, create one
-                    self.createZone(recordZoneId: records.first!.recordID.zoneID) { result in
-                        switch result {
-                        case .success(_):
-                            self.saveRecords(records, completion: completion)
-                        case .failure(let error):
-                            completion(.failure(error)); return
-                        }
-                    }
-                } else if ckerror.isRecordExists() {
-                    Log.error("CK: Error saving record. Record already exists.")
-                    if count! >= 2 { completion(.failure(ckerror)); return }  // Tried three time.
-                    // Merge in the changes, save the new record
-                    let (local, server) = ckerror.getMergeRecords()
-                    if let merged = PersistenceService.shared.mergeRecords(local: local, server: server, recordType: local?.recordType ?? "") {
-                        var xs: [CKRecord] = records.filter { record -> Bool in record.recordID != merged.recordID }
-                        xs.append(merged)
-                        self.saveRecords(xs, count: count! + 1, isForce: true, completion: completion)
-                    } else {
-                        completion(.failure(ckerror))
-                    }
-                } else {
-                    handleError(ckerror)
-                }
+                handleError(ckerror)
                 return
             }
             if RetryTimer.saveRecords != nil { RetryTimer.saveRecords.stop(); RetryTimer.saveRecords = nil }
@@ -1252,7 +1259,7 @@ extension CKError {
     }
     
     public func isZoneNotFound() -> Bool {
-        return self.isSpecificErrorCode(code: .zoneNotFound)
+        return self.isSpecificErrorCode(code: .zoneNotFound) || self.isInvalidZoneIdentifier()
     }
     
     public func isUnknownItem() -> Bool {
@@ -1265,6 +1272,10 @@ extension CKError {
             return type
         }
         return nil
+    }
+
+    private func isInvalidZoneIdentifier() -> Bool {
+        return self.localizedDescription.lowercased().contains("invalid zone identifier")
     }
     
     public func isConflict() -> Bool {

@@ -1770,6 +1770,26 @@ class PersistenceService {
         }
     }
     
+    func saveEnvToCloud(_ env: EEnv) {
+        env.managedObjectContext?.perform {
+            let zoneID = self.ck.appZoneID()
+            let ckEnvID = self.ck.recordID(entityId: env.getId(), zoneID: zoneID)
+            let ckEnv = self.ck.createRecord(recordID: ckEnvID, recordType: env.recordType)
+            env.updateCKRecord(ckEnv)
+            self.saveToCloud(record: ckEnv, entity: env)
+        }
+    }
+
+    func saveEnvVarToCloud(_ envVar: EEnvVar) {
+        envVar.managedObjectContext?.perform {
+            let zoneID = self.ck.appZoneID()
+            let ckEnvVarID = self.ck.recordID(entityId: envVar.getId(), zoneID: zoneID)
+            let ckEnvVar = self.ck.createRecord(recordID: ckEnvVarID, recordType: envVar.recordType)
+            envVar.updateCKRecord(ckEnvVar)
+            self.saveToCloud(record: ckEnvVar, entity: envVar)
+        }
+    }
+    
     func zoneDeferredSaveModel(ws: EWorkspace) -> DeferredSaveModel {
         var ckzn: CKRecord!
         var wsId: String!

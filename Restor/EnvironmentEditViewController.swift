@@ -56,7 +56,8 @@ class EnvironmentEditViewController: UITableViewController {
     @IBOutlet weak var nameCell: EnvEditCell!
     @IBOutlet weak var valueCell: EnvEditCell!
     var mode: Mode = .addEnv
-    private let localDB = CoreDataService.shared
+    private lazy var localDB = { CoreDataService.shared }()
+    private lazy var db = { PersistenceService.shared }()
     lazy var doneBtn: UIButton = {
         let btn = UI.getNavbarTopDoneButton()
         btn.addTarget(self, action: #selector(self.doneDidTap), for: .touchUpInside)
@@ -175,7 +176,7 @@ class EnvironmentEditViewController: UITableViewController {
         Log.debug("done btn did tap")
         DispatchQueue.main.async {
             if self.mode == .addEnv || self.mode == .addEnvVar {
-                _ = self.localDB.createEnv(name: self.name)
+                self.env = self.localDB.createEnv(name: self.name)
             } else {
                 if self.mode == .editEnv {
                     self.mode = .viewEnv
@@ -190,6 +191,7 @@ class EnvironmentEditViewController: UITableViewController {
                 self.tableView.reloadData()
             }
             self.localDB.saveMainContext()
+            if let x = self.env { self.db.saveEnvToCloud(x) }
             if self.mode == .addEnv || self.mode == .addEnvVar {
                 self.close()
             } else {

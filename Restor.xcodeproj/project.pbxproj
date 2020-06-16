@@ -430,6 +430,7 @@
 			children = (
 				9E49EC012402FF1F00DAA260 /* EADocumentPicker.swift */,
 				9E223D54243626E000229855 /* EACommon.swift */,
+				9EC1F94D2426995A005BDD0A /* EACloudKit.swift */,
 				9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */,
 				9E4334832416C4AA002452EB /* EAFileManager.swift */,
 				9E7B5847242A9BAB00997302 /* EALFUCache.swift */,
@@ -490,7 +491,6 @@
 		9ED99AFA240AF75B0064BDCC /* Service */ = {
 			isa = PBXGroup;
 			children = (
-				9EC1F94D2426995A005BDD0A /* EACloudKit.swift */,
 				9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */,
 				9ED99AFD240AF7940064BDCC /* PersistenceService.swift */,
 			);
