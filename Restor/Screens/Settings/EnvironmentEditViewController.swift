@@ -74,8 +74,8 @@ class EnvironmentEditViewController: UITableViewController {
     var backBtnItem: UIBarButtonItem?
     var env: EEnv?
     var envVar: EEnvVar?
-    var nameok = false
-    var valueok = false
+    var addok = false
+    var editok = false
     
     deinit {
         Log.debug("deinit EnvironmentEditViewController")
@@ -126,6 +126,8 @@ class EnvironmentEditViewController: UITableViewController {
             self.titleLabel.text = "Add Environment"
         case .editEnv:
             self.titleLabel.text = "Edit Environment"
+            self.name = self.env?.name ?? ""
+            self.editok = true
         case .viewEnv:
             self.titleLabel.text = ""
         case .addEnvVar:
@@ -133,6 +135,9 @@ class EnvironmentEditViewController: UITableViewController {
             self.nameCell.textField.placeholder = "server-url"
         case .editEnvVar:
             self.titleLabel.text = "Edit Variable"
+            self.name = self.envVar?.name ?? ""
+            self.value = self.envVar?.value as? String ?? ""
+            self.editok = true
         case .viewEnvVar:
             self.titleLabel.text = ""
         }
@@ -142,24 +147,38 @@ class EnvironmentEditViewController: UITableViewController {
     func close() {
         self.dismiss(animated: true, completion: nil)
     }
-    
+
+    func saveEnv() {
+        self.localDB.saveMainContext()
+        self.db.saveEnvToCloud(self.env!)
+    }
+
+    func saveEnvVar() {
+        self.localDB.saveMainContext()
+        self.db.saveEnvVarToCloud(self.envVar!)
+    }
+
     @objc func doneDidTap(_ sender: Any) {
         Log.debug("done btn did tap")
-        if self.mode == .addEnv {
+        switch self.mode {
+        case .addEnv:
             self.env = self.localDB.createEnv(name: self.name)
-        } else if self.mode == .editEnv {
+            self.saveEnv()
+        case .editEnv:
             self.env?.name = self.name
-        } else if self.mode == .addEnvVar {
+            self.saveEnv()
+        case .addEnvVar:
             guard let envId = self.env?.getId() else { return }
             self.envVar = self.localDB.createEnvVar(envId: envId, name: self.name, value: self.value)
             self.envVar?.env = self.env
-        } else if self.mode == .editEnvVar {
+            self.saveEnvVar()
+        case .editEnvVar:
             self.envVar?.name = self.name
             self.envVar?.value = self.value as NSString
+            self.saveEnvVar()
+        default:
+            break
         }
-        self.localDB.saveMainContext()
-        if let x = self.env, self.mode == .addEnv || self.mode == .editEnv { self.db.saveEnvToCloud(x) }
-        if let x = self.envVar, self.mode == .addEnvVar || self.mode == .editEnvVar { self.db.saveEnvVarToCloud(x) }
         self.close()
     }
     
@@ -195,6 +214,14 @@ class EnvironmentEditViewController: UITableViewController {
     func updateUI() {
         if self.mode == .viewEnv || self.mode == .editEnv {
             self.nameCell.textField.text = self.env != nil ? self.env!.name : self.name
+        } else if self.mode == .viewEnvVar || self.mode == .editEnvVar {
+            if self.envVar != nil {
+                self.nameCell.textField.text = self.envVar!.name
+                self.valueCell.textField.text = self.envVar!.value as? String ?? ""
+            } else {
+                self.nameCell.textField.text = self.name
+                self.valueCell.textField.text = self.value
+            }
         }
         self.nameCell.mode = self.mode
         self.valueCell.mode = self.mode
@@ -208,40 +235,39 @@ class EnvironmentEditViewController: UITableViewController {
         Log.debug("env edit cell text did change notification")
         if let info = notif.userInfo as? [String: Any], let text = info["text"] as? String {
             let type = info["type"] as? EnvEditCell.CellType == EnvEditCell.CellType.name ? EnvEditCell.CellType.name : EnvEditCell.CellType.value
-            let notEmptyFn: (String) -> Bool = { txt in
-                if txt.trim().isEmpty {
-                    if type == .name {
-                        self.name = ""
-                        self.nameok = false
-                    } else {
-                        self.value = ""
-                        self.valueok = false
-                    }
-                    self.disableDoneButton()
-                    return false
-                }
-                return true
-            }
-            if !notEmptyFn(text) { return }
-            if let name = self.env?.name, name == text {  // same as existing name
+            self.addok = false
+            self.editok = false
+            if text.isEmpty {
                 self.disableDoneButton()
-                self.nameok = false
                 return
             }
-            if (self.mode == .addEnvVar || self.mode == .editEnvVar) && type == .value {
-                if let value = self.envVar?.value as? String, value == text {
-                    self.disableDoneButton()
-                    self.valueok = false
-                    return
-                }
-                self.value = text
-                self.valueok = true
-            }
-            if type == .name {
+            switch self.mode {
+            case .addEnv:
                 self.name = text
-                self.nameok = true
+                self.addok = true
+            case .editEnv:
+                self.name = text
+                if let name = self.env?.name, name != text { self.editok = true }
+            case .addEnvVar:
+                type == .name ? (self.name = text) : (self.value = text)
+                if !self.name.isEmpty && !self.value.isEmpty { self.addok = true }
+            case .editEnvVar:
+                type == .name ? (self.name = text) : (self.value = text)
+                if self.envVar != nil {
+                    if self.envVar!.name != self.name || self.envVar!.value as! String != self.value {
+                        self.editok = true
+                    }
+                }
+            default:
+                break
             }
-            if self.nameok && self.valueok { self.enableDoneButton() }
+        }
+        if (self.mode == .addEnv || self.mode == .addEnvVar) && self.addok {
+            self.enableDoneButton()
+        } else if (self.mode == .editEnv || self.mode == .editEnvVar) && self.editok {
+            self.enableDoneButton()
+        } else {
+            self.disableDoneButton()
         }
     }
     

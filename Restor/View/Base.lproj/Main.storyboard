@@ -1114,11 +1114,11 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <view key="tableFooterView" contentMode="scaleToFill" id="cwi-rI-Svg">
-                            <rect key="frame" x="0.0" y="252.5" width="414" height="70"/>
+                            <rect key="frame" x="0.0" y="254.5" width="414" height="70"/>
                             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                             <subviews>
-                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Variables used in the form {{variable-name}} will be substituted with its value when sending a request." textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="bjB-t0-UJB">
-                                    <rect key="frame" x="26" y="16" width="362" height="54"/>
+                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Variables used in the form {{variable-name}} will be substituted with its value when sending a request." textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" minimumScaleFactor="0.5" translatesAutoresizingMaskIntoConstraints="NO" id="bjB-t0-UJB">
+                                    <rect key="frame" x="26" y="0.0" width="362" height="70"/>
                                     <color key="backgroundColor" name="table-view-bg"/>
                                     <constraints>
                                         <constraint firstAttribute="height" priority="750" constant="49" id="20h-qy-evq"/>
@@ -1130,28 +1130,28 @@
                             </subviews>
                             <color key="backgroundColor" name="table-view-bg"/>
                             <constraints>
-                                <constraint firstItem="bjB-t0-UJB" firstAttribute="top" secondItem="cwi-rI-Svg" secondAttribute="top" constant="16" id="2rE-4k-BAU"/>
+                                <constraint firstItem="bjB-t0-UJB" firstAttribute="top" secondItem="cwi-rI-Svg" secondAttribute="top" id="2rE-4k-BAU"/>
                                 <constraint firstAttribute="trailing" secondItem="bjB-t0-UJB" secondAttribute="trailing" constant="26" id="Bbd-Ca-Owx"/>
                                 <constraint firstAttribute="bottom" secondItem="bjB-t0-UJB" secondAttribute="bottom" id="Uci-r9-PQ6"/>
                                 <constraint firstItem="bjB-t0-UJB" firstAttribute="leading" secondItem="cwi-rI-Svg" secondAttribute="leading" constant="26" id="lVF-Lo-3H4"/>
                             </constraints>
                         </view>
                         <prototypes>
-                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="default" indentationWidth="10" reuseIdentifier="envVarCell" id="mzs-Hc-PDd" customClass="EnvVarCell" customModule="Restor" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="28" width="414" height="196.5"/>
+                            <tableViewCell clipsSubviews="YES" contentMode="scaleToFill" preservesSuperviewLayoutMargins="YES" selectionStyle="none" indentationWidth="10" reuseIdentifier="envVarCell" id="mzs-Hc-PDd" customClass="EnvVarCell" customModule="Restor" customModuleProvider="target">
+                                <rect key="frame" x="0.0" y="28" width="414" height="198.5"/>
                                 <autoresizingMask key="autoresizingMask"/>
                                 <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" preservesSuperviewLayoutMargins="YES" insetsLayoutMarginsFromSafeArea="NO" tableViewCell="mzs-Hc-PDd" id="t1d-fp-QTx">
-                                    <rect key="frame" x="0.0" y="0.0" width="414" height="196.5"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="414" height="198.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
                                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="wtQ-ZF-3XP" userLabel="Container View">
-                                            <rect key="frame" x="16" y="0.0" width="382" height="196.5"/>
+                                            <rect key="frame" x="16" y="0.0" width="382" height="198.5"/>
                                             <subviews>
                                                 <stackView opaque="NO" contentMode="scaleToFill" distribution="fillProportionally" translatesAutoresizingMaskIntoConstraints="NO" id="cxG-q4-SsV">
-                                                    <rect key="frame" x="0.0" y="0.0" width="382" height="196.5"/>
+                                                    <rect key="frame" x="0.0" y="0.0" width="382" height="198.5"/>
                                                     <subviews>
                                                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="zgR-76-wQx" userLabel="KV Container View">
-                                                            <rect key="frame" x="0.0" y="0.0" width="382" height="196.5"/>
+                                                            <rect key="frame" x="0.0" y="0.0" width="382" height="198.5"/>
                                                             <subviews>
                                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="252" text="name" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="cYG-hb-Fsg" userLabel="name title label">
                                                                     <rect key="frame" x="0.0" y="8" width="382" height="14.5"/>
@@ -1172,7 +1172,7 @@
                                                                     <nil key="highlightedColor"/>
                                                                 </label>
                                                                 <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="application/json" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="HO9-KH-5Wv" userLabel="value label">
-                                                                    <rect key="frame" x="0.0" y="74" width="382" height="106.5"/>
+                                                                    <rect key="frame" x="0.0" y="74" width="382" height="108.5"/>
                                                                     <fontDescription key="fontDescription" type="system" pointSize="14"/>
                                                                     <nil key="textColor"/>
                                                                     <nil key="highlightedColor"/>
