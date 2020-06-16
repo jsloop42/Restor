@@ -1,8 +1,8 @@
 //
-//  EnvironmentGroupViewController.swift
+//  EnvironmentVariableTableViewController.swift
 //  Restor
 //
-//  Created by jsloop on 19/03/20.
+//  Created by jsloop on 16/06/20.
 //  Copyright © 2020 EstoApps OÜ. All rights reserved.
 //
 
@@ -10,24 +10,30 @@ import Foundation
 import UIKit
 import CoreData
 
-class EnvGroupCell: UITableViewCell {
+class EnvVarCell: UITableViewCell {
     @IBOutlet weak var nameLabel: UILabel!
+    @IBOutlet weak var valueLabel: UILabel!
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+    }
 }
 
-class EnvironmentGroupViewController: UIViewController {
-    @IBOutlet weak var tableView: UITableView!
+class EnvironmentVariableTableViewController: UITableViewController {
     private let app = App.shared
     private let localDB = CoreDataService.shared
-    private var frc: NSFetchedResultsController<EEnv>!
+    var env: EEnv?
+    var frc: NSFetchedResultsController<EEnvVar>!
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        AppState.setCurrentScreen(.envGroup)
+        AppState.setCurrentScreen(.envVar)
         self.updateData()
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        Log.debug("env var table view controller - view did load")
         self.initUI()
     }
     
@@ -37,13 +43,14 @@ class EnvironmentGroupViewController: UIViewController {
         self.view.backgroundColor = App.Color.tableViewBg
         self.tableView.dataSource = self
         self.tableView.delegate = self
-        self.navigationItem.title = "Environments"
+        self.navigationItem.title = "Variables"
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
     }
-
+    
     func updateData() {
+        guard let envId = self.env?.getId() else { return }
         if self.frc != nil { self.frc.delegate = nil }
-        if let _frc = self.localDB.getFetchResultsController(obj: EEnv.self) as? NSFetchedResultsController<EEnv> {
+        if let _frc = self.localDB.getFetchResultsController(obj: EEnvVar.self, predicate: NSPredicate(format: "env.id == %@", envId)) as? NSFetchedResultsController<EEnvVar> {
             self.frc = _frc
             self.frc.delegate = self
             try? self.frc.performFetch()
@@ -53,42 +60,28 @@ class EnvironmentGroupViewController: UIViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add button did tap")
-        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envEditVC.rawValue) as? EnvironmentEditViewController {
-            vc.mode = .addEnv
-            self.present(vc, animated: true, completion: nil)
-        }
-    }
-}
-
-extension EnvironmentGroupViewController: UITableViewDelegate, UITableViewDataSource {
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if self.frc == nil { return 0 }
-        return self.frc.numberOfRows(in: section)
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "envGroupCell", for: indexPath) as! EnvGroupCell
-        cell.nameLabel.text = self.frc.object(at: indexPath).getName()
-        cell.accessoryType = .disclosureIndicator
-        return cell
-    }
-
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let env = self.frc.object(at: indexPath)
-//        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envEditVC.rawValue) as? EnvironmentEditViewController {
-//            vc.env = env
-//            vc.mode = .viewEnv
-//            self.navigationController?.pushViewController(vc, animated: true)
-//        }
     }
     
-    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if self.frc == nil { return 0 }
+        return self.frc.numberOfRows(in: 0)
+    }
+    
+    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "envVarCell", for: indexPath) as! EnvVarCell
+        let envVar = self.frc.object(at: indexPath)
+        cell.nameLabel.text = envVar.name
+        cell.valueLabel.text = envVar.value as? String
+        return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
         let edit = UIContextualAction(style: .normal, title: "Edit") { action, view, completion in
             Log.debug("edit row: \(indexPath)")
-            let env = self.frc.object(at: indexPath)
+            let envVar = self.frc.object(at: indexPath)
             if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envEditVC.rawValue) as? EnvironmentEditViewController {
-                vc.env = env
-                vc.mode = .editEnv
+                vc.envVar = envVar
+                vc.mode = .editEnvVar
                 self.navigationController?.present(vc, animated: true, completion: nil)
                 completion(true)
             } else {
@@ -107,9 +100,9 @@ extension EnvironmentGroupViewController: UITableViewDelegate, UITableViewDataSo
     }
 }
 
-extension EnvironmentGroupViewController: NSFetchedResultsControllerDelegate {
+extension EnvironmentVariableTableViewController: NSFetchedResultsControllerDelegate {
     public func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
-        Log.debug("env list frc did change")
+        Log.debug("env var list frc did change")
         DispatchQueue.main.async {
             if self.navigationController?.topViewController == self {
                 self.tableView.reloadData()

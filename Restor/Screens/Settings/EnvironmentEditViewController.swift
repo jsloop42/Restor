@@ -67,6 +67,7 @@ class EnvironmentEditViewController: UITableViewController {
     var value = ""
     var backBtnItem: UIBarButtonItem?
     var env: EEnv?
+    var envVar: EEnvVar?
     
     deinit {
         Log.debug("deinit EnvironmentEditViewController")

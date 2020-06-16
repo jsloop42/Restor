@@ -59,6 +59,7 @@ class App {
         case request
         case settings
         case envGroup
+        case envVar
         case requestMethodList
         case requestBodyTypeList  // json, xml ..
         case requestBodyFormTypeList  // text, file
@@ -967,6 +968,7 @@ enum StoryboardId: String {
     case responseVC
     case environmentGroupVC
     case envEditVC
+    case envVarVC
     case optionsPickerNav
     case optionsPickerVC
     case popupVC

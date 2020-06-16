@@ -77,6 +77,7 @@
 		9E9DE8C9246C2AE80068F8CE /* RequestListCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9DE8C8246C2AE80068F8CE /* RequestListCoordinator.swift */; };
 		9E9DE8CC246C7DCD0068F8CE /* RestorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */; };
 		9E9E64352492CA6B006B9F5F /* preview.html in Resources */ = {isa = PBXBuildFile; fileRef = 9E9E64342492CA6B006B9F5F /* preview.html */; };
+		9EA8DD972498E66E00D07A3F /* EnvironmentVariableTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA8DD962498E66E00D07A3F /* EnvironmentVariableTableViewController.swift */; };
 		9EB4DC40246061230077DF2A /* RequestTabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */; };
 		9EB78E71242B7AFF009663FE /* EALFUCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB78E70242B7AFF009663FE /* EALFUCacheTests.swift */; };
 		9EB78E73242BE6FF009663FE /* EAQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB78E72242BE6FF009663FE /* EAQueue.swift */; };
@@ -204,6 +205,7 @@
 		9E9DE8C8246C2AE80068F8CE /* RequestListCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListCoordinator.swift; sourceTree = "<group>"; };
 		9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorViewController.swift; sourceTree = "<group>"; };
 		9E9E64342492CA6B006B9F5F /* preview.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = preview.html; sourceTree = "<group>"; };
+		9EA8DD962498E66E00D07A3F /* EnvironmentVariableTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentVariableTableViewController.swift; sourceTree = "<group>"; };
 		9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTabBarViewController.swift; sourceTree = "<group>"; };
 		9EB78E70242B7AFF009663FE /* EALFUCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EALFUCacheTests.swift; sourceTree = "<group>"; };
 		9EB78E72242BE6FF009663FE /* EAQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAQueue.swift; sourceTree = "<group>"; };
@@ -370,9 +372,6 @@
 				9ED99AFA240AF75B0064BDCC /* Service */,
 				9E538DAF2399536B0025C14C /* Model */,
 				9E9DE8CA246C7D8F0068F8CE /* Screens */,
-				9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */,
-				9E6298C224974F2D001B68EB /* EnvironmentEditViewController.swift */,
-				9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */,
 				9E36C413246BEBBD00946726 /* UI State + Coordinator */,
 				9E7585F023A2B24300AD6E8B /* View */,
 				9EE34CA223D9F67C00CA08F2 /* App.swift */,
@@ -415,14 +414,34 @@
 		9E9DE8CA246C7D8F0068F8CE /* Screens */ = {
 			isa = PBXGroup;
 			children = (
+				9EA8DD952498E63B00D07A3F /* Base Classes */,
 				9EFF1FFC24229D8D00E97632 /* Project */,
 				9EE34CA423D9F6C800CA08F2 /* Request */,
 				9E0AD514247ACB4C0099B9A5 /* Response */,
+				9EA8DD942498E61A00D07A3F /* Settings */,
 				9E538DB6239958A10025C14C /* Workspace */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		9EA8DD942498E61A00D07A3F /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				9E6298C224974F2D001B68EB /* EnvironmentEditViewController.swift */,
+				9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */,
+				9EA8DD962498E66E00D07A3F /* EnvironmentVariableTableViewController.swift */,
+				9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		9EA8DD952498E63B00D07A3F /* Base Classes */ = {
+			isa = PBXGroup;
+			children = (
 				9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */,
 				9E18F16C246D9DB1003C888C /* RestorTableViewController.swift */,
 			);
-			path = Screens;
+			path = "Base Classes";
 			sourceTree = "<group>";
 		};
 		9EB79704247DAD7700119ED1 /* EALib */ = {
@@ -710,6 +729,7 @@
 				9EBCAA9F2424F3E100C82508 /* PopupViewController.swift in Sources */,
 				9E18F171246DC051003C888C /* EditRequestState.swift in Sources */,
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
+				9EA8DD972498E66E00D07A3F /* EnvironmentVariableTableViewController.swift in Sources */,
 				9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectListViewController.swift in Sources */,
 				9E36C419246BEC7A00946726 /* WorkspaceListState.swift in Sources */,

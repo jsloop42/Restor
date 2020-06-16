@@ -1325,12 +1325,16 @@ class CoreDataService {
         return x
     }
     
-    func getEnvVars(includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EEnvVar] {
+    func getEnvVars(envId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EEnvVar] {
         var xs: [EEnvVar] = []
         let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
             let fr = NSFetchRequest<EEnvVar>(entityName: "EEnvVar")
-            if includeMarkForDelete != nil { fr.predicate = NSPredicate(format: "markForDelete == %hhd", includeMarkForDelete!) }
+            if includeMarkForDelete != nil {
+                fr.predicate = NSPredicate(format: "env.id == %@ AND markForDelete == %hhd", envId, includeMarkForDelete!)
+            } else {
+                fr.predicate = NSPredicate(format: "env.id == %@", envId)
+            }
             fr.fetchBatchSize = self.fetchBatchSize
             do {
                 xs = try moc.fetch(fr)
