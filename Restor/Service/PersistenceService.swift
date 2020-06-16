@@ -1293,13 +1293,11 @@ class PersistenceService {
     func updateEnvVarFromCloud(_ record: CKRecord) {
         let ctx = self.syncFromCloudCtx!
         ctx.performAndWait {
-            let envId = record.id()
-            let name = record["name"] as? String ?? ""
-            let value = record["value"] as? String ?? ""
-            var envVar = self.localdb.getEnvVar(id: envId, ctx: ctx)
+            let envVarId = record.id()
+            var envVar = self.localdb.getEnvVar(id: envVarId, ctx: ctx)
             var isNew = false
             if envVar == nil {
-                envVar = self.localdb.createEnvVar(name: name, value: value, id: envId, checkExists: false, ctx: ctx)
+                envVar = self.localdb.createEnvVar(id: envVarId, checkExists: false, ctx: ctx)
                 isNew = true
             }
             guard let envVarData = envVar else { return }
@@ -1888,7 +1886,12 @@ class PersistenceService {
             let zoneID = self.ck.appZoneID()
             let ckEnvVarID = self.ck.recordID(entityId: envVar.getId(), zoneID: zoneID)
             let ckEnvVar = self.ck.createRecord(recordID: ckEnvVarID, recordType: envVar.recordType)
-            envVar.updateCKRecord(ckEnvVar)
+            guard let env = envVar.env else { return }
+            // env record
+            let ckEnvID = self.ck.recordID(entityId: env.getId(), zoneID: zoneID)
+            let ckEnv = self.ck.createRecord(recordID: ckEnvID, recordType: env.recordType)
+            env.updateCKRecord(ckEnv)
+            envVar.updateCKRecord(ckEnvVar, env: ckEnv)
             self.saveToCloud(record: ckEnvVar, entity: envVar)
         }
     }

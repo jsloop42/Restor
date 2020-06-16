@@ -1778,13 +1778,12 @@ class CoreDataService {
         return x
     }
     
-    func createEnv(name: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnv? {
+    func createEnv(name: String, envId: String? = CoreDataService.shared.envId(), checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnv? {
         var x: EEnv?
         let ts = Date().currentTimeNanos()
         let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
-            let envId = self.envId()
-            if let isExists = checkExists, isExists, let data = self.getEnv(id: envId, ctx: ctx) { x = data }
+            if let isExists = checkExists, isExists, let data = self.getEnv(id: envId!, ctx: ctx) { x = data }
             let data = x != nil ? x! : EEnv(context: moc)
             data.id = envId
             data.name = name
@@ -1797,7 +1796,7 @@ class CoreDataService {
         return x
     }
 
-    func createEnvVar(name: String, value: String, id: String? = CoreDataService.shared.envVarId(), checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnvVar? {
+    func createEnvVar(envId: String, name: String, value: String, id: String? = CoreDataService.shared.envVarId(), checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnvVar? {
         var x: EEnvVar?
         let ts = Date().currentTimeNanos()
         let moc = self.getMainMOC(ctx: ctx)
@@ -1808,6 +1807,24 @@ class CoreDataService {
             data.id = envVarId
             data.name = name
             data.value = value as NSString
+            data.created = x == nil ? ts: x!.created
+            data.modified = ts
+            data.changeTag = ts
+            data.version = x == nil ? 0 : x!.version
+            x = data
+        }
+        return x
+    }
+    
+    func createEnvVar(id: String? = CoreDataService.shared.envVarId(), checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnvVar? {
+        var x: EEnvVar?
+        let ts = Date().currentTimeNanos()
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            let envVarId = id == nil ? self.envVarId() : id!
+            if let isExists = checkExists, isExists, let data = self.getEnvVar(id: envVarId, ctx: ctx) { x = data }
+            let data = x != nil ? x! : EEnvVar(context: moc)
+            data.id = envVarId
             data.created = x == nil ? ts: x!.created
             data.modified = ts
             data.changeTag = ts

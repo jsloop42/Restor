@@ -19,6 +19,12 @@ class EnvEditCell: UITableViewCell, UITextFieldDelegate {
     @IBOutlet weak var textField: EATextField!
     private let nc = NotificationCenter.default
     var mode: EnvironmentEditViewController.Mode = .addEnv
+    var cellType: CellType = .name
+
+    enum CellType: Int {
+        case name
+        case value
+    }
     
     override func awakeFromNib() {
         super.awakeFromNib()
@@ -48,7 +54,7 @@ class EnvEditCell: UITableViewCell, UITextFieldDelegate {
     
     @objc func textFieldDidChange(_ sender: Any) {
         Log.debug("text field did change")
-        self.nc.post(name: .envEditCellTextDidChange, object: self, userInfo: ["text": self.textField.text ?? ""])
+        self.nc.post(name: .envEditCellTextDidChange, object: self, userInfo: ["text": self.textField.text ?? "", "type": self.cellType])
     }
 }
 
@@ -68,6 +74,8 @@ class EnvironmentEditViewController: UITableViewController {
     var backBtnItem: UIBarButtonItem?
     var env: EEnv?
     var envVar: EEnvVar?
+    var nameok = false
+    var valueok = false
     
     deinit {
         Log.debug("deinit EnvironmentEditViewController")
@@ -111,6 +119,8 @@ class EnvironmentEditViewController: UITableViewController {
         self.app.updateNavigationControllerBackground(self.navigationController)
         self.app.updateViewBackground(self.view)
         self.view.backgroundColor = App.Color.tableViewBg
+        self.nameCell.cellType = .name
+        self.valueCell.cellType = .value
         switch self.mode {
         case .addEnv:
             self.titleLabel.text = "Add Environment"
@@ -120,6 +130,7 @@ class EnvironmentEditViewController: UITableViewController {
             self.titleLabel.text = ""
         case .addEnvVar:
             self.titleLabel.text = "Add Variable"
+            self.nameCell.textField.placeholder = "server-url"
         case .editEnvVar:
             self.titleLabel.text = "Edit Variable"
         case .viewEnvVar:
@@ -134,14 +145,21 @@ class EnvironmentEditViewController: UITableViewController {
     
     @objc func doneDidTap(_ sender: Any) {
         Log.debug("done btn did tap")
-        if self.mode == .addEnv || self.mode == .addEnvVar {
+        if self.mode == .addEnv {
             self.env = self.localDB.createEnv(name: self.name)
-        } else {
+        } else if self.mode == .editEnv {
             self.env?.name = self.name
-            // TODO: handle value
+        } else if self.mode == .addEnvVar {
+            guard let envId = self.env?.getId() else { return }
+            self.envVar = self.localDB.createEnvVar(envId: envId, name: self.name, value: self.value)
+            self.envVar?.env = self.env
+        } else if self.mode == .editEnvVar {
+            self.envVar?.name = self.name
+            self.envVar?.value = self.value as NSString
         }
         self.localDB.saveMainContext()
-        if let x = self.env { self.db.saveEnvToCloud(x) }
+        if let x = self.env, self.mode == .addEnv || self.mode == .editEnv { self.db.saveEnvToCloud(x) }
+        if let x = self.envVar, self.mode == .addEnvVar || self.mode == .editEnvVar { self.db.saveEnvVarToCloud(x) }
         self.close()
     }
     
@@ -188,18 +206,42 @@ class EnvironmentEditViewController: UITableViewController {
     
     @objc func envEditCellTextDidChange(_ notif: Notification) {
         Log.debug("env edit cell text did change notification")
-        if let info = notif.userInfo as? [String: String], let text = info["text"] {
-            if text.trim().isEmpty {
-                self.name = ""
-                self.disableDoneButton()
-                return
+        if let info = notif.userInfo as? [String: Any], let text = info["text"] as? String {
+            let type = info["type"] as? EnvEditCell.CellType == EnvEditCell.CellType.name ? EnvEditCell.CellType.name : EnvEditCell.CellType.value
+            let notEmptyFn: (String) -> Bool = { txt in
+                if txt.trim().isEmpty {
+                    if type == .name {
+                        self.name = ""
+                        self.nameok = false
+                    } else {
+                        self.value = ""
+                        self.valueok = false
+                    }
+                    self.disableDoneButton()
+                    return false
+                }
+                return true
             }
+            if !notEmptyFn(text) { return }
             if let name = self.env?.name, name == text {  // same as existing name
                 self.disableDoneButton()
+                self.nameok = false
                 return
             }
-            self.name = text  // TODO: handle value
-            self.enableDoneButton()
+            if (self.mode == .addEnvVar || self.mode == .editEnvVar) && type == .value {
+                if let value = self.envVar?.value as? String, value == text {
+                    self.disableDoneButton()
+                    self.valueok = false
+                    return
+                }
+                self.value = text
+                self.valueok = true
+            }
+            if type == .name {
+                self.name = text
+                self.nameok = true
+            }
+            if self.nameok && self.valueok { self.enableDoneButton() }
         }
     }
     

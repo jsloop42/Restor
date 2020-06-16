@@ -67,11 +67,12 @@ class EEnvVar: NSManagedObject, Entity {
         //if self.modified < AppState.editRequestSaveTs { self.modified = AppState.editRequestSaveTs }
     }
     
-    func updateCKRecord(_ record: CKRecord) {
+    func updateCKRecord(_ record: CKRecord, env: CKRecord) {
         self.managedObjectContext?.performAndWait {
             record["created"] = self.created as CKRecordValue
             record["modified"] = self.modified as CKRecordValue
             record["changeTag"] = self.changeTag as CKRecordValue
+            record["id"] = self.getId() as CKRecordValue
             record["name"] = (self.name ?? "") as CKRecordValue
             if let name = self.name, let str = self.value as? String, let data = self.secureTrans.transformedValue(str) as? Data {
                 let url = EAFileManager.getTemporaryURL(name)
@@ -83,6 +84,8 @@ class EEnvVar: NSManagedObject, Entity {
                 }
             }
             record["version"] = self.version as CKRecordValue
+            let ref = CKRecord.Reference(record: env, action: .none)
+            record["env"] = ref
         }
     }
         
@@ -92,6 +95,7 @@ class EEnvVar: NSManagedObject, Entity {
                 if let x = record["created"] as? Int64 { self.created = x }
                 if let x = record["modified"] as? Int64 { self.modified = x }
                 if let x = record["changeTag"] as? Int64 { self.changeTag = x }
+                if let x = record["id"] as? String { self.id = x }
                 if let x = record["name"] as? String { self.name = x }
                 if let x = record["value"] as? CKAsset, let url = x.fileURL {
                     do {
@@ -103,6 +107,9 @@ class EEnvVar: NSManagedObject, Entity {
                     } catch let error { Log.error("Error getting data from file url: \(error)") }
                 }
                 if let x = record["version"] as? Int64 { self.version = x }
+                if let ref = record["env"] as? CKRecord.Reference, let env = EEnv.getEnvFromReference(ref, record: record, ctx: moc) {
+                    self.env = env
+                }
             }
         }
     }

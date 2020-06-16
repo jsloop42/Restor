@@ -60,6 +60,11 @@ class EnvironmentVariableTableViewController: UITableViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add button did tap")
+        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envEditVC.rawValue) as? EnvironmentEditViewController {
+            vc.mode = .addEnvVar
+            vc.env = self.env
+            self.present(vc, animated: true, completion: nil)
+        }
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
