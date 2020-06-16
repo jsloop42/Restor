@@ -32,9 +32,10 @@ class EnvironmentGroupViewController: UIViewController {
     }
     
     func initUI() {
-        self.app.updateNavigationControllerBackground(self.navigationController)
         self.app.updateViewBackground(self.view)
+        self.app.updateNavigationControllerBackground(self.navigationController)
         self.view.backgroundColor = App.Color.tableViewBg
+        self.tableView.backgroundColor = App.Color.tableViewBg
         self.tableView.dataSource = self
         self.tableView.delegate = self
         self.navigationItem.title = "Environments"

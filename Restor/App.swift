@@ -961,6 +961,7 @@ enum TableCellId: String {
 }
 
 enum StoryboardId: String {
+    case base64VC
     case rootNav
     case editRequestVC
     case requestTabBar

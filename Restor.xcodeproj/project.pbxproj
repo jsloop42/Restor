@@ -78,6 +78,7 @@
 		9E9DE8CC246C7DCD0068F8CE /* RestorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */; };
 		9E9E64352492CA6B006B9F5F /* preview.html in Resources */ = {isa = PBXBuildFile; fileRef = 9E9E64342492CA6B006B9F5F /* preview.html */; };
 		9EA8DD972498E66E00D07A3F /* EnvironmentVariableTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA8DD962498E66E00D07A3F /* EnvironmentVariableTableViewController.swift */; };
+		9EA8DD99249917A600D07A3F /* Base64ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA8DD98249917A600D07A3F /* Base64ViewController.swift */; };
 		9EB4DC40246061230077DF2A /* RequestTabBarViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */; };
 		9EB78E71242B7AFF009663FE /* EALFUCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB78E70242B7AFF009663FE /* EALFUCacheTests.swift */; };
 		9EB78E73242BE6FF009663FE /* EAQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EB78E72242BE6FF009663FE /* EAQueue.swift */; };
@@ -206,6 +207,7 @@
 		9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorViewController.swift; sourceTree = "<group>"; };
 		9E9E64342492CA6B006B9F5F /* preview.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = preview.html; sourceTree = "<group>"; };
 		9EA8DD962498E66E00D07A3F /* EnvironmentVariableTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentVariableTableViewController.swift; sourceTree = "<group>"; };
+		9EA8DD98249917A600D07A3F /* Base64ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Base64ViewController.swift; sourceTree = "<group>"; };
 		9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestTabBarViewController.swift; sourceTree = "<group>"; };
 		9EB78E70242B7AFF009663FE /* EALFUCacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EALFUCacheTests.swift; sourceTree = "<group>"; };
 		9EB78E72242BE6FF009663FE /* EAQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAQueue.swift; sourceTree = "<group>"; };
@@ -431,6 +433,7 @@
 				9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */,
 				9EA8DD962498E66E00D07A3F /* EnvironmentVariableTableViewController.swift */,
 				9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */,
+				9EA8DD98249917A600D07A3F /* Base64ViewController.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -760,6 +763,7 @@
 				9E49EC022402FF1F00DAA260 /* EADocumentPicker.swift in Sources */,
 				9E18F16B246D9CE9003C888C /* RequestCoordinator.swift in Sources */,
 				9E6298C52497C28C001B68EB /* EEnv.swift in Sources */,
+				9EA8DD99249917A600D07A3F /* Base64ViewController.swift in Sources */,
 				9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */,
 				9E36C417246BEC3B00946726 /* RequestListState.swift in Sources */,
 				9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */,

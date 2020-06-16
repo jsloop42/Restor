@@ -44,6 +44,8 @@ class SettingsTableViewController: RestorTableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if indexPath.row == CellId.workspaceGroup.rawValue {
             UI.pushScreen(self.navigationController!, storyboard: self.storyboard!, storyboardId: StoryboardId.environmentGroupVC.rawValue)
+        } else if indexPath.row == CellId.base64.rawValue {
+            UI.pushScreen(self.navigationController!, storyboard: self.storyboard!, storyboardId: StoryboardId.base64VC.rawValue)
         }
     }
     
