@@ -907,6 +907,7 @@ class App {
         public static let darkGrey = UIColor(red: 75/255, green: 74/255, blue: 75/255, alpha: 1.0)
         public static let lightGrey = UIColor(red: 209/255, green: 209/255, blue: 208/255, alpha: 1.0)
         public static let lightGrey1 = UIColor(red: 241/255, green: 241/255, blue: 246/255, alpha: 1.0)
+        public static let lightPurple = UIColor(red: 119/255, green: 123/255, blue: 246/255, alpha: 1.0)  // purple like
         public static var requestMethodBg: UIColor = {
             if #available(iOS 13, *) {
                 return UIColor { (UITraitCollection: UITraitCollection) -> UIColor in

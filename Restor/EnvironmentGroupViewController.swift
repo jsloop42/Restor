@@ -72,11 +72,35 @@ extension EnvironmentGroupViewController: UITableViewDelegate, UITableViewDataSo
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let env = self.frc.object(at: indexPath)
-        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envEditVC.rawValue) as? EnvironmentEditViewController {
-            vc.env = env
-            vc.mode = .viewEnv
-            self.navigationController?.pushViewController(vc, animated: true)
+//        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envEditVC.rawValue) as? EnvironmentEditViewController {
+//            vc.env = env
+//            vc.mode = .viewEnv
+//            self.navigationController?.pushViewController(vc, animated: true)
+//        }
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let edit = UIContextualAction(style: .normal, title: "Edit") { action, view, completion in
+            Log.debug("edit row: \(indexPath)")
+            let env = self.frc.object(at: indexPath)
+            if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envEditVC.rawValue) as? EnvironmentEditViewController {
+                vc.env = env
+                vc.mode = .editEnv
+                self.navigationController?.present(vc, animated: true, completion: nil)
+                completion(true)
+            } else {
+                completion(false)
+            }
         }
+        edit.backgroundColor = App.Color.lightPurple
+        let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
+            Log.debug("delete row: \(indexPath)")
+            // TODO: remove from model, reload table view
+            completion(true)
+        }
+        let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete, edit])
+        swipeActionConfig.performsFirstActionWithFullSwipe = false
+        return swipeActionConfig
     }
 }
 

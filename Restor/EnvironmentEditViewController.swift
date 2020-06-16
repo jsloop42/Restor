@@ -55,28 +55,11 @@ class EnvEditCell: UITableViewCell, UITextFieldDelegate {
 class EnvironmentEditViewController: UITableViewController {
     @IBOutlet weak var nameCell: EnvEditCell!
     @IBOutlet weak var valueCell: EnvEditCell!
+    @IBOutlet weak var doneBtn: UIButton!
+    @IBOutlet weak var cancelBtn: UIButton!
     var mode: Mode = .addEnv
     private lazy var localDB = { CoreDataService.shared }()
     private lazy var db = { PersistenceService.shared }()
-    lazy var doneBtn: UIButton = {
-        let btn = UI.getNavbarTopDoneButton()
-        btn.addTarget(self, action: #selector(self.doneDidTap), for: .touchUpInside)
-        return btn
-    }()
-    lazy var editBtn: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("Edit", for: .normal)
-        btn.titleLabel?.font = UIFont.systemFont(ofSize: 16)
-        btn.addTarget(self, action: #selector(self.editDidTap), for: .touchUpInside)
-        return btn
-    }()
-    lazy var cancelBtn: UIButton = {
-        let btn = UIButton(type: .system)
-        btn.setTitle("Cancel", for: .normal)
-        btn.titleLabel?.font = UIFont.systemFont(ofSize: 16)
-        btn.addTarget(self, action: #selector(self.cancelDidTap), for: .touchUpInside)
-        return btn
-    }()
     private let app = App.shared
     private let nc = NotificationCenter.default
     var name = ""
@@ -99,6 +82,7 @@ class EnvironmentEditViewController: UITableViewController {
     }
     
     enum CellId: Int {
+        case navViewCell
         case nameTitleCell
         case nameCell
         case valueTitleCell
@@ -118,20 +102,10 @@ class EnvironmentEditViewController: UITableViewController {
         self.initEvents()
     }
     
-    override func shouldPopOnBackButton() -> Bool {
-        if self.mode == .editEnv || self.mode == .editEnvVar { return false }
-        return true
-    }
-    
-    override func willMove(toParent parent: UIViewController?) {
-        Log.debug("will move")
-        if parent == nil { // When the user swipe to back, the parent is nil
-            return
-        }
-        super.willMove(toParent: parent)
-    }
-    
     func initUI() {
+        if #available(iOS 13.0, *) {
+            self.isModalInPresentation = true
+        }
         self.app.updateNavigationControllerBackground(self.navigationController)
         self.app.updateViewBackground(self.view)
         self.view.backgroundColor = App.Color.tableViewBg
@@ -149,98 +123,29 @@ class EnvironmentEditViewController: UITableViewController {
         case .viewEnvVar:
             self.navigationItem.title = ""
         }
-        if self.mode != .viewEnv && self.mode != .viewEnvVar {
-            self.addNavigationBarDoneButton()
-        } else {
-            self.addNavigationBarEditButton()
-        }
-        self.backBtnItem = self.navigationItem.leftBarButtonItem
-    }
-    
-    /// Add a done button to nav bar right
-    func addNavigationBarDoneButton() {
-        self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: self.doneBtn)
         self.disableDoneButton()
     }
     
-    /// Add a done button to nav bar right
-    func addNavigationBarEditButton() {
-        self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: self.editBtn)
-    }
-    
     func close() {
-        self.navigationController?.popViewController(animated: true)
+        self.dismiss(animated: true, completion: nil)
     }
     
     @objc func doneDidTap(_ sender: Any) {
         Log.debug("done btn did tap")
-        DispatchQueue.main.async {
-            if self.mode == .addEnv || self.mode == .addEnvVar {
-                self.env = self.localDB.createEnv(name: self.name)
-            } else {
-                if self.mode == .editEnv {
-                    self.mode = .viewEnv
-                } else if self.mode == .editEnvVar {
-                    self.mode = .viewEnvVar
-                }
-                self.env?.name = self.name
-                self.nameCell.mode = self.mode
-                self.valueCell.mode = self.mode
-                self.nameCell.updateUI()
-                self.valueCell.updateUI()
-                self.tableView.reloadData()
-            }
-            self.localDB.saveMainContext()
-            if let x = self.env { self.db.saveEnvToCloud(x) }
-            if self.mode == .addEnv || self.mode == .addEnvVar {
-                self.close()
-            } else {
-                self.updateCancelToBackButton()
-                self.addNavigationBarEditButton()
-            }
+        if self.mode == .addEnv || self.mode == .addEnvVar {
+            self.env = self.localDB.createEnv(name: self.name)
+        } else {
+            self.env?.name = self.name
+            // TODO: handle value
         }
-    }
-    
-    @objc func editDidTap(_ sender: Any) {
-        Log.debug("edit did tap")
-        self.addNavigationBarDoneButton()
-        self.updateBackButtonToCancel()
-        if self.mode == .viewEnv {
-            self.mode = .editEnv
-        } else if self.mode == .viewEnvVar {
-            self.mode = .editEnvVar
-        }
-        self.nameCell.mode = self.mode
-        self.valueCell.mode = self.mode
-        self.nameCell.updateUI()
-        if self.mode == .viewEnvVar || self.mode == .addEnvVar || self.mode == .editEnvVar {
-            self.valueCell.updateUI()
-        }
-        self.tableView.reloadData()
+        self.localDB.saveMainContext()
+        if let x = self.env { self.db.saveEnvToCloud(x) }
+        self.close()
     }
     
     @objc func cancelDidTap(_ sender: Any) {
         Log.debug("cancel did tap")
-        if self.mode == .editEnv {
-            self.mode = .viewEnv
-        } else if self.mode == .editEnvVar {
-            self.mode = .viewEnvVar
-        }
-        self.updateCancelToBackButton()
-        UIView.animate(withDuration: 0.3) {
-            self.addNavigationBarEditButton()
-        }
-    }
-    
-    func updateCancelToBackButton() {
-        UI.endEditing()
-        self.navigationItem.leftBarButtonItem = nil
-        self.navigationItem.backBarButtonItem = self.backBtnItem
-    }
-    
-    func updateBackButtonToCancel() {
-        self.navigationItem.backBarButtonItem = nil
-        self.navigationItem.leftBarButtonItem = UIBarButtonItem(customView: self.cancelBtn)
+        self.close()
     }
     
     func enableDoneButton() {
@@ -259,6 +164,8 @@ class EnvironmentEditViewController: UITableViewController {
     
     func initEvents() {
         self.nc.addObserver(self, selector: #selector(self.envEditCellTextDidChange(_:)), name: .envEditCellTextDidChange, object: nil)
+        self.doneBtn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchDown)
+        self.cancelBtn.addTarget(self, action: #selector(self.cancelDidTap(_:)), for: .touchDown)
     }
     
     func initData() {
@@ -285,6 +192,10 @@ class EnvironmentEditViewController: UITableViewController {
                 self.disableDoneButton()
                 return
             }
+            if let name = self.env?.name, name == text {  // same as existing name
+                self.disableDoneButton()
+                return
+            }
             self.name = text  // TODO: handle value
             self.enableDoneButton()
         }
@@ -293,9 +204,9 @@ class EnvironmentEditViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch self.mode {
         case .addEnv, .editEnv, .viewEnv:
-            return 3
+            return 4
         case .addEnvVar, .editEnvVar, .viewEnvVar:
-            return 5
+            return 6
         }
     }
     
@@ -303,14 +214,14 @@ class EnvironmentEditViewController: UITableViewController {
         let row = indexPath.row
         switch self.mode {
         case .addEnv, .editEnv, .viewEnv:
-            if row == CellId.nameTitleCell.rawValue || row == CellId.nameCell.rawValue {
+            if row == CellId.navViewCell.rawValue || row == CellId.nameTitleCell.rawValue || row == CellId.nameCell.rawValue {
                 return 44
             }
         case .addEnvVar, .editEnvVar, .viewEnvVar:
-            if row == CellId.nameTitleCell.rawValue || row == CellId.nameCell.rawValue {
+            if row == CellId.navViewCell.rawValue || row == CellId.nameTitleCell.rawValue || row == CellId.nameCell.rawValue {
                 return 44
             }
-            if row == CellId.valueTitleCell.rawValue || row == CellId.valueCell.rawValue {
+            if row == CellId.navViewCell.rawValue || row == CellId.valueTitleCell.rawValue || row == CellId.valueCell.rawValue {
                 return 44
             }
         }
