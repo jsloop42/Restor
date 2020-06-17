@@ -36,49 +36,67 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
         //self.outputTextView.isEditable = false
         //self.inputTextView.delegate = self
         self.navigationItem.title = "Base64"
+        let t0 = ">>> Researchers are at the heart of everything that scholarly and research publishers do. Accurate author and reviewer information is vital to indexing, search and discovery, publication tracking, funding and resource use attribution, and supporting peer review. ORCID serves as an information hub, enabling your authors and reviewers to reliably connect to their contributions, and to share information from their ORCID record as they interact with your publishing systems. Collecting iDs for all your authors and reviewers during the publication process -- whether for books, journals, datasets, compositions, presentations, code, or a variety of other works -- allows for information to be easily shared, ensures researchers can provide consent to share, saves researchers time and hassle, reduces the risk of errors and, critically, enables researchers to get the credit they deserve for the important work they’re doing +++ >>> Researchers are at the heart of everything that scholarly and research publishers do. Accurate author and reviewer information is vital to indexing, search and discovery, publication tracking, funding and resource use attribution, and supporting peer review. ORCID serves as an information hub, enabling your authors and reviewers to reliably connect to their contributions, and to share information from their ORCID record as they interact with your publishing systems. Collecting iDs for all your authors and reviewers during the publication process -- whether for books, journals, datasets, compositions, presentations, code, or a variety of other works -- allows for information to be easily shared, ensures researchers can provide consent to share, saves researchers time and hassle, reduces the risk of errors and, critically, enables researchers to get the credit they deserve for the important work they’re doing."
+        let t1 = "Researchers are at the heart of everything that scholarly and research publishers do. Accurate author and reviewer information is vital to indexing, search and discovery, publication tracking, funding and resource use attribution, and supporting peer review. ORCID serves as an information hub, enabling your authors and reviewers to reliably connect to their contributions, and to share information from their ORCID record as they interact with your publishing systems. Collecting iDs for all your authors and reviewers during the publication process -- whether for books, journals, datasets, compositions, presentations, code, or a variety of other works -- allows for information to be easily shared, ensures researchers can provide consent to share, saves researchers time and hassle, reduces the risk of errors and, critically, enables researchers to get the credit they deserve for the important work they’re doing."
+        let bounds = UIScreen.main.bounds
+        let font = App.Font.monospace14!
+        
+        let scrollView = UIScrollView(frame: .zero)
+        self.containerView.addSubview(scrollView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        
+        let width = bounds.width - (48 + scrollView.contentInset.left + scrollView.contentInset.right)
+        let h0 = t0.height(width: width, font: font)
+        let h1 = t1.height(width: width, font: font)
+        Log.debug("width: \(width), h0: \(h0), h1: \(h1)")
+        
         let textView1 = UITextView(frame: .zero, textContainer: nil)
-        //textView1.backgroundColor = .blue // visual debugging
-        textView1.isScrollEnabled = true   // causes expanding height
-        self.containerView.addSubview(textView1)
+        textView1.font = font
+        textView1.backgroundColor = .blue // visual debugging
+        textView1.isScrollEnabled = false   // causes expanding height
+        scrollView.addSubview(textView1)
         
-        let textView = EATextView(frame: .zero, textContainer: nil)
-        //textView.backgroundColor = .yellow // visual debugging
-        textView.isScrollEnabled = false   // causes expanding height
-        textView.addBorderWithColor(color: UIColor(named: "cell-separator-bg")!, width: 1)
-        self.containerView.addSubview(textView)
-        
-        let btn = UIButton(type: .system)
-        btn.setTitle("Process", for: .normal)
-        btn.titleLabel?.font = UIFont.systemFont(ofSize: 15, weight: .regular)
-        //btn.addBorderWithColor(color: btn.tintColor, width: 1.0)
-        self.containerView.addSubview(btn)
+        let textView0 = UITextView(frame: .zero, textContainer: nil)
+        textView0.font = font
+        textView0.backgroundColor = .yellow // visual debugging
+        textView0.isScrollEnabled = false   // causes expanding height
+        textView0.addBorderWithColor(color: UIColor(named: "cell-separator-bg")!, width: 1)
+        scrollView.addSubview(textView0)
 
         // Auto Layout
         textView1.translatesAutoresizingMaskIntoConstraints = false
         
         NSLayoutConstraint.activate([
-            textView1.topAnchor.constraint(equalTo: containerView.topAnchor),
-            textView1.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            textView1.trailingAnchor.constraint(equalTo: containerView.trailingAnchor)
+            scrollView.topAnchor.constraint(equalTo: self.containerView.topAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: self.containerView.bottomAnchor)
         ])
         
-        textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.placeholder = "> Plain text string"
         NSLayoutConstraint.activate([
-            textView.topAnchor.constraint(equalTo: textView1.bottomAnchor, constant: -4),
-            textView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            textView.trailingAnchor.constraint(equalTo: btn.leadingAnchor, constant: -4),
-            textView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor)
+            textView0.topAnchor.constraint(equalTo: scrollView.topAnchor),
+            textView0.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
+            textView0.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor),
+            textView0.heightAnchor.constraint(equalToConstant: h0)
         ])
-        let heightContraint = NSLayoutConstraint(item: textView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1.0, constant: 100)
-        heightContraint.priority = .defaultHigh
-        heightContraint.isActive = true
-        btn.translatesAutoresizingMaskIntoConstraints = false
+        
+        textView0.translatesAutoresizingMaskIntoConstraints = false
+        //textView.placeholder = "> Plain text string"
         NSLayoutConstraint.activate([
-            btn.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor, constant: -8),
-            btn.bottomAnchor.constraint(equalTo: self.containerView.bottomAnchor),
-            btn.heightAnchor.constraint(equalToConstant: 35)
+            textView1.topAnchor.constraint(equalTo: textView0.bottomAnchor, constant: 4),
+            textView1.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
+            textView1.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor),
+            //textView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
+            textView1.heightAnchor.constraint(equalToConstant: h1)
         ])
+//        let heightContraint = NSLayoutConstraint(item: textView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1.0, constant: 100)
+//        heightContraint.priority = .defaultHigh
+//        heightContraint.isActive = true
+        
+        textView0.text = t0
+        textView1.text = t1
+        scrollView.contentSize.width = UIScreen.main.bounds.width
+        scrollView.contentSize.height = h0 + h1
     }
     
     func initEvents() {
