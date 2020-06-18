@@ -16,6 +16,55 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
     private let nc = NotificationCenter.default
     private var keyboardHeight: CGFloat = 0.0
     private var isViewDidOffset = false
+    let font = App.Font.monospace14!
+    let bgColor = UIColor(named: "table-view-cell-bg")
+    private lazy var scrollView: UIScrollView = {
+        let sv = UIScrollView(frame: .zero)
+        sv.translatesAutoresizingMaskIntoConstraints = false
+        return sv
+    }()
+    private var titleLabel: UILabel {
+        let lbl = UILabel(frame: .zero)
+        lbl.font = UIFont.systemFont(ofSize: 12)
+        lbl.translatesAutoresizingMaskIntoConstraints = false
+        lbl.textColor = App.Color.labelTitleFg
+        return lbl
+    }
+    private lazy var inpTextLabel: UILabel = {
+        let lbl = self.titleLabel
+        lbl.text = "PLAIN TEXT"
+        return lbl
+    }()
+    private lazy var outTextLabel: UILabel = {
+        let lbl = self.titleLabel
+        lbl.text = "ENCODED TEXT"
+        return lbl
+    }()
+    private lazy var inputTextView: UITextView = {
+       let tv = UITextView(frame: .zero, textContainer: nil)
+        tv.font = self.font
+        tv.backgroundColor = self.bgColor
+        //tv.backgroundColor = .yellow // visual debugging
+        tv.delegate = self
+        tv.isScrollEnabled = false   // causes expanding height
+//        tv.addBorderWithColor(color: UIColor(named: "cell-separator-bg")!, width: 1)
+        tv.translatesAutoresizingMaskIntoConstraints = false
+        return tv
+    }()
+    private lazy var outputTextView: UITextView = {
+        let tv = UITextView(frame: .zero, textContainer: nil)
+        tv.font = font
+        tv.backgroundColor = bgColor
+        tv.isEditable = false
+        //tv.backgroundColor = .blue // visual debugging
+        tv.isScrollEnabled = false   // causes expanding height
+        tv.translatesAutoresizingMaskIntoConstraints = false
+        return tv
+    }()
+    private var inpHeightConstraint: NSLayoutConstraint?
+    private var outHeightConstraint: NSLayoutConstraint?
+    private var encodeInpText = ""
+    private var decodeInpText = ""
     
     deinit {
         self.nc.removeObserver(self)
@@ -23,6 +72,7 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        self.textViewDidChange(self.inputTextView)
     }
     
     override func viewDidLoad() {
@@ -33,70 +83,47 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
     }
     
     func initUI() {
-        //self.outputTextView.isEditable = false
-        //self.inputTextView.delegate = self
         self.navigationItem.title = "Base64"
-        let t0 = ">>> Researchers are at the heart of everything that scholarly and research publishers do. Accurate author and reviewer information is vital to indexing, search and discovery, publication tracking, funding and resource use attribution, and supporting peer review. ORCID serves as an information hub, enabling your authors and reviewers to reliably connect to their contributions, and to share information from their ORCID record as they interact with your publishing systems. Collecting iDs for all your authors and reviewers during the publication process -- whether for books, journals, datasets, compositions, presentations, code, or a variety of other works -- allows for information to be easily shared, ensures researchers can provide consent to share, saves researchers time and hassle, reduces the risk of errors and, critically, enables researchers to get the credit they deserve for the important work they’re doing +++ >>> Researchers are at the heart of everything that scholarly and research publishers do. Accurate author and reviewer information is vital to indexing, search and discovery, publication tracking, funding and resource use attribution, and supporting peer review. ORCID serves as an information hub, enabling your authors and reviewers to reliably connect to their contributions, and to share information from their ORCID record as they interact with your publishing systems. Collecting iDs for all your authors and reviewers during the publication process -- whether for books, journals, datasets, compositions, presentations, code, or a variety of other works -- allows for information to be easily shared, ensures researchers can provide consent to share, saves researchers time and hassle, reduces the risk of errors and, critically, enables researchers to get the credit they deserve for the important work they’re doing."
-        let t1 = "Researchers are at the heart of everything that scholarly and research publishers do. Accurate author and reviewer information is vital to indexing, search and discovery, publication tracking, funding and resource use attribution, and supporting peer review. ORCID serves as an information hub, enabling your authors and reviewers to reliably connect to their contributions, and to share information from their ORCID record as they interact with your publishing systems. Collecting iDs for all your authors and reviewers during the publication process -- whether for books, journals, datasets, compositions, presentations, code, or a variety of other works -- allows for information to be easily shared, ensures researchers can provide consent to share, saves researchers time and hassle, reduces the risk of errors and, critically, enables researchers to get the credit they deserve for the important work they’re doing."
-        let bounds = UIScreen.main.bounds
-        let font = App.Font.monospace14!
-        
-        let scrollView = UIScrollView(frame: .zero)
-        self.containerView.addSubview(scrollView)
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        
-        let width = bounds.width - (48 + scrollView.contentInset.left + scrollView.contentInset.right)
-        let h0 = t0.height(width: width, font: font)
-        let h1 = t1.height(width: width, font: font)
-        Log.debug("width: \(width), h0: \(h0), h1: \(h1)")
-        
-        let textView1 = UITextView(frame: .zero, textContainer: nil)
-        textView1.font = font
-        textView1.backgroundColor = .blue // visual debugging
-        textView1.isScrollEnabled = false   // causes expanding height
-        scrollView.addSubview(textView1)
-        
-        let textView0 = UITextView(frame: .zero, textContainer: nil)
-        textView0.font = font
-        textView0.backgroundColor = .yellow // visual debugging
-        textView0.isScrollEnabled = false   // causes expanding height
-        textView0.addBorderWithColor(color: UIColor(named: "cell-separator-bg")!, width: 1)
-        scrollView.addSubview(textView0)
+        self.containerView.addSubview(self.scrollView)
+        self.scrollView.addSubview(self.inpTextLabel)
+        self.scrollView.addSubview(self.inputTextView)
+        self.scrollView.addSubview(self.outTextLabel)
+        self.scrollView.addSubview(self.outputTextView)
 
         // Auto Layout
-        textView1.translatesAutoresizingMaskIntoConstraints = false
-        
         NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: self.containerView.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: self.containerView.bottomAnchor)
+            self.scrollView.topAnchor.constraint(equalTo: self.containerView.topAnchor),
+            self.scrollView.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
+            self.scrollView.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor),
+            self.scrollView.bottomAnchor.constraint(equalTo: self.containerView.bottomAnchor)
         ])
-        
         NSLayoutConstraint.activate([
-            textView0.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            textView0.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
-            textView0.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor),
-            textView0.heightAnchor.constraint(equalToConstant: h0)
+            self.inpTextLabel.topAnchor.constraint(equalTo: self.containerView.topAnchor),
+            self.inpTextLabel.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
+            //self.inpTextLabel.bottomAnchor.constraint(equalTo: self.inputTextView.topAnchor, constant: -8)
         ])
-        
-        textView0.translatesAutoresizingMaskIntoConstraints = false
-        //textView.placeholder = "> Plain text string"
         NSLayoutConstraint.activate([
-            textView1.topAnchor.constraint(equalTo: textView0.bottomAnchor, constant: 4),
-            textView1.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
-            textView1.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor),
-            //textView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            textView1.heightAnchor.constraint(equalToConstant: h1)
+            self.inputTextView.topAnchor.constraint(equalTo: self.inpTextLabel.bottomAnchor, constant: 8),
+            self.inputTextView.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
+            self.inputTextView.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor),
         ])
-//        let heightContraint = NSLayoutConstraint(item: textView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1.0, constant: 100)
-//        heightContraint.priority = .defaultHigh
-//        heightContraint.isActive = true
-        
-        textView0.text = t0
-        textView1.text = t1
-        scrollView.contentSize.width = UIScreen.main.bounds.width
-        scrollView.contentSize.height = h0 + h1
+        self.inpHeightConstraint = NSLayoutConstraint(item: self.inputTextView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1.0, constant: 200)
+        self.inpHeightConstraint?.isActive = true
+        NSLayoutConstraint.activate([
+            self.outTextLabel.topAnchor.constraint(equalTo: self.inputTextView.bottomAnchor, constant: 12),
+            self.outTextLabel.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
+            //self.outTextLabel.bottomAnchor.constraint(equalTo: self.outputTextView.topAnchor, constant: -8)
+        ])
+        NSLayoutConstraint.activate([
+            self.outputTextView.topAnchor.constraint(equalTo: self.outTextLabel.bottomAnchor, constant: 8),
+            self.outputTextView.leadingAnchor.constraint(equalTo: self.containerView.leadingAnchor),
+            self.outputTextView.trailingAnchor.constraint(equalTo: self.containerView.trailingAnchor)
+        ])
+        self.outHeightConstraint = NSLayoutConstraint(item: self.outputTextView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .notAnAttribute, multiplier: 1.0, constant: 200)
+        self.outHeightConstraint?.isActive = true
+        self.scrollView.contentSize.width = UIScreen.main.bounds.width - 48
+        self.scrollView.showsHorizontalScrollIndicator = false
+        self.updateUI()
     }
     
     func initEvents() {
@@ -106,6 +133,28 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
         self.view.addGestureRecognizer(UITapGestureRecognizer(target: self, action: #selector(self.viewDidTap)))
     }
     
+    func getHeights() -> (CGFloat, CGFloat) {
+        let bounds = UIScreen.main.bounds
+        let width = bounds.width - 48
+        return (self.inputTextView.text.height(width: width, font: font) + 8, self.outputTextView.text.height(width: width, font: font) + 8)
+    }
+    
+    func updateUI() {
+        if self.isViewDidOffset { return }
+        self.inputTextView.isScrollEnabled = false
+        let h = self.getHeights()
+        print("height: \(h)")
+        UIView.animate(withDuration: 0.3) {
+            self.scrollView.contentSize.height = max(h.0 + h.1, 400) + 44
+            self.inpHeightConstraint?.isActive = false
+            self.outHeightConstraint?.isActive = false
+            self.inpHeightConstraint?.constant = max(h.0, 200) + 12
+            self.outHeightConstraint?.constant = max(h.1, 200)
+            self.outHeightConstraint?.isActive = true
+            self.inpHeightConstraint?.isActive = true
+        }
+    }
+    
     @objc func viewDidTap() {
         UI.endEditing()
     }
@@ -113,11 +162,11 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
     @objc func keyboardWillShow(notif: Notification) {
         if let userInfo = notif.userInfo, let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue {
             let kbHeight = keyboardSize.cgRectValue.height
-            keyboardHeight = kbHeight
+            self.keyboardHeight = kbHeight
             if !self.isViewDidOffset {
-                var frame = self.view.frame
-                frame.origin.y -= kbHeight
-                self.view.frame = frame
+                self.scrollView.contentSize.height += self.keyboardHeight
+                self.scrollView.showsVerticalScrollIndicator = false
+                self.inputTextView.isScrollEnabled = true
                 self.isViewDidOffset = true
             }
         }
@@ -125,29 +174,46 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
     
     @objc func keyboardWillHide(notif: Notification) {
         if self.isViewDidOffset {
-            var frame = self.view.frame
-            frame.origin.y = 0
-            self.view.frame = frame
+            self.scrollView.contentSize.height -= self.keyboardHeight
+            self.scrollView.showsVerticalScrollIndicator = true
             self.isViewDidOffset = false
+            self.updateUI()
         }
     }
     
-    
     @objc func menuDidChange() {
         Log.debug("menu did change")
-//        if self.menu.selectedSegmentIndex == 0 {
-//            self.inputTextView.placeholder = "> Plain text"
-//        } else {
-//            self.inputTextView.placeholder = "> Encoded text"
-//        }
+        if self.menu.selectedSegmentIndex == 0 {
+            self.decodeInpText = self.inputTextView.text
+            self.inputTextView.text = self.encodeInpText
+            self.inpTextLabel.text = "PLAIN TEXT"
+            self.outTextLabel.text = "ENCODED TEXT"
+        } else {
+            self.encodeInpText = self.inputTextView.text
+            self.inputTextView.text = self.decodeInpText
+            self.inpTextLabel.text = "ENCODED TEXT"
+            self.outTextLabel.text = "PLAIN TEXT"
+        }
+        self.outputTextView.text = ""
+        self.textViewDidChange(self.inputTextView)
     }
     
-//    func textViewDidChange(_ textView: UITextView) {
-//        guard let text = textView.text, !text.isEmpty else { return }
-//        if self.menu.selectedSegmentIndex == 0 {
-//            self.outputTextView.text = self.utils.base64Encode(text)
-//        } else {
-//            self.outputTextView.text = self.utils.base64Decode(text)
-//        }
-//    }
+    func textViewDidChange(_ textView: UITextView) {
+        self.updateUI()
+        guard let text = textView.text, !text.isEmpty else { return }
+        if self.menu.selectedSegmentIndex == 0 {
+            self.outputTextView.text = self.utils.base64Encode(text)
+        } else {
+            self.outputTextView.text = self.utils.base64Decode(text)
+        }
+    }
+    
+    func textViewDidBeginEditing(_ textView: UITextView) {
+        textView.isScrollEnabled = true
+    }
+    
+    func textViewDidEndEditing(_ textView: UITextView) {
+        textView.isScrollEnabled = false
+        self.updateUI()
+    }
 }

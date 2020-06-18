@@ -22,6 +22,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
         self.window = UIWindow(frame: UIScreen.main.bounds)
         self.app.updateWindowBackground(self.window)
         AppState.appCoord = AppCoordinator(window: self.window!)
+        if #available(iOS 13.0, *) {
+            Log.debug("make key and visible is set from scene delegate")
+        } else {
+            self.window?.makeKeyAndVisible()
+        }
+        
         //UI.setGlobalStyle()
 //        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
 //            if let error = error {

@@ -948,6 +948,12 @@ class App {
                 return Color.lightGrey1
             }
         }()
+        public static var labelTitleFg: UIColor = {
+            if #available(iOS 13, *) {
+                    return UIColor.secondaryLabel
+            }
+            return UIColor(red: 96/255, green: 97/255, blue: 101/255, alpha: 1.0)
+        }()
     }
     
     public struct Font {
