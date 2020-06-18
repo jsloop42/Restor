@@ -280,6 +280,13 @@ class UI {
     static func endEditing() {
         UIApplication.shared.sendAction(#selector(UIApplication.resignFirstResponder), to: nil, from: nil, for: nil)
     }
+    
+    static func addCornerRadius(_ tv: UITextView) {
+        tv.layer.cornerRadius = 4
+        tv.layer.borderColor = UIColor(named: "cell-separator-bg")?.cgColor
+        tv.layer.borderWidth = 0.5
+        tv.clipsToBounds = true
+    }
 }
 
 extension UIView {

@@ -44,6 +44,7 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
        let tv = UITextView(frame: .zero, textContainer: nil)
         tv.font = self.font
         tv.backgroundColor = self.bgColor
+        UI.addCornerRadius(tv)
         //tv.backgroundColor = .yellow // visual debugging
         tv.delegate = self
         tv.isScrollEnabled = false   // causes expanding height
@@ -55,6 +56,7 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
         let tv = UITextView(frame: .zero, textContainer: nil)
         tv.font = font
         tv.backgroundColor = bgColor
+        UI.addCornerRadius(tv)
         tv.isEditable = false
         //tv.backgroundColor = .blue // visual debugging
         tv.isScrollEnabled = false   // causes expanding height
