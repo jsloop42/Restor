@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="16119" systemVersion="19E287" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="16119" systemVersion="19F101" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="YES" userDefinedModelVersionIdentifier="">
     <entity name="EEnv" representedClassName=".EEnv" syncable="YES" codeGenerationType="category">
         <attribute name="changeTag" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
@@ -192,6 +192,7 @@
         <attribute name="changeTag" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="created" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="desc" attributeType="String" defaultValueString=""/>
+        <attribute name="envId" attributeType="String" defaultValueString=""/>
         <attribute name="id" attributeType="String" defaultValueString=""/>
         <attribute name="isSynced" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
         <attribute name="markForDelete" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
@@ -394,7 +395,7 @@
         <element name="EHistory" positionX="-9" positionY="135" width="128" height="673"/>
         <element name="EImage" positionX="-9" positionY="90" width="128" height="238"/>
         <element name="EProject" positionX="-54" positionY="-9" width="128" height="238"/>
-        <element name="ERequest" positionX="-36" positionY="9" width="128" height="328"/>
+        <element name="ERequest" positionX="-36" positionY="9" width="128" height="343"/>
         <element name="ERequestBodyData" positionX="0" positionY="45" width="128" height="283"/>
         <element name="ERequestData" positionX="18" positionY="63" width="128" height="358"/>
         <element name="ERequestMethodData" positionX="-18" positionY="27" width="128" height="238"/>

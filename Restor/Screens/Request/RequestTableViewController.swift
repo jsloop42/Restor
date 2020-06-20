@@ -109,6 +109,10 @@ class RequestTableViewController: RestorTableViewController {
     
     func initData() {
         self.request = self.tabbarController.request
+        if let envId = self.request?.envId, let env = self.localdb.getEnv(id: envId) {
+            self.env = env
+            self.updateEnv()
+        }
     }
     
     func initUI() {
@@ -188,6 +192,7 @@ class RequestTableViewController: RestorTableViewController {
         Log.debug("env btn did tap")
         if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envPickerVC.rawValue) as? EnvironmentPickerViewController {
             vc.selectedIndex = self.selectedEnvIndex
+            vc.env = self.env
             self.navigationController?.present(vc, animated: true, completion: nil)
         }
     }
@@ -199,6 +204,12 @@ class RequestTableViewController: RestorTableViewController {
                 Log.debug("env did change")
                 self.env = info["env"] as? EEnv
                 self.selectedEnvIndex = idx
+                if let env = self.env {
+                    self.request?.envId = env.getId()
+                } else {
+                    self.request?.envId = ""
+                }
+                self.localdb.saveMainContext()
                 self.updateEnv()
             }
         }
@@ -216,7 +227,7 @@ class RequestTableViewController: RestorTableViewController {
     @objc func editButtonDidTap(_ notif: Notification) {
         Log.debug("edit button did tap")
         guard let info = notif.userInfo, let req = info["request"] as? ERequest, req.getId() == self.request?.getId() else { return }
-        self.viewEditRequestVC()
+        DispatchQueue.main.async { self.viewEditRequestVC() }
     }
     
     @objc func requestDidChange(_ notif: Notification) {
@@ -241,9 +252,11 @@ class RequestTableViewController: RestorTableViewController {
     @objc func responseDidReceive(_ notif: Notification) {
         Log.debug("response did receive")
         if let info = notif.userInfo as? [String: Any], let respData = info["data"] as? ResponseData, let reqId = self.request?.getId(), reqId == respData.requestId {
-            self.isRequestInProgress = false
-            UIView.animate(withDuration: 0.3) {
-                self.displayRequestDidCompleteUIChanges()
+            DispatchQueue.main.async {
+                self.isRequestInProgress = false
+                UIView.animate(withDuration: 0.3) {
+                    self.displayRequestDidCompleteUIChanges()
+                }
             }
         }
     }
@@ -251,9 +264,11 @@ class RequestTableViewController: RestorTableViewController {
     @objc func requestDidCancel(_ notif: Notification) {
         Log.debug("request did cancel")
         if let info = notif.userInfo as? [String: Any], let request = info["request"] as? ERequest, let reqId = self.request?.getId(), request.getId() == reqId {
-            self.isRequestInProgress = false
-            UIView.animate(withDuration: 0.3) {
-                self.displayRequestDidCompleteUIChanges()
+            DispatchQueue.main.async {
+                self.isRequestInProgress = false
+                UIView.animate(withDuration: 0.3) {
+                    self.displayRequestDidCompleteUIChanges()
+                }
             }
         }
     }

@@ -9,9 +9,14 @@
 import Foundation
 import GameplayKit
 
+extension Notification.Name {
+    static let extrapolateDidFail = Notification.Name("extrapolate-did-fail")
+}
+
 /// User has tapped the Go button and the request is being processed for sending.
 class RequestPrepareState: GKState {
     unowned var request: ERequest
+    let nc = NotificationCenter.default
     
     init(_ request: ERequest) {
         self.request = request
@@ -25,7 +30,15 @@ class RequestPrepareState: GKState {
     override func didEnter(from previousState: GKState?) {
         Log.debug("[state] did enter - request prepare")
         guard let fsm = self.stateMachine as? RequestStateMachine, let man = fsm.manager else { return }
-        man.prepareRequest()
+        do {
+            try man.prepareRequest()
+        } catch let error {
+            Log.error("Error in prepare request: \(error)")
+            if error is AppError && error.code == AppError.extrapolate.code {
+                fsm.enter(RequestCancelState.self)
+                UI.displayToast("Extrapolating env variables failed. Please check the variables.")
+            }
+        }
     }
 }
 

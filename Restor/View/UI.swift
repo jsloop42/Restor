@@ -109,7 +109,7 @@ class UI {
         if self.isToastPresenting {
             self.toastQueue.insert(msg)
         } else {
-            if let vc = WorkspaceListViewController.shared {
+            if let navVC = AppState.appCoord.window?.rootViewController as? UINavigationController, let vc = navVC.viewControllers.last {
                 self.viewToast(msg, vc: vc)
             }
         }

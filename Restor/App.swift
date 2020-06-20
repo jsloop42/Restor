@@ -1076,6 +1076,7 @@ enum AppError: Error {
     case entityUpdate
     case entityDelete
     case error
+    case extrapolate
     case fileOpen
     case fileRead
     case fileWrite

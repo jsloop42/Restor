@@ -16,6 +16,7 @@ extension Notification.Name {
 }
 
 final class RequestManager {
+    typealias ExtrapolateResult = (result: String, shouldExtrapolate: Bool, didExtrapolate: Bool)
     var request: ERequest
     var env: EEnv? {
         didSet {
@@ -47,9 +48,9 @@ final class RequestManager {
         self.fsm.enter(RequestPrepareState.self)
     }
     
-    func prepareRequest() {
+    func prepareRequest() throws {
         Log.debug("[req-man] prepare-request")
-        let urlReq = self.requestToURLRequest(self.request)
+        let urlReq = try self.requestToURLRequest(self.request)
         if urlReq == nil {
             Log.debug("urlrequest is nil -> moving to cancel state")
             self.fsm.enter(RequestCancelState.self)
@@ -155,9 +156,10 @@ final class RequestManager {
         self.nc.post(name: .requestDidCancel, object: self, userInfo: ["request": self.request])
     }
     
-    func getURL(_ str: String?) -> URL? {
+    func getURL(_ str: String?) throws -> URL? {
         guard var str = str else { return nil }
-        str = self.extrapolate(str)
+        let exp = try self.checkExtrapolationResult(self.extrapolate(str))
+        str = exp.result
         if !str.starts(with: "http://") && !str.starts(with: "https://") { str = "http://\(str)" }
         return URL(string: str)
     }
@@ -177,37 +179,50 @@ final class RequestManager {
         return true
     }
 
-    func extrapolate(_ string: String) -> String {
-        if self.envVars.isEmpty || !self.shouldExtrapolate(string) { return string }
+    func extrapolate(_ string: String) -> ExtrapolateResult {
+        if self.envVars.isEmpty { return (string, false, false) }
+        let isExp = self.shouldExtrapolate(string)
+        if !isExp { return (string, false, false) }
         let substr = string.slice(from: "{{", to: "}}") ?? ""
-        if substr.isEmpty { return string }
+        if substr.isEmpty { return (string, isExp, false) }
         if let envVar = (self.envVars.first { x in x.name == substr }), let val = envVar.value as? String {
-            return string.replacingOccurrences(of: "{{\(substr)}}", with: val, options: .caseInsensitive)
+            let ret = string.replacingOccurrences(of: "{{\(substr)}}", with: val, options: .caseInsensitive)
+            return (ret, isExp, string != ret)
         }
-        return string
+        return (string, isExp, false)
     }
 
-    func requestToURLRequest(_ req: ERequest) -> URLRequest? {
+    func checkExtrapolationResult(_ exp: ExtrapolateResult) throws -> ExtrapolateResult {
+        if (exp.shouldExtrapolate && !exp.didExtrapolate) {  // extrapolate error
+            throw AppError.extrapolate
+        }
+        return exp
+    }
+    
+    func requestToURLRequest(_ req: ERequest) throws -> URLRequest? {
         Log.debug("[req-man] request-to-url-request")
         guard let projId = request.project?.getId() else { return nil }
-        guard let url = self.getURL(req.url) else { return nil }
+        guard let url = try self.getURL(req.url) else { return nil }
         guard var urlComp = URLComponents(string: url.absoluteString) else { return nil }
         let qp = self.localdb.getParamsRequestData(request.getId())
         if !qp.isEmpty {
-            urlComp.queryItems = qp.map({ data -> URLQueryItem in URLQueryItem(name: (self.extrapolate(data.key ?? "")),
-                    value: self.extrapolate(data.value ?? "")) })
+            urlComp.queryItems = try qp.map({ data -> URLQueryItem in
+                let nameExp = try self.checkExtrapolationResult(self.extrapolate(data.key ?? ""))
+                let valueExp = try self.checkExtrapolationResult(self.extrapolate(data.value ?? ""))
+                return URLQueryItem(name: nameExp.result, value: valueExp.result)
+            })
         }
         var headers: [String: String] = [:]
         let _headers = self.localdb.getHeadersRequestData(request.getId())
         if !_headers.isEmpty {
-            _headers.forEach { data in
+            try _headers.forEach { data in
                 if let name = data.key, let val = data.value {
-                    let key = self.extrapolate(name)
-                    let value = self.extrapolate(val)
-                    if key.lowercased() == "content-type" && value.lowercased() == "application/x-www-form-urlencoded" {
+                    let keyExp = try self.checkExtrapolationResult(self.extrapolate(name))
+                    let valueExp = try self.checkExtrapolationResult(self.extrapolate(val))
+                    if keyExp.result.lowercased() == "content-type" && valueExp.result.lowercased() == "application/x-www-form-urlencoded" {
                         urlComp.percentEncodedQuery = urlComp.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
                     }
-                    headers[key] = value
+                    headers[keyExp.result] = valueExp.result
                 }
             }
         }

@@ -25,6 +25,7 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
     var frc: NSFetchedResultsController<EEnv>!
     var selectedIndex: Int = -1
     var nc = NotificationCenter.default
+    var env: EEnv?
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -88,8 +89,15 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
         let elem = self.frc.object(at: indexPath)
         cell.titleLabel.text = elem.getName()
         cell.accessoryType = .none
-        if self.selectedIndex >= 0 && indexPath.row == self.selectedIndex {
+        let row = indexPath.row
+        if self.selectedIndex >= 0 && row == self.selectedIndex {
             cell.accessoryType = .checkmark
+        } else if self.env != nil {
+            if elem.id == self.env!.getId() {
+                cell.accessoryType = .checkmark
+                self.selectedIndex = row
+                self.env = nil
+            }
         }
         return cell
     }
