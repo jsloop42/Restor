@@ -343,6 +343,31 @@ public extension String {
     func replaceAll(pattern: String, with string: String) -> String {
         return self.replacingOccurrences(of: pattern, with: string, options: .regularExpression)
     }
+    
+    func distance(of element: Element) -> Int? {
+        return self.firstIndex(of: element)?.distance(in: self)
+    }
+    
+    func distance<S: StringProtocol>(of string: S) -> Int? {
+        return self.range(of: string)?.lowerBound.distance(in: self)
+    }
+    
+    func slice(from: String, to: String) -> String? {
+        if let r1 = self.range(of: from)?.upperBound, let r2 = self.range(of: to)?.lowerBound {
+            return (String(self[r1..<r2]))
+        }
+        return nil
+    }
+}
+
+public extension Collection {
+    func distance(to index: Index) -> Int {
+        return self.distance(from: startIndex, to: index)
+    }
+}
+
+public extension String.Index {
+    func distance<S: StringProtocol>(in string: S) -> Int { return string.distance(to: self) }
 }
 
 public extension UIImage {

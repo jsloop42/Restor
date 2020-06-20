@@ -17,14 +17,21 @@ extension Notification.Name {
 
 final class RequestManager {
     var request: ERequest
+    var env: EEnv? {
+        didSet {
+            self.envVars = self.env?.variables?.allObjects as? [EEnvVar] ?? []
+        }
+    }
+    var envVars: [EEnvVar] = []
     var fsm: RequestStateMachine
     private let localdb = CoreDataService.shared
     private let http: EAHTTPClient
     private let nc = NotificationCenter.default
     private var validateSSL = true
     
-    init(request: ERequest) {
+    init(request: ERequest, env: EEnv? = nil) {
         self.request = request
+        self.env = env
         self.http = EAHTTPClient()
         self.fsm = RequestStateMachine(states: RequestManager.getAllRequestStates(request), request: request)
         self.fsm.manager = self
@@ -150,10 +157,36 @@ final class RequestManager {
     
     func getURL(_ str: String?) -> URL? {
         guard var str = str else { return nil }
+        str = self.extrapolate(str)
         if !str.starts(with: "http://") && !str.starts(with: "https://") { str = "http://\(str)" }
         return URL(string: str)
     }
-    
+
+    /// Checks if the string is in template form
+    func shouldExtrapolate(_ str: String) -> Bool {
+        // opening bracket match
+        let idxL = str.firstIndex(of: "{")?.distance(in: str)
+        if idxL == nil { return false }
+        // closing bracket match
+        if str[idxL! + 1] != "{" { return false }
+        let idxR = str.firstIndex(of: "}")?.distance(in: str)
+        if idxR == nil { return false }
+        if idxR! <= idxL! { return false }
+        if idxR! == str.count - 1 { return false }
+        if str[idxR! + 1] != "}" { return false }
+        return true
+    }
+
+    func extrapolate(_ string: String) -> String {
+        if self.envVars.isEmpty || !self.shouldExtrapolate(string) { return string }
+        let substr = string.slice(from: "{{", to: "}}") ?? ""
+        if substr.isEmpty { return string }
+        if let envVar = (self.envVars.first { x in x.name == substr }), let val = envVar.value as? String {
+            return string.replacingOccurrences(of: "{{\(substr)}}", with: val, options: .caseInsensitive)
+        }
+        return string
+    }
+
     func requestToURLRequest(_ req: ERequest) -> URLRequest? {
         Log.debug("[req-man] request-to-url-request")
         guard let projId = request.project?.getId() else { return nil }
@@ -161,18 +194,21 @@ final class RequestManager {
         guard var urlComp = URLComponents(string: url.absoluteString) else { return nil }
         let qp = self.localdb.getParamsRequestData(request.getId())
         if !qp.isEmpty {
-            urlComp.queryItems = qp.map({ data -> URLQueryItem in URLQueryItem(name: data.key ?? "", value: data.value ?? "") })
+            urlComp.queryItems = qp.map({ data -> URLQueryItem in URLQueryItem(name: (self.extrapolate(data.key ?? "")),
+                    value: self.extrapolate(data.value ?? "")) })
         }
         var headers: [String: String] = [:]
         let _headers = self.localdb.getHeadersRequestData(request.getId())
         if !_headers.isEmpty {
             _headers.forEach { data in
                 if let name = data.key, let val = data.value {
-                    if name.lowercased() == "content-type" && val.lowercased() == "application/x-www-form-urlencoded" {
+                    let key = self.extrapolate(name)
+                    let value = self.extrapolate(val)
+                    if key.lowercased() == "content-type" && value.lowercased() == "application/x-www-form-urlencoded" {
                         urlComp.percentEncodedQuery = urlComp.percentEncodedQuery?.replacingOccurrences(of: "+", with: "%2B")
                     }
+                    headers[key] = value
                 }
-                headers[data.key ?? ""] = data.value ?? ""
             }
         }
         let method = self.localdb.getRequestMethodData(at: request.selectedMethodIndex.toInt(), projId: projId)

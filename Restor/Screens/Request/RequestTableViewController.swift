@@ -100,7 +100,7 @@ class RequestTableViewController: RestorTableViewController {
         if let req = self.request {
             self.reqMan = AppState.getFromRequestState(req.getId())
             if self.reqMan == nil {
-                let man = RequestManager(request: req)
+                let man = RequestManager(request: req, env: self.env)
                 AppState.addToRequestState(man)
                 self.reqMan = man
             }
@@ -266,6 +266,7 @@ class RequestTableViewController: RestorTableViewController {
             return
         }
         self.initManager()
+        self.reqMan?.env = self.env
         man.start()
         self.isRequestInProgress = true
         UIView.animate(withDuration: 0.3) {
@@ -303,7 +304,7 @@ class RequestTableViewController: RestorTableViewController {
     
     func hideActivityIndicator() {
         self.activityIndicator.stopAnimating()
-        self.tabbarController.navigationItem.rightBarButtonItem = nil
+        self.tabBarController?.navigationItem.rightBarButtonItem = nil
         self.tabbarController.addNavigationBarEditButton()
     }
     
