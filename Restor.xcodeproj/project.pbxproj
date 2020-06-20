@@ -28,6 +28,7 @@
 		9E1B2DEC242799E700994233 /* ETag.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1B2DEB242799E700994233 /* ETag.swift */; };
 		9E223D532436261600229855 /* EACloudOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D522436261600229855 /* EACloudOperation.swift */; };
 		9E223D55243626E000229855 /* EACommon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D54243626E000229855 /* EACommon.swift */; };
+		9E358E3A249E31F700D7481F /* EnvironmentPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E358E39249E31F700D7481F /* EnvironmentPickerViewController.swift */; };
 		9E36C412246BEA5F00946726 /* EAUIStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C411246BEA5F00946726 /* EAUIStateMachine.swift */; };
 		9E36C415246BEBEC00946726 /* ProjectListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C414246BEBEC00946726 /* ProjectListState.swift */; };
 		9E36C417246BEC3B00946726 /* RequestListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C416246BEC3B00946726 /* RequestListState.swift */; };
@@ -150,6 +151,7 @@
 		9E1B2DEB242799E700994233 /* ETag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ETag.swift; sourceTree = "<group>"; };
 		9E223D522436261600229855 /* EACloudOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACloudOperation.swift; sourceTree = "<group>"; };
 		9E223D54243626E000229855 /* EACommon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACommon.swift; sourceTree = "<group>"; };
+		9E358E39249E31F700D7481F /* EnvironmentPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentPickerViewController.swift; sourceTree = "<group>"; };
 		9E36C411246BEA5F00946726 /* EAUIStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUIStateMachine.swift; sourceTree = "<group>"; };
 		9E36C414246BEBEC00946726 /* ProjectListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListState.swift; sourceTree = "<group>"; };
 		9E36C416246BEC3B00946726 /* RequestListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListState.swift; sourceTree = "<group>"; };
@@ -529,6 +531,7 @@
 				9EFFF1C9246FEA50003D7CA8 /* RequestManager.swift */,
 				9EFFF1CB246FEA83003D7CA8 /* RequestStates.swift */,
 				9E4CE932246FED560088621D /* RequestStateMachine.swift */,
+				9E358E39249E31F700D7481F /* EnvironmentPickerViewController.swift */,
 			);
 			path = Request;
 			sourceTree = "<group>";
@@ -749,6 +752,7 @@
 				9ED1255924755DA9005E2AD7 /* EHistory.swift in Sources */,
 				9E1B2DDC242798BB00994233 /* EWorkspace.swift in Sources */,
 				9EB4DC40246061230077DF2A /* RequestTabBarViewController.swift in Sources */,
+				9E358E3A249E31F700D7481F /* EnvironmentPickerViewController.swift in Sources */,
 				9E1B2DEA242799AF00994233 /* ERequestData.swift in Sources */,
 				9E85FE48240E9CDB002821F2 /* main.swift in Sources */,
 				9EFFF1CA246FEA50003D7CA8 /* RequestManager.swift in Sources */,

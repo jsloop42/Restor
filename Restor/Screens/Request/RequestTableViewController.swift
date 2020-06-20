@@ -23,6 +23,7 @@ class RequestTableViewController: RestorTableViewController {
     var binary: ERequestData?
     var binaryFiles: [EFile] = []
     private var tabbarController: RequestTabBarController { self.tabBarController as! RequestTabBarController }
+    @IBOutlet weak var envBtn: UIButton!
     @IBOutlet var headerKVTableViewManager: KVTableViewManager!
     @IBOutlet var paramsKVTableViewManager: KVTableViewManager!
     @IBOutlet weak var headersTableView: EADynamicSizeTableView!
@@ -45,6 +46,9 @@ class RequestTableViewController: RestorTableViewController {
     private var isRequestInProgress = false
     lazy var activityIndicator = { UIActivityIndicatorView(frame: CGRect(x: 0, y: 0, width: 20, height: 20)) }()
     lazy var activityBarButton = { UIBarButtonItem(customView: self.activityIndicator) }()
+    private var selectedEnvIndex = -1
+    private var env: EEnv?
+    private let defaultEnvText = "env: none"
     
     enum TableType: String {
         case header = "request-header-table-view"
@@ -52,7 +56,7 @@ class RequestTableViewController: RestorTableViewController {
     }
     
     enum CellId: Int {
-        case spaceAfterTop = 0
+        case env = 0
         case url = 1
         case spacerAfterUrl = 2
         case name = 3
@@ -126,6 +130,7 @@ class RequestTableViewController: RestorTableViewController {
         self.nc.addObserver(self, selector: #selector(self.dynamicSizeTableViewHeightDidChange(_:)), name: .dynamicSizeTableViewHeightDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
         self.nc.addObserver(self, selector: #selector(self.requestDidCancel(_:)), name: .requestDidCancel, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.envDidSelect(_:)), name: .envDidSelect, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -179,6 +184,35 @@ class RequestTableViewController: RestorTableViewController {
         }
     }
     
+    @IBAction func envBtnDidTap(_ sender: Any) {
+        Log.debug("env btn did tap")
+        if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.envPickerVC.rawValue) as? EnvironmentPickerViewController {
+            vc.selectedIndex = self.selectedEnvIndex
+            self.navigationController?.present(vc, animated: true, completion: nil)
+        }
+    }
+    
+    @objc func envDidSelect(_ notif: Notification) {
+        Log.debug("env did select notification")
+        if let info = notif.userInfo as? [String: Any], let idx = info["index"] as? Int {
+            DispatchQueue.main.async {
+                Log.debug("env did change")
+                self.env = info["env"] as? EEnv
+                self.selectedEnvIndex = idx
+                self.updateEnv()
+            }
+        }
+    }
+
+    func updateEnv() {
+        if let env = self.env {
+            let name = env.getName()
+            self.envBtn.setTitle("env: \(name)", for: .normal)
+        } else {
+            self.envBtn.setTitle(self.defaultEnvText, for: .normal)
+        }
+    }
+
     @objc func editButtonDidTap(_ notif: Notification) {
         Log.debug("edit button did tap")
         guard let info = notif.userInfo, let req = info["request"] as? ERequest, req.getId() == self.request?.getId() else { return }
@@ -471,8 +505,8 @@ extension RequestTableViewController: UICollectionViewDelegate, UICollectionView
 extension RequestTableViewController {
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         var height: CGFloat = 54
-        if indexPath.row == CellId.spaceAfterTop.rawValue {
-            height = 12
+        if indexPath.row == CellId.env.rawValue {
+            height = 40
         } else if indexPath.row == CellId.url.rawValue {
             height = 54
         } else if indexPath.row == CellId.spacerAfterUrl.rawValue {
