@@ -49,14 +49,11 @@ class EnvironmentVariableTableViewController: UITableViewController {
     }
     
     func updateData() {
-        guard let envId = self.env?.getId() else { return }
-        if self.frc != nil { self.frc.delegate = nil }
-        if let _frc = self.localDB.getFetchResultsController(obj: EEnvVar.self, predicate: NSPredicate(format: "env.id == %@", envId)) as? NSFetchedResultsController<EEnvVar> {
-            self.frc = _frc
-            self.frc.delegate = self
-            try? self.frc.performFetch()
-            self.tableView.reloadData()
-        }
+        if self.frc == nil { return }
+        self.frc.delegate = nil
+        try? self.frc.performFetch()
+        self.frc.delegate = self
+        self.tableView.reloadData()
     }
     
     @objc func addBtnDidTap(_ sender: Any) {

@@ -80,6 +80,14 @@ class WorkspaceListViewController: RestorViewController {
         self.reloadData()
     }
     
+    func updateData() {
+        if self.frc == nil { return }
+        self.frc.delegate = nil
+        try? self.frc.performFetch()
+        self.frc.delegate = self
+        self.tableView.reloadData()
+    }
+    
     func postWorkspaceWillCloseEvent() {
         self.nc.post(name: .workspaceWillClose, object: self)
     }
@@ -129,6 +137,24 @@ class WorkspaceListViewController: RestorViewController {
             Log.debug("model value: \(model.name) - \(model.desc)")
             AppState.setCurrentScreen(.workspaceList)
             self.addWorkspace(name: model.name, desc: model.desc, isSyncEnabled: model.iCloudSyncFieldEnabled)
+        }))
+    }
+    
+    func viewEditPopup(_ ws: EWorkspace) {
+        self.app.viewPopupScreen(self, model: PopupModel(title: "Edit Workspace", name: ws.getName(), desc: ws.desc ?? "", doneHandler: { model in
+            Log.debug("model value: \(model.name) - \(model.desc)")
+            var didChange = false
+            if ws.name != model.name {
+                ws.name = model.name
+                didChange = true
+            }
+            if ws.desc != model.desc {
+                ws.desc = model.desc
+                didChange = true
+            }
+            if didChange {
+                self.localdb.saveMainContext()
+            }
         }))
     }
     
@@ -192,6 +218,31 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
         self.app.setSelectedWorkspace(ws)
         self.nc.post(name: .workspaceDidChange, object: self, userInfo: ["workspace": ws])
         self.close()
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let edit = UIContextualAction(style: .normal, title: "Edit") { action, view, completion in
+            Log.debug("edit row: \(indexPath)")
+            let proj = self.frc.object(at: indexPath)
+            self.viewEditPopup(proj)
+            completion(true)
+        }
+        edit.backgroundColor = App.Color.lightPurple
+        let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
+            Log.debug("delete row: \(indexPath)")
+            let ws = self.frc.object(at: indexPath)
+            if ws == self.wsSelected {  // Reset selection to the default workspace
+                self.wsSelected = self.localdb.getDefaultWorkspace(ctx: self.localdb.mainMOC)
+            }
+            self.localdb.markEntityForDelete(ws)
+            self.localdb.saveMainContext()
+            self.db.deleteDataMarkedForDelete(ws, ctx: self.localdb.mainMOC)
+            self.updateData()
+            completion(true)
+        }
+        let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete, edit])
+        swipeActionConfig.performsFirstActionWithFullSwipe = false
+        return swipeActionConfig
     }
 }
 

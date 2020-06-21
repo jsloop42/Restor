@@ -110,14 +110,9 @@ public class EWorkspace: NSManagedObject, Entity {
         }
     }
     
-    /// This is similar to creating new entity except certain meta is preserved. Mainly used when deleting the default workspace.
-    func resetToDefault() {
-        if let xs = self.projects?.allObjects as? [EProject] {
-            xs.forEach { proj in CoreDataService.shared.deleteEntity(proj) }
-        }
-        self.desc = CoreDataService.shared.defaultWorkspaceDesc
-        self.name = CoreDataService.shared.defaultWorkspaceName
-        self.modified = Date().currentTimeNanos()
-        self.changeTag = modified
+    /// Checks if the default workspace does not have any change or is just after a reset (is new)
+    var isInDefaultMode: Bool {
+        let db = CoreDataService.shared
+        return self.id == db.defaultWorkspaceId && self.name == db.defaultWorkspaceName && self.desc == db.defaultWorkspaceDesc && self.modified == self.changeTag
     }
 }

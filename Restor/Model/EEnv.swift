@@ -80,7 +80,7 @@ class EEnv: NSManagedObject, Entity {
     static func getEnvFromReference(_ ref: CKRecord.Reference, record: CKRecord, ctx: NSManagedObjectContext) -> EEnv? {
         let envId = EACloudKit.shared.entityID(recordID: ref.recordID)
         if let env = CoreDataService.shared.getEnv(id: envId, ctx: ctx) { return env }
-        let env = CoreDataService.shared.createEnv(name: "", envId: envId, checkExists: false, ctx: ctx)
+        let env = CoreDataService.shared.createEnv(name: "", envId: envId, wsId: "", checkExists: false, ctx: ctx)
         env?.changeTag = 0
         return env
     }

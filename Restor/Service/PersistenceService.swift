@@ -1000,6 +1000,40 @@ class PersistenceService {
         }
     }
     
+    /// This is similar to creating new entity except certain meta is preserved. Mainly used when deleting the default workspace.
+    func resetDefaultWorkspace() {
+        let ws = self.localdb.getDefaultWorkspace()
+        let wsId = ws.getId()
+        let projxs = self.localdb.getProjects(wsId: wsId)
+        let envxs = self.localdb.getEnvs(wsId: wsId)
+        let projLen = projxs.count
+        let envLen = envxs.count
+        let len = max(projxs.count, envxs.count)
+        for i in 0..<len {
+            if i < projLen {
+                projxs[i].markForDelete = true
+            }
+            if i < envLen {
+                envxs[i].markForDelete = true
+            }
+        }
+        self.localdb.saveMainContext()
+        for i in 0..<len {
+            if i < projLen {
+                self.deleteDataMarkedForDelete(projxs[i])
+            }
+            if i < envLen {
+                self.deleteDataMarkedForDelete(envxs[i])
+            }
+        }
+        ws.desc = CoreDataService.shared.defaultWorkspaceDesc
+        ws.name = CoreDataService.shared.defaultWorkspaceName
+        ws.modified = Date().currentTimeNanos()
+        ws.changeTag = ws.modified
+        ws.isSynced = true
+        self.localdb.saveMainContext()
+    }
+    
     // MARK: - Cloud record merge (conflict)
     
     /// Check if server record is latest. Cases were a record is created locally, but failed to sync, new record gets added from another device, and then the
@@ -1290,7 +1324,7 @@ class PersistenceService {
             var env = self.localdb.getEnv(id: envId, ctx: ctx)
             var isNew = false
             if env == nil {
-                env = self.localdb.createEnv(name: name, checkExists: false, ctx: ctx)
+                env = self.localdb.createEnv(name: name, wsId: record.getWsId(), checkExists: false, ctx: ctx)
                 isNew = true
             }
             guard let envData = env else { return }
@@ -1363,10 +1397,7 @@ class PersistenceService {
         let ctx = self.syncFromCloudCtx!
         ctx.perform {
             if id == self.localdb.defaultWorkspaceId {
-                let ws = self.localdb.getDefaultWorkspace(ctx: ctx)
-                ws.resetToDefault()
-                ws.isSynced = true
-                self.localdb.saveMainContext()
+                self.resetDefaultWorkspace()
                 return
             }
             self.localdb.deleteWorkspace(id: id, ctx: ctx)
@@ -1494,7 +1525,12 @@ class PersistenceService {
             let envs = self.localdb.getEnvs(wsId: ws.getId(), includeMarkForDelete: nil, ctx: ctx)
             envs.forEach { env in self.deleteDataMarkedForDelete(env, ctx: ctx)  }
         }
-        self.deleteEntitesFromCloud([ws], ctx: ctx)
+        if ws.isInDefaultMode {
+            ws.markForDelete = false
+            self.saveWorkspaceToCloud(ws)  // Update the workspace as it's the default one
+        } else {
+            self.deleteEntitesFromCloud([ws], ctx: ctx)
+        }
     }
     
     func deleteDataMarkedForDelete(_ env: EEnv, ctx: NSManagedObjectContext? = nil) {

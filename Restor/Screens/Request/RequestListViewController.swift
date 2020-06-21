@@ -67,7 +67,7 @@ class RequestListViewController: RestorViewController {
     }
     
     func getFRCPredicate(_ projId: String) -> NSPredicate {
-        return NSPredicate(format: "project.id == %@ AND name != %@", projId, "")
+        return NSPredicate(format: "project.id == %@ AND name != %@ AND markForDelete == %hdd", projId, "", false)
     }
     
     func initData() {
@@ -79,6 +79,14 @@ class RequestListViewController: RestorViewController {
             }
         }
         self.reloadData()
+    }
+    
+    func updateData() {
+        if self.frc == nil { return }
+        self.frc.delegate = nil
+        try? self.frc.performFetch()
+        self.frc.delegate = self
+        self.tableView.reloadData()
     }
     
     @objc func databaseWillUpdate(_ notif: Notification) {
@@ -135,6 +143,21 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let req = self.frc.object(at: indexPath)
         self.nc.post(name: .requestVCShouldPresent, object: self, userInfo: ["request": req])
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
+            Log.debug("delete row: \(indexPath)")
+            let req = self.frc.object(at: indexPath)
+            self.localdb.markEntityForDelete(req)
+            self.localdb.saveMainContext()
+            self.db.deleteDataMarkedForDelete(req, ctx: self.localdb.mainMOC)
+            self.updateData()
+            completion(true)
+        }
+        let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete])
+        swipeActionConfig.performsFirstActionWithFullSwipe = false
+        return swipeActionConfig
     }
 }
 

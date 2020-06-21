@@ -89,6 +89,14 @@ class ProjectListViewController: RestorViewController {
         self.reloadData()
     }
     
+    func updateData() {
+        if self.frc == nil { return }
+        self.frc.delegate = nil
+        try? self.frc.performFetch()
+        self.frc.delegate = self
+        self.tableView.reloadData()
+    }
+    
     @objc func databaseWillUpdate(_ notif: Notification) {
         DispatchQueue.main.async { self.frc.delegate = nil }
     }
@@ -188,6 +196,24 @@ class ProjectListViewController: RestorViewController {
         }))
     }
     
+    func viewEditPopup(_ proj: EProject) {
+        self.app.viewPopupScreen(self, model: PopupModel(title: "Edit Project", name: proj.getName(), desc: proj.desc ?? "", doneHandler: { model in
+            Log.debug("model value: \(model.name) - \(model.desc)")
+            var didChange = false
+            if proj.name != model.name {
+                proj.name = model.name
+                didChange = true
+            }
+            if proj.desc != model.desc {
+                proj.desc = model.desc
+                didChange = true
+            }
+            if didChange {
+                self.localdb.saveMainContext()
+            }
+        }))
+    }
+    
     func viewAlert(vc: UIViewController, storyboard: UIStoryboard, message: String? = nil, title: String? = nil) {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .actionSheet)
         alert.addAction(UIAlertAction(title: "Cancel", style: .cancel, handler: nil))
@@ -230,7 +256,28 @@ extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource 
         DispatchQueue.main.async {
             self.nc.post(name: .requestListVCShouldPresent, object: self, userInfo: ["project": proj])
         }
-        //UI.pushScreen(self.navigationController!, storyboardId: StoryboardId.requestListVC.rawValue)
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let edit = UIContextualAction(style: .normal, title: "Edit") { action, view, completion in
+            Log.debug("edit row: \(indexPath)")
+            let proj = self.frc.object(at: indexPath)
+            self.viewEditPopup(proj)
+            completion(true)
+        }
+        edit.backgroundColor = App.Color.lightPurple
+        let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
+            Log.debug("delete row: \(indexPath)")
+            let proj = self.frc.object(at: indexPath)
+            self.localdb.markEntityForDelete(proj)
+            self.localdb.saveMainContext()
+            self.db.deleteDataMarkedForDelete(proj, ctx: self.localdb.mainMOC)
+            self.updateData()
+            completion(true)
+        }
+        let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete, edit])
+        swipeActionConfig.performsFirstActionWithFullSwipe = false
+        return swipeActionConfig
     }
 }
 

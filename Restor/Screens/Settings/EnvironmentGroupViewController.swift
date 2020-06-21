@@ -44,13 +44,11 @@ class EnvironmentGroupViewController: UIViewController {
     }
 
     func updateData() {
-        if self.frc != nil { self.frc.delegate = nil }
-        if let _frc = self.localDB.getFetchResultsController(obj: EEnv.self) as? NSFetchedResultsController<EEnv> {
-            self.frc = _frc
-            self.frc.delegate = self
-            try? self.frc.performFetch()
-            self.tableView.reloadData()
-        }
+        if self.frc == nil { return }
+        self.frc.delegate = nil
+        try? self.frc.performFetch()
+        self.frc.delegate = self
+        self.tableView.reloadData()
     }
     
     @objc func addBtnDidTap(_ sender: Any) {
