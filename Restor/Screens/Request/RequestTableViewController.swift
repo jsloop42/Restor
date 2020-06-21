@@ -105,6 +105,15 @@ class RequestTableViewController: RestorTableViewController {
                 self.reqMan = man
             }
         }
+        if let man = self.reqMan {
+            guard let state = man.fsm.currentState else {
+                self.displayRequestDidCompleteUIChanges()
+                return
+            }
+            if state.classForCoder != RequestCancelState.self {
+                self.displayRequestInProgressUIChanges()
+            }
+        }
     }
     
     func initData() {

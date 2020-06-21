@@ -18,12 +18,11 @@ class EEnv: NSManagedObject, Entity {
     }
     
     public func getWsId() -> String {
-        fatalError("Not implemented")
-        return ""
+        return self.wsId ?? ""
     }
     
     public func setWsId(_ id: String) {
-        fatalError("Not implemented")
+        self.wsId = id
     }
     
     public func getName() -> String {
@@ -72,6 +71,7 @@ class EEnv: NSManagedObject, Entity {
             record["modified"] = self.modified as CKRecordValue
             record["changeTag"] = self.changeTag as CKRecordValue
             record["id"] = (self.id ?? "") as CKRecordValue
+            record["wsId"] = (self.wsId ?? "") as CKRecordValue
             record["name"] = (self.name ?? "") as CKRecordValue
             record["version"] = self.version as CKRecordValue
         }
@@ -92,6 +92,7 @@ class EEnv: NSManagedObject, Entity {
                 if let x = record["modified"] as? Int64 { self.modified = x }
                 if let x = record["changeTag"] as? Int64 { self.changeTag = x }
                 if let x = record["id"] as? String { self.id = x }
+                if let x = record["wsId"] as? String { self.wsId = x }
                 if let x = record["name"] as? String { self.name = x }
                 if let x = record["version"] as? Int64 { self.version = x }
             }

@@ -21,7 +21,8 @@ class EnvVarCell: UITableViewCell {
 
 class EnvironmentVariableTableViewController: UITableViewController {
     private let app = App.shared
-    private let localDB = CoreDataService.shared
+    private lazy var localDB = { CoreDataService.shared }()
+    private lazy var db = { PersistenceService.shared }()
     var env: EEnv?
     var frc: NSFetchedResultsController<EEnvVar>!
     
@@ -96,7 +97,11 @@ class EnvironmentVariableTableViewController: UITableViewController {
         edit.backgroundColor = App.Color.lightPurple
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             Log.debug("delete row: \(indexPath)")
-            // TODO: remove from model, reload table view
+            let envVar = self.frc.object(at: indexPath)
+            envVar.markForDelete = true
+            self.localDB.saveMainContext()
+            self.db.deleteDataMarkedForDelete(envVar, ctx: self.localDB.mainMOC)
+            self.updateData()
             completion(true)
         }
         let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete, edit])

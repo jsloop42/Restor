@@ -17,7 +17,8 @@ class EnvGroupCell: UITableViewCell {
 class EnvironmentGroupViewController: UIViewController {
     @IBOutlet weak var tableView: UITableView!
     private let app = App.shared
-    private let localDB = CoreDataService.shared
+    private lazy var localDB = { CoreDataService.shared }()
+    private lazy var db = { PersistenceService.shared }()
     private var frc: NSFetchedResultsController<EEnv>!
     
     override func viewWillAppear(_ animated: Bool) {
@@ -98,7 +99,11 @@ extension EnvironmentGroupViewController: UITableViewDelegate, UITableViewDataSo
         edit.backgroundColor = App.Color.lightPurple
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             Log.debug("delete row: \(indexPath)")
-            // TODO: remove from model, reload table view
+            let env = self.frc.object(at: indexPath)
+            env.markForDelete = true
+            self.localDB.saveMainContext()
+            self.db.deleteDataMarkedForDelete(env, ctx: self.localDB.mainMOC)
+            self.updateData()
             completion(true)
         }
         let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete, edit])

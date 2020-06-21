@@ -1241,6 +1241,8 @@ class CoreDataService {
         return x
     }
     
+    // MARK: EHistory
+    
     func getHistory(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EHistory? {
         var x: EHistory?
         let moc = self.getMainMOC(ctx: ctx)
@@ -1275,6 +1277,8 @@ class CoreDataService {
         return x
     }
     
+    // MARK: EEnv
+    
     func getEnv(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnv? {
         var x: EEnv?
         let moc = self.getMainMOC(ctx: ctx)
@@ -1308,6 +1312,29 @@ class CoreDataService {
         return xs
     }
     
+    /// Retrieves envs belonging to the given workspace.
+    func getEnvs(wsId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EEnv] {
+        var xs: [EEnv] = []
+        let moc = self.getMainMOC(ctx: ctx)
+        moc.performAndWait {
+            let fr = NSFetchRequest<EEnv>(entityName: "EEnv")
+            if includeMarkForDelete != nil {
+                fr.predicate = NSPredicate(format: "markForDelete == %hhd AND wsId == %@", includeMarkForDelete!, wsId)
+            } else {
+                fr.predicate = NSPredicate(format: "wsId == %@", wsId)
+            }
+            fr.fetchBatchSize = self.fetchBatchSize
+            do {
+                xs = try moc.fetch(fr)
+            } catch let error {
+                Log.error("Error getting envs: \(error)")
+            }
+        }
+        return xs
+    }
+    
+    // MARK: EEnvVar
+    
     func getEnvVar(id: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnvVar? {
         var x: EEnvVar?
         let moc = self.getMainMOC(ctx: ctx)
@@ -1325,6 +1352,7 @@ class CoreDataService {
         return x
     }
     
+    /// Retrieves env variables belonging to the given env.
     func getEnvVars(envId: String, includeMarkForDelete: Bool? = false, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> [EEnvVar] {
         var xs: [EEnvVar] = []
         let moc = self.getMainMOC(ctx: ctx)
@@ -1778,7 +1806,7 @@ class CoreDataService {
         return x
     }
     
-    func createEnv(name: String, envId: String? = CoreDataService.shared.envId(), checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnv? {
+    func createEnv(name: String, envId: String? = CoreDataService.shared.envId(), wsId: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnv? {
         var x: EEnv?
         let ts = Date().currentTimeNanos()
         let moc = self.getMainMOC(ctx: ctx)
@@ -1786,6 +1814,7 @@ class CoreDataService {
             if let isExists = checkExists, isExists, let data = self.getEnv(id: envId!, ctx: ctx) { x = data }
             let data = x != nil ? x! : EEnv(context: moc)
             data.id = envId
+            data.wsId = wsId
             data.name = name
             data.created = x == nil ? ts: x!.created
             data.modified = ts
@@ -1796,7 +1825,7 @@ class CoreDataService {
         return x
     }
 
-    func createEnvVar(envId: String, name: String, value: String, id: String? = CoreDataService.shared.envVarId(), checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnvVar? {
+    func createEnvVar(name: String, value: String, id: String? = CoreDataService.shared.envVarId(), checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EEnvVar? {
         var x: EEnvVar?
         let ts = Date().currentTimeNanos()
         let moc = self.getMainMOC(ctx: ctx)

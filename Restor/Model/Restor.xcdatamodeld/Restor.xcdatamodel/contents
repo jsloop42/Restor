@@ -9,12 +9,16 @@
         <attribute name="modified" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
         <attribute name="name" attributeType="String" defaultValueString=""/>
         <attribute name="version" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="wsId" attributeType="String" defaultValueString=""/>
         <relationship name="variables" optional="YES" toMany="YES" deletionRule="Nullify" destinationEntity="EEnvVar" inverseName="env" inverseEntity="EEnvVar"/>
         <fetchIndex name="byId">
             <fetchIndexElement property="id" type="Binary" order="ascending"/>
         </fetchIndex>
         <fetchIndex name="byMarkForDelete">
             <fetchIndexElement property="markForDelete" type="Binary" order="ascending"/>
+        </fetchIndex>
+        <fetchIndex name="byWsId">
+            <fetchIndexElement property="wsId" type="Binary" order="ascending"/>
         </fetchIndex>
         <uniquenessConstraints>
             <uniquenessConstraint>
@@ -389,7 +393,7 @@
         </uniquenessConstraints>
     </entity>
     <elements>
-        <element name="EEnv" positionX="-9" positionY="144" width="128" height="178"/>
+        <element name="EEnv" positionX="-9" positionY="144" width="128" height="193"/>
         <element name="EEnvVar" positionX="-9" positionY="153" width="128" height="193"/>
         <element name="EFile" positionX="36" positionY="126" width="128" height="238"/>
         <element name="EHistory" positionX="-9" positionY="135" width="128" height="673"/>

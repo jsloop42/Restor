@@ -67,7 +67,7 @@ class EnvironmentEditViewController: UITableViewController {
     var mode: Mode = .addEnv
     private lazy var localDB = { CoreDataService.shared }()
     private lazy var db = { PersistenceService.shared }()
-    private let app = App.shared
+    private lazy var app = { App.shared }()
     private let nc = NotificationCenter.default
     var name = ""
     var value = ""
@@ -160,16 +160,16 @@ class EnvironmentEditViewController: UITableViewController {
 
     @objc func doneDidTap(_ sender: Any) {
         Log.debug("done btn did tap")
+        let wsId = self.app.getSelectedWorkspace().getId()
         switch self.mode {
         case .addEnv:
-            self.env = self.localDB.createEnv(name: self.name)
+            self.env = self.localDB.createEnv(name: self.name, wsId: wsId)
             self.saveEnv()
         case .editEnv:
             self.env?.name = self.name
             self.saveEnv()
         case .addEnvVar:
-            guard let envId = self.env?.getId() else { return }
-            self.envVar = self.localDB.createEnvVar(envId: envId, name: self.name, value: self.value)
+            self.envVar = self.localDB.createEnvVar(name: self.name, value: self.value)
             self.envVar?.env = self.env
             self.saveEnvVar()
         case .editEnvVar:

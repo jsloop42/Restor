@@ -85,6 +85,8 @@ class PersistenceService {
     var reqMethodCache = EALFUCache(size: 16)
     var fileCache = EALFUCache(size: 16)
     var imageCache = EALFUCache(size: 16)
+    var envCache = EALFUCache(size: 16)
+    var envVarCache = EALFUCache(size: 32)
     var saveQueueCompletionHandler: (([CKRecord]) -> Void)!
     var saveQueue: EAQueue<DeferredSaveModel>!
     var defaultZoneCursor: CKQueryOperation.Cursor?
@@ -92,6 +94,7 @@ class PersistenceService {
     private let lastSyncedKey = "last-synced-key"
     private let lastSyncTimeKey = "last-sync-time-key"
     private let defaultQueryCursorKey = "default-query-cursor-key"
+    private let appQueryCursorKey = "app-query-cursor-key"
     private let syncRecordKey = "sync-record-key"
     private let defaultZoneRecordFetchLimit = 50
     private let opQueue = EAOperationQueue()
@@ -245,6 +248,8 @@ class PersistenceService {
         self.reqMethodCache.resetCache()
         self.fileCache.resetCache()
         self.imageCache.resetCache()
+        self.envCache.resetCache()
+        self.envVarCache.resetCache()
     }
     
     @objc func networkDidBecomeUnavailable(_ notif: Notification) {
@@ -406,7 +411,11 @@ class PersistenceService {
             return self.fileCache.get(entityId)
         case .image:
             return self.imageCache.get(entityId)
-        case .zone, .history, .env, .envVar:
+        case .env:
+            return self.envCache.get(entityId)
+        case .envVar:
+            return self.envVarCache.get(entityId)
+        case .zone, .history:
             return nil
         }
     }
@@ -429,7 +438,11 @@ class PersistenceService {
             self.fileCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
         case .image:
             self.imageCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
-        case .zone, .history, .env, .envVar:
+        case .env:
+            self.envCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .envVar:
+            self.envVarCache.add(CacheValue(key: entityId, value: record, ts: Date().currentTimeNanos(), accessCount: 0))
+        case .zone, .history:
             break
         }
     }
@@ -842,6 +855,7 @@ class PersistenceService {
         if self.syncFromCloudCtx == nil {
             self.syncFromCloudCtx = self.localdb.mainMOC
         }
+        // We query the _defaultZone which has Zone records corresponding to each zones. For each zone, we then get the changes.
         self.queryDefaultZoneRecords(completion: self.syncFromCloudHandler(_:))
     }
     
@@ -1476,12 +1490,31 @@ class PersistenceService {
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
         ctx.perform {
             let xs = self.localdb.getProjects(wsId: ws.getId(), includeMarkForDelete: true, ctx: ctx)
-            xs.forEach { proj in self.deleteDataMakedForDelete(proj, ctx: ctx) }
+            xs.forEach { proj in self.deleteDataMarkedForDelete(proj, ctx: ctx) }
+            let envs = self.localdb.getEnvs(wsId: ws.getId(), includeMarkForDelete: nil, ctx: ctx)
+            envs.forEach { env in self.deleteDataMarkedForDelete(env, ctx: ctx)  }
         }
         self.deleteEntitesFromCloud([ws], ctx: ctx)
     }
     
-    func deleteDataMakedForDelete(_ proj: EProject, ctx: NSManagedObjectContext? = nil) {
+    func deleteDataMarkedForDelete(_ env: EEnv, ctx: NSManagedObjectContext? = nil) {
+        Log.debug("delete data marked for delete - env")
+        let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
+        ctx.perform {
+            let envId = env.getId()
+            let xs = self.localdb.getEnvVars(envId: envId, ctx: ctx)
+            self.deleteEntitesFromCloud(xs, ctx: ctx)
+        }
+        self.deleteEntitesFromCloud([env], ctx: ctx)
+    }
+    
+    func deleteDataMarkedForDelete(_ envVar: EEnvVar, ctx: NSManagedObjectContext? = nil) {
+        Log.debug("delete data marked for delete - env var")
+        let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
+        self.deleteEntitesFromCloud([envVar], ctx: ctx)
+    }
+        
+    func deleteDataMarkedForDelete(_ proj: EProject, ctx: NSManagedObjectContext? = nil) {
         Log.debug("delete data marked for delete - proj")
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
         ctx.perform {
@@ -1625,24 +1658,42 @@ class PersistenceService {
     
     func queryDefaultZoneRecords(completion: @escaping (Result<[CKRecord], Error>) -> Void) {
         Log.debug("query default zone records")
-        self.ck.queryRecords(zoneID: self.ck.defaultZoneID(), recordType: RecordType.zone.rawValue, predicate: NSPredicate(format: "isSyncEnabled == %hdd", true),
+        self.queryZoneRecordsImp(recordType: .zone, completion: completion)
+    }
+    
+    func queryZoneRecordsImp(recordType: RecordType, completion: @escaping (Result<[CKRecord], Error>) -> Void) {
+        let zoneID: CKRecordZone.ID
+        var isDefault = true
+        if recordType == .zone {
+            zoneID = self.ck.defaultZoneID()
+            isDefault = true
+        } else {
+            fatalError("Querying other zones are not expected")
+        }
+        self.ck.queryRecords(zoneID: zoneID, recordType: recordType.rawValue, predicate: NSPredicate(format: "isSyncEnabled == %hdd", true),
                              cursor: self.getCachedDefaultZoneQueryCursor(), limit: self.defaultZoneRecordFetchLimit) { [weak self] result in
-            Log.debug("query default zone records handler")
+            Log.debug("query zone \(zoneID.zoneName) records handler")
             guard let self = self else { return }
             switch result {
             case .success(let (records, cursor)):
-                self.isSyncFromCloudSuccess = true
+                if isDefault { self.isSyncFromCloudSuccess = true }
                 if let cursor = cursor {
-                    self.setDefaultZoneQueryCursorToCache(cursor)
-                    self.hasMoreZonesToQuery = true
+                    if isDefault {
+                        self.setDefaultZoneQueryCursorToCache(cursor)
+                        self.hasMoreZonesToQuery = true
+                    }
                 } else {
-                    self.removeDefaultZoneQueryCursorFromCache()
-                    self.hasMoreZonesToQuery = false
+                    if isDefault {
+                        self.removeDefaultZoneQueryCursorFromCache()
+                        self.hasMoreZonesToQuery = false
+                    }
                 }
                 completion(.success(records))
             case .failure(let error):
-                Log.error("Error querying default zone record: \(error)")
-                self.isSyncFromCloudSuccess = false
+                Log.error("Error querying \(isDefault ? "default" : "unknown") zone record: \(error)")
+                if isDefault {
+                    self.isSyncFromCloudSuccess = false
+                }
                 completion(.failure(error))
             }
         }
@@ -1791,7 +1842,7 @@ class PersistenceService {
             guard let ws = proj.workspace else { self.removeFromSyncToCloudSaveId(proj.getId()); Log.error("Workspace is empty for project"); return }
             if !ws.isSyncEnabled { self.removeFromSyncToCloudSaveId(proj.getId()); return }
             if ws.markForDelete { self.deleteDataMarkedForDelete(ws); return }
-            if proj.markForDelete { self.deleteDataMakedForDelete(proj); return }
+            if proj.markForDelete { self.deleteDataMarkedForDelete(proj); return }
             let wsId  = ws.getId()
             let projId = proj.getId()
             let zoneID = proj.getZoneID()
@@ -1833,7 +1884,7 @@ class PersistenceService {
     func saveRequestToCloud(_ req: ERequest) {
         req.managedObjectContext?.perform {
             guard let proj = req.project, let ws = proj.workspace, ws.isSyncEnabled else { self.removeFromSyncToCloudSaveId(req.getId()); return }
-            if proj.markForDelete { self.deleteDataMakedForDelete(proj); return }
+            if proj.markForDelete { self.deleteDataMarkedForDelete(proj); return }
             if req.markForDelete { self.deleteDataMarkedForDelete(req); return }
             guard let reqId = req.id else { Log.error("ERequest id is nil"); return }
             let wsId = ws.getId()
@@ -1873,7 +1924,7 @@ class PersistenceService {
     
     func saveEnvToCloud(_ env: EEnv) {
         env.managedObjectContext?.perform {
-            let zoneID = self.ck.appZoneID()
+            let zoneID = self.ck.zoneID(workspaceId: env.getWsId())
             let ckEnvID = self.ck.recordID(entityId: env.getId(), zoneID: zoneID)
             let ckEnv = self.ck.createRecord(recordID: ckEnvID, recordType: env.recordType)
             env.updateCKRecord(ckEnv)
@@ -1883,10 +1934,10 @@ class PersistenceService {
 
     func saveEnvVarToCloud(_ envVar: EEnvVar) {
         envVar.managedObjectContext?.perform {
-            let zoneID = self.ck.appZoneID()
+            guard let env = envVar.env, let wsId = env.wsId else { return }
+            let zoneID = self.ck.zoneID(workspaceId: wsId)
             let ckEnvVarID = self.ck.recordID(entityId: envVar.getId(), zoneID: zoneID)
             let ckEnvVar = self.ck.createRecord(recordID: ckEnvVarID, recordType: envVar.recordType)
-            guard let env = envVar.env else { return }
             // env record
             let ckEnvID = self.ck.recordID(entityId: env.getId(), zoneID: zoneID)
             let ckEnv = self.ck.createRecord(recordID: ckEnvID, recordType: env.recordType)
