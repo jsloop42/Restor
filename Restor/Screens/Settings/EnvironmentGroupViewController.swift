@@ -20,6 +20,7 @@ class EnvironmentGroupViewController: UIViewController {
     private lazy var localDB = { CoreDataService.shared }()
     private lazy var db = { PersistenceService.shared }()
     private var frc: NSFetchedResultsController<EEnv>!
+    private var workspace: EWorkspace?
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -30,6 +31,7 @@ class EnvironmentGroupViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         self.initUI()
+        self.initData()
     }
     
     func initUI() {
@@ -41,6 +43,18 @@ class EnvironmentGroupViewController: UIViewController {
         self.tableView.delegate = self
         self.navigationItem.title = "Environments"
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
+    }
+    
+    func initData() {
+        guard self.frc == nil else { return }
+        if self.workspace == nil { self.workspace = self.app.getSelectedWorkspace() }
+        guard let wsId = self.workspace?.getId() else { return }
+        if let _frc = self.localDB.getFetchResultsController(obj: EEnv.self, predicate: NSPredicate(format: "wsId == %@ AND markForDelete == %hhd", wsId, false), ctx: self.localDB.mainMOC) as? NSFetchedResultsController<EEnv> {
+            self.frc = _frc
+            self.frc.delegate = self
+            try? self.frc.performFetch()
+            self.tableView.reloadData()
+        }
     }
 
     func updateData() {

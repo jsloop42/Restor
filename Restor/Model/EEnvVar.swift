@@ -19,8 +19,7 @@ class EEnvVar: NSManagedObject, Entity {
     }
     
     public func getWsId() -> String {
-        fatalError("Not implemented")
-        return ""
+        return self.env?.getWsId() ?? ""
     }
     
     public func setWsId(_ id: String) {

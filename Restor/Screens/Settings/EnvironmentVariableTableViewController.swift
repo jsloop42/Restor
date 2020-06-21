@@ -36,6 +36,7 @@ class EnvironmentVariableTableViewController: UITableViewController {
         super.viewDidLoad()
         Log.debug("env var table view controller - view did load")
         self.initUI()
+        self.initData()
     }
     
     func initUI() {
@@ -46,6 +47,16 @@ class EnvironmentVariableTableViewController: UITableViewController {
         self.tableView.delegate = self
         self.navigationItem.title = "Variables"
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(self.addBtnDidTap(_:)))
+    }
+    
+    func initData() {
+        guard self.frc == nil, let envId = self.env?.getId() else { return }
+        if let _frc = self.localDB.getFetchResultsController(obj: EEnvVar.self, predicate: NSPredicate(format: "env.id == %@ AND markForDelete == %hhd", envId, false), ctx: self.localDB.mainMOC) as? NSFetchedResultsController<EEnvVar> {
+            self.frc = _frc
+            self.frc.delegate = self
+            try? self.frc.performFetch()
+            self.tableView.reloadData()
+        }
     }
     
     func updateData() {

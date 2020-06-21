@@ -157,6 +157,8 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
         let cell = tableView.dequeueReusableCell(withIdentifier: CellReuseId.popupCell.rawValue, for: indexPath) as! PopupCell
         self.updateCellUI(cell)
         self.initCellEvents(cell)
+        cell.nameTextField.text = self.model?.name
+        cell.descTextField.text = self.model?.desc
         return cell
     }
     
