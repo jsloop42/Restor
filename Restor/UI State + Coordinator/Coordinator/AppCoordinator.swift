@@ -51,7 +51,6 @@ class AppCoordinator: EACoordinator {
             self.nc.addObserver(self, selector: #selector(self.requestListVCShouldPresent(_:)), name: .requestListVCShouldPresent, object: nil)
             self.nc.addObserver(self, selector: #selector(self.requestVCShouldPresent(_:)), name: .requestVCShouldPresent, object: nil)
             self.nc.addObserver(self, selector: #selector(self.editRequestVCShouldPresent(_:)), name: .editRequestVCShouldPresent, object: nil)
-            // TODO: move notif name to enum
             self.nc.addObserver(self, selector: #selector(self.didNavigateBackToProjectListVC(_:)), name: .workspaceWillClose, object: nil)
             self.nc.addObserver(self, selector: #selector(self.didNavigateBackToProjectListVC(_:)), name: Notification.Name("did-navigate-back-to-ProjectListViewController"), object: nil)
             self.nc.addObserver(self, selector: #selector(self.didNavigateBackToRequestListVC(_:)), name: Notification.Name("did-navigate-back-to-RequestListViewController"), object: nil)
@@ -91,7 +90,7 @@ class AppCoordinator: EACoordinator {
             self.fsm.enter(EditRequestState.self)
         }
     }
-    
+
     func editRequestVCShouldPresent(request: ERequest) {
         DispatchQueue.main.async {
             guard let state = self.fsm.state(forClass: EditRequestState.self) else { return }

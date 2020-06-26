@@ -67,13 +67,14 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     /// Display Edit button in navigation bar
     func addNavigationBarEditButton() {
         self.barBtn = UIButton(type: .custom)
+        self.barBtn.titleLabel?.font = UIFont.systemFont(ofSize: 16)
         self.barBtn.setTitleColor(self.barBtn.tintColor, for: .normal)
         self.barBtn.addTarget(self, action: #selector(self.rightBarButtonDidTap(_:)), for: .touchUpInside)
         self.updateBarButtonText()
     }
     
     func updateBarButtonText() {
-        self.barBtn.setTitle(self.selectedTab == .request ? "Edit" : "", for: .normal)
+        self.barBtn.setTitle(self.selectedTab == .request ? "Edit" : "History", for: .normal)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: self.barBtn)
     }
     
@@ -83,7 +84,10 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
         if self.selectedTab == .request {
             self.nc.post(name: .editRequestDidTap, object: self, userInfo: ["request": req])
         } else if self.selectedTab == .response {
-            // self.nc.post(name: .viewRequestHistoryDidTap, object: self, userInfo: ["request": req])  // TODO: history button v1.1
+            if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.historyVC.rawValue) as? HistoryTableViewController {
+                vc.request = req
+                self.navigationController?.pushViewController(vc, animated: true)
+            }
         }
     }
     

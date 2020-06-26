@@ -983,6 +983,7 @@ enum StoryboardId: String {
     case projectListVC
     case requestListVC
     case settingsVC
+    case historyVC
     case workspaceListVC
 }
 

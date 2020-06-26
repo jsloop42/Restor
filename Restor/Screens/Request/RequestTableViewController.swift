@@ -352,57 +352,10 @@ class RequestTableViewController: RestorTableViewController {
             self.methodLabel.text = "GET"
         }
         self.urlLabel.text = request.url
-        // self.urlLabel.text = "https://example.com/api/image/2458C0A7-538A-4A4B-9788-971BD38934BD/olive/imCJHoKQhHRWStsT3MkGiPbg.jpg"
         self.nameLabel.text = request.name
         self.nameLabel.sizeToFit()
         self.descLabel.text = request.desc
-        self.descLabel.text =
-        """
-        There's a place in my mind
-        No one knows where it hides
-        And my fantasy is flying
-        It's a castle in the sky
-        
-        It's a world of our past
-        Where the legend still lasts
-        And the king wears the crown
-        But the magic spell is law
-        
-        Take your sword and your shield
-        There's a battle on the field
-        You're a knight and you're right
-        So with dragons now you'll fight
-        
-        And my fancy is flying
-        It's a castle in the sky
-        Or there's nothing out there
-        These are castles in the air
-        
-        Fairytales live in me
-        Fables coming from my memory
-        Fantasy is not a crime
-        Find your castle in the sky
-        
-        You've got the key
-        Of the kingdom of the clouds
-        Open the door
-        Leaving back your doubts
-        
-        You've got the power
-        To live another childhood
-        So ride the wind
-        That leads you to the moon 'cause...
-        """
-        self.descLabel.text = ""
         self.descLabel.sizeToFit()
-//        self.urlTextField.text = req.url
-//        self.nameTextField.text = req.name
-//        if let x = req.desc, !x.isEmpty {
-//            self.descTextView.text = x
-//        } else {
-//            self.descTextView.isHidden = true
-//            self.descBorderView.isHidden = true
-//        }
         self.requestBody = request.body
         guard let body = self.requestBody else { return }
         guard let bodyType = RequestBodyType(rawValue: body.selected.toInt()) else { return }

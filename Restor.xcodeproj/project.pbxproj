@@ -33,6 +33,7 @@
 		9E36C415246BEBEC00946726 /* ProjectListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C414246BEBEC00946726 /* ProjectListState.swift */; };
 		9E36C417246BEC3B00946726 /* RequestListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C416246BEC3B00946726 /* RequestListState.swift */; };
 		9E36C419246BEC7A00946726 /* WorkspaceListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C418246BEC7A00946726 /* WorkspaceListState.swift */; };
+		9E3AFF1B24A6760900716BD7 /* HistoryTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3AFF1A24A6760900716BD7 /* HistoryTableViewController.swift */; };
 		9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334832416C4AA002452EB /* EAFileManager.swift */; };
 		9E4334862416D1ED002452EB /* IMG_6109.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 9E4334852416D1DE002452EB /* IMG_6109.jpeg */; };
 		9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334872416DC20002452EB /* BackgroundWorker.swift */; };
@@ -156,6 +157,7 @@
 		9E36C414246BEBEC00946726 /* ProjectListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListState.swift; sourceTree = "<group>"; };
 		9E36C416246BEC3B00946726 /* RequestListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListState.swift; sourceTree = "<group>"; };
 		9E36C418246BEC7A00946726 /* WorkspaceListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListState.swift; sourceTree = "<group>"; };
+		9E3AFF1A24A6760900716BD7 /* HistoryTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryTableViewController.swift; sourceTree = "<group>"; };
 		9E4334832416C4AA002452EB /* EAFileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAFileManager.swift; sourceTree = "<group>"; };
 		9E4334852416D1DE002452EB /* IMG_6109.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = IMG_6109.jpeg; sourceTree = "<group>"; };
 		9E4334872416DC20002452EB /* BackgroundWorker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundWorker.swift; sourceTree = "<group>"; };
@@ -271,6 +273,7 @@
 		9E0AD514247ACB4C0099B9A5 /* Response */ = {
 			isa = PBXGroup;
 			children = (
+				9E3AFF1A24A6760900716BD7 /* HistoryTableViewController.swift */,
 				9E70D4BA24605E2700B33CF1 /* ResponseTableViewController.swift */,
 			);
 			path = Response;
@@ -755,6 +758,7 @@
 				9E358E3A249E31F700D7481F /* EnvironmentPickerViewController.swift in Sources */,
 				9E1B2DEA242799AF00994233 /* ERequestData.swift in Sources */,
 				9E85FE48240E9CDB002821F2 /* main.swift in Sources */,
+				9E3AFF1B24A6760900716BD7 /* HistoryTableViewController.swift in Sources */,
 				9EFFF1CA246FEA50003D7CA8 /* RequestManager.swift in Sources */,
 				9E473B04241CE74200DEC889 /* EditRequestTableViewController.swift in Sources */,
 				9E1B2DE22427990600994233 /* ERequestMethodData.swift in Sources */,

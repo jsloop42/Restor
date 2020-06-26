@@ -422,7 +422,7 @@ class ResponseTableViewController: RestorTableViewController {
     private lazy var ck = { EACloudKit.shared }()
     private lazy var localdb = { CoreDataService.shared }()
     private lazy var utils = { EAUtils.shared }()
-    private lazy var tabbarController = { self.tabBarController as! RequestTabBarController }()
+    private lazy var tabbarController: RequestTabBarController? = { self.tabBarController as? RequestTabBarController }()
     var mode: ResponseMode = .info
     @IBOutlet weak var infoCell: ResponseInfoCell!
     @IBOutlet weak var headersViewCell: ResponseKVCell! {
@@ -448,7 +448,14 @@ class ResponseTableViewController: RestorTableViewController {
     private var previousCookieCellHeight: CGFloat = 0.0
     private var previousMetricsCellHeight: CGFloat = 0.0
     private var previousDetailsCellHeight: CGFloat = 0.0
+    var request: ERequest?
     var data: ResponseData?
+    var viewType = ViewType.requestResponse
+    
+    enum ViewType {
+        case requestResponse  // From request response screen within a tab bar controller
+        case historyResponse  // From history screen without tab bar controller
+    }
     
     enum InfoCellId: Int {
         case spacerBeforeInfoCell
@@ -499,8 +506,12 @@ class ResponseTableViewController: RestorTableViewController {
     
     func initData() {
         Log.debug("response vc - initData")
-        guard let req = self.tabbarController.request else { return }
-        self.data = self.tabbarController.responseData
+        guard let req = (self.viewType == .requestResponse ? self.tabbarController?.request : self.request) else { return }
+        if self.viewType == .requestResponse {
+            self.data = self.tabbarController?.responseData
+        } else {
+            self.data?.request = self.request
+        }
         if self.data == nil {
             if let history = self.localdb.getLatestHistory(reqId: req.getId(), includeMarkForDelete: nil, ctx: self.localdb.mainMOC) {
                 self.data = ResponseData(history: history)
@@ -544,8 +555,12 @@ class ResponseTableViewController: RestorTableViewController {
     }
     
     func initUI() {
-        self.mode = ResponseMode(rawValue: self.tabbarController.segView.selectedSegmentIndex) ?? .info
-        self.tabbarController.viewNavbarSegment()
+        if self.viewType == .requestResponse {
+            self.mode = ResponseMode(rawValue: self.tabbarController?.segView.selectedSegmentIndex ?? 0) ?? .info
+            self.tabbarController?.viewNavbarSegment()
+        } else {
+            self.navigationItem.title = "Response"
+        }
     }
     
     func initEvents() {
@@ -741,7 +756,7 @@ extension ResponseTableViewController {
             if indexPath.row == RawCellId.spacerBeforeRawCell.rawValue {
                 return 24
             }
-            let h: CGFloat = UIScreen.main.bounds.height - (48 + self.tabbarController.tabBar.frame.height + self.navigationController!.navigationBar.frame.height +
+            let h: CGFloat = UIScreen.main.bounds.height - (48 + (self.tabbarController?.tabBar.frame.height ?? 0) + self.navigationController!.navigationBar.frame.height +
                 UIApplication.shared.keyWindow!.safeAreaInsets.top)
             Log.debug("view height: \(h) - 832?")
             return h
@@ -749,7 +764,7 @@ extension ResponseTableViewController {
             if indexPath.row == PreviewCellId.spacerBeforePreviewCell.rawValue {
                 return 24
             }
-            let h: CGFloat = UIScreen.main.bounds.height - (48 + self.tabbarController.tabBar.frame.height + self.navigationController!.navigationBar.frame.height +
+            let h: CGFloat = UIScreen.main.bounds.height - (48 + (self.tabbarController?.tabBar.frame.height ?? 0) + self.navigationController!.navigationBar.frame.height +
                 UIApplication.shared.keyWindow!.safeAreaInsets.top)
             return h
         default:

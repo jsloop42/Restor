@@ -29,6 +29,9 @@ class RequestListViewController: RestorViewController {
     private lazy var db = { PersistenceService.shared }()
     private let nc = NotificationCenter.default
     var project: EProject?
+    var methods: [ERequestMethodData] = []
+    let font17 = UIFont.systemFont(ofSize: 17)
+    let font15 = UIFont.systemFont(ofSize: 15)
     
     deinit {
         self.nc.removeObserver(self)
@@ -77,6 +80,7 @@ class RequestListViewController: RestorViewController {
                 self.frc = _frc
                 self.frc.delegate = self
             }
+            self.methods = self.localdb.getRequestMethodData(projId:  projId, ctx: self.localdb.mainMOC)
         }
         self.reloadData()
     }
@@ -125,9 +129,34 @@ class RequestListViewController: RestorViewController {
 class RequestCell: UITableViewCell {
     @IBOutlet weak var nameLbl: UILabel!
     @IBOutlet weak var descLbl: UILabel!
+    @IBOutlet weak var bottomBorder: UIView!
+    
+    func hideBottomBorder() {
+        self.bottomBorder.isHidden = true
+    }
+    
+    func displayBottomBorder() {
+        self.bottomBorder.isHidden = false
+    }
 }
 
 extension RequestListViewController: UITableViewDelegate, UITableViewDataSource {
+    func getDesc(req: ERequest) -> String {
+        let method = self.methods[req.selectedMethodIndex.toInt()].getName()
+        let url = req.url ?? ""
+        var path = ""
+        if !url.isEmpty {
+            if url.firstIndex(of: "{") != nil {
+                if let idx = url.firstIndex(of: "/") {
+                    path = String(url.suffix(from: idx))
+                }
+            } else {
+                path = URL(string: url)?.path ?? url
+            }
+        }
+        return "\(method) \(path.isEmpty ? "/" : path)"
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.frc.numberOfRows(in: section)
     }
@@ -136,7 +165,18 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
         let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseId, for: indexPath) as! RequestCell
         let req = self.frc.object(at: indexPath)
         cell.nameLbl.text = req.name
-        cell.descLbl.text = req.desc
+        let desc = self.getDesc(req: req)
+        cell.descLbl.text = desc
+        if desc.isEmpty {
+            cell.descLbl.isHidden = true
+        } else {
+            cell.descLbl.isHidden = false
+        }
+        if indexPath.row == self.frc.numberOfRows(in: indexPath.section) - 1 {
+            cell.displayBottomBorder()
+        } else {
+            cell.hideBottomBorder()
+        }
         return cell
     }
     
@@ -158,6 +198,16 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
         let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete])
         swipeActionConfig.performsFirstActionWithFullSwipe = false
         return swipeActionConfig
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        let req = self.frc.object(at: indexPath)
+        let name = req.name ?? ""
+        let desc = self.getDesc(req: req)
+        let w = tableView.frame.width
+        let h1 = name.height(width: w, font: self.font17) + 20
+        let h2: CGFloat =  desc.isEmpty ? 0 : desc.height(width: w, font: self.font15) + 10
+        return max(h1 + h2, 46)
     }
 }
 
