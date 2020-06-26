@@ -11,6 +11,9 @@ import UIKit
 
 class SettingsTableViewController: RestorTableViewController {
     private let app = App.shared
+    @IBOutlet weak var saveHistorySwitch: UISwitch!
+    private lazy var localDB = { CoreDataService.shared }()
+    private lazy var db = { PersistenceService.shared }()
     
     enum CellId: Int {
         case spacerAfterTop
@@ -19,6 +22,8 @@ class SettingsTableViewController: RestorTableViewController {
         case toolsTitle
         case base64
         case spacerAfterTools
+        case saveHistory
+        case spacerAfterSaveHistory
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -30,6 +35,7 @@ class SettingsTableViewController: RestorTableViewController {
         super.viewDidLoad()
         Log.debug("settings tv view did load")
         self.initUI()
+        self.initEvents()
     }
     
     func initUI() {
@@ -39,6 +45,18 @@ class SettingsTableViewController: RestorTableViewController {
         self.navigationItem.title = "Settings"
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
+    }
+    
+    func initEvents() {
+        self.saveHistorySwitch.addTarget(self, action: #selector(self.saveHistorySwitchDidChange(_:)), for: .valueChanged)
+    }
+    
+    @objc func saveHistorySwitchDidChange(_ sender: UISwitch) {
+        Log.debug("save history switch did change")
+        let ws = self.app.getSelectedWorkspace()
+        ws.saveResponse = self.saveHistorySwitch.isOn
+        self.localDB.saveMainContext()
+        self.db.saveWorkspaceToCloud(ws)
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -62,6 +80,10 @@ class SettingsTableViewController: RestorTableViewController {
         case CellId.base64.rawValue:
             return 44
         case CellId.spacerAfterTools.rawValue:
+            return 24
+        case CellId.saveHistory.rawValue:
+            return 44
+        case CellId.spacerAfterSaveHistory.rawValue:
             return 24
         default:
             break

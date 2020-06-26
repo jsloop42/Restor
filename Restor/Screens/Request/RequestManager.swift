@@ -106,11 +106,6 @@ final class RequestManager {
             guard let ws = self.localdb.getWorkspace(id: self.request.getWsId()) else { return }
             var history: EHistory!
             // Save history if save response is enabled
-            
-            // TODO: test
-            ws.saveResponse = true
-            // TODO: end test
-            
             if ws.saveResponse {
                 history = EHistory.initFromResponseData(info)
             } else {
