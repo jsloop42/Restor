@@ -1503,7 +1503,7 @@ class PersistenceService {
         Log.debug("delete data marked for delete - set: \(set.count)")
         guard set.count > 0 else { return }
         let ctx = self.localdb.mainMOC
-        ctx.perform {
+        ctx.performAndWait {
             let xs = set.toArray().compactMap({ info -> Entity? in
                 self.localdb.getManagedObject(moId: info.moID, withContext: ctx) as? Entity
             })
@@ -1519,24 +1519,35 @@ class PersistenceService {
     func deleteDataMarkedForDelete(_ ws: EWorkspace, ctx: NSManagedObjectContext? = nil) {
         Log.debug("delete data marked for delete - ws")
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
-        ctx.perform {
+        ctx.performAndWait {
+            var acc: [Entity] = []
             let xs = self.localdb.getProjects(wsId: ws.getId(), includeMarkForDelete: true, ctx: ctx)
-            xs.forEach { proj in self.deleteDataMarkedForDelete(proj, ctx: ctx) }
+            xs.forEach { proj in
+                proj.markForDelete = true
+                self.deleteDataMarkedForDelete(proj, ctx: ctx)
+            }
             let envs = self.localdb.getEnvs(wsId: ws.getId(), includeMarkForDelete: nil, ctx: ctx)
-            envs.forEach { env in self.deleteDataMarkedForDelete(env, ctx: ctx)  }
+            envs.forEach { env in
+                env.markForDelete = true
+                self.deleteDataMarkedForDelete(env, ctx: ctx)
+            }
+            ws.markForDelete = true
+            acc.append(ws)
+            self.localdb.saveMainContext()
+            self.deleteEntitesFromCloud(acc, ctx: ctx)
         }
-        if ws.isInDefaultMode {
-            ws.markForDelete = false
-            self.saveWorkspaceToCloud(ws)  // Update the workspace as it's the default one
-        } else {
-            self.deleteEntitesFromCloud([ws], ctx: ctx)
-        }
+        //if ws.isInDefaultMode {
+//            ws.markForDelete = false
+  //          self.saveWorkspaceToCloud(ws)  // Update the workspace as it's the default one
+    //    } else {
+            
+      //  }
     }
     
     func deleteDataMarkedForDelete(_ env: EEnv, ctx: NSManagedObjectContext? = nil) {
         Log.debug("delete data marked for delete - env")
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
-        ctx.perform {
+        ctx.performAndWait {
             let envId = env.getId()
             let xs = self.localdb.getEnvVars(envId: envId, ctx: ctx)
             self.deleteEntitesFromCloud(xs, ctx: ctx)
@@ -1553,7 +1564,7 @@ class PersistenceService {
     func deleteDataMarkedForDelete(_ proj: EProject, ctx: NSManagedObjectContext? = nil) {
         Log.debug("delete data marked for delete - proj")
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
-        ctx.perform {
+        ctx.performAndWait {
             let xs = self.localdb.getRequests(projectId: proj.getId(), includeMarkForDelete: true, ctx: ctx)
             xs.forEach { req in self.deleteDataMarkedForDelete(req, ctx: ctx) }
         }
@@ -1563,7 +1574,7 @@ class PersistenceService {
     func deleteDataMarkedForDelete(_ request: ERequest, ctx: NSManagedObjectContext? = nil) {
         Log.debug("delete data marked for delete - req")
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
-        ctx.perform {
+        ctx.performAndWait {
             guard let ws = request.project?.workspace else { return }
             if request.markForDelete {
                 var acc: [Entity] = []
@@ -1598,7 +1609,7 @@ class PersistenceService {
     func deleteRequestDataMarkedForDelete(reqId: String, wsId: String, ctx: NSManagedObjectContext? = nil) {
         Log.debug("delete request data marked for delete: reqId: \(reqId)")
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
-        ctx.perform {
+        ctx.performAndWait {
             var files: [EFile] = []
             var xs = self.localdb.getRequestDataMarkedForDelete(reqId: reqId, type: .header, ctx: ctx)
             xs.append(contentsOf: self.localdb.getRequestDataMarkedForDelete(reqId: reqId, type: .param, ctx: ctx))
@@ -1621,7 +1632,7 @@ class PersistenceService {
     
     func deleteDataMarkedForDelete(_ image: EImage?, wsId: String, ctx: NSManagedObjectContext? = nil) {
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
-        ctx.perform {
+        ctx.performAndWait {
             guard let image = image, image.markForDelete else { return }
             self.deleteEntitesFromCloud([image], ctx: ctx)
         }
@@ -1629,7 +1640,7 @@ class PersistenceService {
     
     func deleteRequestBodyDataMarkedForDelete(_ req: ERequest, ctx: NSManagedObjectContext? = nil) {
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
-        ctx.perform {
+        ctx.performAndWait {
             if let body = req.body, body.markForDelete {
                 self.deleteEntitesFromCloud([body], ctx: ctx)
             }
@@ -1638,7 +1649,7 @@ class PersistenceService {
     
     func deleteRequestMethodDataMarkedForDelete(_ req: ERequest, ctx: NSManagedObjectContext? = nil) {
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
-        ctx.perform {
+        ctx.performAndWait {
             if let proj = req.project {
                 self.deleteEntitesFromCloud(self.localdb.getRequestMethodDataMarkedForDelete(projId: proj.getId(), ctx: self.localdb.getChildMOC()), ctx: ctx)
             }
@@ -1651,7 +1662,13 @@ class PersistenceService {
         Log.debug("delete data count: \(xs.count)")
         var recordIDs: [CKRecord.ID] = []
         xs.forEach { elem in
-            elem.managedObjectContext?.performAndWait { recordIDs.append(elem.getRecordID()) }
+            elem.managedObjectContext?.performAndWait {
+                if !elem.getId().isEmpty {
+                    let recordID = elem.getRecordID()
+                    Log.debug("recordID: \(recordID)")
+                    recordIDs.append(recordID)
+                }
+            }
         }
         let op = EACloudOperation(deleteRecordIDs: recordIDs) { [weak self] op in
             self?.ck.deleteRecords(recordIDs: recordIDs) { result in

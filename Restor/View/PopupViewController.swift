@@ -123,6 +123,7 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
     
     func initCellEvents(_ cell: PopupCell) {
         cell.nameTextField.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: .editingChanged)
+        cell.descTextField.addTarget(self, action: #selector(self.textFieldDidChange(_:)), for: .editingChanged)
     }
         
     @objc func textFieldDidChange(_ textField: UITextField) {
@@ -136,7 +137,9 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
             }, args: [text]))
             return
         }
-        self.doneBtn.isEnabled = !text.isEmpty
+        if textField.tag == 0 {
+            self.doneBtn.isEnabled = !text.isEmpty
+        }
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {

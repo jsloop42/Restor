@@ -113,6 +113,6 @@ public class EWorkspace: NSManagedObject, Entity {
     /// Checks if the default workspace does not have any change or is just after a reset (is new)
     var isInDefaultMode: Bool {
         let db = CoreDataService.shared
-        return self.id == db.defaultWorkspaceId && self.name == db.defaultWorkspaceName && self.desc == db.defaultWorkspaceDesc && self.modified == self.changeTag
+        return self.id == db.defaultWorkspaceId && self.name == db.defaultWorkspaceName && self.desc == db.defaultWorkspaceDesc && self.modified == self.changeTag && (self.projects == nil || self.projects!.isEmpty)
     }
 }

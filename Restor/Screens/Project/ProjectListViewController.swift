@@ -196,8 +196,26 @@ class ProjectListViewController: RestorViewController {
         }))
     }
     
+    func didPopupModelChange(_ model: PopupModel, proj: EProject) -> Bool {
+        var didChange = true
+        proj.managedObjectContext?.performAndWait {
+            if model.name.isEmpty {
+                didChange = false
+            } else {
+                didChange = false
+                if proj.name != model.name {
+                    didChange = true
+                }
+                if proj.desc != model.desc {
+                    didChange = true
+                }
+            }
+        }
+        return didChange
+    }
+    
     func viewEditPopup(_ proj: EProject) {
-        self.app.viewPopupScreen(self, model: PopupModel(title: "Edit Project", name: proj.getName(), desc: proj.desc ?? "", doneHandler: { model in
+        self.app.viewPopupScreen(self, model: PopupModel(title: "Edit Project", name: proj.getName(), desc: proj.desc ?? "", shouldValidate: true, doneHandler: { model in
             Log.debug("model value: \(model.name) - \(model.desc)")
             var didChange = false
             if proj.name != model.name {
@@ -210,7 +228,10 @@ class ProjectListViewController: RestorViewController {
             }
             if didChange {
                 self.localdb.saveMainContext()
+                self.updateData()
             }
+        }, validateHandler: { model in
+            return self.didPopupModelChange(model, proj: proj)
         }))
     }
     

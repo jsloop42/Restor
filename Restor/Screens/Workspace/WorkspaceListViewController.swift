@@ -59,6 +59,9 @@ class WorkspaceListViewController: RestorViewController {
     func initUI() {
         self.app.updateViewBackground(self.view)
         self.app.updateNavigationControllerBackground(self.navigationController)
+        if #available(iOS 13.0, *) {
+            self.isModalInPresentation = true
+        }
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()
@@ -72,7 +75,7 @@ class WorkspaceListViewController: RestorViewController {
     
     func initData() {
         if self.frc == nil {
-            if let _frc = self.localdb.getFetchResultsController(obj: EWorkspace.self, ctx: self.localdb.mainMOC) as? NSFetchedResultsController<EWorkspace> {
+            if let _frc = self.localdb.getFetchResultsController(obj: EWorkspace.self, predicate: NSPredicate(format: "markForDelete == %hhd", false), ctx: self.localdb.mainMOC) as? NSFetchedResultsController<EWorkspace> {
                 self.frc = _frc
                 self.frc.delegate = self
             }
@@ -140,8 +143,26 @@ class WorkspaceListViewController: RestorViewController {
         }))
     }
     
+    func didPopupModelChange(_ model: PopupModel, ws: EWorkspace) -> Bool {
+        var didChange = true
+        ws.managedObjectContext?.performAndWait {
+            if model.name.isEmpty {
+                didChange = false
+            } else {
+                didChange = false
+                if ws.name != model.name {
+                    didChange = true
+                }
+                if ws.desc != model.desc {
+                    didChange = true
+                }
+            }
+        }
+        return didChange
+    }
+    
     func viewEditPopup(_ ws: EWorkspace) {
-        self.app.viewPopupScreen(self, model: PopupModel(title: "Edit Workspace", name: ws.getName(), desc: ws.desc ?? "", doneHandler: { model in
+        self.app.viewPopupScreen(self, model: PopupModel(title: "Edit Workspace", name: ws.getName(), desc: ws.desc ?? "", shouldValidate: true, doneHandler: { model in
             Log.debug("model value: \(model.name) - \(model.desc)")
             var didChange = false
             if ws.name != model.name {
@@ -154,7 +175,10 @@ class WorkspaceListViewController: RestorViewController {
             }
             if didChange {
                 self.localdb.saveMainContext()
+                self.updateData()
             }
+        }, validateHandler: { model in
+            return self.didPopupModelChange(model, ws: ws)
         }))
     }
     
@@ -220,19 +244,20 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
         self.close()
     }
     
+    
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let ws = self.frc.object(at: indexPath)
         let edit = UIContextualAction(style: .normal, title: "Edit") { action, view, completion in
             Log.debug("edit row: \(indexPath)")
-            let proj = self.frc.object(at: indexPath)
-            self.viewEditPopup(proj)
+            self.viewEditPopup(ws)
             completion(true)
         }
         edit.backgroundColor = App.Color.lightPurple
         let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
             Log.debug("delete row: \(indexPath)")
-            let ws = self.frc.object(at: indexPath)
             if ws == self.wsSelected {  // Reset selection to the default workspace
-                self.wsSelected = self.localdb.getDefaultWorkspace(ctx: self.localdb.mainMOC)
+                let wss = self.localdb.getAllWorkspaces(offset: 0, limit: 1, includeMarkForDelete: false, ctx: self.localdb.mainMOC)
+                self.wsSelected = !wss.isEmpty ? wss.first! : self.localdb.getDefaultWorkspace()
             }
             self.localdb.markEntityForDelete(ws)
             self.localdb.saveMainContext()
@@ -240,7 +265,7 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
             self.updateData()
             completion(true)
         }
-        let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete, edit])
+        let swipeActionConfig = UISwipeActionsConfiguration(actions: ws.isInDefaultMode ? [edit] : [delete, edit])
         swipeActionConfig.performsFirstActionWithFullSwipe = false
         return swipeActionConfig
     }

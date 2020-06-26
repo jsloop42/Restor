@@ -487,15 +487,18 @@ class CoreDataService {
         var x: EWorkspace!
         let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
-            if let ws = self.getWorkspace(id: self.defaultWorkspaceId) { x = ws; return }
-            // We create the default workspace with active flag as false. Only if any change by the user gets made, the flag is enabled. This helps in syncing from cloud.
-            let ws: EWorkspace! = self.createWorkspace(id: self.defaultWorkspaceId, name: self.defaultWorkspaceName, desc: self.defaultWorkspaceDesc, isSyncEnabled: true, isActive: false, ctx: moc)
-            self.saveMainContext()
-            if let isProj = project, isProj {
-                ws.projects = NSSet()
-                ws.projects!.adding(self.getDefaultProject(ctx: ctx) as Any)
+            if let ws = self.getWorkspace(id: self.defaultWorkspaceId) {
+                x = ws
+            } else {
+                // We create the default workspace with active flag as false. Only if any change by the user gets made, the flag is enabled. This helps in syncing from cloud.
+                let ws: EWorkspace! = self.createWorkspace(id: self.defaultWorkspaceId, name: self.defaultWorkspaceName, desc: self.defaultWorkspaceDesc, isSyncEnabled: true, isActive: false, ctx: moc)
+                self.saveMainContext()
+                if let isProj = project, isProj {
+                    ws.projects = NSSet()
+                    ws.projects!.adding(self.getDefaultProject(ctx: ctx) as Any)
+                }
+                x = ws
             }
-            x = ws
         }
         return x
     }
