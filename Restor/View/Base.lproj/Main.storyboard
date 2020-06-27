@@ -5298,6 +5298,9 @@
                                                         <wkPreferences key="preferences"/>
                                                     </wkWebViewConfiguration>
                                                 </wkWebView>
+                                                <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="2Lh-iz-Rt3">
+                                                    <rect key="frame" x="197" y="26.5" width="20" height="20"/>
+                                                </activityIndicatorView>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="mTY-rW-ArM" userLabel="Bottom Border View">
                                                     <rect key="frame" x="0.0" y="80" width="414" height="1"/>
                                                     <color key="backgroundColor" name="cell-separator-bg"/>
@@ -5312,6 +5315,8 @@
                                                 <constraint firstAttribute="trailing" secondItem="mTY-rW-ArM" secondAttribute="trailing" id="4ph-GI-M8K"/>
                                                 <constraint firstAttribute="trailing" secondItem="PzK-KK-6qp" secondAttribute="trailing" id="926-0z-1Zl"/>
                                                 <constraint firstItem="mTY-rW-ArM" firstAttribute="top" secondItem="bvc-aX-HPj" secondAttribute="bottom" id="KTG-Dm-l75"/>
+                                                <constraint firstItem="2Lh-iz-Rt3" firstAttribute="centerY" secondItem="qsK-nx-SEl" secondAttribute="centerY" constant="-4" id="SOG-Xe-f5E"/>
+                                                <constraint firstItem="2Lh-iz-Rt3" firstAttribute="centerX" secondItem="qsK-nx-SEl" secondAttribute="centerX" id="VGl-aN-a7G"/>
                                                 <constraint firstAttribute="trailing" secondItem="bvc-aX-HPj" secondAttribute="trailing" id="elV-cR-p6T"/>
                                                 <constraint firstItem="PzK-KK-6qp" firstAttribute="leading" secondItem="qsK-nx-SEl" secondAttribute="leading" id="feU-nG-ysC"/>
                                                 <constraint firstItem="bvc-aX-HPj" firstAttribute="leading" secondItem="qsK-nx-SEl" secondAttribute="leading" id="sIP-8L-TPp"/>
@@ -5322,6 +5327,7 @@
                                         </tableViewCellContentView>
                                         <color key="backgroundColor" name="web-view-bg"/>
                                         <connections>
+                                            <outlet property="activityIndicator" destination="2Lh-iz-Rt3" id="Umx-CE-dUP"/>
                                             <outlet property="webView" destination="bvc-aX-HPj" id="VvK-LF-nGi"/>
                                         </connections>
                                     </tableViewCell>
@@ -5375,6 +5381,9 @@
                                                         <wkPreferences key="preferences"/>
                                                     </wkWebViewConfiguration>
                                                 </wkWebView>
+                                                <activityIndicatorView opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" style="medium" translatesAutoresizingMaskIntoConstraints="NO" id="JIV-RA-gdU">
+                                                    <rect key="frame" x="197" y="26.5" width="20" height="20"/>
+                                                </activityIndicatorView>
                                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="OsL-9T-MRW" userLabel="Bottom Border View">
                                                     <rect key="frame" x="0.0" y="80" width="414" height="1"/>
                                                     <color key="backgroundColor" name="cell-separator-bg"/>
@@ -5387,18 +5396,21 @@
                                             <constraints>
                                                 <constraint firstItem="5eD-le-JCt" firstAttribute="leading" secondItem="daU-Sg-pzW" secondAttribute="leading" id="0fH-1h-aBf"/>
                                                 <constraint firstAttribute="trailing" secondItem="5eD-le-JCt" secondAttribute="trailing" id="AsC-yz-xmr"/>
+                                                <constraint firstItem="JIV-RA-gdU" firstAttribute="centerX" secondItem="daU-Sg-pzW" secondAttribute="centerX" id="B9M-Zr-Hv2"/>
                                                 <constraint firstItem="EHJ-dR-fSB" firstAttribute="leading" secondItem="daU-Sg-pzW" secondAttribute="leading" id="BlR-V9-foe"/>
                                                 <constraint firstItem="OsL-9T-MRW" firstAttribute="top" secondItem="EHJ-dR-fSB" secondAttribute="bottom" id="DWN-K5-ggy"/>
                                                 <constraint firstItem="EHJ-dR-fSB" firstAttribute="top" secondItem="5eD-le-JCt" secondAttribute="bottom" id="Imv-jM-c32"/>
                                                 <constraint firstAttribute="bottom" secondItem="OsL-9T-MRW" secondAttribute="bottom" id="Nzp-rv-Yi1"/>
                                                 <constraint firstAttribute="trailing" secondItem="OsL-9T-MRW" secondAttribute="trailing" id="REQ-Gs-CcM"/>
                                                 <constraint firstItem="5eD-le-JCt" firstAttribute="top" secondItem="daU-Sg-pzW" secondAttribute="top" id="dKX-bb-D8M"/>
+                                                <constraint firstItem="JIV-RA-gdU" firstAttribute="centerY" secondItem="daU-Sg-pzW" secondAttribute="centerY" constant="-4" id="gzf-zR-6B6"/>
                                                 <constraint firstAttribute="trailing" secondItem="EHJ-dR-fSB" secondAttribute="trailing" id="lhh-V5-wTf"/>
                                                 <constraint firstItem="OsL-9T-MRW" firstAttribute="leading" secondItem="daU-Sg-pzW" secondAttribute="leading" id="psV-cG-Lvb"/>
                                             </constraints>
                                         </tableViewCellContentView>
                                         <color key="backgroundColor" name="web-view-bg"/>
                                         <connections>
+                                            <outlet property="activityIndicator" destination="JIV-RA-gdU" id="I72-zi-cEa"/>
                                             <outlet property="webView" destination="EHJ-dR-fSB" id="5yu-gD-ZH1"/>
                                         </connections>
                                     </tableViewCell>

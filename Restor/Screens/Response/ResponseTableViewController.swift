@@ -14,6 +14,7 @@ import WebKit
 
 final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDelegate {
     @IBOutlet weak var webView: WKWebView!
+    @IBOutlet weak var activityIndicator: UIActivityIndicatorView!
     var data: ResponseData? {
         didSet {
             if self.responseCache == nil && data != nil {
@@ -80,6 +81,9 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
     
     func initUI() {
+        UIView.animate(withDuration: 0.3) {
+            self.activityIndicator.isHidden = false
+        }
         self.webView.scrollView.isScrollEnabled = true
         let color = UIColor(named: "web-view-bg")
         self.webView.backgroundColor = color
@@ -141,6 +145,9 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         Log.debug("web view did finish load")
+        UIView.animate(withDuration: 0.3) {
+            self.activityIndicator.isHidden = true
+        }
     }
 }
 
