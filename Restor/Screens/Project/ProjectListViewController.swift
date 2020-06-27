@@ -189,10 +189,12 @@ class ProjectListViewController: RestorViewController {
     }
     
     func viewPopup() {
-        self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", doneHandler: { model in
+        self.app.viewPopupScreen(self, model: PopupModel(title: "New Project", shouldValidate: true, doneHandler: { model in
             Log.debug("model value: \(model.name) - \(model.desc)")
             AppState.setCurrentScreen(.projectList)
             self.addProject(name: model.name, desc: model.desc)
+        }, validateHandler: { model in
+            return !model.name.isEmpty
         }))
     }
     

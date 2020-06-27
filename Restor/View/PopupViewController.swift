@@ -128,7 +128,11 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
         
     @objc func textFieldDidChange(_ textField: UITextField) {
         let text = (textField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        self.model?.name = text
+        if textField.tag == 0 {
+            self.model?.name = text
+        } else {
+            self.model?.desc = text
+        }
         if let model = self.model, model.shouldValidate, let validateFn = model.validateHandler {
             self.rescheduler.schedule(fn: EAReschedulerFn(id: "validate-scheduler", block: {
                 return validateFn(model)
@@ -137,9 +141,7 @@ class PopupViewController: UIViewController, UITableViewDataSource, UITableViewD
             }, args: [text]))
             return
         }
-        if textField.tag == 0 {
-            self.doneBtn.isEnabled = !text.isEmpty
-        }
+        self.doneBtn.isEnabled = !text.isEmpty
     }
     
     func numberOfSections(in tableView: UITableView) -> Int {

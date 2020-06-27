@@ -136,10 +136,12 @@ class WorkspaceListViewController: RestorViewController {
     }
     
     func viewPopup() {
-        self.app.viewPopupScreen(self, model: PopupModel(title: "New Workspace", iCloudSyncFieldEnabled: true, doneHandler: { model in
+        self.app.viewPopupScreen(self, model: PopupModel(title: "New Workspace", iCloudSyncFieldEnabled: true, shouldValidate: true, doneHandler: { model in
             Log.debug("model value: \(model.name) - \(model.desc)")
             AppState.setCurrentScreen(.workspaceList)
             self.addWorkspace(name: model.name, desc: model.desc, isSyncEnabled: model.iCloudSyncFieldEnabled)
+        }, validateHandler: { model in
+            return !model.name.isEmpty
         }))
     }
     
