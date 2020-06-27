@@ -446,6 +446,7 @@ class ResponseTableViewController: RestorTableViewController {
     var request: ERequest?
     var data: ResponseData?
     var viewType = ViewType.requestResponse
+    private var segView: UISegmentedControl!
     
     enum ViewType {
         case requestResponse  // From request response screen within a tab bar controller
@@ -555,7 +556,17 @@ class ResponseTableViewController: RestorTableViewController {
             self.tabbarController?.viewNavbarSegment()
         } else {
             self.navigationItem.title = "Response"
+            self.navigationItem.titleView = self.initSegmentControl()
         }
+    }
+    
+    func initSegmentControl() -> UISegmentedControl {
+        if self.segView != nil { return self.segView }
+        self.segView = UISegmentedControl(items: ResponseMode.allCases)
+        self.segView.selectedSegmentIndex = 0
+        self.segView.sizeToFit()
+        self.segView.addTarget(self, action: #selector(self.segmentChangeHandler(_:)), for: .valueChanged)
+        return self.segView!
     }
     
     func initEvents() {
@@ -563,6 +574,11 @@ class ResponseTableViewController: RestorTableViewController {
         self.nc.addObserver(self, selector: #selector(self.viewRequestHistoryDidTap(_:)), name: .viewRequestHistoryDidTap, object: nil)
         self.nc.addObserver(self, selector: #selector(self.dynamicSizeTableViewHeightDidChange(_:)), name: .dynamicSizeTableViewHeightDidChange, object: nil)
         self.nc.addObserver(self, selector: #selector(self.responseTableViewShouldReload(_:)), name: .responseTableViewShouldReload, object: nil)
+    }
+    
+    @objc func segmentChangeHandler(_ sender: Any) {
+        Log.debug("segment did change")
+        self.nc.post(name: .responseSegmentDidChange, object: self, userInfo: ["index": self.segView!.selectedSegmentIndex])
     }
     
     func updateUI() {
@@ -647,7 +663,9 @@ class ResponseTableViewController: RestorTableViewController {
     @objc func segmentDidChange(_ notif: Notification) {
         Log.debug("segment did change notif")
         if let info = notif.userInfo, let idx = info["index"] as? Int {
-            self.ck.saveValue(key: Const.responseSegmentIndexKey, value: idx)
+            if self.viewType == .requestResponse {
+                self.ck.saveValue(key: Const.responseSegmentIndexKey, value: idx)
+            }
             self.mode = ResponseMode(rawValue: idx) ?? .info
             Log.debug("response mode changed: \(self.mode)")
             self.initData()

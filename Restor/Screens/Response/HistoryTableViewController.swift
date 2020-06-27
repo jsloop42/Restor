@@ -85,6 +85,10 @@ class HistoryTableViewController: UITableViewController {
         
     }
     
+    @objc func segmentDidChange(_ sender: Any) {
+        Log.debug("segment did change")
+    }
+    
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return self.frc.numberOfRows(in: section)
     }
