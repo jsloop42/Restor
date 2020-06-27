@@ -2,22 +2,28 @@
 //  SceneDelegate.swift
 //  Restor
 //
-//  Created by Jaseem V V on 02/12/19.
-//  Copyright © 2019 Jaseem V V. All rights reserved.
+//  Created by jsloop on 02/12/19.
+//  Copyright © 2019 EstoApps OÜ. All rights reserved.
 //
 
 import UIKit
 
+@available(iOS 13.0, *)
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-
-    var window: UIWindow?
-
+    //unowned var window: UIWindow?
+    private let app = App.shared
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        guard let _ = (scene as? UIWindowScene) else { return }
+        Log.debug("scene delegate - will connect to")
+        guard let windowScene = (scene as? UIWindowScene) else { return }
+        guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
+        if AppState.appCoord == nil { AppState.appCoord = AppCoordinator(window: appDelegate.window!) }
+        appDelegate.window!.windowScene = windowScene  // This order matters. First we set the window scene and make it key and visible. Else copy paste menu won't appear.
+        appDelegate.window?.makeKeyAndVisible()
+        self.app.didFinishLaunching(scene: scene, window: appDelegate.window!, appCoord: AppState.appCoord!)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {
@@ -30,6 +36,7 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneDidBecomeActive(_ scene: UIScene) {
         // Called when the scene has moved from an inactive state to an active state.
         // Use this method to restart any tasks that were paused (or not yet started) when the scene was inactive.
+        Log.debug("scene did become active")
     }
 
     func sceneWillResignActive(_ scene: UIScene) {
@@ -40,17 +47,15 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     func sceneWillEnterForeground(_ scene: UIScene) {
         // Called as the scene transitions from the background to the foreground.
         // Use this method to undo the changes made on entering the background.
+        self.app.willEnterForground()
     }
 
     func sceneDidEnterBackground(_ scene: UIScene) {
         // Called as the scene transitions from the foreground to the background.
         // Use this method to save data, release shared resources, and store enough scene-specific state information
         // to restore the scene back to its current state.
-
         // Save changes in the application's managed object context when the application transitions to the background.
-        (UIApplication.shared.delegate as? AppDelegate)?.saveContext()
+        Log.debug("scene did enter background")
+        self.app.didEnterBackground()
     }
-
-
 }
-
