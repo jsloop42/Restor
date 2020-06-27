@@ -221,6 +221,15 @@ class WorkspaceListViewController: RestorViewController {
 class WorkspaceCell: UITableViewCell {
     @IBOutlet weak var nameLbl: UILabel!
     @IBOutlet weak var descLbl: UILabel!
+    @IBOutlet weak var bottomBorder: UIView!
+    
+    func hideBottomBorder() {
+        self.bottomBorder.isHidden = true
+    }
+    
+    func displayBottomBorder() {
+        self.bottomBorder.isHidden = false
+    }
 }
 
 extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSource {
@@ -235,6 +244,16 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
         if ws.id == self.wsSelected.id { cell.accessoryType = .checkmark }
         cell.nameLbl.text = ws.name
         cell.descLbl.text = ws.desc
+        if let text = ws.desc, !text.isEmpty {
+            cell.descLbl.isHidden = false
+        } else {
+            cell.descLbl.isHidden = true
+        }
+        if indexPath.row == self.frc.numberOfRows(in: indexPath.section) - 1 {
+            cell.displayBottomBorder()
+        } else {
+            cell.hideBottomBorder()
+        }
         return cell
     }
     
@@ -270,6 +289,21 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
         let swipeActionConfig = UISwipeActionsConfiguration(actions: ws.isInDefaultMode ? [edit] : [delete, edit])
         swipeActionConfig.performsFirstActionWithFullSwipe = false
         return swipeActionConfig
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        let ws = self.frc.object(at: indexPath)
+        let name = ws.name ?? ""
+        let desc = self.getDesc(ws: ws)
+        let w = tableView.frame.width - 15
+        let h1 = name.height(width: w, font: App.Font.font17) + 18
+        let h2: CGFloat =  desc.isEmpty ? 0 : desc.height(width: w, font: App.Font.font15) + 8
+        Log.debug("row: \(indexPath.row) -> \(h1 + h2)")
+        return max(h1 + h2, 46)
+    }
+    
+    func getDesc(ws: EWorkspace) -> String {
+        return ws.desc ?? ""
     }
 }
 

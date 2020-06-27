@@ -30,8 +30,6 @@ class RequestListViewController: RestorViewController {
     private let nc = NotificationCenter.default
     var project: EProject?
     var methods: [ERequestMethodData] = []
-    let font17 = UIFont.systemFont(ofSize: 17)
-    let font15 = UIFont.systemFont(ofSize: 15)
     
     deinit {
         self.nc.removeObserver(self)
@@ -205,8 +203,8 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
         let name = req.name ?? ""
         let desc = self.getDesc(req: req)
         let w = tableView.frame.width
-        let h1 = name.height(width: w, font: self.font17) + 20
-        let h2: CGFloat =  desc.isEmpty ? 0 : desc.height(width: w, font: self.font15) + 10
+        let h1 = name.height(width: w, font: App.Font.font17) + 20
+        let h2: CGFloat =  desc.isEmpty ? 0 : desc.height(width: w, font: App.Font.font15) + 10
         return max(h1 + h2, 46)
     }
 }

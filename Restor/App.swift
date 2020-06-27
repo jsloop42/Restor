@@ -959,6 +959,8 @@ class App {
     public struct Font {
         static let monospace13 = UIFont(name: "Menlo-Regular", size: 13)
         static let monospace14 = UIFont(name: "Menlo-Regular", size: 14)
+        static let font17 = UIFont.systemFont(ofSize: 17)
+        static let font15 = UIFont.systemFont(ofSize: 15)
     }
 }
 
