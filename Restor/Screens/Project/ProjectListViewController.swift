@@ -257,9 +257,22 @@ class ProjectListViewController: RestorViewController {
 class ProjectCell: UITableViewCell {
     @IBOutlet weak var nameLbl: UILabel!
     @IBOutlet weak var descLbl: UILabel!
+    @IBOutlet weak var borderView: UIView!
+    
+    func hideBottomBorder() {
+        self.borderView.isHidden = true
+    }
+    
+    func displayBottomBorder() {
+        self.borderView.isHidden = false
+    }
 }
 
 extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource {
+    func getDesc(proj: EProject) -> String {
+        return proj.desc ?? ""
+    }
+    
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if self.frc == nil { return 0 }
         return self.frc.numberOfRows(in: section)
@@ -269,7 +282,18 @@ extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource 
         let cell = tableView.dequeueReusableCell(withIdentifier: self.cellReuseId, for: indexPath) as! ProjectCell
         let proj = self.frc.object(at: indexPath)
         cell.nameLbl.text = proj.name
-        cell.descLbl.text = proj.desc
+        let desc = self.getDesc(proj: proj)
+        cell.descLbl.text = desc
+        if desc.isEmpty {
+            cell.descLbl.isHidden = true
+        } else {
+            cell.descLbl.isHidden = false
+        }
+        if indexPath.row == self.frc.numberOfRows(in: indexPath.section) - 1 {
+            cell.displayBottomBorder()
+        } else {
+            cell.hideBottomBorder()
+        }
         return cell
     }
     
@@ -301,6 +325,16 @@ extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource 
         let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete, edit])
         swipeActionConfig.performsFirstActionWithFullSwipe = false
         return swipeActionConfig
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        let proj = self.frc.object(at: indexPath)
+        let name = proj.name ?? ""
+        let desc = self.getDesc(proj: proj)
+        let w = tableView.frame.width
+        let h1 = name.height(width: w, font: App.Font.font17) + 20
+        let h2: CGFloat =  desc.isEmpty ? 0 : desc.height(width: w, font: App.Font.font15) + 10
+        return max(h1 + h2, 46)
     }
 }
 

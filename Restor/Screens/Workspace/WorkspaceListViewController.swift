@@ -243,8 +243,9 @@ extension WorkspaceListViewController: UITableViewDelegate, UITableViewDataSourc
         cell.accessoryType = .none
         if ws.id == self.wsSelected.id { cell.accessoryType = .checkmark }
         cell.nameLbl.text = ws.name
-        cell.descLbl.text = ws.desc
-        if let text = ws.desc, !text.isEmpty {
+        let desc = self.getDesc(ws: ws)
+        cell.descLbl.text = desc
+        if !desc.isEmpty {
             cell.descLbl.isHidden = false
         } else {
             cell.descLbl.isHidden = true
