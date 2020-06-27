@@ -272,32 +272,18 @@ class EnvironmentEditViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        switch self.mode {
-        case .addEnv, .editEnv, .viewEnv:
-            return 4
-        case .addEnvVar, .editEnvVar, .viewEnvVar:
-            return 6
-        }
+        return 6
     }
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         let row = indexPath.row
+        if row == 5 { return 24 }
         switch self.mode {
         case .addEnv, .editEnv, .viewEnv:
-            if row == CellId.navViewCell.rawValue || row == CellId.nameTitleCell.rawValue || row == CellId.nameCell.rawValue {
-                return 44
-            }
+            if row == 3 || row == 4 { return 0 }
+            return 44
         case .addEnvVar, .editEnvVar, .viewEnvVar:
-            if row == CellId.navViewCell.rawValue || row == CellId.nameTitleCell.rawValue || row == CellId.nameCell.rawValue {
-                return 44
-            }
-            if row == CellId.navViewCell.rawValue || row == CellId.valueTitleCell.rawValue || row == CellId.valueCell.rawValue {
-                return 44
-            }
+            return 44
         }
-        if row == CellId.spacerCell.rawValue {
-            return 24
-        }
-        return 0
     }
 }

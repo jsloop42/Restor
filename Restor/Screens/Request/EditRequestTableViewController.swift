@@ -805,7 +805,8 @@ class KVEditBodyContentCell: UITableViewCell, KVEditContentCellType, UICollectio
     private lazy var textViewAttrs: [NSAttributedString.Key: Any]  = {
         let style = NSMutableParagraphStyle()
         style.lineSpacing = 1.35
-        let attributes = [NSAttributedString.Key.paragraphStyle: style, NSAttributedString.Key.font: self.monospaceFont]
+        let attributes = [NSAttributedString.Key.paragraphStyle: style, NSAttributedString.Key.font: self.monospaceFont,
+                          NSAttributedString.Key.foregroundColor: App.Color.textViewFg]
         return attributes as [NSAttributedString.Key : Any]
     }()
     
@@ -832,6 +833,7 @@ class KVEditBodyContentCell: UITableViewCell, KVEditContentCellType, UICollectio
         // raw text view
         self.rawTextViewContainer.isHidden = false
         self.rawTextView.placeholderFont = self.monospaceFont
+        self.rawTextView.backgroundColor = UIColor(named: "table-view-cell-bg")
         self.updateTextViewText(self.rawTextView, text: self.rawTextView.text)
         // binary text field
         self.binaryTextField.borderStyle = .none

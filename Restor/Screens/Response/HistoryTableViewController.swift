@@ -45,7 +45,8 @@ class HistoryTableViewController: UITableViewController {
     
     func initData() {
         if self.frc != nil { return }
-        if let _frc = self.localDB.getFetchResultsController(obj: EHistory.self, predicate: self.getPredicate(), ctx: self.localDB.mainMOC) as? NSFetchedResultsController<EHistory> {
+        if let _frc = self.localDB.getFetchResultsController(obj: EHistory.self, predicate: self.getPredicate(), sortDesc: self.getSortDescriptors(),
+                                                             ctx: self.localDB.mainMOC) as? NSFetchedResultsController<EHistory> {
             self.frc = _frc
             self.frc.delegate = self
             try? self.frc.performFetch()
@@ -56,6 +57,10 @@ class HistoryTableViewController: UITableViewController {
     func getPredicate() -> NSPredicate {
         guard let reqId = self.request?.getId() else { return NSPredicate(value: true) }
         return NSPredicate(format: "requestId == %@", reqId)
+    }
+    
+    func getSortDescriptors() -> [NSSortDescriptor] {
+        return [NSSortDescriptor(key: "created", ascending: false)]
     }
     
     func updateData() {
@@ -89,9 +94,11 @@ class HistoryTableViewController: UITableViewController {
         let history = self.frc.object(at: indexPath)
         cell.methodLabel.text = history.method
         if let urlStr = history.url, let url = URL(string: urlStr) {
-            cell.pathLabel.text = url.path
+            let path = url.path
+            cell.pathLabel.text = path.isEmpty ? "/" : path
         }
         cell.statusCodeLabel.text = history.statusCode > 0 ? "\(history.statusCode)" : ""
+        cell.statusCodeLabel.textColor = self.app.getStatusCodeViewColor(history.statusCode.toInt())
         cell.contentView.addGestureRecognizer(cell.pathScrollView.panGestureRecognizer)
         if indexPath.row == self.frc.numberOfRows(in: indexPath.section) - 1 {
             cell.displayBottomBorder()

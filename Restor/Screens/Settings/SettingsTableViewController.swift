@@ -14,6 +14,7 @@ class SettingsTableViewController: RestorTableViewController {
     @IBOutlet weak var saveHistorySwitch: UISwitch!
     private lazy var localDB = { CoreDataService.shared }()
     private lazy var db = { PersistenceService.shared }()
+    private lazy var workspace = { self.app.getSelectedWorkspace() }()
     
     enum CellId: Int {
         case spacerAfterTop
@@ -45,6 +46,7 @@ class SettingsTableViewController: RestorTableViewController {
         self.navigationItem.title = "Settings"
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
+        self.saveHistorySwitch.isOn = self.workspace.saveResponse
     }
     
     func initEvents() {
@@ -53,10 +55,9 @@ class SettingsTableViewController: RestorTableViewController {
     
     @objc func saveHistorySwitchDidChange(_ sender: UISwitch) {
         Log.debug("save history switch did change")
-        let ws = self.app.getSelectedWorkspace()
-        ws.saveResponse = self.saveHistorySwitch.isOn
+        self.workspace.saveResponse = self.saveHistorySwitch.isOn
         self.localDB.saveMainContext()
-        self.db.saveWorkspaceToCloud(ws)
+        self.db.saveWorkspaceToCloud(self.workspace)
     }
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {

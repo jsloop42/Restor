@@ -16,7 +16,7 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     @IBOutlet weak var webView: WKWebView!
     var data: ResponseData? {
         didSet {
-            if self.responseCache == nil {
+            if self.responseCache == nil && data != nil {
                 let reqId = self.data!.requestId
                 if let cache = AppState.getResponseCache(reqId) {
                     self.responseCache = cache
@@ -168,12 +168,6 @@ final class ResponseInfoCell: UITableViewCell {
         guard let data = self.data, let req = data.request else { return }
         self.nameLabel.text = req.name
         self.urlLabel.text = "\(data.method) \(data.url)"
-        
-        //self.nameLabel.text = "Get the list of all users filtered by active sorted by first name grouped by location joined by demographics segemented by geolocation"
-        //self.urlLabel.text = "https://piperway.com/rest/list/user/sort/filter/group?param=search&name=first"
-        //self.nameLabel.text = "Get list of all users"
-        //self.urlLabel.text = "https://piperway.com/test/list/user"
-        
         var color: UIColor!
         if data.statusCode > 0 {
             self.statusCodeLabel.text = "\(data.statusCode)"
@@ -209,6 +203,7 @@ final class ResponseInfoCell: UITableViewCell {
             self.statusCodeView.backgroundColor = UIColor(named: "http-status-none")
             self.statusMessageLabel.textColor = UIColor(named: "help-text-fg")
         }
+        self.statusCodeView.backgroundColor = self.app.getStatusCodeViewColor(data.statusCode)
         let ts = data.connectionInfo.elapsed > 0 ? self.utils.millisToReadable(data.connectionInfo.elapsed.toDouble()) : ""
         if data.connectionInfo.responseBodyBytesReceived > 0 {
             self.statusSizeLabel.text = "\(!ts.isEmpty ? "\(ts), " : "")\(self.utils.bytesToReadable(data.connectionInfo.responseBodyBytesReceived))"

@@ -20,6 +20,8 @@ class WorkspaceListViewController: RestorViewController {
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var addBtn: UIBarButtonItem!
+    @IBOutlet weak var navBarView: UIView!
+    @IBOutlet weak var navBarTitleLabel: UILabel!
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
     private var keyboardHeight: CGFloat = 0.0
@@ -62,6 +64,8 @@ class WorkspaceListViewController: RestorViewController {
         if #available(iOS 13.0, *) {
             self.isModalInPresentation = true
         }
+        self.navBarView.backgroundColor = App.Color.navBarBg
+        self.navBarTitleLabel.backgroundColor = App.Color.navBarBg
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.reloadData()

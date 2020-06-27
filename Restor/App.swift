@@ -899,6 +899,26 @@ class App {
         }
         return false
     }
+    
+    func getStatusCodeViewColor(_ statusCode: Int) -> UIColor {
+        var color: UIColor!
+        if statusCode > 0 {
+            if (200..<299) ~= statusCode {
+                color = UIColor(named: "http-status-200")
+            } else if (300..<399) ~= statusCode {
+                color = UIColor(named: "http-status-300")
+            } else if (400..<500) ~= statusCode {
+                color = UIColor(named: "http-status-400")
+            } else if (500..<600) ~= statusCode {
+                color = UIColor(named: "http-status-500")
+            }
+        } else if statusCode <= -1 {  // error
+            color = UIColor(named: "http-status-error")
+        } else {
+            color = UIColor(named: "http-status-none")
+        }
+        return color!
+    }
 
     // MARK: - Theme
     public struct Color {
@@ -950,9 +970,34 @@ class App {
         }()
         public static var labelTitleFg: UIColor = {
             if #available(iOS 13, *) {
-                    return UIColor.secondaryLabel
+                return UIColor.secondaryLabel
             }
             return UIColor(red: 96/255, green: 97/255, blue: 101/255, alpha: 1.0)
+        }()
+        public static var textViewFg: UIColor = {
+            if #available(iOS 13, *) {
+                return UIColor { (UITraitCollection: UITraitCollection) -> UIColor in
+                    if UITraitCollection.userInterfaceStyle == .dark {
+                        return UIColor.white
+                    } else {
+                        return UIColor.black
+                    }
+                }
+            }
+            return UIColor.black
+        }()
+        public static var navBarBg: UIColor = {
+            let light = UIColor(red: 246/255, green: 247/255, blue: 248/255, alpha: 1.0)
+            if #available(iOS 13, *) {
+                return UIColor { (UITraitCollection: UITraitCollection) -> UIColor in
+                    if UITraitCollection.userInterfaceStyle == .dark {
+                        return UIColor(red: 39/255, green: 40/255, blue: 42/255, alpha: 1.0)
+                    } else {
+                        return light
+                    }
+                }
+            }
+            return light
         }()
     }
     

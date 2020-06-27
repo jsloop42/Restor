@@ -20,6 +20,9 @@ class EnvPickerCell: UITableViewCell {
 
 class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
     @IBOutlet weak var tableView: UITableView!
+    @IBOutlet weak var navView: UIView!
+    @IBOutlet weak var navTitleLabel: UILabel!
+    @IBOutlet weak var doneBtn: UIButton!
     private lazy var localDB = { CoreDataService.shared }()
     private lazy var app = { App.shared }()
     var frc: NSFetchedResultsController<EEnv>!
@@ -45,6 +48,9 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
             self.isModalInPresentation = true
         }
         self.view.backgroundColor = App.Color.tableViewBg
+        self.navView.backgroundColor = App.Color.navBarBg
+        self.navTitleLabel.backgroundColor = App.Color.navBarBg
+        self.doneBtn.backgroundColor = App.Color.navBarBg
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.estimatedRowHeight = 44
         self.tableView.delegate = self

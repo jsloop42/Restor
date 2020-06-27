@@ -346,12 +346,16 @@ class CoreDataService {
     ///   - predicate: An optional fetch predicate.
     ///   - ctx: The managed object context.
     /// - Returns: The fetch results controller.
-    func getFetchResultsController(obj: Entity.Type, predicate: NSPredicate? = nil, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
+    func getFetchResultsController(obj: Entity.Type, predicate: NSPredicate? = nil, sortDesc: [NSSortDescriptor]? = nil, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> NSFetchedResultsController<NSFetchRequestResult> {
         let moc = self.getMainMOC(ctx: ctx)
         var frc: NSFetchedResultsController<NSFetchRequestResult>!
         moc.performAndWait {
             let fr = obj.fetchRequest()
-            fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            if sortDesc != nil {
+                fr.sortDescriptors = sortDesc!
+            } else {
+                fr.sortDescriptors = [NSSortDescriptor(key: "created", ascending: true)]
+            }
             if let x = predicate {
                 fr.predicate = x
             } else {
