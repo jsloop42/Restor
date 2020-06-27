@@ -271,7 +271,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     }
     
     func renderTheme() {
-        self.methodView.backgroundColor = App.Color.requestMethodBg
+        //self.methodView.backgroundColor = App.Color.requestMethodBg
     }
     
     func addDoneButton() {
