@@ -140,7 +140,7 @@ class ProjectListViewController: RestorViewController {
         if #available(iOS 13.0, *) {
             return UIBarButtonItem(image: UIImage(systemName: "gear"), style: .plain, target: self, action: #selector(self.settingsButtonDidTap(_:)))
         }
-        return UIBarButtonItem(image: UIImage(), style: .plain, target: self, action: #selector(self.settingsButtonDidTap(_:)))
+        return UIBarButtonItem(image: UIImage(named: "settings"), style: .plain, target: self, action: #selector(self.settingsButtonDidTap(_:)))
     }
     
     @objc func workspaceDidSync(_ notif: Notification) {
