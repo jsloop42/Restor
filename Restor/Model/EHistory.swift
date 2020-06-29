@@ -11,6 +11,7 @@ import CoreData
 import CloudKit
 
 public class EHistory: NSManagedObject, Entity {
+    private let secureTrans = SecureTransformerData()
     
     static func initFromResponseData(_ respData: ResponseData) -> EHistory {
         let history = EHistory(context: CoreDataService.shared.mainMOC)
@@ -20,7 +21,7 @@ public class EHistory: NSManagedObject, Entity {
         history.modified = ts
         history.connection = respData.connectionInfo.connection
         history.connectionTime = respData.connectionInfo.connectionTime
-        history.cookies = respData.cookiesData
+        if let cookies = respData.cookiesData as? NSObject { history.cookies = cookies }
         history.dnsResolutionTime = respData.connectionInfo.dnsTime
         history.elapsed = respData.connectionInfo.elapsed
         history.fetchStartTime = respData.connectionInfo.fetchStart
@@ -120,11 +121,11 @@ public class EHistory: NSManagedObject, Entity {
             record["modified"] = self.modified as CKRecordValue
             record["connection"] = (self.connection ?? "") as CKRecordValue
             record["connectionTime"] = self.connectionTime as CKRecordValue
-            if let id = self.id, let data = self.cookies {
+            if let id = self.id, let _cookies = self.cookies, let data = self.secureTrans.transformedValue(_cookies) as? Data {
                 let url = EAFileManager.getTemporaryURL(id)
                 do {
                     try data.write(to: url)
-                    record["cookies"] = CKAsset(fileURL: url)
+                    record["value"] = CKAsset(fileURL: url)
                 } catch let error {
                     Log.error("Error: \(error)")
                 }
@@ -190,7 +191,13 @@ public class EHistory: NSManagedObject, Entity {
                 if let x = record["connection"] as? String { self.connection = x }
                 if let x = record["connectionTime"] as? Double { self.connectionTime = x }
                 if let x = record["cookies"] as? CKAsset, let url = x.fileURL {
-                    do { self.cookies = try Data(contentsOf: url) } catch let error { Log.error("Error getting data from file url: \(error)") }
+                    do {
+                        let data = try Data(contentsOf: url)
+                        if let _cookies = self.secureTrans.reverseTransformedValue(data) as? String {
+                            self.cookies = _cookies as NSObject
+                        }
+                        
+                    } catch let error { Log.error("Error getting data from file url: \(error)") }
                 }
                 if let x = record["dnsResolutionTime"] as? Double { self.dnsResolutionTime = x }
                 if let x = record["elapsed"] as? Int64 { self.elapsed = x }

@@ -81,9 +81,7 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
     
     func initUI() {
-        UIView.animate(withDuration: 0.3) {
-            self.activityIndicator.isHidden = false
-        }
+        self.displayActivityIndicator()
         self.webView.scrollView.isScrollEnabled = true
         let color = UIColor(named: "web-view-bg")
         self.webView.backgroundColor = color
@@ -111,7 +109,10 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
         
     private func updateRawModeUI() {
-        guard !self.rawTemplate.isEmpty, let data = self.data, let respData = data.responseData else { return }
+        guard !self.rawTemplate.isEmpty, let data = self.data, let respData = data.responseData else {
+            self.hideActivityIndicator()
+            return
+        }
         self.doneLoading = false
         if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
             UIView.animate(withDuration: 0.3) {
@@ -129,7 +130,10 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
     
     private func updatePreviewModeUI() {
-        guard let data = self.data, let respData = data.responseData, let html = String(data: respData, encoding: .utf8) else { return }
+        guard let data = self.data, let respData = data.responseData, let html = String(data: respData, encoding: .utf8) else {
+            self.hideActivityIndicator()
+            return
+        }
         if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
             UIView.animate(withDuration: 0.3) {
                 self.webView.isHidden = true
@@ -143,11 +147,21 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
         }
     }
     
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        Log.debug("web view did finish load")
+    func displayActivityIndicator() {
+        UIView.animate(withDuration: 0.3) {
+            self.activityIndicator.isHidden = false
+        }
+    }
+    
+    func hideActivityIndicator() {
         UIView.animate(withDuration: 0.3) {
             self.activityIndicator.isHidden = true
         }
+    }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Log.debug("web view did finish load")
+        self.hideActivityIndicator()
     }
 }
 

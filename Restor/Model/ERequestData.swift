@@ -175,6 +175,35 @@ public class ERequestData: NSManagedObject, Entity {
         }
     }
     
+    public static func fromDictionary(_ dict: [String: Any]) -> ERequestData? {
+        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String, let _type = dict["type"] as? Int64,
+            let type = RequestDataType(rawValue: _type.toInt()), let _format = dict["fieldFormat"] as? Int64,
+            let format = RequestBodyFormFieldFormatType(rawValue: _format.toInt())
+            else { return nil }
+        let db = CoreDataService.shared
+        guard let reqData = db.createRequestData(id: id, wsId: wsId, type: type, fieldFormat: format, ctx: db.mainMOC) else { return nil }
+        if let x = dict["created"] as? Int64 { reqData.created = x }
+        if let x = dict["modified"] as? Int64 { reqData.modified = x }
+        if let x = dict["changeTag"] as? Int64 { reqData.changeTag = x }
+        if let x = dict["key"] as? String { reqData.key = x }
+        if let x = dict["value"] as? String { reqData.value = x }
+        if let x = dict["version"] as? Int64 { reqData.version = x }
+        if let files = dict["files"] as? [[String: Any]] {
+            files.forEach { hm in
+                if let file = EFile.fromDictionary(hm) {
+                    file.requestData = reqData
+                }
+            }
+        }
+        if let image = dict["image"] as? [String: Any] {
+            if let img = EImage.fromDictionary(image) {
+                img.requestData = reqData
+            }
+        }
+        db.saveMainContext()
+        return reqData
+    }
+    
     public func toDictionary() -> [String : Any] {
         var dict: [String: Any] = [:]
         dict["created"] = self.created
@@ -184,6 +213,7 @@ public class ERequestData: NSManagedObject, Entity {
         dict["fieldFormat"] = self.fieldFormat
         dict["id"] = self.id
         dict["key"] = self.key
+        dict["type"] = self.type
         dict["value"] = self.value
         dict["version"] = self.version
         dict["wsId"] = self.wsId
@@ -193,6 +223,8 @@ public class ERequestData: NSManagedObject, Entity {
                 if !file.markForDelete { acc.append(file.toDictionary()) }
             }
         }
+        dict["files"] = acc
+        acc = []
         if let image = self.image {
             dict["image"] = image.toDictionary()
         }

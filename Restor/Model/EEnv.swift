@@ -98,4 +98,42 @@ class EEnv: NSManagedObject, Entity {
             }
         }
     }
+    
+    public static func fromDictionary(_ dict: [String: Any]) -> EEnv? {
+        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String else { return nil }
+        let db = CoreDataService.shared
+        guard let env = db.createEnv(name: "", envId: id, wsId: wsId, checkExists: true, ctx: db.mainMOC) else { return nil }
+        if let x = dict["created"] as? Int64 { env.created = x }
+        if let x = dict["modified"] as? Int64 { env.modified = x }
+        if let x = dict["changeTag"] as? Int64 { env.changeTag = x }
+        if let x = dict["name"] as? String { env.name = x }
+        if let x = dict["version"] as? Int64 { env.version = x }
+        if let xs = dict["variables"] as? [[String: Any]] {
+            xs.forEach { hm in
+                if let envVar = EEnvVar.fromDictionary(hm) {
+                    envVar.env = env
+                }
+            }
+        }
+        db.saveMainContext()
+        return env
+    }
+    
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["id"] = self.id
+        dict["name"] = self.name
+        dict["version"] = self.version
+        dict["wsId"] = self.wsId
+        let vars = CoreDataService.shared.getEnvVars(envId: self.getId())
+        var acc: [[String: Any]] = []
+        vars.forEach { envVar in
+            acc.append(envVar.toDictionary())
+        }
+        dict["variables"] = acc
+        return dict
+    }
 }

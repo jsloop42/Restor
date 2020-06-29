@@ -12,7 +12,7 @@ import CloudKit
 
 class EEnvVar: NSManagedObject, Entity {
     public var recordType: String { return "EnvVar" }
-    private let secureTrans = SecureTransformer()
+    private let secureTrans = SecureTransformerString()
     
     public func getId() -> String {
         return self.id ?? ""
@@ -111,5 +111,29 @@ class EEnvVar: NSManagedObject, Entity {
                 }
             }
         }
+    }
+    
+    public static func fromDictionary(_ dict: [String: Any]) -> EEnvVar? {
+        guard let id = dict["id"] as? String else { return nil }
+        let db = CoreDataService.shared
+        guard let envVar = db.createEnvVar(name: "", value: "", id: id, checkExists: true, ctx: db.mainMOC) else { return nil }
+        if let x = dict["created"] as? Int64 { envVar.created = x }
+        if let x = dict["modified"] as? Int64 { envVar.modified = x }
+        if let x = dict["changeTag"] as? Int64 { envVar.changeTag = x }
+        if let x = dict["name"] as? String { envVar.name = x }
+        if let x = dict["value"] as? String { envVar.value = x as NSObject }
+        if let x = dict["version"] as? Int64 { envVar.version = x }
+        return envVar
+    }
+    
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["id"] = self.id
+        dict["name"] = self.name
+        dict["value"] = self.value as? String ?? ""
+        return dict
     }
 }

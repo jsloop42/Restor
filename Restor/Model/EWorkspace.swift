@@ -122,17 +122,16 @@ public class EWorkspace: NSManagedObject, Entity {
         guard let id = dict["id"] as? String else { return nil }
         let db = CoreDataService.shared
         let ctx = db.mainMOC
-        let ws = db.getWorkspace(id: id, ctx: ctx)
-        if let x = dict["created"] as? Int64 { ws?.created = x }
-        if let x = dict["modified"] as? Int64 { ws?.modified = x }
-        if let x = dict["changeTag"] as? Int64 { ws?.changeTag = x }
-        if let x = dict["id"] as? String { ws?.id = x }
-        if let x = dict["isActive"] as? Bool { ws?.isActive = x }
-        if let x = dict["isSyncEnabled"] as? Bool { ws?.isSyncEnabled = x }
-        if let x = dict["name"] as? String { ws?.name = x }
-        if let x = dict["desc"] as? String { ws?.desc = x }
-        if let x = dict["saveResponse"] as? Bool { ws?.saveResponse = x }
-        if let x = dict["version"] as? Int64 { ws?.version = x }
+        guard let ws = db.createWorkspace(id: id, name: "", desc: "", isSyncEnabled: false, ctx: ctx) else { return nil }
+        if let x = dict["created"] as? Int64 { ws.created = x }
+        if let x = dict["modified"] as? Int64 { ws.modified = x }
+        if let x = dict["changeTag"] as? Int64 { ws.changeTag = x }
+        if let x = dict["isActive"] as? Bool { ws.isActive = x }
+        if let x = dict["isSyncEnabled"] as? Bool { ws.isSyncEnabled = x }
+        if let x = dict["name"] as? String { ws.name = x }
+        if let x = dict["desc"] as? String { ws.desc = x }
+        if let x = dict["saveResponse"] as? Bool { ws.saveResponse = x }
+        if let x = dict["version"] as? Int64 { ws.version = x }
         db.saveMainContext()
         if let xs = dict["projects"] as? [[String: Any]] {
             xs.forEach { x in
@@ -141,11 +140,17 @@ public class EWorkspace: NSManagedObject, Entity {
                 }
             }
         }
+        if let xs = dict["envs"] as? [[String: Any]] {
+            xs.forEach { dict in
+                _ = EEnv.fromDictionary(dict)
+            }
+        }
         db.saveMainContext()
         return ws
     }
     
     public func toDictionary() -> [String: Any] {
+        let db = CoreDataService.shared
         var dict: [String: Any] = [:]
         dict["created"] = self.created
         dict["modified"] = self.modified
@@ -163,6 +168,12 @@ public class EWorkspace: NSManagedObject, Entity {
             xs.append(proj.toDictionary())
         }
         dict["projects"] = xs
+        let envxs = db.getEnvs(wsId: self.getWsId())
+        xs = []
+        envxs.forEach { env in
+            xs.append(env.toDictionary())
+        }
+        dict["envs"] = xs
         return dict
     }
 }

@@ -25,6 +25,9 @@ class SettingsTableViewController: RestorTableViewController {
         case spacerAfterTools
         case saveHistory
         case spacerAfterSaveHistory
+        case importData
+        case exportData
+        case spaceAfterExportData
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -65,6 +68,16 @@ class SettingsTableViewController: RestorTableViewController {
             UI.pushScreen(self.navigationController!, storyboard: self.storyboard!, storyboardId: StoryboardId.environmentGroupVC.rawValue)
         } else if indexPath.row == CellId.base64.rawValue {
             UI.pushScreen(self.navigationController!, storyboard: self.storyboard!, storyboardId: StoryboardId.base64VC.rawValue)
+        } else if indexPath.row == CellId.importData.rawValue {
+            if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.importExportVC.rawValue) as? ImportExportViewController {
+                vc.mode = .import
+                self.navigationController?.present(vc, animated: true, completion: nil)
+            }
+        } else if indexPath.row == CellId.exportData.rawValue {
+            if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.importExportVC.rawValue) as? ImportExportViewController {
+                vc.mode = .export
+                self.navigationController?.present(vc, animated: true, completion: nil)
+            }
         }
     }
     
@@ -85,6 +98,12 @@ class SettingsTableViewController: RestorTableViewController {
         case CellId.saveHistory.rawValue:
             return 44
         case CellId.spacerAfterSaveHistory.rawValue:
+            return 24
+        case CellId.importData.rawValue:
+            return 44
+        case CellId.exportData.rawValue:
+            return 44
+        case CellId.spaceAfterExportData.rawValue:
             return 24
         default:
             break

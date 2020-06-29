@@ -139,8 +139,31 @@ public class EProject: NSManagedObject, Entity {
     }
     
     public static func fromDictionary(_ dict: [String: Any]) -> EProject? {
-        guard let id = dict["id"] as? String else { return nil }
-        return nil
+        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String else { return nil }
+        let db = CoreDataService.shared
+        guard let proj = db.createProject(id: id, wsId: wsId, name: "", desc: "", ctx: db.mainMOC) else { return nil }
+        if let x = dict["created"] as? Int64 { proj.created = x }
+        if let x = dict["modified"] as? Int64 { proj.modified = x }
+        if let x = dict["changeTag"] as? Int64 { proj.changeTag = x }
+        if let x = dict["desc"] as? String { proj.desc = x }
+        if let x = dict["name"] as? String { proj.name = x }
+        if let x = dict["version"] as? Int64 { proj.version = x }
+        if let xs = dict["requests"] as? [[String: Any]] {
+            xs.forEach { dict in
+                if let req = ERequest.fromDictionary(dict) {
+                    req.project = proj
+                }
+            }
+        }
+        if let xs = dict["methods"] as? [[String: Any]] {
+            xs.forEach { dict in
+                if let method = ERequestMethodData.fromDictionary(dict) {
+                    method.project = proj
+                }
+            }
+        }
+        db.saveMainContext()
+        return proj
     }
     
     public func toDictionary() -> [String: Any] {
@@ -168,6 +191,6 @@ public class EProject: NSManagedObject, Entity {
             xs.append(method.toDictionary())
         }
         dict["methods"] = xs
-        return [:]
+        return dict
     }
 }

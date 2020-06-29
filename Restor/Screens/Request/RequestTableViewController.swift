@@ -144,6 +144,7 @@ class RequestTableViewController: RestorTableViewController {
         self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
         self.nc.addObserver(self, selector: #selector(self.requestDidCancel(_:)), name: .requestDidCancel, object: nil)
         self.nc.addObserver(self, selector: #selector(self.envDidSelect(_:)), name: .envDidSelect, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.extrapolateDidFail(_:)), name: .extrapolateDidFail, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -278,6 +279,15 @@ class RequestTableViewController: RestorTableViewController {
                 UIView.animate(withDuration: 0.3) {
                     self.displayRequestDidCompleteUIChanges()
                 }
+            }
+        }
+    }
+    
+    @objc func extrapolateDidFail(_ notif: Notification) {
+        Log.debug("extrapolate did fail notif")
+        if let info = notif.userInfo as? [String: String], let msg = info["msg"] {
+            DispatchQueue.main.async {
+                UI.viewToast(msg, hideSec: 3, vc: self, completion: nil)
             }
         }
     }

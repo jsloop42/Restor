@@ -200,9 +200,7 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
         self.textViewDidChange(self.inputTextView)
     }
     
-    func textViewDidChange(_ textView: UITextView) {
-        self.updateUI()
-        guard let text = textView.text, !text.isEmpty else { return }
+    func updateTextView(_ text: String) {
         if self.menu.selectedSegmentIndex == 0 {
             self.outputTextView.text = self.utils.base64Encode(text)
         } else {
@@ -210,11 +208,20 @@ class Base64ViewController: UIViewController, UITextViewDelegate {
         }
     }
     
+    func textViewDidChange(_ textView: UITextView) {
+        Log.debug("text view did end editing")
+        self.updateUI()
+        self.updateTextView(textView.text ?? "")
+    }
+    
     func textViewDidBeginEditing(_ textView: UITextView) {
+        Log.debug("text view did begin editing")
         textView.isScrollEnabled = true
+        self.updateUI()
     }
     
     func textViewDidEndEditing(_ textView: UITextView) {
+        Log.debug("text view did end editing")
         textView.isScrollEnabled = false
         self.updateUI()
     }

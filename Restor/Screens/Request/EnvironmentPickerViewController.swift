@@ -23,6 +23,7 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
     @IBOutlet weak var navView: UIView!
     @IBOutlet weak var navTitleLabel: UILabel!
     @IBOutlet weak var doneBtn: UIButton!
+    @IBOutlet weak var cancelBtn: UIButton!
     private lazy var localDB = { CoreDataService.shared }()
     private lazy var app = { App.shared }()
     var frc: NSFetchedResultsController<EEnv>!
@@ -51,6 +52,7 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
         self.navView.backgroundColor = App.Color.navBarBg
         self.navTitleLabel.backgroundColor = App.Color.navBarBg
         self.doneBtn.backgroundColor = App.Color.navBarBg
+        self.cancelBtn.backgroundColor = App.Color.navBarBg
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.estimatedRowHeight = 44
         self.tableView.delegate = self

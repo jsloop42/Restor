@@ -132,6 +132,42 @@ public class ERequest: NSManagedObject, Entity {
         }
     }
     
+    public static func fromDictionary(_ dict: [String: Any]) -> ERequest? {
+        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String else { return nil }
+        let db = CoreDataService.shared
+        guard let req = db.createRequest(id: id, wsId: wsId, name: "") else { return nil }
+        if let x = dict["created"] as? Int64 { req.created = x }
+        if let x = dict["modified"] as? Int64 { req.modified = x }
+        if let x = dict["changeTag"] as? Int64 { req.changeTag = x }
+        if let x = dict["desc"] as? String { req.desc = x }
+        if let x = dict["name"] as? String { req.name = x }
+        if let x = dict["validateSSL"] as? Bool { req.validateSSL = x }
+        if let x = dict["selectedMethodIndex"] as? Int64 { req.selectedMethodIndex = x }
+        if let x = dict["url"] as? String { req.url = x }
+        if let x = dict["version"] as? Int64 { req.version = x }
+        if let dict = dict["body"] as? [String: Any] {
+            if let body = ERequestBodyData.fromDictionary(dict) {
+                req.body = body
+            }
+        }
+        if let xs = dict["headers"] as? [[String: Any]] {
+            xs.forEach { dict in
+                if let reqData = ERequestData.fromDictionary(dict) {
+                    reqData.header = req
+                }
+            }
+        }
+        if let xs = dict["params"] as? [[String: Any]] {
+            xs.forEach { dict in
+                if let reqData = ERequestData.fromDictionary(dict) {
+                    reqData.param = req
+                }
+            }
+        }
+        db.saveMainContext()
+        return req
+    }
+    
     public func toDictionary() -> [String: Any] {
         var dict: [String: Any] = [:]
         dict["created"] = self.created

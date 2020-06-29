@@ -125,7 +125,7 @@ final class RequestManager {
             }
             if history != nil {
                 info.history = history
-                history.cookies = info.cookiesData
+                if let cookies = info.cookiesData as NSObject? { history.cookies = cookies }
                 self.localdb.saveMainContext()
                 if let ws = self.localdb.getWorkspace(id: history.getWsId()), ws.isSyncEnabled { PersistenceService.shared.saveHistoryToCloud(history!) }
             }
@@ -175,8 +175,8 @@ final class RequestManager {
     }
 
     func extrapolate(_ string: String) -> ExtrapolateResult {
-        if self.envVars.isEmpty { return (string, false, false) }
         let isExp = self.shouldExtrapolate(string)
+        if self.envVars.isEmpty && isExp { return (string, true, false) }
         if !isExp { return (string, false, false) }
         let substr = string.slice(from: "{{", to: "}}") ?? ""
         if substr.isEmpty { return (string, isExp, false) }

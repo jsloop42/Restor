@@ -36,7 +36,8 @@ class RequestPrepareState: GKState {
             Log.error("Error in prepare request: \(error)")
             if error is AppError && error.code == AppError.extrapolate.code {
                 fsm.enter(RequestCancelState.self)
-                UI.displayToast("Extrapolating env variables failed. Please check the variables.")
+                self.nc.post(name: .extrapolateDidFail, object: self, userInfo: ["msg": "Extrapolating env variables failed. Please check the variables and env."])
+                //UI.displayToast("Extrapolating env variables failed. Please check the variables.")
             }
         }
     }

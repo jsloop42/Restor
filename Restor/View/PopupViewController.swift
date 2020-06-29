@@ -30,13 +30,28 @@ class PopupHelpCell: UITableViewCell {
     @IBOutlet weak var helpLabel: UILabel!
 }
 
-class PopupCell: UITableViewCell {
+class PopupCell: UITableViewCell, UITextFieldDelegate {
     @IBOutlet weak var nameView: UIView!
     @IBOutlet weak var descView: UIView!
     @IBOutlet weak var syncView: UIView!
     @IBOutlet weak var nameTextField: UITextField!  // Name
     @IBOutlet weak var descTextField: UITextField!  // Description
     @IBOutlet weak var iCloudSyncSwitch: UISwitch!  // iCloud Sync
+    
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        self.nameTextField.delegate = self
+        self.descTextField.delegate = self
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField.tag == 0 {
+            self.descTextField.becomeFirstResponder()
+        } else if textField.tag == 1 {
+            textField.resignFirstResponder()
+        }
+        return false  // Do not add a line break
+    }
 }
 
 /// Popup screen for getting user input values

@@ -177,14 +177,14 @@ class UI {
     }
    
     /// Display toast using the presented view controller
-    static func viewToast(_ message: String, hideSec: Double? = 3, vc: UIViewController) {
+    static func viewToast(_ message: String, hideSec: Double? = 3, vc: UIViewController, completion: (() -> Void)? = nil) {
         self.isToastPresenting = true
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .actionSheet)
         DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + (hideSec ?? 3), execute: {
             self.isToastPresenting = false
             alert.dismiss(animated: true, completion: {
                 if !self.toastQueue.isEmpty, let msg = self.toastQueue.popFirst() {
-                    self.viewToast(msg, hideSec: hideSec, vc: vc)
+                    self.viewToast(msg, hideSec: hideSec, vc: vc, completion: completion)
                 }
             })
         })
@@ -194,7 +194,7 @@ class UI {
             popoverPresentationController.sourceRect = vc.view.bounds
             popoverPresentationController.permittedArrowDirections = []
         }
-        DispatchQueue.main.async { vc.present(alert, animated: true, completion: nil) }
+        DispatchQueue.main.async { vc.present(alert, animated: true, completion: completion) }
     }
    
     static func activityIndicator() -> UIActivityIndicatorView {

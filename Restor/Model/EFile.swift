@@ -119,6 +119,18 @@ public class EFile: NSManagedObject, Entity {
         }
     }
     
+    public static func fromDictionary(_ dict: [String: Any]) -> EFile? {
+        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String, let data = dict["data"] as? Data,
+            let name = dict["name"] as? String, let _type = dict["type"] as? Int64, let type = RequestDataType(rawValue: _type.toInt()) else { return nil }
+        let db = CoreDataService.shared
+        guard let file = db.createFile(fileId: id, data: data, wsId: wsId, name: name, path: URL(fileURLWithPath: "/tmp/"), type: type, checkExists: true, ctx: db.mainMOC) else { return nil }
+        if let x = dict["created"] as? Int64 { file.created = x }
+        if let x = dict["modified"] as? Int64 { file.modified = x }
+        if let x = dict["changeTag"] as? Int64 { file.changeTag = x }
+        if let x = dict["version"] as? Int64 { file.version = x }
+        return file
+    }
+    
     public func toDictionary() -> [String : Any] {
         var dict: [String: Any] = [:]
         dict["created"] = self.created

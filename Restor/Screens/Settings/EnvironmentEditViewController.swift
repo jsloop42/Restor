@@ -58,7 +58,7 @@ class EnvEditCell: UITableViewCell, UITextFieldDelegate {
     }
 }
 
-class EnvironmentEditViewController: UITableViewController {
+class EnvironmentEditViewController: UITableViewController, UITextFieldDelegate {
     @IBOutlet weak var nameCell: EnvEditCell!
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var valueCell: EnvEditCell!
@@ -124,8 +124,10 @@ class EnvironmentEditViewController: UITableViewController {
         switch self.mode {
         case .addEnv:
             self.titleLabel.text = "Add Environment"
+            self.nameCell.textField.returnKeyType = .default
         case .editEnv:
             self.titleLabel.text = "Edit Environment"
+            self.nameCell.textField.returnKeyType = .default
             self.name = self.env?.name ?? ""
             self.editok = true
         case .viewEnv:
@@ -133,14 +135,20 @@ class EnvironmentEditViewController: UITableViewController {
         case .addEnvVar:
             self.titleLabel.text = "Add Variable"
             self.nameCell.textField.placeholder = "server-url"
+            self.nameCell.textField.returnKeyType = .next
+            self.valueCell.textField.returnKeyType = .default
         case .editEnvVar:
             self.titleLabel.text = "Edit Variable"
+            self.nameCell.textField.returnKeyType = .next
+            self.valueCell.textField.returnKeyType = .default
             self.name = self.envVar?.name ?? ""
             self.value = self.envVar?.value as? String ?? ""
             self.editok = true
         case .viewEnvVar:
             self.titleLabel.text = ""
         }
+        self.nameCell.textField.delegate = self
+        self.valueCell.textField.delegate = self
         self.disableDoneButton()
     }
     
@@ -207,10 +215,6 @@ class EnvironmentEditViewController: UITableViewController {
         self.cancelBtn.addTarget(self, action: #selector(self.cancelDidTap(_:)), for: .touchDown)
     }
     
-    func initData() {
-        
-    }
-    
     func updateUI() {
         if self.mode == .viewEnv || self.mode == .editEnv {
             self.nameCell.textField.text = self.env != nil ? self.env!.name : self.name
@@ -269,6 +273,15 @@ class EnvironmentEditViewController: UITableViewController {
         } else {
             self.disableDoneButton()
         }
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        if textField.tag == 0 {
+            self.valueCell.textField.becomeFirstResponder()
+        } else if textField.tag == 1 {
+            textField.resignFirstResponder()
+        }
+        return false  // Do not add a line break
     }
     
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9E0894E224AA7F3D0058153F /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E0894E124AA7F3D0058153F /* WebKit.framework */; };
 		9E0AD513247AC4A50099B9A5 /* ResponseData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0AD512247AC4A50099B9A5 /* ResponseData.swift */; };
 		9E145F92241BD9D200962A19 /* EARescheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E145F91241BD9D200962A19 /* EARescheduler.swift */; };
 		9E145F94241C118800962A19 /* EAReschedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E145F93241C118800962A19 /* EAReschedulerTests.swift */; };
@@ -57,6 +58,7 @@
 		9E769AFA242147AB005B18C3 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E769AF9242147AB005B18C3 /* Models.swift */; };
 		9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */; };
 		9E7B5848242A9BAB00997302 /* EALFUCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7B5847242A9BAB00997302 /* EALFUCache.swift */; };
+		9E7C9E3E24AA7321005B6235 /* ImportExportViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7C9E3C24AA7321005B6235 /* ImportExportViewController.swift */; };
 		9E7CE9142479509800C18C1A /* KVCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E7CE9132479509800C18C1A /* KVCell.swift */; };
 		9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */; };
 		9E857F96248296BF008BE3D0 /* SourceCodePro-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9E857F95248296BF008BE3D0 /* SourceCodePro-Regular.ttf */; };
@@ -131,6 +133,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		9E0894E124AA7F3D0058153F /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
+		9E0894E324AA7F690058153F /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
 		9E0AD512247AC4A50099B9A5 /* ResponseData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseData.swift; sourceTree = "<group>"; };
 		9E145F91241BD9D200962A19 /* EARescheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARescheduler.swift; sourceTree = "<group>"; };
 		9E145F93241C118800962A19 /* EAReschedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAReschedulerTests.swift; sourceTree = "<group>"; };
@@ -182,6 +186,7 @@
 		9E769AF9242147AB005B18C3 /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListViewController.swift; sourceTree = "<group>"; };
 		9E7B5847242A9BAB00997302 /* EALFUCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EALFUCache.swift; sourceTree = "<group>"; };
+		9E7C9E3C24AA7321005B6235 /* ImportExportViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImportExportViewController.swift; sourceTree = "<group>"; };
 		9E7CE9132479509800C18C1A /* KVCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KVCell.swift; sourceTree = "<group>"; };
 		9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentGroupViewController.swift; sourceTree = "<group>"; };
 		9E857F95248296BF008BE3D0 /* SourceCodePro-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "SourceCodePro-Regular.ttf"; sourceTree = "<group>"; };
@@ -249,6 +254,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9E0894E224AA7F3D0058153F /* WebKit.framework in Frameworks */,
 				9EC1F94C2426565B005BDD0A /* CloudKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -434,11 +440,12 @@
 		9EA8DD942498E61A00D07A3F /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				9EA8DD98249917A600D07A3F /* Base64ViewController.swift */,
 				9E6298C224974F2D001B68EB /* EnvironmentEditViewController.swift */,
 				9E81E3F42423B80A00CDEC4C /* EnvironmentGroupViewController.swift */,
 				9EA8DD962498E66E00D07A3F /* EnvironmentVariableTableViewController.swift */,
+				9E7C9E3C24AA7321005B6235 /* ImportExportViewController.swift */,
 				9EFF1FFD24229DB600E97632 /* SettingsTableViewController.swift */,
-				9EA8DD98249917A600D07A3F /* Base64ViewController.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -528,13 +535,13 @@
 			isa = PBXGroup;
 			children = (
 				9E473B03241CE74100DEC889 /* EditRequestTableViewController.swift */,
+				9E358E39249E31F700D7481F /* EnvironmentPickerViewController.swift */,
 				9E78D1D0239EBB4E005FC692 /* RequestListViewController.swift */,
 				9EB4DC3F246061230077DF2A /* RequestTabBarViewController.swift */,
 				9E70D4B824605DBB00B33CF1 /* RequestTableViewController.swift */,
 				9EFFF1C9246FEA50003D7CA8 /* RequestManager.swift */,
 				9EFFF1CB246FEA83003D7CA8 /* RequestStates.swift */,
 				9E4CE932246FED560088621D /* RequestStateMachine.swift */,
-				9E358E39249E31F700D7481F /* EnvironmentPickerViewController.swift */,
 			);
 			path = Request;
 			sourceTree = "<group>";
@@ -542,6 +549,8 @@
 		9EFACA1823998A1B0004AB91 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9E0894E324AA7F690058153F /* Security.framework */,
+				9E0894E124AA7F3D0058153F /* WebKit.framework */,
 				9EC1F94B2426565B005BDD0A /* CloudKit.framework */,
 			);
 			name = Frameworks;
@@ -723,6 +732,7 @@
 				9ED7C8CA246C157700936701 /* EACoordinator.swift in Sources */,
 				9E9DE8CC246C7DCD0068F8CE /* RestorViewController.swift in Sources */,
 				9E9CFA86246F3C1D009D870E /* EACrypto.swift in Sources */,
+				9E7C9E3E24AA7321005B6235 /* ImportExportViewController.swift in Sources */,
 				9E7CE9142479509800C18C1A /* KVCell.swift in Sources */,
 				9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */,
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
@@ -959,6 +969,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Restor/Restor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = J7Q5T569K8;
 				INFOPLIST_FILE = Restor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
@@ -979,6 +990,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Restor/Restor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 2;
 				DEVELOPMENT_TEAM = J7Q5T569K8;
 				INFOPLIST_FILE = Restor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
