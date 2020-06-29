@@ -96,4 +96,17 @@ public class ERequestMethodData: NSManagedObject, Entity {
             }
         }
     }
+    
+    public func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["id"] = self.id
+        dict["isCustom"] = self.isCustom
+        dict["name"] = self.name
+        dict["version"] = self.version
+        dict["wsId"] = self.wsId
+        return dict
+    }
 }

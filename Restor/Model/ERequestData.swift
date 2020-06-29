@@ -174,4 +174,28 @@ public class ERequestData: NSManagedObject, Entity {
             }
         }
     }
+    
+    public func toDictionary() -> [String : Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["desc"] = self.desc
+        dict["fieldFormat"] = self.fieldFormat
+        dict["id"] = self.id
+        dict["key"] = self.key
+        dict["value"] = self.value
+        dict["version"] = self.version
+        dict["wsId"] = self.wsId
+        var acc: [[String: Any]] = []
+        if let xs = self.files?.allObjects as? [EFile] {
+            xs.forEach { file in
+                if !file.markForDelete { acc.append(file.toDictionary()) }
+            }
+        }
+        if let image = self.image {
+            dict["image"] = image.toDictionary()
+        }
+        return dict
+    }
 }

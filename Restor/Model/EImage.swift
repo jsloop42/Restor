@@ -120,4 +120,18 @@ public class EImage: NSManagedObject, Entity {
             }
         }
     }
+    
+    public func toDictionary() -> [String : Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["id"] = self.id
+        dict["wsId"] = self.wsId
+        dict["name"] = self.name
+        dict["type"] = self.type
+        dict["data"] = self.data
+        dict["version"] = self.version
+        return dict
+    }
 }

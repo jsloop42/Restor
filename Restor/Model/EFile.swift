@@ -118,4 +118,18 @@ public class EFile: NSManagedObject, Entity {
             }
         }
     }
+    
+    public func toDictionary() -> [String : Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["id"] = self.id
+        dict["name"] = self.name
+        dict["type"] = self.type
+        dict["version"] = self.version
+        dict["data"] = self.data
+        dict["wsId"] = self.wsId
+        return dict
+    }
 }

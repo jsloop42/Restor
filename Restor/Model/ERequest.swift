@@ -131,4 +131,37 @@ public class ERequest: NSManagedObject, Entity {
             }
         }
     }
+    
+    public func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["id"] = self.id
+        dict["wsId"] = self.wsId
+        dict["desc"] = self.desc
+        dict["name"] = self.name
+        dict["validateSSL"] = self.validateSSL
+        dict["selectedMethodIndex"] = self.selectedMethodIndex
+        dict["url"] = self.url
+        dict["version"] = self.version
+        if let body = self.body {
+            dict["body"] = body.toDictionary()
+        }
+        let db = CoreDataService.shared
+        let headers = db.getHeadersRequestData(self.getId())
+        var xs: [[String: Any]] = []
+        headers.forEach { header in
+            xs.append(header.toDictionary())
+        }
+        dict["headers"] = xs
+        xs = []
+        let params = db.getParamsRequestData(self.getId())
+        params.forEach { param in
+            xs.append(param.toDictionary())
+        }
+        dict["params"] = xs
+        xs = []
+        return dict
+    }
 }

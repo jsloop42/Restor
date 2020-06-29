@@ -76,6 +76,7 @@ public class EWorkspace: NSManagedObject, Entity {
             record["isActive"] = self.isActive as CKRecordValue
             record["isSyncEnabled"] = self.isSyncEnabled as CKRecordValue
             record["name"] = self.name! as CKRecordValue
+            record["saveResponse"] = self.saveResponse as CKRecordValue
             record["version"] = self.version as CKRecordValue
         }
     }
@@ -106,6 +107,7 @@ public class EWorkspace: NSManagedObject, Entity {
             if let x = record["isSyncEnabled"] as? Bool { self.isSyncEnabled = x }
             if let x = record["name"] as? String { self.name = x }
             if let x = record["desc"] as? String { self.desc = x }
+            if let x = record["saveResponse"] as? Bool { self.saveResponse = x }
             if let x = record["version"] as? Int64 { self.version = x }
         }
     }
@@ -114,5 +116,53 @@ public class EWorkspace: NSManagedObject, Entity {
     var isInDefaultMode: Bool {
         let db = CoreDataService.shared
         return self.id == db.defaultWorkspaceId && self.name == db.defaultWorkspaceName && self.desc == db.defaultWorkspaceDesc && self.modified == self.changeTag && (self.projects == nil || self.projects!.isEmpty)
+    }
+    
+    public static func fromDictionary(_ dict: [String: Any]) -> EWorkspace? {
+        guard let id = dict["id"] as? String else { return nil }
+        let db = CoreDataService.shared
+        let ctx = db.mainMOC
+        let ws = db.getWorkspace(id: id, ctx: ctx)
+        if let x = dict["created"] as? Int64 { ws?.created = x }
+        if let x = dict["modified"] as? Int64 { ws?.modified = x }
+        if let x = dict["changeTag"] as? Int64 { ws?.changeTag = x }
+        if let x = dict["id"] as? String { ws?.id = x }
+        if let x = dict["isActive"] as? Bool { ws?.isActive = x }
+        if let x = dict["isSyncEnabled"] as? Bool { ws?.isSyncEnabled = x }
+        if let x = dict["name"] as? String { ws?.name = x }
+        if let x = dict["desc"] as? String { ws?.desc = x }
+        if let x = dict["saveResponse"] as? Bool { ws?.saveResponse = x }
+        if let x = dict["version"] as? Int64 { ws?.version = x }
+        db.saveMainContext()
+        if let xs = dict["projects"] as? [[String: Any]] {
+            xs.forEach { x in
+                if let proj = EProject.fromDictionary(x) {
+                    proj.workspace = ws
+                }
+            }
+        }
+        db.saveMainContext()
+        return ws
+    }
+    
+    public func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["id"] = self.id
+        dict["isActive"] = self.isActive
+        dict["isSyncEnabled"] = self.isSyncEnabled
+        dict["name"] = self.name
+        dict["desc"] = self.desc
+        dict["saveResponse"] = self.saveResponse
+        dict["version"] = self.version
+        var xs: [[String: Any]] = []
+        let projs = CoreDataService.shared.getProjects(wsId: self.getId())
+        projs.forEach { proj in
+            xs.append(proj.toDictionary())
+        }
+        dict["projects"] = xs
+        return dict
     }
 }
