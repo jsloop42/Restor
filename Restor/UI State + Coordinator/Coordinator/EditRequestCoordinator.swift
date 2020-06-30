@@ -32,7 +32,10 @@ class EditRequestCoordinator: EACoordinator {
         DispatchQueue.main.async {
             if let vc = UIStoryboard.editRequestVC {
                 AppState.editRequest = self.request  // TODO: change global state
-                self.presenter.pushViewController(vc, animated: true)
+                // self.presenter.pushViewController(vc, animated: true)
+                let navVC = UINavigationController(rootViewController: vc)
+                navVC.setNavigationBarHidden(true, animated: false)
+                self.presenter.present(navVC, animated: true, completion: nil)
             }
         }
     }

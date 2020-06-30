@@ -9,6 +9,7 @@
 import Foundation
 import UIKit
 
+@available(*, deprecated)
 class RestorTableViewController: UITableViewController {
     fileprivate let nc = NotificationCenter.default
     

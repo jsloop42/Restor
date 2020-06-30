@@ -31,6 +31,9 @@ class ValidateSSLCell: UITableViewCell {
 
 class EditRequestTableViewController: RestorTableViewController, UITextFieldDelegate, UITextViewDelegate {
     static weak var shared: EditRequestTableViewController?
+    @IBOutlet weak var titleLabel: UILabel!
+    @IBOutlet weak var cancelBtn: UIButton!
+    @IBOutlet weak var doneBtn: UIButton!
     @IBOutlet weak var methodView: UIView!
     @IBOutlet weak var methodLabel: UILabel!
     @IBOutlet weak var urlTextField: EATextField!
@@ -53,7 +56,6 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     @IBOutlet weak var paramsCell: UITableViewCell!
     @IBOutlet weak var bodyCell: UITableViewCell!
     @IBOutlet weak var validateSSLCell: ValidateSSLCell!
-    
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     private let nc = NotificationCenter.default
@@ -64,32 +66,34 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     private let utils = EAUtils.shared
     private lazy var db = { PersistenceService.shared }()
     private lazy var localdb = { CoreDataService.shared }()
-    private lazy var doneBtn: UIButton = {
-        let btn = UI.getNavbarTopDoneButton()
-        btn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
-        return btn
-    }()
+//    private lazy var doneBtn: UIButton = {
+//        let btn = UI.getNavbarTopDoneButton()
+//        btn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
+//        return btn
+//    }()
     /// Indicates if the request is valid for saving (any changes made).
     private var isDirty = false
     var entityDict: [String: Any] = [:]
     /// Used in getting child managed object context.
     private var reqName = ""
     private var methods: [ERequestMethodData] = []
+    var isEditMode = false
     
     enum CellId: Int {
-        case spaceAfterTop = 0
-        case url = 1
-        case spacerAfterUrl = 2
-        case name = 3
-        case spacerAfterName = 4
-        case header = 5
-        case spacerAfterHeader = 6
-        case params = 7
-        case spacerAfterParams = 8
-        case body = 9
-        case spacerAfterBody = 10
-        case validateSSL = 11
-        case spacerAfterValidateSSL = 12
+        case navbar = 0
+        case spaceAfterTop = 1
+        case url = 2
+        case spacerAfterUrl = 3
+        case name = 4
+        case spacerAfterName = 5
+        case header = 6
+        case spacerAfterHeader = 7
+        case params = 8
+        case spacerAfterParams = 9
+        case body = 10
+        case spacerAfterBody = 11
+        case validateSSL = 12
+        case spacerAfterValidateSSL = 13
     }
     
     deinit {
@@ -121,7 +125,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         }
     }
     
-    override func shouldPopOnBackButton() -> Bool {
+    @objc func cancelDidTap(_ sender: Any) {
         self.endEditing()
         if self.isDirty {
             UI.viewActionSheet(vc: self, message: "Are you sure you want to discard your changes?", cancelText: "Keep Editing",
@@ -130,14 +134,13 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
                                cancelCallback: { Log.debug("cancel callback") },
                                // discard changes
                                otherCallback: { self.discardContextChanges() })
-            return false
         } else {
             if let data = AppState.editRequest, let url = data.url, url.isEmpty {  // New request and user taps back button without any change, so we discard.
                 self.localdb.deleteEntity(data)
             }
+            self.discardContextChanges()
         }
-        self.destroy()
-        return true
+        //self.destroy()
     }
     
     // Handle the pop gesture
@@ -200,6 +203,16 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         self.validateSSLCell.borderColor = .clear
         // end clear
         self.reqName = AppState.editRequest?.name ?? ""
+        if let data = AppState.editRequest {
+            if data.objectID.isTemporaryID {
+                self.titleLabel.text = "Add Request"
+                self.isEditMode = false
+            } else {
+                self.titleLabel.text = "Edit Request"
+                self.isEditMode = true
+            }
+            
+        }
         self.renderTheme()
     }
     
@@ -222,6 +235,8 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: .documentPickerShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentImagePicker(_:)), name: .imagePickerShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.validateSSLDidChange(_:)), name: .validateSSLDidChange, object: nil)
+        self.cancelBtn.addTarget(self, action: #selector(self.cancelDidTap(_:)), for: .touchUpInside)
+        self.doneBtn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
     }
 
     func updateData() {
@@ -303,7 +318,11 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         DispatchQueue.main.async {
             self.endEditing()
             self.destroy()
-            self.navigationController?.popViewController(animated: true)
+            //self.navigationController?.popViewController(animated: true)
+            self.dismiss(animated: true, completion: {
+                let name = self.isEditMode ? "did-navigate-back-to-RequestTableViewController" : "did-navigate-back-to-RequestListViewController"
+                self.nc.post(name: NSNotification.Name(name), object: self)
+            })
         }
     }
     
@@ -327,7 +346,6 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
                     if method.shouldDelete { self.app.markEntityForDelete(reqMethodData: method, ctx: method.managedObjectContext) }
                 }
             }
-            self.nc.post(name: .requestDidChange, object: self, userInfo: ["request": data])
             //let timer = DispatchSource.makeTimerSource()
             //timer.schedule(deadline: .now() + .milliseconds(300))
             //timer.setEventHandler {
@@ -337,6 +355,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
                 if let tabvc = self.tabBarController as? RequestTabBarController { tabvc.request = data }
                 self.db.saveRequestToCloud(data)
                 self.db.deleteDataMarkedForDelete(self.app.editReqDelete)
+                self.nc.post(name: .requestDidChange, object: self, userInfo: ["request": data])
                 self.close()
                 //timer.cancel()
             //}
@@ -585,6 +604,11 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     func textFieldDidEndEditing(_ textField: UITextField) {
         self.updateStateForTextField(textField)
     }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        UI.endEditing()
+        return false
+    }
         
     func textViewDidBeginEditing(_ textView: UITextView) {
         RequestVC.shared?.clearEditing()
@@ -763,6 +787,11 @@ class KVEditContentCell: UITableViewCell, KVEditContentCellType, UITextFieldDele
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         RequestVC.shared?.clearEditing()
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        UI.endEditing()
+        return false
     }
     
     @objc func updateState(_ textField: UITextField) {
@@ -1237,6 +1266,11 @@ class KVEditBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UIColl
     func textFieldDidEndEditing(_ textField: UITextField) {
         Log.debug("textfield did end editing")
         self.updateState(textField)
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        UI.endEditing()
+        return false
     }
     
     // MARK: - Delegate collection view

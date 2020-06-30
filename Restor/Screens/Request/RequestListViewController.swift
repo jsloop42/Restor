@@ -65,6 +65,7 @@ class RequestListViewController: RestorViewController {
     func initEvents() {
         self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: .databaseWillUpdate, object: nil)
         self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: .databaseDidUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.requestDidChange(_:)), name: .requestDidChange, object: nil)
     }
     
     func getFRCPredicate(_ projId: String) -> NSPredicate {
@@ -89,6 +90,11 @@ class RequestListViewController: RestorViewController {
         try? self.frc.performFetch()
         self.frc.delegate = self
         self.tableView.reloadData()
+    }
+    
+    @objc func requestDidChange(_ notif: Notification) {
+        Log.debug("request did change - refreshing list")
+        self.updateData()
     }
     
     @objc func databaseWillUpdate(_ notif: Notification) {
