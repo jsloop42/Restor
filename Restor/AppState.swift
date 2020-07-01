@@ -10,7 +10,6 @@ import Foundation
 import UIKit
 
 struct AppState {
-    static var appCoord: AppCoordinator!
     static var workspaces: [EWorkspace] = []
     static var selectedWorkspace: Int = 0
     static var totalworkspaces = 0

@@ -11,12 +11,7 @@
 		9E0AD513247AC4A50099B9A5 /* ResponseData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0AD512247AC4A50099B9A5 /* ResponseData.swift */; };
 		9E145F92241BD9D200962A19 /* EARescheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E145F91241BD9D200962A19 /* EARescheduler.swift */; };
 		9E145F94241C118800962A19 /* EAReschedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E145F93241C118800962A19 /* EAReschedulerTests.swift */; };
-		9E18F16B246D9CE9003C888C /* RequestCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E18F16A246D9CE9003C888C /* RequestCoordinator.swift */; };
 		9E18F16D246D9DB1003C888C /* RestorTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E18F16C246D9DB1003C888C /* RestorTableViewController.swift */; };
-		9E18F16F246D9DE8003C888C /* RequestState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E18F16E246D9DE8003C888C /* RequestState.swift */; };
-		9E18F171246DC051003C888C /* EditRequestState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E18F170246DC051003C888C /* EditRequestState.swift */; };
-		9E18F173246DC0E5003C888C /* EditRequestCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E18F172246DC0E5003C888C /* EditRequestCoordinator.swift */; };
-		9E18F175246DDB06003C888C /* WorkspaceListCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E18F174246DDB06003C888C /* WorkspaceListCoordinator.swift */; };
 		9E1B2DD9242753AA00994233 /* CloudKitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1B2DD8242753AA00994233 /* CloudKitTests.swift */; };
 		9E1B2DDC242798BB00994233 /* EWorkspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1B2DDB242798BB00994233 /* EWorkspace.swift */; };
 		9E1B2DDE242798D700994233 /* EProject.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E1B2DDD242798D700994233 /* EProject.swift */; };
@@ -30,10 +25,6 @@
 		9E223D532436261600229855 /* EACloudOperation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D522436261600229855 /* EACloudOperation.swift */; };
 		9E223D55243626E000229855 /* EACommon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E223D54243626E000229855 /* EACommon.swift */; };
 		9E358E3A249E31F700D7481F /* EnvironmentPickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E358E39249E31F700D7481F /* EnvironmentPickerViewController.swift */; };
-		9E36C412246BEA5F00946726 /* EAUIStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C411246BEA5F00946726 /* EAUIStateMachine.swift */; };
-		9E36C415246BEBEC00946726 /* ProjectListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C414246BEBEC00946726 /* ProjectListState.swift */; };
-		9E36C417246BEC3B00946726 /* RequestListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C416246BEC3B00946726 /* RequestListState.swift */; };
-		9E36C419246BEC7A00946726 /* WorkspaceListState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E36C418246BEC7A00946726 /* WorkspaceListState.swift */; };
 		9E3AFF1B24A6760900716BD7 /* HistoryTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E3AFF1A24A6760900716BD7 /* HistoryTableViewController.swift */; };
 		9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4334832416C4AA002452EB /* EAFileManager.swift */; };
 		9E4334862416D1ED002452EB /* IMG_6109.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 9E4334852416D1DE002452EB /* IMG_6109.jpeg */; };
@@ -78,7 +69,6 @@
 		9E926FB923945E7D002DF561 /* RestorUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E926FB823945E7D002DF561 /* RestorUITests.swift */; };
 		9E96153B248817530098F937 /* styles.css in Resources */ = {isa = PBXBuildFile; fileRef = 9E96153A248817530098F937 /* styles.css */; };
 		9E9CFA86246F3C1D009D870E /* EACrypto.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9CFA85246F3C1C009D870E /* EACrypto.swift */; };
-		9E9DE8C9246C2AE80068F8CE /* RequestListCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9DE8C8246C2AE80068F8CE /* RequestListCoordinator.swift */; };
 		9E9DE8CC246C7DCD0068F8CE /* RestorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */; };
 		9E9E64352492CA6B006B9F5F /* preview.html in Resources */ = {isa = PBXBuildFile; fileRef = 9E9E64342492CA6B006B9F5F /* preview.html */; };
 		9EA8DD972498E66E00D07A3F /* EnvironmentVariableTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EA8DD962498E66E00D07A3F /* EnvironmentVariableTableViewController.swift */; };
@@ -98,9 +88,6 @@
 		9ED17CC1248805AA0002CA19 /* prism-light.css in Resources */ = {isa = PBXBuildFile; fileRef = 9ED17CBF248805A90002CA19 /* prism-light.css */; };
 		9ED17CC2248805AA0002CA19 /* prism-dark.css in Resources */ = {isa = PBXBuildFile; fileRef = 9ED17CC0248805AA0002CA19 /* prism-dark.css */; };
 		9ED17CC5248805BD0002CA19 /* prism.js in Resources */ = {isa = PBXBuildFile; fileRef = 9ED17CC3248805BC0002CA19 /* prism.js */; };
-		9ED7C8C5246C0D4C00936701 /* AppCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED7C8C4246C0D4C00936701 /* AppCoordinator.swift */; };
-		9ED7C8C8246C155E00936701 /* ProjectListCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED7C8C7246C155E00936701 /* ProjectListCoordinator.swift */; };
-		9ED7C8CA246C157700936701 /* EACoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED7C8C9246C157700936701 /* EACoordinator.swift */; };
 		9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */; };
 		9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ED99AFD240AF7940064BDCC /* PersistenceService.swift */; };
 		9EE34CA123D9F44600CA08F2 /* EAExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */; };
@@ -138,12 +125,7 @@
 		9E0AD512247AC4A50099B9A5 /* ResponseData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseData.swift; sourceTree = "<group>"; };
 		9E145F91241BD9D200962A19 /* EARescheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARescheduler.swift; sourceTree = "<group>"; };
 		9E145F93241C118800962A19 /* EAReschedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAReschedulerTests.swift; sourceTree = "<group>"; };
-		9E18F16A246D9CE9003C888C /* RequestCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestCoordinator.swift; sourceTree = "<group>"; };
 		9E18F16C246D9DB1003C888C /* RestorTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorTableViewController.swift; sourceTree = "<group>"; };
-		9E18F16E246D9DE8003C888C /* RequestState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestState.swift; sourceTree = "<group>"; };
-		9E18F170246DC051003C888C /* EditRequestState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRequestState.swift; sourceTree = "<group>"; };
-		9E18F172246DC0E5003C888C /* EditRequestCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditRequestCoordinator.swift; sourceTree = "<group>"; };
-		9E18F174246DDB06003C888C /* WorkspaceListCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListCoordinator.swift; sourceTree = "<group>"; };
 		9E1B2DD8242753AA00994233 /* CloudKitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitTests.swift; sourceTree = "<group>"; };
 		9E1B2DDB242798BB00994233 /* EWorkspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EWorkspace.swift; sourceTree = "<group>"; };
 		9E1B2DDD242798D700994233 /* EProject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EProject.swift; sourceTree = "<group>"; };
@@ -157,10 +139,6 @@
 		9E223D522436261600229855 /* EACloudOperation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACloudOperation.swift; sourceTree = "<group>"; };
 		9E223D54243626E000229855 /* EACommon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACommon.swift; sourceTree = "<group>"; };
 		9E358E39249E31F700D7481F /* EnvironmentPickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentPickerViewController.swift; sourceTree = "<group>"; };
-		9E36C411246BEA5F00946726 /* EAUIStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUIStateMachine.swift; sourceTree = "<group>"; };
-		9E36C414246BEBEC00946726 /* ProjectListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListState.swift; sourceTree = "<group>"; };
-		9E36C416246BEC3B00946726 /* RequestListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListState.swift; sourceTree = "<group>"; };
-		9E36C418246BEC7A00946726 /* WorkspaceListState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceListState.swift; sourceTree = "<group>"; };
 		9E3AFF1A24A6760900716BD7 /* HistoryTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryTableViewController.swift; sourceTree = "<group>"; };
 		9E4334832416C4AA002452EB /* EAFileManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAFileManager.swift; sourceTree = "<group>"; };
 		9E4334852416D1DE002452EB /* IMG_6109.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = IMG_6109.jpeg; sourceTree = "<group>"; };
@@ -212,7 +190,6 @@
 		9E926FBA23945E7D002DF561 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		9E96153A248817530098F937 /* styles.css */ = {isa = PBXFileReference; lastKnownFileType = text.css; path = styles.css; sourceTree = "<group>"; };
 		9E9CFA85246F3C1C009D870E /* EACrypto.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACrypto.swift; sourceTree = "<group>"; };
-		9E9DE8C8246C2AE80068F8CE /* RequestListCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestListCoordinator.swift; sourceTree = "<group>"; };
 		9E9DE8CB246C7DCD0068F8CE /* RestorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorViewController.swift; sourceTree = "<group>"; };
 		9E9E64342492CA6B006B9F5F /* preview.html */ = {isa = PBXFileReference; lastKnownFileType = text.html; path = preview.html; sourceTree = "<group>"; };
 		9EA8DD962498E66E00D07A3F /* EnvironmentVariableTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EnvironmentVariableTableViewController.swift; sourceTree = "<group>"; };
@@ -232,9 +209,6 @@
 		9ED17CBF248805A90002CA19 /* prism-light.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "prism-light.css"; sourceTree = "<group>"; };
 		9ED17CC0248805AA0002CA19 /* prism-dark.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; path = "prism-dark.css"; sourceTree = "<group>"; };
 		9ED17CC3248805BC0002CA19 /* prism.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = prism.js; sourceTree = "<group>"; };
-		9ED7C8C4246C0D4C00936701 /* AppCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppCoordinator.swift; sourceTree = "<group>"; };
-		9ED7C8C7246C155E00936701 /* ProjectListCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProjectListCoordinator.swift; sourceTree = "<group>"; };
-		9ED7C8C9246C157700936701 /* EACoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EACoordinator.swift; sourceTree = "<group>"; };
 		9ED99AFB240AF77B0064BDCC /* CoreDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreDataService.swift; sourceTree = "<group>"; };
 		9ED99AFD240AF7940064BDCC /* PersistenceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceService.swift; sourceTree = "<group>"; };
 		9EE34CA023D9F44600CA08F2 /* EAExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAExtensions.swift; sourceTree = "<group>"; };
@@ -283,15 +257,6 @@
 				9E70D4BA24605E2700B33CF1 /* ResponseTableViewController.swift */,
 			);
 			path = Response;
-			sourceTree = "<group>";
-		};
-		9E36C413246BEBBD00946726 /* UI State + Coordinator */ = {
-			isa = PBXGroup;
-			children = (
-				9ED7C8C3246C0CD500936701 /* Coordinator */,
-				9ED7C8C6246C153E00936701 /* FSM */,
-			);
-			path = "UI State + Coordinator";
 			sourceTree = "<group>";
 		};
 		9E538DAF2399536B0025C14C /* Model */ = {
@@ -385,7 +350,6 @@
 				9ED99AFA240AF75B0064BDCC /* Service */,
 				9E538DAF2399536B0025C14C /* Model */,
 				9E9DE8CA246C7D8F0068F8CE /* Screens */,
-				9E36C413246BEBBD00946726 /* UI State + Coordinator */,
 				9E7585F023A2B24300AD6E8B /* View */,
 				9EE34CA223D9F67C00CA08F2 /* App.swift */,
 				9E926F9323945E79002DF561 /* AppDelegate.swift */,
@@ -493,33 +457,6 @@
 				9E568E3B24308C67003150EC /* EAUtilsTests.swift */,
 			);
 			path = EALibTests;
-			sourceTree = "<group>";
-		};
-		9ED7C8C3246C0CD500936701 /* Coordinator */ = {
-			isa = PBXGroup;
-			children = (
-				9ED7C8C4246C0D4C00936701 /* AppCoordinator.swift */,
-				9ED7C8C9246C157700936701 /* EACoordinator.swift */,
-				9E18F172246DC0E5003C888C /* EditRequestCoordinator.swift */,
-				9ED7C8C7246C155E00936701 /* ProjectListCoordinator.swift */,
-				9E18F16A246D9CE9003C888C /* RequestCoordinator.swift */,
-				9E9DE8C8246C2AE80068F8CE /* RequestListCoordinator.swift */,
-				9E18F174246DDB06003C888C /* WorkspaceListCoordinator.swift */,
-			);
-			path = Coordinator;
-			sourceTree = "<group>";
-		};
-		9ED7C8C6246C153E00936701 /* FSM */ = {
-			isa = PBXGroup;
-			children = (
-				9E36C411246BEA5F00946726 /* EAUIStateMachine.swift */,
-				9E18F170246DC051003C888C /* EditRequestState.swift */,
-				9E36C414246BEBEC00946726 /* ProjectListState.swift */,
-				9E36C416246BEC3B00946726 /* RequestListState.swift */,
-				9E18F16E246D9DE8003C888C /* RequestState.swift */,
-				9E36C418246BEC7A00946726 /* WorkspaceListState.swift */,
-			);
-			path = FSM;
 			sourceTree = "<group>";
 		};
 		9ED99AFA240AF75B0064BDCC /* Service */ = {
@@ -714,7 +651,6 @@
 				9E81E3F52423B80A00CDEC4C /* EnvironmentGroupViewController.swift in Sources */,
 				9EC4DAC52497F9D7004851D9 /* EEnvVar.swift in Sources */,
 				9E223D532436261600229855 /* EACloudOperation.swift in Sources */,
-				9ED7C8C8246C155E00936701 /* ProjectListCoordinator.swift in Sources */,
 				9E8759062396C6A700F949D1 /* EAUtils.swift in Sources */,
 				9E18F16D246D9DB1003C888C /* RestorTableViewController.swift in Sources */,
 				9E4C30B6244A189300C1EEBA /* EANetwork.swift in Sources */,
@@ -722,14 +658,10 @@
 				9E7B5848242A9BAB00997302 /* EALFUCache.swift in Sources */,
 				9E1B2DDE242798D700994233 /* EProject.swift in Sources */,
 				9E78D1D1239EBB4E005FC692 /* RequestListViewController.swift in Sources */,
-				9E18F175246DDB06003C888C /* WorkspaceListCoordinator.swift in Sources */,
 				9E926F9823945E79002DF561 /* WorkspaceListViewController.swift in Sources */,
-				9E18F16F246D9DE8003C888C /* RequestState.swift in Sources */,
 				9E1B2DEC242799E700994233 /* ETag.swift in Sources */,
 				9E70D4B924605DBB00B33CF1 /* RequestTableViewController.swift in Sources */,
-				9E36C412246BEA5F00946726 /* EAUIStateMachine.swift in Sources */,
 				9E926F9423945E79002DF561 /* AppDelegate.swift in Sources */,
-				9ED7C8CA246C157700936701 /* EACoordinator.swift in Sources */,
 				9E9DE8CC246C7DCD0068F8CE /* RestorViewController.swift in Sources */,
 				9E9CFA86246F3C1D009D870E /* EACrypto.swift in Sources */,
 				9E7C9E3E24AA7321005B6235 /* ImportExportViewController.swift in Sources */,
@@ -737,21 +669,16 @@
 				9ED99AFC240AF77B0064BDCC /* CoreDataService.swift in Sources */,
 				9E926F9E23945E79002DF561 /* Restor.xcdatamodeld in Sources */,
 				9E926F9623945E79002DF561 /* SceneDelegate.swift in Sources */,
-				9ED7C8C5246C0D4C00936701 /* AppCoordinator.swift in Sources */,
 				9EE34CA323D9F67C00CA08F2 /* App.swift in Sources */,
-				9E36C415246BEBEC00946726 /* ProjectListState.swift in Sources */,
 				9E538DAE239953460025C14C /* AppState.swift in Sources */,
 				9EFF1FFE24229DB600E97632 /* SettingsTableViewController.swift in Sources */,
-				9E9DE8C9246C2AE80068F8CE /* RequestListCoordinator.swift in Sources */,
 				9E6298C324974F2D001B68EB /* EnvironmentEditViewController.swift in Sources */,
 				9E145F92241BD9D200962A19 /* EARescheduler.swift in Sources */,
 				9EBCAA9F2424F3E100C82508 /* PopupViewController.swift in Sources */,
-				9E18F171246DC051003C888C /* EditRequestState.swift in Sources */,
 				9ED99AFE240AF7940064BDCC /* PersistenceService.swift in Sources */,
 				9EA8DD972498E66E00D07A3F /* EnvironmentVariableTableViewController.swift in Sources */,
 				9E4334882416DC20002452EB /* BackgroundWorker.swift in Sources */,
 				9EEA7A90239EA30C00A1CA68 /* ProjectListViewController.swift in Sources */,
-				9E36C419246BEC7A00946726 /* WorkspaceListState.swift in Sources */,
 				9E568E3F2430B576003150EC /* Zone.swift in Sources */,
 				9E732EE9246694E9004A3E4D /* EADynamicSizeTableView.swift in Sources */,
 				9E7585F223A2B27B00AD6E8B /* EATextField.swift in Sources */,
@@ -774,16 +701,13 @@
 				9E1B2DE22427990600994233 /* ERequestMethodData.swift in Sources */,
 				9E1B2DE0242798EF00994233 /* ERequest.swift in Sources */,
 				9EEA7A92239EA4AA00A1CA68 /* Const.swift in Sources */,
-				9E18F173246DC0E5003C888C /* EditRequestCoordinator.swift in Sources */,
 				9E85FE4B240E9DA3002821F2 /* AppDelegateMock.swift in Sources */,
 				9E70D4BB24605E2700B33CF1 /* ResponseTableViewController.swift in Sources */,
 				9E1B2DE42427992B00994233 /* EFile.swift in Sources */,
 				9E49EC022402FF1F00DAA260 /* EADocumentPicker.swift in Sources */,
-				9E18F16B246D9CE9003C888C /* RequestCoordinator.swift in Sources */,
 				9E6298C52497C28C001B68EB /* EEnv.swift in Sources */,
 				9EA8DD99249917A600D07A3F /* Base64ViewController.swift in Sources */,
 				9EEAAEC923EE81410022A72F /* OptionsPickerViewController.swift in Sources */,
-				9E36C417246BEC3B00946726 /* RequestListState.swift in Sources */,
 				9E4334842416C4AA002452EB /* EAFileManager.swift in Sources */,
 				9E4C30B22449F36900C1EEBA /* EARepeatTimer.swift in Sources */,
 				9E769AFA242147AB005B18C3 /* Models.swift in Sources */,
