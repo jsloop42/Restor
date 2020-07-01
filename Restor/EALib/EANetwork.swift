@@ -478,7 +478,7 @@ extension URLRequest {
         let url = self.url?.absoluteString ?? ""
         let delim = "\n"
         let headers = URLRequest.headersToString(self.allHTTPHeaderFields)
-        if let data = self.httpBody, let body = String(data: data, encoding: .utf8) { return "\(method) \(url)\(delim)\(headers)\(delim)\(delim)\(body)" }
+        if let data = self.httpBody, let body = String(data: data, encoding: .utf8) { return "\(method) \(url)\(delim)\(headers)\(delim)\(delim)\(body)" }  // TODO: string encoding fails for image files.
         return "\(method) \(url)\(delim)\(headers)"
     }
     

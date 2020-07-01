@@ -35,6 +35,8 @@
 		9E4C30B42449F5FB00C1EEBA /* EARepeatTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B32449F5FB00C1EEBA /* EARepeatTimerTests.swift */; };
 		9E4C30B6244A189300C1EEBA /* EANetwork.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4C30B5244A189300C1EEBA /* EANetwork.swift */; };
 		9E4CE933246FED560088621D /* RequestStateMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CE932246FED560088621D /* RequestStateMachine.swift */; };
+		9E4F7F0024ACE35300DA01AE /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E4F7EFF24ACE34E00DA01AE /* StoreKit.framework */; };
+		9E4F7F0224ACE75900DA01AE /* MessageUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9E4F7F0124ACE75900DA01AE /* MessageUI.framework */; };
 		9E538DAC239951790025C14C /* UI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAB239951790025C14C /* UI.swift */; };
 		9E538DAE239953460025C14C /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E538DAD239953460025C14C /* AppState.swift */; };
 		9E568E3C24308C67003150EC /* EAUtilsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E568E3B24308C67003150EC /* EAUtilsTests.swift */; };
@@ -150,6 +152,8 @@
 		9E4C30B32449F5FB00C1EEBA /* EARepeatTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EARepeatTimerTests.swift; sourceTree = "<group>"; };
 		9E4C30B5244A189300C1EEBA /* EANetwork.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EANetwork.swift; sourceTree = "<group>"; };
 		9E4CE932246FED560088621D /* RequestStateMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestStateMachine.swift; sourceTree = "<group>"; };
+		9E4F7EFF24ACE34E00DA01AE /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
+		9E4F7F0124ACE75900DA01AE /* MessageUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MessageUI.framework; path = System/Library/Frameworks/MessageUI.framework; sourceTree = SDKROOT; };
 		9E538DAB239951790025C14C /* UI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI.swift; sourceTree = "<group>"; };
 		9E538DAD239953460025C14C /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		9E568E3B24308C67003150EC /* EAUtilsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EAUtilsTests.swift; sourceTree = "<group>"; };
@@ -228,7 +232,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9E4F7F0024ACE35300DA01AE /* StoreKit.framework in Frameworks */,
 				9E0894E224AA7F3D0058153F /* WebKit.framework in Frameworks */,
+				9E4F7F0224ACE75900DA01AE /* MessageUI.framework in Frameworks */,
 				9EC1F94C2426565B005BDD0A /* CloudKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -486,6 +492,8 @@
 		9EFACA1823998A1B0004AB91 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9E4F7F0124ACE75900DA01AE /* MessageUI.framework */,
+				9E4F7EFF24ACE34E00DA01AE /* StoreKit.framework */,
 				9E0894E324AA7F690058153F /* Security.framework */,
 				9E0894E124AA7F3D0058153F /* WebKit.framework */,
 				9EC1F94B2426565B005BDD0A /* CloudKit.framework */,
@@ -893,7 +901,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Restor/Restor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = J7Q5T569K8;
 				INFOPLIST_FILE = Restor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;
@@ -914,7 +922,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Restor/Restor.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = J7Q5T569K8;
 				INFOPLIST_FILE = Restor/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 12.0;

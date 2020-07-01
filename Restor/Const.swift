@@ -39,6 +39,8 @@ struct Const {
     static let paginationOffset = 20
     static let fetchLimit = 30
     static let helpTextForAddNewRequestMethod = "The request method name will be available to all requests within the same project and should be unique."
+    static let appId = "1496176309"
+    static let feedbackEmail = "info@estoapps.com"
 }
 
 extension Notification.Name {

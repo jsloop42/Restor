@@ -236,6 +236,10 @@ public final class EAUtils {
         }
         return str
     }
+    
+    func appVersion() -> String? {
+        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    }
 }
 
 class Log {
