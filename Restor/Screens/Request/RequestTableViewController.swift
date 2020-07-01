@@ -294,12 +294,12 @@ class RequestTableViewController: RestorTableViewController {
     
     @IBAction func goButtonDidTap(_ sender: Any) {
         Log.debug("go button did tap")
+        if self.reqMan == nil { self.initManager() }
         guard let man = self.reqMan else { return }
         if self.isRequestInProgress {
             man.cancelRequest()
             return
         }
-        self.initManager()
         self.reqMan?.env = self.env
         man.start()
         self.isRequestInProgress = true

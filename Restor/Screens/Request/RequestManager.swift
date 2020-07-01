@@ -224,16 +224,22 @@ final class RequestManager {
         let method = self.localdb.getRequestMethodData(at: request.selectedMethodIndex.toInt(), projId: projId)
         guard let aUrl = urlComp.url else { return nil }
         var urlReq = URLRequest(url: aUrl, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 60)
-        var bodyData: Data?
         if let body = request.body {
             let bodyType = RequestBodyType(rawValue: body.selected.toInt()) ?? .json
             switch bodyType {
             case .json:
-                if let x = body.json { bodyData = x.data(using: .utf8) }
+                if let x = body.json {
+                    urlReq.httpBody = x.data(using: .utf8)
+                    let contentType = urlReq.value(forHTTPHeaderField: "Content-Type") ?? ""
+                    let contentTypeLower = urlReq.value(forHTTPHeaderField: "content-type") ?? ""
+                    if (contentType.isEmpty && contentTypeLower.isEmpty) {
+                        urlReq.addValue("application/json", forHTTPHeaderField: "Content-Type")
+                    }
+                }
             case .xml:
-                if let x = body.xml { bodyData = x.data(using: .utf8) }
+                if let x = body.xml { urlReq.httpBody = x.data(using: .utf8) }
             case .raw:
-                if let x = body.raw { bodyData = x.data(using: .utf8) }
+                if let x = body.raw { urlReq.httpBody = x.data(using: .utf8) }
             case .form:
                 urlReq = self.getFormData(req, urlReq: urlReq)
             case .multipart:
@@ -244,7 +250,7 @@ final class RequestManager {
         }
         urlReq.httpMethod = method?.name
         urlReq.allHTTPHeaderFields = headers
-        urlReq.httpBody = bodyData
+        Log.debug("curl: \(urlReq.curl())")
         return urlReq
     }
     
