@@ -16,6 +16,15 @@ extension Notification.Name {
 
 class EnvPickerCell: UITableViewCell {
     @IBOutlet weak var titleLabel: UILabel!
+    @IBOutlet weak var bottomBorder: UIView!
+    
+    func hideBottomBorder() {
+        self.bottomBorder.isHidden = true
+    }
+    
+    func displayBottomBorder() {
+        self.bottomBorder.isHidden = false
+    }
 }
 
 class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
@@ -109,6 +118,11 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
                 self.env = nil
             }
         }
+        if row == self.frc.numberOfRows(in: indexPath.section) - 1 {
+            cell.displayBottomBorder()
+        } else {
+            cell.hideBottomBorder()
+        }
         return cell
     }
 
@@ -119,6 +133,10 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
             self.selectedIndex = indexPath.row
         }
         self.tableView.reloadData()
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 44
     }
 }
 
