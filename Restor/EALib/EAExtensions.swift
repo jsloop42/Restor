@@ -89,6 +89,18 @@ public extension Date {
     }
     
     var fmt_YYYY_MM_dd_HH_mm_ss: String { self.fmt("YYYY-MM-dd HH:mm:ss") }
+    /// Returns formatted date based on user locale
+    var fmt_dd_MMM_YYYY_HH_mm_ss: String {
+        if self.localeIdentifier == "en_US" {
+            return self.fmt("MMM dd YYYY HH:mm:ss")
+        }
+        return self.fmt("dd MMM YYYY HH:mm:ss")
+    }
+    
+    /// Returns langauge identifier of the format `en_US`, `en_GB`
+    var localeIdentifier: String {
+        NSLocale.current.identifier
+    }
     
     private func fmt(_ str: String) -> String {
         let df = DateFormatter()

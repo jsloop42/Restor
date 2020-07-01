@@ -21,7 +21,7 @@ public class EHistory: NSManagedObject, Entity {
         history.modified = ts
         history.connection = respData.connectionInfo.connection
         history.connectionTime = respData.connectionInfo.connectionTime
-        if let cookies = respData.cookiesData as? NSObject { history.cookies = cookies }
+        if let cookies = respData.cookiesData as NSObject? { history.cookies = cookies }
         history.dnsResolutionTime = respData.connectionInfo.dnsTime
         history.elapsed = respData.connectionInfo.elapsed
         history.fetchStartTime = respData.connectionInfo.fetchStart

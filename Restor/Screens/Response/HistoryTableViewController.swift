@@ -15,6 +15,7 @@ class HistoryCell: UITableViewCell {
     @IBOutlet weak var pathLabel: UILabel!
     @IBOutlet weak var statusCodeLabel: UILabel!
     @IBOutlet weak var pathScrollView: UIScrollView!
+    @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var bottomBorder: UIView!
     
     func hideBottomBorder() {
@@ -152,6 +153,7 @@ class HistoryViewController: UIViewController, UITableViewDelegate, UITableViewD
         }
         cell.statusCodeLabel.text = history.statusCode > 0 ? "\(history.statusCode)" : ""
         cell.statusCodeLabel.textColor = self.app.getStatusCodeViewColor(history.statusCode.toInt())
+        cell.dateLabel.text = Date(nanos: history.created).fmt_dd_MMM_YYYY_HH_mm_ss
         cell.contentView.addGestureRecognizer(cell.pathScrollView.panGestureRecognizer)
         let len = isToday ? self.todayFrc.numberOfRows(in: 0) : self.pastFrc.numberOfRows(in: 0)
         if row == len - 1 {
@@ -176,18 +178,8 @@ class HistoryViewController: UIViewController, UITableViewDelegate, UITableViewD
     }
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 54
+        return 75
     }
-    
-//    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-//        if section == Section.today.rawValue {
-//            return self.todayFrc.numberOfRows(in: 0) > 0 ? self.sectionTitle[Section.today.rawValue] : ""
-//        }
-//        if section == Section.past.rawValue {
-//            return self.pastFrc.numberOfRows(in: 0) > 0 ? self.sectionTitle[Section.past.rawValue] : ""
-//        }
-//        return nil
-//    }
     
     func hasElements(inSection section: Int) -> Bool {
         if section == Section.today.rawValue {
@@ -199,16 +191,20 @@ class HistoryViewController: UIViewController, UITableViewDelegate, UITableViewD
         return false
     }
     
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        let width = tableView.frame.width
-        let view = UIView(frame: CGRect(x: 0, y: 0, width: width, height: 28))
-        view.backgroundColor = UIColor(named: "table-view-cell-bg")
-        let label = UILabel(frame: CGRect(x: 15, y: 4, width: width, height: 17))
-        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
-        label.text = self.sectionTitle[section]
-        view.addSubview(label)
-        return view
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return self.sectionTitle[section]
     }
+    
+//    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+//        let width = tableView.frame.width
+//        let view = UIView(frame: CGRect(x: 0, y: 0, width: width, height: 28))
+//        view.backgroundColor = UIColor(named: "table-view-cell-bg")
+//        let label = UILabel(frame: CGRect(x: 15, y: 4, width: width, height: 17))
+//        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+//        label.text = self.sectionTitle[section]
+//        view.addSubview(label)
+//        return view
+//    }
     
     func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
         if self.hasElements(inSection: section) {
