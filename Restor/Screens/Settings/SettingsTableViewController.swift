@@ -14,6 +14,7 @@ import MessageUI
 class SettingsTableViewController: RestorTableViewController {
     private let app = App.shared
     @IBOutlet weak var saveHistorySwitch: UISwitch!
+    @IBOutlet weak var syncWorkspaceSwitch: UISwitch!
     private lazy var localDB = { CoreDataService.shared }()
     private lazy var db = { PersistenceService.shared }()
     private lazy var workspace = { self.app.getSelectedWorkspace() }()
@@ -24,6 +25,7 @@ class SettingsTableViewController: RestorTableViewController {
         case spacerAfterTop
         case workspaceGroup
         case spacerAfterWorkspace
+        case syncWorkspace
         case saveHistory
         case spacerAfterSaveHistory
         case toolsTitle
@@ -58,6 +60,7 @@ class SettingsTableViewController: RestorTableViewController {
         self.tableView.estimatedRowHeight = 44
         self.tableView.rowHeight = UITableView.automaticDimension
         self.saveHistorySwitch.isOn = self.workspace.saveResponse
+        self.syncWorkspaceSwitch.isOn = self.workspace.isSyncEnabled
         self.updateAbout()
     }
     
@@ -69,6 +72,7 @@ class SettingsTableViewController: RestorTableViewController {
     
     func initEvents() {
         self.saveHistorySwitch.addTarget(self, action: #selector(self.saveHistorySwitchDidChange(_:)), for: .valueChanged)
+        self.syncWorkspaceSwitch.addTarget(self, action: #selector(self.syncWorkspaceSwitchDidChange(_:)), for: .valueChanged)
     }
     
     func rateApp() {
@@ -91,6 +95,18 @@ class SettingsTableViewController: RestorTableViewController {
             self.present(mail, animated: true)
         } else {
             UI.viewToast("Unable to compose e-mail. Please send your feedback to \(Const.feedbackEmail).", vc: self)
+        }
+    }
+    
+    @objc func syncWorkspaceSwitchDidChange(_ sender: UISwitch) {
+        Log.debug("sync workspace switch did change")
+        self.workspace.isSyncEnabled = self.syncWorkspaceSwitch.isOn
+        self.localDB.saveMainContext()
+        self.db.saveWorkspaceToCloud(self.workspace)
+        if self.workspace.isSyncEnabled {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {  // sync any pending changes
+                self.db.syncToCloud()
+            }
         }
     }
     
@@ -131,6 +147,8 @@ class SettingsTableViewController: RestorTableViewController {
             return 44
         case CellId.spacerAfterWorkspace.rawValue:
             return 24
+        case CellId.syncWorkspace.rawValue:
+            return 44
         case CellId.saveHistory.rawValue:
             return 44
         case CellId.spacerAfterSaveHistory.rawValue:

@@ -92,6 +92,7 @@ class RequestListViewController: RestorViewController {
         self.frc.delegate = nil
         try? self.frc.performFetch()
         self.frc.delegate = self
+        self.checkHelpShouldDisplay()
         self.tableView.reloadData()
     }
     
@@ -111,15 +112,19 @@ class RequestListViewController: RestorViewController {
         }
     }
     
+    func checkHelpShouldDisplay() {
+        if self.frc.numberOfRows(in: 0) == 0 {
+            self.displayHelpText()
+        } else {
+            self.hideHelpText()
+        }
+    }
+    
     func reloadData() {
         if self.frc == nil { return }
         do {
             try self.frc.performFetch()
-            if self.frc.numberOfRows(in: 0) == 0 {
-                self.displayHelpText()
-            } else {
-                self.hideHelpText()
-            }
+            self.checkHelpShouldDisplay()
             self.tableView.reloadData()
         } catch let error {
             Log.error("Error fetching: \(error)")

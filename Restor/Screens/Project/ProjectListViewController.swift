@@ -95,6 +95,7 @@ class ProjectListViewController: RestorViewController {
         self.frc.delegate = nil
         try? self.frc.performFetch()
         self.frc.delegate = self
+        self.checkHelpShouldDisplay()
         self.tableView.reloadData()
     }
     
@@ -109,15 +110,19 @@ class ProjectListViewController: RestorViewController {
         }
     }
     
+    func checkHelpShouldDisplay() {
+        if self.frc.numberOfRows(in: 0) == 0 {
+            self.displayHelpText()
+        } else {
+            self.hideHelpText()
+        }
+    }
+    
     func reloadData() {
         if self.frc == nil { return }
         do {
             try self.frc.performFetch()
-            if self.frc.numberOfRows(in: 0) == 0 {
-                self.displayHelpText()
-            } else {
-                self.hideHelpText()
-            }
+            self.checkHelpShouldDisplay()
             self.tableView.reloadData()
         } catch let error {
             Log.error("Error fetching: \(error)")
@@ -125,12 +130,14 @@ class ProjectListViewController: RestorViewController {
     }
     
     func displayHelpText() {
+        if !self.helpTextLabel.isHidden { return }
         UIView.animate(withDuration: 0.3) {
             self.helpTextLabel.isHidden = false
         }
     }
     
     func hideHelpText() {
+        if self.helpTextLabel.isHidden { return }
         UIView.animate(withDuration: 0.3) {
             self.helpTextLabel.isHidden = true
         }
@@ -149,7 +156,6 @@ class ProjectListViewController: RestorViewController {
                 self.frc = _frc
                 self.frc.delegate = self
                 self.reloadData()
-                self.tableView.reloadData()
             }
         }
     }
@@ -305,6 +311,7 @@ extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource 
         cell.nameLbl.text = proj.name
         let desc = self.getDesc(proj: proj)
         cell.descLbl.text = desc
+        self.hideHelpText()
         if desc.isEmpty {
             cell.descLbl.isHidden = true
         } else {

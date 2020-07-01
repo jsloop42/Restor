@@ -33,6 +33,7 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
     @IBOutlet weak var navTitleLabel: UILabel!
     @IBOutlet weak var doneBtn: UIButton!
     @IBOutlet weak var cancelBtn: UIButton!
+    @IBOutlet weak var helpTextLabel: UILabel!
     private lazy var localDB = { CoreDataService.shared }()
     private lazy var app = { App.shared }()
     var frc: NSFetchedResultsController<EEnv>!
@@ -75,6 +76,7 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
             self.frc = frc
             self.frc.delegate = self
             try? self.frc.performFetch()
+            self.checkHelpShouldDisplay()
             self.tableView.reloadData()
         }
     }
@@ -84,11 +86,32 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
         self.frc.delegate = nil
         try? self.frc.performFetch()
         self.frc.delegate = self
+        self.checkHelpShouldDisplay()
         self.tableView.reloadData()
     }
     
     func close() {
         self.dismiss(animated: true, completion: nil)
+    }
+    
+    func checkHelpShouldDisplay() {
+        if self.frc.numberOfRows(in: 0) == 0 {
+            self.displayHelpText()
+        } else {
+            self.hideHelpText()
+        }
+    }
+    
+    func displayHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = false
+        }
+    }
+    
+    func hideHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = true
+        }
     }
     
     @IBAction func doneDidTap(_ sender: Any) {

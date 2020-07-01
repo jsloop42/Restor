@@ -134,10 +134,6 @@ class App {
         }
     }
     
-    func saveSelectedWorkspaceId(_ id: String) {
-        EACloudKit.shared.saveValue(key: Const.selectedWorkspaceIdKey, value: id)
-    }
-    
     /// Invoked before application termination to perform save state, clean up.
     func saveState() {
         //self.localdb.saveBackgroundContext(isForce: true)
@@ -262,11 +258,14 @@ class App {
     
     func getSelectedWorkspace() -> EWorkspace {
         if AppState.currentWorkspace != nil { return AppState.currentWorkspace! }
-        if let wsId = EACloudKit.shared.getValue(key: Const.selectedWorkspaceIdKey) as? String {
-            if let ws = self.localdb.getWorkspace(id: wsId) {
-                AppState.currentWorkspace = ws
-                return ws
-            }
+        let ckWsId = EACloudKit.shared.getValue(key: Const.selectedWorkspaceIdKey) as? String ?? ""
+        var wsId = self.utils.getValue(Const.selectedWorkspaceIdKey) as? String ?? ""
+        if wsId.isEmpty && !ckWsId.isEmpty {
+            wsId = ckWsId
+        }
+        if let ws = self.localdb.getWorkspace(id: wsId) {
+            AppState.currentWorkspace = ws
+            return ws
         }
         let ws = self.localdb.getDefaultWorkspace()
         Log.debug("ws: \(ws)")
@@ -277,6 +276,11 @@ class App {
     func setSelectedWorkspace(_ ws: EWorkspace) {
         AppState.currentWorkspace = ws
         if let wsId = ws.id { self.saveSelectedWorkspaceId(wsId) }
+    }
+    
+    func saveSelectedWorkspaceId(_ id: String) {
+        EACloudKit.shared.saveValue(key: Const.selectedWorkspaceIdKey, value: id)
+        self.utils.setValue(key: Const.selectedWorkspaceIdKey, value: id)
     }
     
     func didReceiveMemoryWarning() {
