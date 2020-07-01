@@ -17,25 +17,27 @@ public extension Calendar.Component {
 public extension Date {
     /// Returns the year from the date.
     var year: Int { Calendar.current.component(.year, from: self) }
-    
     /// Returns month as `Int` starting from `1...12`.
     var month: Int { Calendar.current.component(.month, from: self) }
-    
     var week: Int { Calendar.current.component(.weekOfYear, from: self) }
-    
     var weekday: Int { Calendar.current.component(.weekday, from: self) }
-    
     var weekOfMonth: Int { Calendar.current.component(.weekOfMonth, from: self) }
-    
     var day: Int { Calendar.current.component(.day, from: self) }
-    
     var hour: Int { Calendar.current.component(.hour, from: self) }
-    
     var minute: Int { Calendar.current.component(.minute, from: self) }
-    
     var second: Int { Calendar.current.component(.second, from: self) }
-    
     var nanos: Int { Calendar.current.component(.nanosecond, from: self) }
+    var yesterday: Date { self.adjust(.day, offset: -1) }
+    var today: Date { self.startOfDay }
+    var tomorrow: Date { self.adjust(.day, offset: 1) }
+    var dayAfter: Date { self.adjust(.day, offset: 2) }
+    var dayBefore: Date { self.adjust(.day, offset: -2) }
+    var isLastDayOfMonth: Bool { return self.tomorrow.month != month }
+    
+    /// Create a `Date` object from timestamp in nanoseconds
+    init(nanos: Int64) {
+        self.init(timeIntervalSince1970: TimeInterval(nanos / 1000000))
+    }
     
     /// Get timestamp
     func currentTimeMillis() -> Int64 {

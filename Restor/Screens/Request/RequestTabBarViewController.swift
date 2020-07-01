@@ -24,6 +24,7 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     private let nc = NotificationCenter.default
     private var selectedTab: Tab = .request
     private var barBtn: UIButton!
+    var isHideHistory = false
     
     enum Tab: Int {
         case request
@@ -74,8 +75,20 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
     }
     
     func updateBarButtonText() {
+        if self.isHideHistory {
+            self.navigationItem.rightBarButtonItem = nil
+            return
+        }
         self.barBtn.setTitle(self.selectedTab == .request ? "Edit" : "History", for: .normal)
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(customView: self.barBtn)
+    }
+    
+    func hideHistoryButton() {
+        self.isHideHistory = true
+    }
+    
+    func displayHistoryButton() {
+        self.isHideHistory = false
     }
     
     @objc func rightBarButtonDidTap(_ sender: Any) {
@@ -84,7 +97,7 @@ class RequestTabBarController: UITabBarController, UITabBarControllerDelegate {
         if self.selectedTab == .request {
             self.nc.post(name: .editRequestDidTap, object: self, userInfo: ["request": req])
         } else if self.selectedTab == .response {
-            if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.historyVC.rawValue) as? HistoryTableViewController {
+            if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.historyVC.rawValue) as? HistoryViewController {
                 vc.request = req
                 self.navigationController?.pushViewController(vc, animated: true)
             }

@@ -335,7 +335,6 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
         if self.tableType == .header {
             let key = self.headerKeys[row]
             cell.keyLabel.text = key
-            //cell.keyLabel.text = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
             cell.valueLabel.text = self.headers[key]
             if row == self.headers.count - 1 {
                 cell.hideBorder()
@@ -408,7 +407,6 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
                 val = _val
             }
         }
-        //key = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
         let text = val.count >= key.count ? val : key
         Log.debug("text: \(text)")
         let width = tableView.frame.width / 2 - 32
@@ -604,7 +602,11 @@ class ResponseTableViewController: RestorTableViewController {
     
     func updateUI() {
         Log.debug("update UI")
-        if self.data == nil { return }
+        if self.data == nil {
+            self.tabbarController?.hideHistoryButton()
+            return
+        }
+        self.tabbarController?.displayHistoryButton()
         if self.mode == .info {
             self.infoCell.updateUI()
             self.headersViewCell.updateUI()
@@ -695,6 +697,7 @@ class ResponseTableViewController: RestorTableViewController {
         }
     }
     
+    @available(*, deprecated)
     @objc func viewRequestHistoryDidTap(_ notif: Notification) {
         Log.debug("view request history did tap")
         guard let info = notif.userInfo, let req = info["request"] as? ERequest, let data = self.data, req.getId() == data.request?.getId() else { return }

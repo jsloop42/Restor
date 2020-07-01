@@ -112,7 +112,7 @@ struct ResponseData: CustomDebugStringConvertible, Equatable {
     }
         
     init(history: EHistory) {
-        self.created = Date().currentTimeNanos()
+        self.created = history.created
         self.mode = .history
         self.history = history
         self.urlRequestString = history.request ?? ""
