@@ -9,10 +9,30 @@
 import Foundation
 import UIKit
 
+class EANavigationController: UINavigationController {
+    weak var docPickerVC: UIDocumentPickerViewController?
+    
+    override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
+        if let vc = viewControllerToPresent as? UIDocumentPickerViewController {
+            self.docPickerVC = vc
+        }
+        super.present(viewControllerToPresent, animated: flag, completion: completion)
+    }
+    
+    override func dismiss(animated flag: Bool, completion: (() -> Void)? = nil) {
+        if self.docPickerVC == nil {
+            super.dismiss(animated: flag, completion: completion)
+        } else {
+            
+        }
+    }
+}
+
 class EditRequestCoordinator: EACoordinator {
     let presenter: UINavigationController
     private let nc = NotificationCenter.default
     let request: ERequest
+    private var navVC: EANavigationController!
     
     deinit {
         self.nc.removeObserver(self)
@@ -21,6 +41,9 @@ class EditRequestCoordinator: EACoordinator {
     init(presenter: UINavigationController, request: ERequest) {
         self.presenter = presenter
         self.request = request
+        if let vc = UIStoryboard.editRequestVC {
+            self.navVC = EANavigationController(rootViewController: vc)
+        }
         self.initEvents()
     }
     
@@ -30,10 +53,9 @@ class EditRequestCoordinator: EACoordinator {
     
     func start() {
         DispatchQueue.main.async {
-            if let vc = UIStoryboard.editRequestVC {
+            if let navVC = self.navVC {
                 AppState.editRequest = self.request  // TODO: change global state
                 // self.presenter.pushViewController(vc, animated: true)
-                let navVC = UINavigationController(rootViewController: vc)
                 navVC.setNavigationBarHidden(true, animated: false)
                 self.presenter.present(navVC, animated: true, completion: nil)
             }

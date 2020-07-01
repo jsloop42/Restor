@@ -30,6 +30,7 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
     var selectedIndex: Int = -1
     var nc = NotificationCenter.default
     var env: EEnv?
+    var ws: EWorkspace?
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -60,7 +61,8 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
     }
 
     func initData() {
-        if let frc = self.localDB.getFetchResultsController(obj: EEnv.self) as? NSFetchedResultsController<EEnv> {
+        self.ws = self.app.getSelectedWorkspace()
+        if let frc = self.localDB.getFetchResultsController(obj: EEnv.self, predicate: NSPredicate(format: "wsId == %@", self.ws!.getId())) as? NSFetchedResultsController<EEnv> {
             self.frc = frc
             self.frc.delegate = self
             try? self.frc.performFetch()

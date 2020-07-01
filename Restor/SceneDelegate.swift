@@ -10,20 +10,19 @@ import UIKit
 
 @available(iOS 13.0, *)
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
-    //unowned var window: UIWindow?
+    unowned var window: UIWindow?
     private let app = App.shared
 
     func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
         // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.
         // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).
-        Log.debug("scene delegate - will connect to")
         guard let windowScene = (scene as? UIWindowScene) else { return }
         guard let appDelegate = UIApplication.shared.delegate as? AppDelegate else { return }
-        if AppState.appCoord == nil { AppState.appCoord = AppCoordinator(window: appDelegate.window!) }
-        appDelegate.window!.windowScene = windowScene  // This order matters. First we set the window scene and make it key and visible. Else copy paste menu won't appear.
+        self.window = appDelegate.window
+        appDelegate.window?.windowScene = windowScene  // This order matters. First we set the window scene and make it key and visible. Else copy paste menu won't appear.
         appDelegate.window?.makeKeyAndVisible()
-        self.app.didFinishLaunching(scene: scene, window: appDelegate.window!, appCoord: AppState.appCoord!)
+        self.app.didFinishLaunching(scene: scene, window: self.window!)
     }
 
     func sceneDidDisconnect(_ scene: UIScene) {

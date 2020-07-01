@@ -237,7 +237,14 @@ final class RequestManager {
                     }
                 }
             case .xml:
-                if let x = body.xml { urlReq.httpBody = x.data(using: .utf8) }
+                if let x = body.xml {
+                    urlReq.httpBody = x.data(using: .utf8)
+                    let contentType = urlReq.value(forHTTPHeaderField: "Content-Type") ?? ""
+                    let contentTypeLower = urlReq.value(forHTTPHeaderField: "content-type") ?? ""
+                    if (contentType.isEmpty && contentTypeLower.isEmpty) {
+                        urlReq.addValue("text/xml", forHTTPHeaderField: "Content-Type")
+                    }
+                }
             case .raw:
                 if let x = body.raw { urlReq.httpBody = x.data(using: .utf8) }
             case .form:

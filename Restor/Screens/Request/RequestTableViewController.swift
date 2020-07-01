@@ -344,7 +344,10 @@ class RequestTableViewController: RestorTableViewController {
     
     func viewEditRequestVC() {
         Log.debug("view edit request vc")
-        if let req = self.request { self.nc.post(name: .editRequestVCShouldPresent, object: self, userInfo: ["request": req]) }
+        if let vc = UIStoryboard.editRequestVC {
+            AppState.editRequest = self.request
+            self.tabbarController.navigationController?.pushViewController(vc, animated: true)
+        }
     }
     
     func updateData() {

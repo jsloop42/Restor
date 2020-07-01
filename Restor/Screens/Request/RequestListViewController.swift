@@ -85,6 +85,8 @@ class RequestListViewController: RestorViewController {
     }
     
     func updateData() {
+        guard let projId = self.project?.getId() else { return }
+        self.methods = self.localdb.getRequestMethodData(projId: projId, ctx: self.localdb.mainMOC)
         if self.frc == nil { return }
         self.frc.delegate = nil
         try? self.frc.performFetch()
@@ -124,7 +126,10 @@ class RequestListViewController: RestorViewController {
             let name = self.app.getNewRequestName()
             if let proj = self.project, let wsId = proj.workspace?.getId(),
                 let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: self.localdb.mainMOC) {
-                self.nc.post(name: .editRequestVCShouldPresent, object: self, userInfo: ["request": req])
+                if let vc = UIStoryboard.editRequestVC {
+                    AppState.editRequest = req
+                    self.navigationController!.pushViewController(vc, animated: true)
+                }
             }
         }
     }
@@ -186,7 +191,10 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let req = self.frc.object(at: indexPath)
-        self.nc.post(name: .requestVCShouldPresent, object: self, userInfo: ["request": req])
+        if let vc = UIStoryboard.requestTabBar {
+            vc.request = req
+            self.navigationController!.pushViewController(vc, animated: true)
+        }
     }
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {

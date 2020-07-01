@@ -172,7 +172,9 @@ class ProjectListViewController: RestorViewController {
     
     @IBAction func workspaceDidTap(_ sender: Any) {
         Log.debug("workspace did tap")
-        self.nc.post(name: .workspaceVCShouldPresent, object: self)
+        if let vc = UIStoryboard.workspaceListVC {
+            self.navigationController!.present(vc, animated: true, completion: nil)
+        }
     }
     
     @objc func workspaceDidChange(_ notif: Notification) {
@@ -301,7 +303,10 @@ extension ProjectListViewController: UITableViewDelegate, UITableViewDataSource 
         let proj = self.frc.object(at: indexPath)
         AppState.currentProject = proj  // TODO: remove AppState.currentProject
         DispatchQueue.main.async {
-            self.nc.post(name: .requestListVCShouldPresent, object: self, userInfo: ["project": proj])
+            if let vc = UIStoryboard.requestListVC {
+                vc.project = proj
+                self.navigationController!.pushViewController(vc, animated: true)
+            }
         }
     }
     

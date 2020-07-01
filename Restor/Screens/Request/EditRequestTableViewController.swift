@@ -32,8 +32,8 @@ class ValidateSSLCell: UITableViewCell {
 class EditRequestTableViewController: RestorTableViewController, UITextFieldDelegate, UITextViewDelegate {
     static weak var shared: EditRequestTableViewController?
     @IBOutlet weak var titleLabel: UILabel!
-    @IBOutlet weak var cancelBtn: UIButton!
-    @IBOutlet weak var doneBtn: UIButton!
+    // @IBOutlet weak var cancelBtn: UIButton!
+    // @IBOutlet weak var doneBtn: UIButton!
     @IBOutlet weak var methodView: UIView!
     @IBOutlet weak var methodLabel: UILabel!
     @IBOutlet weak var urlTextField: EATextField!
@@ -56,6 +56,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     @IBOutlet weak var paramsCell: UITableViewCell!
     @IBOutlet weak var bodyCell: UITableViewCell!
     @IBOutlet weak var validateSSLCell: ValidateSSLCell!
+    weak var docPickerVC: UIDocumentPickerViewController?
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     private let nc = NotificationCenter.default
@@ -66,11 +67,11 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     private let utils = EAUtils.shared
     private lazy var db = { PersistenceService.shared }()
     private lazy var localdb = { CoreDataService.shared }()
-//    private lazy var doneBtn: UIButton = {
-//        let btn = UI.getNavbarTopDoneButton()
-//        btn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
-//        return btn
-//    }()
+    private lazy var doneBtn: UIButton = {
+        let btn = UI.getNavbarTopDoneButton()
+        btn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
+        return btn
+    }()
     /// Indicates if the request is valid for saving (any changes made).
     private var isDirty = false
     var entityDict: [String: Any] = [:]
@@ -120,12 +121,13 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
             self.app.clearEditRequestEntityIds()
             self.app.clearEditRequestDeleteObjects()
             self.localdb.saveMainContext { _ in
+                AppState.editRequest = nil
                 self.close()
             }
         }
     }
     
-    @objc func cancelDidTap(_ sender: Any) {
+    override func shouldPopOnBackButton() -> Bool {
         self.endEditing()
         if self.isDirty {
             UI.viewActionSheet(vc: self, message: "Are you sure you want to discard your changes?", cancelText: "Keep Editing",
@@ -134,23 +136,26 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
                                cancelCallback: { Log.debug("cancel callback") },
                                // discard changes
                                otherCallback: { self.discardContextChanges() })
+            return false
         } else {
             if let data = AppState.editRequest, let url = data.url, url.isEmpty {  // New request and user taps back button without any change, so we discard.
                 self.localdb.deleteEntity(data)
             }
-            self.discardContextChanges()
         }
-        //self.destroy()
+        self.destroy()
+        return true
     }
     
     // Handle the pop gesture
     override func willMove(toParent parent: UIViewController?) {
         Log.debug("will move")
         if parent == nil { // When the user swipe to back, the parent is nil
+            if !self.isDirty { self.destroy() }
             return
         }
         super.willMove(toParent: parent)
     }
+
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
@@ -235,8 +240,8 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: .documentPickerShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentImagePicker(_:)), name: .imagePickerShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.validateSSLDidChange(_:)), name: .validateSSLDidChange, object: nil)
-        self.cancelBtn.addTarget(self, action: #selector(self.cancelDidTap(_:)), for: .touchUpInside)
-        self.doneBtn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
+        // self.cancelBtn.addTarget(self, action: #selector(self.cancelDidTap(_:)), for: .touchUpInside)
+        // self.doneBtn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
     }
 
     func updateData() {
@@ -318,11 +323,11 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         DispatchQueue.main.async {
             self.endEditing()
             self.destroy()
-            //self.navigationController?.popViewController(animated: true)
-            self.dismiss(animated: true, completion: {
-                let name = self.isEditMode ? "did-navigate-back-to-RequestTableViewController" : "did-navigate-back-to-RequestListViewController"
-                self.nc.post(name: NSNotification.Name(name), object: self)
-            })
+            self.navigationController?.popViewController(animated: true)
+//            self.dismiss(animated: true, completion: {
+//                let name = self.isEditMode ? "did-navigate-back-to-RequestTableViewController" : "did-navigate-back-to-RequestListViewController"
+//                self.nc.post(name: NSNotification.Name(name), object: self)
+//            })
         }
     }
     
@@ -535,7 +540,9 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         var height: CGFloat!
-        if indexPath.row == CellId.spaceAfterTop.rawValue {
+        if indexPath.row == CellId.navbar.rawValue {
+            height = 0
+        } else if indexPath.row == CellId.spaceAfterTop.rawValue {
             height = 12
         } else if indexPath.row == CellId.url.rawValue {
             height = 54
@@ -588,6 +595,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     }
     
     @objc func updateStateForTextField(_ textField: UITextField) {
+        if AppState.editRequest == nil { return }
         if textField == self.urlTextField {
             AppState.editRequest!.url = (textField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         } else if textField == self.nameTextField {

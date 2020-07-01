@@ -79,27 +79,32 @@ class App {
         _ = self.getSelectedWorkspace()
     }
     
+    func initUI(_ vc: UINavigationController) {
+        self.updateViewBackground(vc.view)
+        self.updateNavigationControllerBackground(vc)
+    }
+    
     // MARK: - App lifecycle events
     
-    private func didFinishLaunchingImpl(window: UIWindow, appCoord: AppCoordinator) {
+    private func didFinishLaunchingImpl(window: UIWindow) {
         if !self.appLaunched {
             CoreDataService.shared.bootstrap()
             EACloudKit.shared.bootstrap()
-            appCoord.start()
+            self.initUI(window.rootViewController as! UINavigationController)
             self.appLaunched = true
         }
     }
     
     @available(iOS 13.0, *)
-    func didFinishLaunching(scene: UIScene, window: UIWindow, appCoord: AppCoordinator) {
+    func didFinishLaunching(scene: UIScene, window: UIWindow) {
         Log.debug("did finish launching")
-        self.didFinishLaunchingImpl(window: window, appCoord: appCoord)
+        self.didFinishLaunchingImpl(window: window)
     }
     
     @available(iOS 10.0, *)
-    func didFinishLaunching(app: UIApplication, window: UIWindow, appCoord: AppCoordinator) {
+    func didFinishLaunching(app: UIApplication, window: UIWindow) {
         Log.debug("did finish launching")
-        self.didFinishLaunchingImpl(window: window, appCoord: appCoord)
+        self.didFinishLaunchingImpl(window: window)
     }
     
     func willEnterForground() {
@@ -1150,6 +1155,7 @@ extension CKRecord {
 
 extension UIStoryboard {
     static var main: UIStoryboard { UIStoryboard(name: "Main", bundle: nil) }
+    static var rootNav: UINavigationController? { self.main.instantiateViewController(withIdentifier: StoryboardId.rootNav.rawValue) as? UINavigationController }
     static var workspaceListVC: WorkspaceListViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.workspaceListVC.rawValue) as? WorkspaceListViewController }
     static var projectListVC: ProjectListViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.projectListVC.rawValue) as? ProjectListViewController }
     static var requestListVC: RequestListViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.requestListVC.rawValue) as? RequestListViewController }
