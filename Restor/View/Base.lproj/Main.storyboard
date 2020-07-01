@@ -6096,7 +6096,7 @@
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" id="zZ5-xy-U3a">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
-                        <color key="backgroundColor" name="table-view-bg"/>
+                        <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <inset key="separatorInset" minX="15" minY="0.0" maxX="0.0" maxY="0.0"/>
                         <view key="tableFooterView" contentMode="scaleToFill" id="5YF-eC-M2t">
                             <rect key="frame" x="0.0" y="110" width="414" height="44"/>
@@ -6133,7 +6133,6 @@
                                                             <nil key="highlightedColor"/>
                                                         </label>
                                                     </subviews>
-                                                    <color key="backgroundColor" name="table-view-cell-bg"/>
                                                     <constraints>
                                                         <constraint firstAttribute="trailing" secondItem="Cfb-8L-ZHV" secondAttribute="trailing" constant="4" id="IwQ-XC-KfJ"/>
                                                         <constraint firstItem="Cfb-8L-ZHV" firstAttribute="leading" secondItem="645-Hg-u5X" secondAttribute="leading" constant="4" id="J78-ZU-F4U"/>
@@ -6181,7 +6180,6 @@
                                                             <nil key="highlightedColor"/>
                                                         </label>
                                                     </subviews>
-                                                    <color key="backgroundColor" name="table-view-cell-bg"/>
                                                     <constraints>
                                                         <constraint firstItem="RHj-xH-cyl" firstAttribute="centerX" secondItem="rfW-Oc-Q9E" secondAttribute="centerX" id="Fxn-Nb-ats"/>
                                                         <constraint firstAttribute="width" constant="50" id="J4K-5u-Wbt"/>
@@ -6196,7 +6194,6 @@
                                                     </userDefinedRuntimeAttributes>
                                                 </view>
                                             </subviews>
-                                            <color key="backgroundColor" name="table-view-cell-bg"/>
                                             <constraints>
                                                 <constraint firstItem="rfW-Oc-Q9E" firstAttribute="leading" secondItem="xtc-gG-YDR" secondAttribute="trailing" constant="8" id="8mp-o5-8tf"/>
                                                 <constraint firstAttribute="trailing" secondItem="rfW-Oc-Q9E" secondAttribute="trailing" constant="8" id="D6N-jS-bRF"/>
@@ -6215,7 +6212,6 @@
                                             </constraints>
                                         </view>
                                     </subviews>
-                                    <color key="backgroundColor" name="table-view-cell-bg"/>
                                     <constraints>
                                         <constraint firstItem="Kw4-Id-dhO" firstAttribute="top" secondItem="3Ji-8W-S7E" secondAttribute="top" id="GZq-VL-gGn"/>
                                         <constraint firstAttribute="trailing" secondItem="UbL-12-awO" secondAttribute="trailing" id="HWQ-g2-oAB"/>
@@ -6229,7 +6225,6 @@
                                         <constraint firstAttribute="trailing" secondItem="bva-hX-V6g" secondAttribute="trailing" id="wsA-B2-TfJ"/>
                                     </constraints>
                                 </tableViewCellContentView>
-                                <color key="backgroundColor" name="table-view-cell-bg"/>
                                 <connections>
                                     <outlet property="bottomBorder" destination="UbL-12-awO" id="DC0-Dy-oVA"/>
                                     <outlet property="methodLabel" destination="Cfb-8L-ZHV" id="sug-iw-8oX"/>
