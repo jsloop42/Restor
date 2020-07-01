@@ -1947,13 +1947,13 @@
                                                 <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" distribution="equalCentering" alignment="top" spacing="2" translatesAutoresizingMaskIntoConstraints="NO" id="9Pt-YB-ylu">
                                                     <rect key="frame" x="15" y="23" width="383" height="40.5"/>
                                                     <subviews>
-                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" ambiguous="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="iKn-N9-Zi6" userLabel="Name Label">
+                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="iKn-N9-Zi6" userLabel="Name Label">
                                                             <rect key="frame" x="0.0" y="0.0" width="383" height="20.5"/>
                                                             <fontDescription key="fontDescription" type="system" pointSize="17"/>
                                                             <nil key="textColor"/>
                                                             <nil key="highlightedColor"/>
                                                         </label>
-                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="252" ambiguous="YES" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Qmv-sW-SSW" userLabel="Description Label">
+                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="252" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" numberOfLines="0" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="Qmv-sW-SSW" userLabel="Description Label">
                                                             <rect key="frame" x="0.0" y="22.5" width="383" height="18"/>
                                                             <fontDescription key="fontDescription" type="system" pointSize="15"/>
                                                             <color key="textColor" systemColor="secondaryLabelColor" red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.59999999999999998" colorSpace="custom" customColorSpace="sRGB"/>
@@ -1996,6 +1996,12 @@
                                     <outlet property="delegate" destination="p67-zo-gl1" id="ngR-63-eWC"/>
                                 </connections>
                             </tableView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Tap the + button to add a new project" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="yxA-2S-WxH">
+                                <rect key="frame" x="63.5" y="408" width="287.5" height="20.5"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" systemColor="placeholderTextColor" red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.29999999999999999" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
@@ -2003,14 +2009,17 @@
                             <constraint firstItem="heD-vK-fo4" firstAttribute="leading" secondItem="aJs-mS-lLr" secondAttribute="leading" id="MWT-vs-6dE"/>
                             <constraint firstItem="heD-vK-fo4" firstAttribute="bottom" secondItem="aJs-mS-lLr" secondAttribute="bottom" id="MZA-X5-fyz"/>
                             <constraint firstItem="heD-vK-fo4" firstAttribute="top" secondItem="TNG-MA-upU" secondAttribute="bottom" id="X5n-5p-mqu"/>
+                            <constraint firstItem="yxA-2S-WxH" firstAttribute="centerY" secondItem="Ne5-qf-7a3" secondAttribute="centerY" constant="-30" id="laG-PN-lUC"/>
                             <constraint firstItem="TNG-MA-upU" firstAttribute="top" secondItem="aJs-mS-lLr" secondAttribute="top" id="meR-3o-hXu"/>
                             <constraint firstItem="TNG-MA-upU" firstAttribute="leading" secondItem="aJs-mS-lLr" secondAttribute="leading" id="otM-9T-FJu"/>
                             <constraint firstItem="TNG-MA-upU" firstAttribute="trailing" secondItem="aJs-mS-lLr" secondAttribute="trailing" id="yii-Yu-f9w"/>
+                            <constraint firstItem="yxA-2S-WxH" firstAttribute="centerX" secondItem="Ne5-qf-7a3" secondAttribute="centerX" id="z2T-F3-baa"/>
                         </constraints>
                         <viewLayoutGuide key="safeArea" id="aJs-mS-lLr"/>
                     </view>
                     <navigationItem key="navigationItem" id="JlX-v3-NOi"/>
                     <connections>
+                        <outlet property="helpTextLabel" destination="yxA-2S-WxH" id="oZM-Pe-g3p"/>
                         <outlet property="tableView" destination="TNG-MA-upU" id="J7d-Dg-1F1"/>
                         <outlet property="toolbar" destination="heD-vK-fo4" id="lpX-8O-JE7"/>
                         <outlet property="workspaceBtn" destination="Dd9-wm-Fq0" id="ssR-Ih-WyD"/>
@@ -2104,6 +2113,12 @@
                                     <outlet property="delegate" destination="F9q-uP-ck0" id="Xad-ra-vqf"/>
                                 </connections>
                             </tableView>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Tap the + button to add a new request" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="o2z-z4-doU">
+                                <rect key="frame" x="61" y="418" width="292" height="20.5"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <color key="textColor" systemColor="placeholderTextColor" red="0.23529411759999999" green="0.23529411759999999" blue="0.26274509800000001" alpha="0.29999999999999999" colorSpace="custom" customColorSpace="sRGB"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" systemColor="systemBackgroundColor" cocoaTouchSystemColor="whiteColor"/>
                         <constraints>
@@ -2111,7 +2126,9 @@
                             <constraint firstItem="D5E-Ed-AR5" firstAttribute="top" secondItem="vHk-9w-IbR" secondAttribute="top" id="3fx-Sf-yjB"/>
                             <constraint firstItem="D5E-Ed-AR5" firstAttribute="leading" secondItem="vHk-9w-IbR" secondAttribute="leading" id="4wy-AE-7eS"/>
                             <constraint firstItem="2yM-eo-jsq" firstAttribute="trailing" secondItem="vHk-9w-IbR" secondAttribute="trailing" id="HuU-Md-Waj"/>
+                            <constraint firstItem="o2z-z4-doU" firstAttribute="centerY" secondItem="EAb-QP-pNP" secondAttribute="centerY" constant="-20" id="KL5-gj-Lix"/>
                             <constraint firstItem="2yM-eo-jsq" firstAttribute="top" secondItem="D5E-Ed-AR5" secondAttribute="bottom" id="Ps8-v6-2C5"/>
+                            <constraint firstItem="o2z-z4-doU" firstAttribute="centerX" secondItem="EAb-QP-pNP" secondAttribute="centerX" id="f2X-WR-x7r"/>
                             <constraint firstItem="2yM-eo-jsq" firstAttribute="bottom" secondItem="vHk-9w-IbR" secondAttribute="bottom" id="oMg-K5-IQy"/>
                             <constraint firstItem="2yM-eo-jsq" firstAttribute="leading" secondItem="vHk-9w-IbR" secondAttribute="leading" id="tlp-H3-VtO"/>
                         </constraints>
@@ -2119,6 +2136,7 @@
                     </view>
                     <connections>
                         <outlet property="filterBtn" destination="FVm-Yb-c3e" id="cXU-fY-CmV"/>
+                        <outlet property="helpTextLabel" destination="o2z-z4-doU" id="Tpj-k8-cwe"/>
                         <outlet property="tableView" destination="D5E-Ed-AR5" id="XPH-gN-pf0"/>
                         <outlet property="toolbar" destination="2yM-eo-jsq" id="zXc-y4-Jf1"/>
                         <outlet property="windowBtn" destination="tlx-H5-UPt" id="Cw6-wg-hOY"/>

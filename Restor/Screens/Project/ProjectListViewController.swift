@@ -18,6 +18,7 @@ class ProjectListViewController: RestorViewController {
     @IBOutlet weak var toolbar: UIToolbar!
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var workspaceBtn: UIButton!
+    @IBOutlet weak var helpTextLabel: UILabel!
     private var workspace: EWorkspace!
     private var popupBottomContraints: NSLayoutConstraint?
     private var isKeyboardActive = false
@@ -112,9 +113,26 @@ class ProjectListViewController: RestorViewController {
         if self.frc == nil { return }
         do {
             try self.frc.performFetch()
+            if self.frc.numberOfRows(in: 0) == 0 {
+                self.displayHelpText()
+            } else {
+                self.hideHelpText()
+            }
             self.tableView.reloadData()
         } catch let error {
             Log.error("Error fetching: \(error)")
+        }
+    }
+    
+    func displayHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = false
+        }
+    }
+    
+    func hideHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = true
         }
     }
     
@@ -167,7 +185,8 @@ class ProjectListViewController: RestorViewController {
     
     @objc func addBtnDidTap(_ sender: Any) {
         Log.debug("add button did tap")
-        self.viewAlert(vc: self, storyboard: self.storyboard!)
+        //self.viewAlert(vc: self, storyboard: self.storyboard!)
+        self.viewPopup()
     }
     
     @IBAction func workspaceDidTap(_ sender: Any) {

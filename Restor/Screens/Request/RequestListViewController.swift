@@ -21,6 +21,7 @@ class RequestListViewController: RestorViewController {
     @IBOutlet weak var filterBtn: UIBarButtonItem!
     @IBOutlet weak var windowBtn: UIBarButtonItem!
     @IBOutlet weak var addBtn: UIBarButtonItem!
+    @IBOutlet weak var helpTextLabel: UILabel!
     private let utils = EAUtils.shared
     private let app: App = App.shared
     private lazy var localdb = { CoreDataService.shared }()
@@ -114,9 +115,26 @@ class RequestListViewController: RestorViewController {
         if self.frc == nil { return }
         do {
             try self.frc.performFetch()
+            if self.frc.numberOfRows(in: 0) == 0 {
+                self.displayHelpText()
+            } else {
+                self.hideHelpText()
+            }
             self.tableView.reloadData()
         } catch let error {
             Log.error("Error fetching: \(error)")
+        }
+    }
+    
+    func displayHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = false
+        }
+    }
+    
+    func hideHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = true
         }
     }
     
