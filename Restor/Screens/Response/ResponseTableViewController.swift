@@ -35,7 +35,6 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     var previewTemplate = ""
     var responseCache: ResponseCache!
     var type: ResponseMode = .raw
-    var didReload = false
     
     enum Template: String {
         case rawview = "rawview"
@@ -102,7 +101,6 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
 
     func updateUI() {
-        self.didReload = false
         if self.type == .raw {
             self.updateRawModeUI()
         } else if self.type == .preview {
@@ -163,10 +161,6 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         Log.debug("web view did finish load")
-        if !self.didReload {
-            self.didReload = true
-            webView.reload()
-        }
         self.hideActivityIndicator()
     }
 }
