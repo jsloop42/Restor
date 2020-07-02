@@ -98,6 +98,20 @@ class SettingsTableViewController: RestorTableViewController {
         }
     }
     
+    func shareLink() {
+        if let url = URL(string: Const.appURL), let image = UIImage(named: "restor-icon") {
+            let objectsToShare: [Any] = ["Restor - API endpoint testing on the go", url, image]
+            let activityVC = UIActivityViewController(activityItems: objectsToShare, applicationActivities: nil)
+            if UIDevice.current.userInterfaceIdiom == .pad {
+                if let popup = activityVC.popoverPresentationController {
+                    popup.sourceView = self.view
+                    popup.sourceRect = CGRect(x: self.view.frame.size.width / 2, y: self.view.frame.size.height / 4, width: 0, height: 0)
+                }
+            }
+            self.present(activityVC, animated: true, completion: nil)
+        }
+    }
+    
     @objc func syncWorkspaceSwitchDidChange(_ sender: UISwitch) {
         Log.debug("sync workspace switch did change")
         self.workspace.isSyncEnabled = self.syncWorkspaceSwitch.isOn
@@ -136,6 +150,8 @@ class SettingsTableViewController: RestorTableViewController {
             self.rateApp()
         } else if indexPath.row == CellId.feedback.rawValue {
             self.sendFeedback()
+        } else if indexPath.row == CellId.share.rawValue {
+            self.shareLink()
         }
     }
     

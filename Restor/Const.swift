@@ -41,6 +41,7 @@ struct Const {
     static let helpTextForAddNewRequestMethod = "The request method name will be available to all requests within the same project and should be unique."
     static let appId = "1496176309"
     static let feedbackEmail = "info@estoapps.com"
+    static let appURL = "https://apps.apple.com/gb/app/restor/id\(Const.appId)"
 }
 
 extension Notification.Name {
