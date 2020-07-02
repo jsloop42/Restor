@@ -221,6 +221,7 @@ final class RequestManager {
                 }
             }
         }
+        headers["X-Restor-Id"] = UUID().uuidString.lowercased()
         let method = self.localdb.getRequestMethodData(at: request.selectedMethodIndex.toInt(), projId: projId)
         guard let aUrl = urlComp.url else { return nil }
         var urlReq = URLRequest(url: aUrl, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 60)
