@@ -163,6 +163,16 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
         Log.debug("web view did finish load")
         self.hideActivityIndicator()
     }
+    
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Swift.Void) {
+        if navigationAction.navigationType != .other && navigationAction.navigationType != .reload {
+            if self.type == .raw {  // Disable link navigation. The data detection is enabled so that base64 encoded images gets displayed in the raw view.
+                decisionHandler(.cancel)
+                return
+            }
+        }
+        decisionHandler(.allow)
+    }
 }
 
 // MARK: - ResponseInfoCell
