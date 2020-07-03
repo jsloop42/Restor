@@ -89,13 +89,15 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
         self.contentView.backgroundColor = color
         self.backgroundView?.backgroundColor = color
     }
-    
+        
     func getHtmlSource(template: Template, data: Data, lang: String, theme: String) -> String {
         guard var html = String(data: data, encoding: .utf8)?.trim() else { return "" }
         if template == .preview { return self.rawTemplate.replacingOccurrences(of: "#_restor-extrapolate-texts", with: html) }
-        html = html.replaceAll(pattern: "\n+", with: "\n").replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#039;")
+        html = html.replaceAll(pattern: "\n+", with: "\n").replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#039;")
             //.replacingOccurrences(of: "\n", with: "<br>")
+        var lang = html.count > 100000 ? "language-plain" : lang
         return (template == .rawview ? self.rawTemplate : self.previewTemplate).replacingOccurrences(of: "#_restor-extrapolate-texts", with: html)
             .replacingOccurrences(of: "#_restor-extrapolate-language", with: lang).replacingOccurrences(of: "#_restor-extrapolate-theme", with: theme)
     }

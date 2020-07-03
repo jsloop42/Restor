@@ -522,6 +522,8 @@
 			dependencies = (
 			);
 			name = Restor;
+			packageProductDependencies = (
+			);
 			productName = Restor;
 			productReference = 9E926F9023945E78002DF561 /* Restor.app */;
 			productType = "com.apple.product-type.application";
@@ -595,6 +597,8 @@
 				Base,
 			);
 			mainGroup = 9E926F8723945E78002DF561;
+			packageReferences = (
+			);
 			productRefGroup = 9E926F9123945E78002DF561 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
