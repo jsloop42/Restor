@@ -97,7 +97,7 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
             .replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;")
             .replacingOccurrences(of: "'", with: "&#039;")
             //.replacingOccurrences(of: "\n", with: "<br>")
-        var lang = html.count > 100000 ? "language-plain" : lang
+        let lang = html.count > 100000 ? "language-plain" : lang
         return (template == .rawview ? self.rawTemplate : self.previewTemplate).replacingOccurrences(of: "#_restor-extrapolate-texts", with: html)
             .replacingOccurrences(of: "#_restor-extrapolate-language", with: lang).replacingOccurrences(of: "#_restor-extrapolate-theme", with: theme)
     }
@@ -116,10 +116,11 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
             return
         }
         self.doneLoading = false
-        if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
+        if let obj = try? JSONSerialization.jsonObject(with: respData, options: .allowFragments),
+            let data = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]) {
             UIView.animate(withDuration: 0.3) {
                 self.webView.isHidden = true
-                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: data, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
                 self.webView.isHidden = false
             }
         } else {
@@ -136,10 +137,11 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
             self.hideActivityIndicator()
             return
         }
-        if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
+        if let obj = try? JSONSerialization.jsonObject(with: respData, options: .allowFragments),
+            let data = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]) {
             UIView.animate(withDuration: 0.3) {
                 self.webView.isHidden = true
-                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: data, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
                 self.webView.isHidden = false
             }
         } else {
