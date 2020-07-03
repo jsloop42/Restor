@@ -11,6 +11,7 @@ import GameplayKit
 
 extension Notification.Name {
     static let extrapolateDidFail = Notification.Name("extrapolate-did-fail")
+    static let invalidURL = Notification.Name("invalid-url")
 }
 
 /// User has tapped the Go button and the request is being processed for sending.
@@ -34,11 +35,15 @@ class RequestPrepareState: GKState {
             try man.prepareRequest()
         } catch let error {
             Log.error("Error in prepare request: \(error)")
-            if error is AppError && error.code == AppError.extrapolate.code {
-                fsm.enter(RequestCancelState.self)
-                self.nc.post(name: .extrapolateDidFail, object: self, userInfo: ["msg": "Extrapolating env variables failed. Please check the variables and env."])
-                //UI.displayToast("Extrapolating env variables failed. Please check the variables.")
+            if error is AppError {
+                if error.code == AppError.extrapolate.code {
+                    self.nc.post(name: .extrapolateDidFail, object: self, userInfo: ["msg": "Extrapolating env variables failed. Please check the variables and env."])
+                    //UI.displayToast("Extrapolating env variables failed. Please check the variables.")
+                } else if error.code == AppError.invalidURL.code {
+                    self.nc.post(name: .invalidURL, object: self, userInfo: ["msg": "Constructing the request failed. Please check the URL format."])
+                }
             }
+            fsm.enter(RequestCancelState.self)
         }
     }
 }

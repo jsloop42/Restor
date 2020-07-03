@@ -79,7 +79,7 @@ class WorkspaceListViewController: RestorViewController {
     
     func initData() {
         if self.frc == nil {
-            if let _frc = self.localdb.getFetchResultsController(obj: EWorkspace.self, predicate: NSPredicate(format: "markForDelete == %hhd", false), ctx: self.localdb.mainMOC) as? NSFetchedResultsController<EWorkspace> {
+            if let _frc = self.localdb.getFetchResultsController(obj: EWorkspace.self, predicate: NSPredicate(format: "markForDelete == %hhd AND name != %@", false, ""), ctx: self.localdb.mainMOC) as? NSFetchedResultsController<EWorkspace> {
                 self.frc = _frc
                 self.frc.delegate = self
             }

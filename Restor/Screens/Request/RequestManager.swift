@@ -53,8 +53,7 @@ final class RequestManager {
         let urlReq = try self.requestToURLRequest(self.request)
         if urlReq == nil {
             Log.debug("urlrequest is nil -> moving to cancel state")
-            self.fsm.enter(RequestCancelState.self)
-            return
+            throw AppError.invalidURL
         }
         let state = self.fsm.state(forClass: RequestSendState.self)
         state?.urlReq = urlReq

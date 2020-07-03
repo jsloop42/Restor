@@ -144,7 +144,8 @@ class RequestTableViewController: RestorTableViewController {
         self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
         self.nc.addObserver(self, selector: #selector(self.requestDidCancel(_:)), name: .requestDidCancel, object: nil)
         self.nc.addObserver(self, selector: #selector(self.envDidSelect(_:)), name: .envDidSelect, object: nil)
-        self.nc.addObserver(self, selector: #selector(self.extrapolateDidFail(_:)), name: .extrapolateDidFail, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.viewToast(_:)), name: .extrapolateDidFail, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.viewToast(_:)), name: .invalidURL, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -283,7 +284,7 @@ class RequestTableViewController: RestorTableViewController {
         }
     }
     
-    @objc func extrapolateDidFail(_ notif: Notification) {
+    @objc func viewToast(_ notif: Notification) {
         Log.debug("extrapolate did fail notif")
         if let info = notif.userInfo as? [String: String], let msg = info["msg"] {
             DispatchQueue.main.async {

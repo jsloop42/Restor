@@ -1148,6 +1148,7 @@ enum AppError: Error {
     case offline
     case server
     case fetch
+    case invalidURL
 }
 
 extension CKRecord {
