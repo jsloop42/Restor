@@ -31,8 +31,10 @@ class HistoryViewController: UIViewController, UITableViewDelegate, UITableViewD
     @IBOutlet weak var tableView: UITableView!
     private let app = App.shared
     private lazy var localDB = { CoreDataService.shared }()
+    private lazy var db = { PersistenceService.shared }()
     private var todayFrc: NSFetchedResultsController<EHistory>!
     private var pastFrc: NSFetchedResultsController<EHistory>!
+    @IBOutlet weak var helpLabel: UILabel!
     var request: ERequest?
     var sectionTitle: [String] = ["Today", "Older"]
     
@@ -71,7 +73,29 @@ class HistoryViewController: UIViewController, UITableViewDelegate, UITableViewD
                 try? self.pastFrc.performFetch()
             }
         }
+        self.checkForEmptyMessageDisplay()
         self.tableView.reloadData()
+    }
+    
+    func checkForEmptyMessageDisplay() {
+        let len = self.todayFrc.numberOfRows(in: 0) + self.pastFrc.numberOfRows(in: 0)
+        if len == 0 {
+            self.displayHelpText()
+        } else {
+            self.hideHelpText()
+        }
+    }
+    
+    func displayHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpLabel.isHidden = false
+        }
+    }
+    
+    func hideHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpLabel.isHidden = true
+        }
     }
     
     func getTodayPredicate() -> NSPredicate {
@@ -100,6 +124,7 @@ class HistoryViewController: UIViewController, UITableViewDelegate, UITableViewD
             try? self.pastFrc.performFetch()
             self.pastFrc.delegate = self
         }
+        self.checkForEmptyMessageDisplay()
         self.tableView.reloadData()
     }
     
@@ -211,6 +236,24 @@ class HistoryViewController: UIViewController, UITableViewDelegate, UITableViewD
             return 28
         }
         return 0
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
+            Log.debug("delete row: \(indexPath)")
+            let row = indexPath.row
+            let section = indexPath.section
+            let isToday = section == Section.today.rawValue
+            let history = self.historyForRow(row, isToday: isToday)
+            self.localDB.markEntityForDelete(history)
+            self.localDB.saveMainContext()
+            self.db.deleteDataMarkedForDelete(history: history, wsId: history.getWsId(), ctx: self.localDB.mainMOC)
+            self.updateData()
+            completion(true)
+        }
+        let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete])
+        swipeActionConfig.performsFirstActionWithFullSwipe = false
+        return swipeActionConfig
     }
 }
 

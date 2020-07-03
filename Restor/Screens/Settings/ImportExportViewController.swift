@@ -100,7 +100,7 @@ class ImportExportViewController: UIViewController {
     @objc func actionButtonDidTap(_ sender: Any) {
         Log.debug("action button did tap")
         if self.mode == .import {  // import button tapped
-            guard let text = self.textView.text else { return }
+            guard let text = self.textView.text, !text.isEmpty else { return }
             // if valid JSON, parse it into dict
             self.isOpInProgress = true
             if let data = text.data(using: .utf8), let xs = try? JSONSerialization.jsonObject(with: data, options: .allowFragments) as? [[String: Any]] {

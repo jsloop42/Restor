@@ -1638,6 +1638,14 @@ class PersistenceService {
         }
     }
     
+    func deleteDataMarkedForDelete(history: EHistory?, wsId: String, ctx: NSManagedObjectContext? = nil) {
+        let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
+        ctx.performAndWait {
+            guard let history = history, history.markForDelete else { return }
+            self.deleteEntitesFromCloud([history], ctx: ctx)
+        }
+    }
+    
     func deleteRequestBodyDataMarkedForDelete(_ req: ERequest, ctx: NSManagedObjectContext? = nil) {
         let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
         ctx.performAndWait {
