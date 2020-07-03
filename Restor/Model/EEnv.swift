@@ -115,6 +115,7 @@ class EEnv: NSManagedObject, Entity {
                 }
             }
         }
+        env.markForDelete = false
         db.saveMainContext()
         return env
     }

@@ -122,15 +122,17 @@ public class EImage: NSManagedObject, Entity {
     }
     
     public static func fromDictionary(_ dict: [String: Any]) -> EImage? {
-        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String, let data = dict["data"] as? Data,
+        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String, let data = dict["data"] as? String,
         let name = dict["name"] as? String, let type = dict["type"] as? String else { return nil }
         let db = CoreDataService.shared
-        guard let image = db.createImage(imageId: id, data: data, wsId: wsId, name: name, type: type, ctx: db.mainMOC) else { return nil }
+        guard let data1 = EAUtils.shared.stringToImageData(data) else { return nil }
+        guard let image = db.createImage(imageId: id, data: data1, wsId: wsId, name: name, type: type, ctx: db.mainMOC) else { return nil }
         if let x = dict["created"] as? Int64 { image.created = x }
         if let x = dict["modified"] as? Int64 { image.modified = x }
         if let x = dict["changeTag"] as? Int64 { image.changeTag = x }
         if let x = dict["isCameraMode"] as? Bool { image.isCameraMode = x }
         if let x = dict["version"] as? Int64 { image.version = x }
+        image.markForDelete = false
         return image
     }
     
@@ -143,7 +145,7 @@ public class EImage: NSManagedObject, Entity {
         dict["wsId"] = self.wsId
         dict["name"] = self.name
         dict["type"] = self.type
-        dict["data"] = self.data
+        dict["data"] = EAUtils.shared.imageDataToString(self.data)
         dict["version"] = self.version
         return dict
     }

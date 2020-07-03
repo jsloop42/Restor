@@ -162,6 +162,7 @@ public class EProject: NSManagedObject, Entity {
                 }
             }
         }
+        proj.markForDelete = false
         db.saveMainContext()
         return proj
     }

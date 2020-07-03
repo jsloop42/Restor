@@ -194,6 +194,16 @@ final class RequestManager {
         return exp
     }
     
+    func addContentType(_ value: String, urlReq: URLRequest) -> URLRequest {
+        var urlReq = urlReq
+        let contentType = urlReq.value(forHTTPHeaderField: "Content-Type") ?? ""
+        let contentTypeLower = urlReq.value(forHTTPHeaderField: "content-type") ?? ""
+        if (contentType.isEmpty && contentTypeLower.isEmpty) {
+            urlReq.addValue(value, forHTTPHeaderField: "Content-Type")
+        }
+        return urlReq
+    }
+    
     func requestToURLRequest(_ req: ERequest) throws -> URLRequest? {
         Log.debug("[req-man] request-to-url-request")
         guard let projId = request.project?.getId() else { return nil }
@@ -231,20 +241,12 @@ final class RequestManager {
             case .json:
                 if let x = body.json {
                     urlReq.httpBody = x.data(using: .utf8)
-                    let contentType = urlReq.value(forHTTPHeaderField: "Content-Type") ?? ""
-                    let contentTypeLower = urlReq.value(forHTTPHeaderField: "content-type") ?? ""
-                    if (contentType.isEmpty && contentTypeLower.isEmpty) {
-                        urlReq.addValue("application/json", forHTTPHeaderField: "Content-Type")
-                    }
+                    urlReq = self.addContentType("application/json", urlReq: urlReq)
                 }
             case .xml:
                 if let x = body.xml {
                     urlReq.httpBody = x.data(using: .utf8)
-                    let contentType = urlReq.value(forHTTPHeaderField: "Content-Type") ?? ""
-                    let contentTypeLower = urlReq.value(forHTTPHeaderField: "content-type") ?? ""
-                    if (contentType.isEmpty && contentTypeLower.isEmpty) {
-                        urlReq.addValue("text/xml", forHTTPHeaderField: "Content-Type")
-                    }
+                    urlReq = self.addContentType("text/xml", urlReq: urlReq)
                 }
             case .raw:
                 if let x = body.raw { urlReq.httpBody = x.data(using: .utf8) }
@@ -254,6 +256,7 @@ final class RequestManager {
                 urlReq = self.getMultipartData(req, urlReq: urlReq)
             case .binary:
                 urlReq = self.getBinaryData(req, urlReq: urlReq)
+                urlReq = self.addContentType("application/octet-stream", urlReq: urlReq)
             }
         }
         urlReq.httpMethod = method?.name

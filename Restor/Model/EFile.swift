@@ -120,14 +120,22 @@ public class EFile: NSManagedObject, Entity {
     }
     
     public static func fromDictionary(_ dict: [String: Any]) -> EFile? {
-        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String, let data = dict["data"] as? Data,
+        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String, let _data = dict["data"] as? String,
             let name = dict["name"] as? String, let _type = dict["type"] as? Int64, let type = RequestDataType(rawValue: _type.toInt()) else { return nil }
         let db = CoreDataService.shared
-        guard let file = db.createFile(fileId: id, data: data, wsId: wsId, name: name, path: URL(fileURLWithPath: "/tmp/"), type: type, checkExists: true, ctx: db.mainMOC) else { return nil }
+        var data: Data?
+        if let aData = _data.data(using: .utf8) {
+            data = aData
+        } else {
+            data = EAUtils.shared.stringToImageData(_data)
+        }
+        guard let data1 = data else { return nil }
+        guard let file = db.createFile(fileId: id, data: data1, wsId: wsId, name: name, path: URL(fileURLWithPath: "/tmp/"), type: type, checkExists: true, ctx: db.mainMOC) else { return nil }
         if let x = dict["created"] as? Int64 { file.created = x }
         if let x = dict["modified"] as? Int64 { file.modified = x }
         if let x = dict["changeTag"] as? Int64 { file.changeTag = x }
         if let x = dict["version"] as? Int64 { file.version = x }
+        file.markForDelete = false
         return file
     }
     
@@ -140,7 +148,13 @@ public class EFile: NSManagedObject, Entity {
         dict["name"] = self.name
         dict["type"] = self.type
         dict["version"] = self.version
-        dict["data"] = self.data
+        if let data = self.data {
+            if let str = String(data: data, encoding: .utf8) {
+                dict["data"] = str
+            } else {
+                dict["data"] = EAUtils.shared.imageDataToString(data)
+            }
+        }
         dict["wsId"] = self.wsId
         return dict
     }

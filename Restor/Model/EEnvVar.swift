@@ -123,6 +123,7 @@ class EEnvVar: NSManagedObject, Entity {
         if let x = dict["name"] as? String { envVar.name = x }
         if let x = dict["value"] as? String { envVar.value = x as NSObject }
         if let x = dict["version"] as? Int64 { envVar.version = x }
+        envVar.markForDelete = false
         return envVar
     }
     

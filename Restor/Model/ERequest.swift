@@ -164,6 +164,7 @@ public class ERequest: NSManagedObject, Entity {
                 }
             }
         }
+        req.markForDelete = false
         db.saveMainContext()
         return req
     }

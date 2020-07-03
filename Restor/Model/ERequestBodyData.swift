@@ -140,6 +140,7 @@ public class ERequestBodyData: NSManagedObject, Entity {
                 }
             }
         }
+        body.markForDelete = false
         db.saveMainContext()
         return body
     }

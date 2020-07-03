@@ -145,7 +145,9 @@ public class EWorkspace: NSManagedObject, Entity {
                 _ = EEnv.fromDictionary(dict)
             }
         }
+        ws.markForDelete = false
         db.saveMainContext()
+        db.mainMOC.refreshAllObjects()
         return ws
     }
     

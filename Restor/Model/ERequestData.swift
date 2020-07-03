@@ -200,6 +200,7 @@ public class ERequestData: NSManagedObject, Entity {
                 img.requestData = reqData
             }
         }
+        reqData.markForDelete = false
         db.saveMainContext()
         return reqData
     }

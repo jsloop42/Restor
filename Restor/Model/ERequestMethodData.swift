@@ -106,6 +106,7 @@ public class ERequestMethodData: NSManagedObject, Entity {
         if let x = dict["changeTag"] as? Int64 { method.changeTag = x }
         if let x = dict["name"] as? String { method.name = x }
         if let x = dict["version"] as? Int64 { method.version = x }
+        method.markForDelete = false
         db.saveMainContext()
         return method
     }

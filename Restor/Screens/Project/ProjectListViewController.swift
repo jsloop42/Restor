@@ -75,7 +75,8 @@ class ProjectListViewController: RestorViewController {
     }
     
     func getFRCPredicate(_ wsId: String) -> NSPredicate {
-        return NSPredicate(format: "workspace.id == %@ AND name != %@", wsId, "")
+        return NSPredicate(format: "workspace.id == %@ AND name != %@ AND markForDelete == %hdd", wsId, "", false)
+        //return NSPredicate(format: "workspace.id == %@ AND name != %@", wsId, "")
     }
     
     func initData() {
