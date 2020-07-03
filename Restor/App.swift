@@ -729,7 +729,6 @@ class App {
                 x?.setChangeTagWithEditTs()
                 return true
             }
-            // TODO: handle binary
             if x != nil && self.didAnyRequestBodyFormChangeImp(x!, request: request) { return true }
         }
         return false

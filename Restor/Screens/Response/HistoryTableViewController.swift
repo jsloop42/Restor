@@ -100,8 +100,8 @@ class HistoryViewController: UIViewController, UITableViewDelegate, UITableViewD
     
     func getTodayPredicate() -> NSPredicate {
         guard let reqId = self.request?.getId() else { return NSPredicate(value: true) }
-        // return NSPredicate(format: "requestId == %@ AND created >= %ld", reqId, Date().startOfDay.currentTimeNanos())
-        return NSPredicate(format: "requestId == %@", reqId)
+        return NSPredicate(format: "requestId == %@ AND created >= %ld", reqId, Date().startOfDay.currentTimeNanos())
+        //return NSPredicate(format: "requestId == %@", reqId)
     }
     
     func getPastPredicate() -> NSPredicate {

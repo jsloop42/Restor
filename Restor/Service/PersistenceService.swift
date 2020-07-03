@@ -836,7 +836,6 @@ class PersistenceService {
         self.deleteEntitesFromCloud(delxs, ctx: self.syncToCloudCtx)
         delxs = []
         if done { self.isSyncToCloudInProgress = false }
-        // TODO: delete env, env vars
         Log.debug("sync to cloud queued - saves: \(self.syncToCloudSaveIds.count), deletes: \(self.syncToCloudDeleteIds.count)")
         self.checkSyncToCloudState()
     }
