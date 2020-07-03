@@ -5944,7 +5944,7 @@
                                                     <rect key="frame" x="0.0" y="1" width="414" height="79"/>
                                                     <color key="backgroundColor" name="web-view-bg"/>
                                                     <wkWebViewConfiguration key="configuration" allowsAirPlayForMediaPlayback="NO" allowsPictureInPictureMediaPlayback="NO" applicationNameForUserAgent="Restor">
-                                                        <dataDetectorTypes key="dataDetectorTypes" phoneNumber="YES" link="YES" address="YES" calendarEvent="YES" trackingNumber="YES" flightNumber="YES" lookupSuggestion="YES"/>
+                                                        <dataDetectorTypes key="dataDetectorTypes" none="YES"/>
                                                         <audiovisualMediaTypes key="mediaTypesRequiringUserActionForPlayback" none="YES"/>
                                                         <wkPreferences key="preferences"/>
                                                     </wkWebViewConfiguration>
