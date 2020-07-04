@@ -15,6 +15,7 @@ class HistoryCell: UITableViewCell {
     @IBOutlet weak var pathLabel: UILabel!
     @IBOutlet weak var statusCodeLabel: UILabel!
     @IBOutlet weak var pathScrollView: UIScrollView!
+    @IBOutlet weak var dateLabel: UILabel!
     @IBOutlet weak var bottomBorder: UIView!
     
     func hideBottomBorder() {
@@ -26,11 +27,21 @@ class HistoryCell: UITableViewCell {
     }
 }
 
-class HistoryTableViewController: UITableViewController {
+class HistoryViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+    @IBOutlet weak var tableView: UITableView!
     private let app = App.shared
     private lazy var localDB = { CoreDataService.shared }()
-    private var frc: NSFetchedResultsController<EHistory>!
+    private lazy var db = { PersistenceService.shared }()
+    private var todayFrc: NSFetchedResultsController<EHistory>!
+    private var pastFrc: NSFetchedResultsController<EHistory>!
+    @IBOutlet weak var helpLabel: UILabel!
     var request: ERequest?
+    var sectionTitle: [String] = ["Today", "Older"]
+    
+    enum Section: Int {
+        case today
+        case past
+    }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -38,25 +49,64 @@ class HistoryTableViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.tableView.delegate = self
+        self.tableView.dataSource = self
         self.initData()
         self.initUI()
         self.initEvents()
     }
     
     func initData() {
-        if self.frc != nil { return }
-        if let _frc = self.localDB.getFetchResultsController(obj: EHistory.self, predicate: self.getPredicate(), sortDesc: self.getSortDescriptors(),
-                                                             ctx: self.localDB.mainMOC) as? NSFetchedResultsController<EHistory> {
-            self.frc = _frc
-            self.frc.delegate = self
-            try? self.frc.performFetch()
-            self.tableView.reloadData()
+        if self.todayFrc == nil {
+            if let _frc = self.localDB.getFetchResultsController(obj: EHistory.self, predicate: self.getTodayPredicate(), sortDesc: self.getSortDescriptors(),
+                                                                 ctx: self.localDB.mainMOC) as? NSFetchedResultsController<EHistory> {
+                self.todayFrc = _frc
+                self.todayFrc.delegate = self
+                try? self.todayFrc.performFetch()
+            }
+        }
+        if self.pastFrc == nil {
+            if let _frc = self.localDB.getFetchResultsController(obj: EHistory.self, predicate: self.getPastPredicate(), sortDesc: self.getSortDescriptors(),
+                                                                 ctx: self.localDB.mainMOC) as? NSFetchedResultsController<EHistory> {
+                self.pastFrc = _frc
+                self.pastFrc.delegate = self
+                try? self.pastFrc.performFetch()
+            }
+        }
+        self.checkForEmptyMessageDisplay()
+        self.tableView.reloadData()
+    }
+    
+    func checkForEmptyMessageDisplay() {
+        let len = self.todayFrc.numberOfRows(in: 0) + self.pastFrc.numberOfRows(in: 0)
+        if len == 0 {
+            self.displayHelpText()
+        } else {
+            self.hideHelpText()
         }
     }
     
-    func getPredicate() -> NSPredicate {
+    func displayHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpLabel.isHidden = false
+        }
+    }
+    
+    func hideHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpLabel.isHidden = true
+        }
+    }
+    
+    func getTodayPredicate() -> NSPredicate {
         guard let reqId = self.request?.getId() else { return NSPredicate(value: true) }
-        return NSPredicate(format: "requestId == %@", reqId)
+        return NSPredicate(format: "requestId == %@ AND created >= %ld", reqId, Date().startOfDay.currentTimeNanos())
+        //return NSPredicate(format: "requestId == %@", reqId)
+    }
+    
+    func getPastPredicate() -> NSPredicate {
+        guard let reqId = self.request?.getId() else { return NSPredicate(value: true) }
+        return NSPredicate(format: "requestId == %@ AND created < %ld", reqId, Date().startOfDay.currentTimeNanos())
     }
     
     func getSortDescriptors() -> [NSSortDescriptor] {
@@ -64,10 +114,17 @@ class HistoryTableViewController: UITableViewController {
     }
     
     func updateData() {
-        if self.frc == nil { return }
-        self.frc.delegate = nil
-        try? self.frc.performFetch()
-        self.frc.delegate = self
+        if self.todayFrc != nil {
+            self.todayFrc.delegate = nil
+            try? self.todayFrc.performFetch()
+            self.todayFrc.delegate = self
+        }
+        if self.pastFrc != nil {
+            self.pastFrc.delegate = nil
+            try? self.pastFrc.performFetch()
+            self.pastFrc.delegate = self
+        }
+        self.checkForEmptyMessageDisplay()
         self.tableView.reloadData()
     }
     
@@ -89,13 +146,31 @@ class HistoryTableViewController: UITableViewController {
         Log.debug("segment did change")
     }
     
-    override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return self.frc.numberOfRows(in: section)
+    func numberOfSections(in tableView: UITableView) -> Int {
+        return 2
     }
     
-    override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        if section == Section.today.rawValue {
+            return self.todayFrc.numberOfRows(in: 0)
+        }
+        if section == Section.past.rawValue {
+            return self.pastFrc.numberOfRows(in: 0)
+        }
+        return 0
+    }
+    
+    func historyForRow(_ row: Int, isToday: Bool) -> EHistory {
+        return isToday ? self.todayFrc.object(at: IndexPath(row: row, section: 0)) : self.pastFrc.object(at: IndexPath(row: row, section: 0))
+    }
+    
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "historyCell", for: indexPath) as! HistoryCell
-        let history = self.frc.object(at: indexPath)
+        let section = indexPath.section
+        let row = indexPath.row
+        let isToday = section == Section.today.rawValue
+        let history = self.historyForRow(row, isToday: isToday)
+        Log.debug("created: \(history.created)")
         cell.methodLabel.text = history.method
         if let urlStr = history.url, let url = URL(string: urlStr) {
             let path = url.path
@@ -103,8 +178,10 @@ class HistoryTableViewController: UITableViewController {
         }
         cell.statusCodeLabel.text = history.statusCode > 0 ? "\(history.statusCode)" : ""
         cell.statusCodeLabel.textColor = self.app.getStatusCodeViewColor(history.statusCode.toInt())
+        cell.dateLabel.text = Date(nanos: history.created).fmt_dd_MMM_YYYY_HH_mm_ss
         cell.contentView.addGestureRecognizer(cell.pathScrollView.panGestureRecognizer)
-        if indexPath.row == self.frc.numberOfRows(in: indexPath.section) - 1 {
+        let len = isToday ? self.todayFrc.numberOfRows(in: 0) : self.pastFrc.numberOfRows(in: 0)
+        if row == len - 1 {
             cell.displayBottomBorder()
         } else {
             cell.hideBottomBorder()
@@ -112,8 +189,11 @@ class HistoryTableViewController: UITableViewController {
         return cell
     }
     
-    override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        let history = self.frc.object(at: indexPath)
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        let section = indexPath.section
+        let row = indexPath.row
+        let isToday = section == Section.today.rawValue
+        let history = self.historyForRow(row, isToday: isToday)
         if let vc = self.storyboard?.instantiateViewController(withIdentifier: StoryboardId.responseVC.rawValue) as? ResponseTableViewController {
             vc.viewType = .historyResponse
             vc.data = ResponseData(history: history)
@@ -122,12 +202,62 @@ class HistoryTableViewController: UITableViewController {
         }
     }
     
-    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        return 54
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 75
+    }
+    
+    func hasElements(inSection section: Int) -> Bool {
+        if section == Section.today.rawValue {
+            return self.todayFrc.numberOfRows(in: 0) > 0
+        }
+        if section == Section.past.rawValue {
+            return self.pastFrc.numberOfRows(in: 0) > 0
+        }
+        return false
+    }
+    
+    func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
+        return self.sectionTitle[section]
+    }
+    
+//    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
+//        let width = tableView.frame.width
+//        let view = UIView(frame: CGRect(x: 0, y: 0, width: width, height: 28))
+//        view.backgroundColor = UIColor(named: "table-view-cell-bg")
+//        let label = UILabel(frame: CGRect(x: 15, y: 4, width: width, height: 17))
+//        label.font = UIFont.systemFont(ofSize: 17, weight: .semibold)
+//        label.text = self.sectionTitle[section]
+//        view.addSubview(label)
+//        return view
+//    }
+    
+    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
+        if self.hasElements(inSection: section) {
+            return 28
+        }
+        return 0
+    }
+    
+    func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {
+        let delete = UIContextualAction(style: .destructive, title: "Delete") { action, view, completion in
+            Log.debug("delete row: \(indexPath)")
+            let row = indexPath.row
+            let section = indexPath.section
+            let isToday = section == Section.today.rawValue
+            let history = self.historyForRow(row, isToday: isToday)
+            self.localDB.markEntityForDelete(history)
+            self.localDB.saveMainContext()
+            self.db.deleteDataMarkedForDelete(history: history, wsId: history.getWsId(), ctx: self.localDB.mainMOC)
+            self.updateData()
+            completion(true)
+        }
+        let swipeActionConfig = UISwipeActionsConfiguration(actions: [delete])
+        swipeActionConfig.performsFirstActionWithFullSwipe = false
+        return swipeActionConfig
     }
 }
 
-extension HistoryTableViewController: NSFetchedResultsControllerDelegate {
+extension HistoryViewController: NSFetchedResultsControllerDelegate {
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         Log.debug("history list frc did change")
         DispatchQueue.main.async {

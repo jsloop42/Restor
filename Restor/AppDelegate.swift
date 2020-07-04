@@ -20,27 +20,14 @@ class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationCenterD
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         Log.debug("app delegate did finish launching with options")
         self.window = UIWindow(frame: UIScreen.main.bounds)
-        self.app.updateWindowBackground(self.window)
-        AppState.appCoord = AppCoordinator(window: self.window!)
+        self.window?.rootViewController = UIStoryboard.rootNav
         if #available(iOS 13.0, *) {
-            Log.debug("make key and visible is set from scene delegate")
+            Log.debug("Window make visible is done from scene delegate")
         } else {
             self.window?.makeKeyAndVisible()
         }
-        
-        //UI.setGlobalStyle()
-//        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
-//            if let error = error {
-//                Log.error("Notification auth req err:  \(error.localizedDescription)")
-//            } else {
-//                DispatchQueue.main.async {
-//                    application.registerForRemoteNotifications()
-//                }
-//            }
-//        }
-//        UNUserNotificationCenter.current().delegate = self
         application.registerForRemoteNotifications()
-        self.app.didFinishLaunching(app: application, window: self.window!, appCoord: AppState.appCoord!)
+        self.app.didFinishLaunching(app: application, window: self.window!)
         return true
     }
     

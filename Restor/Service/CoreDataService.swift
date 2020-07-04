@@ -1715,15 +1715,14 @@ class CoreDataService {
     ///   - checkExists: Check if the image exists already before creating.
     ///   - ctx: The managed object context.
     /// - Returns: An image entity.
-    func createImage(data: Data, wsId: String, name: String, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EImage? {
+    func createImage(imageId: String? = CoreDataService.shared.imageId(), data: Data, wsId: String, name: String, type: String, checkExists: Bool? = true, ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EImage? {
         var x: EImage?
         let ts = Date().currentTimeNanos()
         let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
-            let imageId = self.imageId()
-            if let isExists = checkExists, isExists, let data = self.getImageData(id: imageId, ctx: ctx) { x = data }
+            if let isExists = checkExists, isExists, let data = self.getImageData(id: imageId!, ctx: ctx) { x = data }
             let image = x != nil ? x! : EImage(context: moc)
-            image.id = imageId
+            image.id = imageId!
             image.wsId = wsId
             image.data = data
             image.name = name
@@ -1741,16 +1740,15 @@ class CoreDataService {
         return self.createFile(data: data, wsId: wsId, name: name, path: path, type: .form, checkExists: checkExists, ctx: ctx)
     }
     
-    func createFile(data: Data, wsId: String, name: String, path: URL, type: RequestDataType, checkExists: Bool? = true,
+    func createFile(fileId: String? = CoreDataService.shared.fileId(), data: Data, wsId: String, name: String, path: URL, type: RequestDataType, checkExists: Bool? = true,
                     ctx: NSManagedObjectContext? = CoreDataService.shared.mainMOC) -> EFile? {
         var x: EFile?
         let ts = Date().currentTimeNanos()
         let moc = self.getMainMOC(ctx: ctx)
         moc.performAndWait {
-            let fileId = self.fileId()
-            if let isExists = checkExists, isExists, let data = self.getFileData(id: fileId, ctx: ctx) { x = data }
+            if let isExists = checkExists, isExists, let data = self.getFileData(id: fileId!, ctx: ctx) { x = data }
             let file = x != nil ? x! : EFile(context: moc)
-            file.id = fileId
+            file.id = fileId!
             file.wsId = wsId
             file.data = data
             file.created = x == nil ? ts : x!.created

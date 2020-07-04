@@ -31,6 +31,9 @@ class ValidateSSLCell: UITableViewCell {
 
 class EditRequestTableViewController: RestorTableViewController, UITextFieldDelegate, UITextViewDelegate {
     static weak var shared: EditRequestTableViewController?
+    @IBOutlet weak var titleLabel: UILabel!
+    // @IBOutlet weak var cancelBtn: UIButton!
+    // @IBOutlet weak var doneBtn: UIButton!
     @IBOutlet weak var methodView: UIView!
     @IBOutlet weak var methodLabel: UILabel!
     @IBOutlet weak var urlTextField: EATextField!
@@ -53,7 +56,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     @IBOutlet weak var paramsCell: UITableViewCell!
     @IBOutlet weak var bodyCell: UITableViewCell!
     @IBOutlet weak var validateSSLCell: ValidateSSLCell!
-    
+    weak var docPickerVC: UIDocumentPickerViewController?
     /// Whether the request is running, in which case, we don't remove any listeners
     var isActive = false
     private let nc = NotificationCenter.default
@@ -75,21 +78,23 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     /// Used in getting child managed object context.
     private var reqName = ""
     private var methods: [ERequestMethodData] = []
+    var isEditMode = false
     
     enum CellId: Int {
-        case spaceAfterTop = 0
-        case url = 1
-        case spacerAfterUrl = 2
-        case name = 3
-        case spacerAfterName = 4
-        case header = 5
-        case spacerAfterHeader = 6
-        case params = 7
-        case spacerAfterParams = 8
-        case body = 9
-        case spacerAfterBody = 10
-        case validateSSL = 11
-        case spacerAfterValidateSSL = 12
+        case navbar = 0
+        case spaceAfterTop = 1
+        case url = 2
+        case spacerAfterUrl = 3
+        case name = 4
+        case spacerAfterName = 5
+        case header = 6
+        case spacerAfterHeader = 7
+        case params = 8
+        case spacerAfterParams = 9
+        case body = 10
+        case spacerAfterBody = 11
+        case validateSSL = 12
+        case spacerAfterValidateSSL = 13
     }
     
     deinit {
@@ -116,6 +121,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
             self.app.clearEditRequestEntityIds()
             self.app.clearEditRequestDeleteObjects()
             self.localdb.saveMainContext { _ in
+                AppState.editRequest = nil
                 self.close()
             }
         }
@@ -144,10 +150,12 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     override func willMove(toParent parent: UIViewController?) {
         Log.debug("will move")
         if parent == nil { // When the user swipe to back, the parent is nil
+            if !self.isDirty { self.destroy() }
             return
         }
         super.willMove(toParent: parent)
     }
+
     
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
@@ -200,6 +208,16 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         self.validateSSLCell.borderColor = .clear
         // end clear
         self.reqName = AppState.editRequest?.name ?? ""
+        if let data = AppState.editRequest {
+            if data.objectID.isTemporaryID {
+                self.titleLabel.text = "Add Request"
+                self.isEditMode = false
+            } else {
+                self.titleLabel.text = "Edit Request"
+                self.isEditMode = true
+            }
+            
+        }
         self.renderTheme()
     }
     
@@ -222,6 +240,8 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
         self.nc.addObserver(self, selector: #selector(self.presentDocumentPicker(_:)), name: .documentPickerShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.presentImagePicker(_:)), name: .imagePickerShouldPresent, object: nil)
         self.nc.addObserver(self, selector: #selector(self.validateSSLDidChange(_:)), name: .validateSSLDidChange, object: nil)
+        // self.cancelBtn.addTarget(self, action: #selector(self.cancelDidTap(_:)), for: .touchUpInside)
+        // self.doneBtn.addTarget(self, action: #selector(self.doneDidTap(_:)), for: .touchUpInside)
     }
 
     func updateData() {
@@ -304,6 +324,10 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
             self.endEditing()
             self.destroy()
             self.navigationController?.popViewController(animated: true)
+//            self.dismiss(animated: true, completion: {
+//                let name = self.isEditMode ? "did-navigate-back-to-RequestTableViewController" : "did-navigate-back-to-RequestListViewController"
+//                self.nc.post(name: NSNotification.Name(name), object: self)
+//            })
         }
     }
     
@@ -327,7 +351,6 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
                     if method.shouldDelete { self.app.markEntityForDelete(reqMethodData: method, ctx: method.managedObjectContext) }
                 }
             }
-            self.nc.post(name: .requestDidChange, object: self, userInfo: ["request": data])
             //let timer = DispatchSource.makeTimerSource()
             //timer.schedule(deadline: .now() + .milliseconds(300))
             //timer.setEventHandler {
@@ -337,6 +360,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
                 if let tabvc = self.tabBarController as? RequestTabBarController { tabvc.request = data }
                 self.db.saveRequestToCloud(data)
                 self.db.deleteDataMarkedForDelete(self.app.editReqDelete)
+                self.nc.post(name: .requestDidChange, object: self, userInfo: ["request": data])
                 self.close()
                 //timer.cancel()
             //}
@@ -516,7 +540,9 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         var height: CGFloat!
-        if indexPath.row == CellId.spaceAfterTop.rawValue {
+        if indexPath.row == CellId.navbar.rawValue {
+            height = 0
+        } else if indexPath.row == CellId.spaceAfterTop.rawValue {
             height = 12
         } else if indexPath.row == CellId.url.rawValue {
             height = 54
@@ -569,6 +595,7 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     }
     
     @objc func updateStateForTextField(_ textField: UITextField) {
+        if AppState.editRequest == nil { return }
         if textField == self.urlTextField {
             AppState.editRequest!.url = (textField.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         } else if textField == self.nameTextField {
@@ -584,6 +611,11 @@ class EditRequestTableViewController: RestorTableViewController, UITextFieldDele
     
     func textFieldDidEndEditing(_ textField: UITextField) {
         self.updateStateForTextField(textField)
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        UI.endEditing()
+        return false
     }
         
     func textViewDidBeginEditing(_ textView: UITextView) {
@@ -674,6 +706,16 @@ protocol KVEditTableViewDelegate: class {
 
 class KVEditHeaderCell: UITableViewCell {
     @IBOutlet weak var headerTitleBtn: UIButton!
+    
+    func updateUI() {
+        if #available(iOS 13.0, *) {
+            Log.debug("using system image")
+        } else {
+            if self.headerTitleBtn != nil {
+                self.headerTitleBtn.setImage(UIImage(named: "add-circle"), for: .normal)
+            }
+        }
+    }
 }
 
 protocol KVEditContentCellDelegate: class {
@@ -722,6 +764,11 @@ class KVEditContentCell: UITableViewCell, KVEditContentCellType, UITextFieldDele
         self.deleteView.isHidden = true
         self.keyTextField.isColor = false
         self.valueTextField.isColor = false
+        if #available(iOS 13.0, *) {
+            Log.debug("using system image")
+        } else {
+            self.deleteBtn.setImage(UIImage(named: "delete-circle"), for: .normal)
+        }
     }
     
     func initEvents() {
@@ -763,6 +810,11 @@ class KVEditContentCell: UITableViewCell, KVEditContentCellType, UITextFieldDele
     
     func textFieldDidBeginEditing(_ textField: UITextField) {
         RequestVC.shared?.clearEditing()
+    }
+    
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        UI.endEditing()
+        return false
     }
     
     @objc func updateState(_ textField: UITextField) {
@@ -840,6 +892,14 @@ class KVEditBodyContentCell: UITableViewCell, KVEditContentCellType, UICollectio
         self.binaryTextField.isColor = false
         self.binaryTextField.placeholder = "select file"
         self.imageFileView.isHidden = true
+        if #available(iOS 13.0, *) {
+            Log.debug("using system image")
+        } else {
+            if self.deleteBtn != nil {
+                self.deleteBtn.setImage(UIImage(named: "delete-circle"), for: .normal)
+            }
+        }
+        
     }
             
     func initEvents() {
@@ -1239,6 +1299,11 @@ class KVEditBodyFieldTableViewCell: UITableViewCell, UITextFieldDelegate, UIColl
         self.updateState(textField)
     }
     
+    func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+        UI.endEditing()
+        return false
+    }
+    
     // MARK: - Delegate collection view
     
     func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
@@ -1454,6 +1519,7 @@ class KVEditBodyFieldTableView: UITableView, UITableViewDelegate, UITableViewDat
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         if indexPath.section == 1 {  // title
             let cell = tableView.dequeueReusableCell(withIdentifier: "editBodyFieldTitleCell", for: indexPath) as! KVEditHeaderCell
+            cell.updateUI()
             return cell
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: self.cellId, for: indexPath) as! KVEditBodyFieldTableViewCell
@@ -1997,6 +2063,7 @@ class KVEditTableViewManager: NSObject, UITableViewDelegate, UITableViewDataSour
             titleCellId = "editBodyTitleCell"
         }
         let cell = tableView.dequeueReusableCell(withIdentifier: titleCellId, for: indexPath) as! KVEditHeaderCell
+        cell.updateUI()
         cell.headerTitleBtn.setTitle(title, for: .normal)
         return cell
     }

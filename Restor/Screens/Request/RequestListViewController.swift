@@ -21,6 +21,7 @@ class RequestListViewController: RestorViewController {
     @IBOutlet weak var filterBtn: UIBarButtonItem!
     @IBOutlet weak var windowBtn: UIBarButtonItem!
     @IBOutlet weak var addBtn: UIBarButtonItem!
+    @IBOutlet weak var helpTextLabel: UILabel!
     private let utils = EAUtils.shared
     private let app: App = App.shared
     private lazy var localdb = { CoreDataService.shared }()
@@ -65,6 +66,7 @@ class RequestListViewController: RestorViewController {
     func initEvents() {
         self.nc.addObserver(self, selector: #selector(self.databaseWillUpdate(_:)), name: .databaseWillUpdate, object: nil)
         self.nc.addObserver(self, selector: #selector(self.databaseDidUpdate(_:)), name: .databaseDidUpdate, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.requestDidChange(_:)), name: .requestDidChange, object: nil)
     }
     
     func getFRCPredicate(_ projId: String) -> NSPredicate {
@@ -84,11 +86,19 @@ class RequestListViewController: RestorViewController {
     }
     
     func updateData() {
+        guard let projId = self.project?.getId() else { return }
+        self.methods = self.localdb.getRequestMethodData(projId: projId, ctx: self.localdb.mainMOC)
         if self.frc == nil { return }
         self.frc.delegate = nil
         try? self.frc.performFetch()
         self.frc.delegate = self
+        self.checkHelpShouldDisplay()
         self.tableView.reloadData()
+    }
+    
+    @objc func requestDidChange(_ notif: Notification) {
+        Log.debug("request did change - refreshing list")
+        self.updateData()
     }
     
     @objc func databaseWillUpdate(_ notif: Notification) {
@@ -102,13 +112,34 @@ class RequestListViewController: RestorViewController {
         }
     }
     
+    func checkHelpShouldDisplay() {
+        if self.frc.numberOfRows(in: 0) == 0 {
+            self.displayHelpText()
+        } else {
+            self.hideHelpText()
+        }
+    }
+    
     func reloadData() {
         if self.frc == nil { return }
         do {
             try self.frc.performFetch()
+            self.checkHelpShouldDisplay()
             self.tableView.reloadData()
         } catch let error {
             Log.error("Error fetching: \(error)")
+        }
+    }
+    
+    func displayHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = false
+        }
+    }
+    
+    func hideHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = true
         }
     }
     
@@ -118,7 +149,10 @@ class RequestListViewController: RestorViewController {
             let name = self.app.getNewRequestName()
             if let proj = self.project, let wsId = proj.workspace?.getId(),
                 let req = self.localdb.createRequest(id: self.localdb.requestId(), wsId: wsId, name: name, ctx: self.localdb.mainMOC) {
-                self.nc.post(name: .editRequestVCShouldPresent, object: self, userInfo: ["request": req])
+                if let vc = UIStoryboard.editRequestVC {
+                    AppState.editRequest = req
+                    self.navigationController!.pushViewController(vc, animated: true)
+                }
             }
         }
     }
@@ -140,7 +174,9 @@ class RequestCell: UITableViewCell {
 
 extension RequestListViewController: UITableViewDelegate, UITableViewDataSource {
     func getDesc(req: ERequest) -> String {
-        let method = self.methods[req.selectedMethodIndex.toInt()].getName()
+        let idx = req.selectedMethodIndex.toInt()
+        guard self.methods.count > idx else { return "" }
+        let method = self.methods[idx].getName()
         let url = req.url ?? ""
         var path = ""
         if !url.isEmpty {
@@ -180,7 +216,10 @@ extension RequestListViewController: UITableViewDelegate, UITableViewDataSource 
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let req = self.frc.object(at: indexPath)
-        self.nc.post(name: .requestVCShouldPresent, object: self, userInfo: ["request": req])
+        if let vc = UIStoryboard.requestTabBar {
+            vc.request = req
+            self.navigationController!.pushViewController(vc, animated: true)
+        }
     }
     
     func tableView(_ tableView: UITableView, trailingSwipeActionsConfigurationForRowAt indexPath: IndexPath) -> UISwipeActionsConfiguration? {

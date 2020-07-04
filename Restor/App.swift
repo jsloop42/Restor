@@ -79,27 +79,32 @@ class App {
         _ = self.getSelectedWorkspace()
     }
     
+    func initUI(_ vc: UINavigationController) {
+        self.updateViewBackground(vc.view)
+        self.updateNavigationControllerBackground(vc)
+    }
+    
     // MARK: - App lifecycle events
     
-    private func didFinishLaunchingImpl(window: UIWindow, appCoord: AppCoordinator) {
+    private func didFinishLaunchingImpl(window: UIWindow) {
         if !self.appLaunched {
             CoreDataService.shared.bootstrap()
             EACloudKit.shared.bootstrap()
-            appCoord.start()
+            self.initUI(window.rootViewController as! UINavigationController)
             self.appLaunched = true
         }
     }
     
     @available(iOS 13.0, *)
-    func didFinishLaunching(scene: UIScene, window: UIWindow, appCoord: AppCoordinator) {
+    func didFinishLaunching(scene: UIScene, window: UIWindow) {
         Log.debug("did finish launching")
-        self.didFinishLaunchingImpl(window: window, appCoord: appCoord)
+        self.didFinishLaunchingImpl(window: window)
     }
     
     @available(iOS 10.0, *)
-    func didFinishLaunching(app: UIApplication, window: UIWindow, appCoord: AppCoordinator) {
+    func didFinishLaunching(app: UIApplication, window: UIWindow) {
         Log.debug("did finish launching")
-        self.didFinishLaunchingImpl(window: window, appCoord: appCoord)
+        self.didFinishLaunchingImpl(window: window)
     }
     
     func willEnterForground() {
@@ -127,10 +132,6 @@ class App {
                 self.nc.post(name: .online, object: self)
             }
         }
-    }
-    
-    func saveSelectedWorkspaceId(_ id: String) {
-        EACloudKit.shared.saveValue(key: Const.selectedWorkspaceIdKey, value: id)
     }
     
     /// Invoked before application termination to perform save state, clean up.
@@ -257,11 +258,14 @@ class App {
     
     func getSelectedWorkspace() -> EWorkspace {
         if AppState.currentWorkspace != nil { return AppState.currentWorkspace! }
-        if let wsId = EACloudKit.shared.getValue(key: Const.selectedWorkspaceIdKey) as? String {
-            if let ws = self.localdb.getWorkspace(id: wsId) {
-                AppState.currentWorkspace = ws
-                return ws
-            }
+        let ckWsId = EACloudKit.shared.getValue(key: Const.selectedWorkspaceIdKey) as? String ?? ""
+        var wsId = self.utils.getValue(Const.selectedWorkspaceIdKey) as? String ?? ""
+        if wsId.isEmpty && !ckWsId.isEmpty {
+            wsId = ckWsId
+        }
+        if let ws = self.localdb.getWorkspace(id: wsId) {
+            AppState.currentWorkspace = ws
+            return ws
         }
         let ws = self.localdb.getDefaultWorkspace()
         Log.debug("ws: \(ws)")
@@ -272,6 +276,11 @@ class App {
     func setSelectedWorkspace(_ ws: EWorkspace) {
         AppState.currentWorkspace = ws
         if let wsId = ws.id { self.saveSelectedWorkspaceId(wsId) }
+    }
+    
+    func saveSelectedWorkspaceId(_ id: String) {
+        EACloudKit.shared.saveValue(key: Const.selectedWorkspaceIdKey, value: id)
+        self.utils.setValue(key: Const.selectedWorkspaceIdKey, value: id)
     }
     
     func didReceiveMemoryWarning() {
@@ -720,7 +729,6 @@ class App {
                 x?.setChangeTagWithEditTs()
                 return true
             }
-            // TODO: handle binary
             if x != nil && self.didAnyRequestBodyFormChangeImp(x!, request: request) { return true }
         }
         return false
@@ -1024,6 +1032,7 @@ enum StoryboardId: String {
     case envEditVC
     case envVarVC
     case envPickerVC
+    case importExportVC
     case optionsPickerNav
     case optionsPickerVC
     case popupVC
@@ -1139,6 +1148,7 @@ enum AppError: Error {
     case offline
     case server
     case fetch
+    case invalidURL
 }
 
 extension CKRecord {
@@ -1149,6 +1159,7 @@ extension CKRecord {
 
 extension UIStoryboard {
     static var main: UIStoryboard { UIStoryboard(name: "Main", bundle: nil) }
+    static var rootNav: UINavigationController? { self.main.instantiateViewController(withIdentifier: StoryboardId.rootNav.rawValue) as? UINavigationController }
     static var workspaceListVC: WorkspaceListViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.workspaceListVC.rawValue) as? WorkspaceListViewController }
     static var projectListVC: ProjectListViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.projectListVC.rawValue) as? ProjectListViewController }
     static var requestListVC: RequestListViewController? { self.main.instantiateViewController(withIdentifier: StoryboardId.requestListVC.rawValue) as? RequestListViewController }

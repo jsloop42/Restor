@@ -112,7 +112,7 @@ struct ResponseData: CustomDebugStringConvertible, Equatable {
     }
         
     init(history: EHistory) {
-        self.created = Date().currentTimeNanos()
+        self.created = history.created
         self.mode = .history
         self.history = history
         self.urlRequestString = history.request ?? ""
@@ -302,7 +302,7 @@ struct ResponseData: CustomDebugStringConvertible, Equatable {
                 self.cookiesData = try? JSONEncoder().encode(self.cookies)
             }
         } else if self.mode == .history {
-            self.cookiesData = self.history?.cookies
+            if let cookies = self.history?.cookies as? Data { self.cookiesData = cookies }
             if let data = self.cookiesData, let xs = try? JSONDecoder().decode([EAHTTPCookie].self, from: data) {
                 self.cookies = xs
             }

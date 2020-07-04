@@ -96,4 +96,31 @@ public class ERequestMethodData: NSManagedObject, Entity {
             }
         }
     }
+    
+    public static func fromDictionary(_ dict: [String: Any]) -> ERequestMethodData? {
+        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String else { return nil }
+        let db = CoreDataService.shared
+        guard let method = db.createRequestMethodData(id: id, wsId: wsId, name: "", ctx: db.mainMOC) else { return nil }
+        if let x = dict["created"] as? Int64 { method.created = x }
+        if let x = dict["modified"] as? Int64 { method.modified = x }
+        if let x = dict["changeTag"] as? Int64 { method.changeTag = x }
+        if let x = dict["name"] as? String { method.name = x }
+        if let x = dict["version"] as? Int64 { method.version = x }
+        method.markForDelete = false
+        db.saveMainContext()
+        return method
+    }
+    
+    public func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["id"] = self.id
+        dict["isCustom"] = self.isCustom
+        dict["name"] = self.name
+        dict["version"] = self.version
+        dict["wsId"] = self.wsId
+        return dict
+    }
 }

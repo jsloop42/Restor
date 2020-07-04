@@ -81,9 +81,7 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
     
     func initUI() {
-        UIView.animate(withDuration: 0.3) {
-            self.activityIndicator.isHidden = false
-        }
+        self.displayActivityIndicator()
         self.webView.scrollView.isScrollEnabled = true
         let color = UIColor(named: "web-view-bg")
         self.webView.backgroundColor = color
@@ -91,13 +89,15 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
         self.contentView.backgroundColor = color
         self.backgroundView?.backgroundColor = color
     }
-    
+        
     func getHtmlSource(template: Template, data: Data, lang: String, theme: String) -> String {
         guard var html = String(data: data, encoding: .utf8)?.trim() else { return "" }
         if template == .preview { return self.rawTemplate.replacingOccurrences(of: "#_restor-extrapolate-texts", with: html) }
-        html = html.replaceAll(pattern: "\n+", with: "\n").replacingOccurrences(of: "&", with: "&amp;").replacingOccurrences(of: "<", with: "&lt;")
-            .replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;").replacingOccurrences(of: "'", with: "&#039;")
+        html = html.replaceAll(pattern: "\n+", with: "\n").replacingOccurrences(of: "&", with: "&amp;")
+            .replacingOccurrences(of: "<", with: "&lt;").replacingOccurrences(of: ">", with: "&gt;").replacingOccurrences(of: "\"", with: "&quot;")
+            .replacingOccurrences(of: "'", with: "&#039;")
             //.replacingOccurrences(of: "\n", with: "<br>")
+        let lang = html.count > 100000 ? "language-plain" : lang
         return (template == .rawview ? self.rawTemplate : self.previewTemplate).replacingOccurrences(of: "#_restor-extrapolate-texts", with: html)
             .replacingOccurrences(of: "#_restor-extrapolate-language", with: lang).replacingOccurrences(of: "#_restor-extrapolate-theme", with: theme)
     }
@@ -111,12 +111,16 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
         
     private func updateRawModeUI() {
-        guard !self.rawTemplate.isEmpty, let data = self.data, let respData = data.responseData else { return }
+        guard !self.rawTemplate.isEmpty, let data = self.data, let respData = data.responseData else {
+            self.hideActivityIndicator()
+            return
+        }
         self.doneLoading = false
-        if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
+        if let obj = try? JSONSerialization.jsonObject(with: respData, options: .allowFragments),
+            let data = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]) {
             UIView.animate(withDuration: 0.3) {
                 self.webView.isHidden = true
-                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: data, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
                 self.webView.isHidden = false
             }
         } else {
@@ -129,11 +133,15 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
     }
     
     private func updatePreviewModeUI() {
-        guard let data = self.data, let respData = data.responseData, let html = String(data: respData, encoding: .utf8) else { return }
-        if (try? JSONSerialization.jsonObject(with: respData, options: .allowFragments)) != nil {
+        guard let data = self.data, let respData = data.responseData, let html = String(data: respData, encoding: .utf8) else {
+            self.hideActivityIndicator()
+            return
+        }
+        if let obj = try? JSONSerialization.jsonObject(with: respData, options: .allowFragments),
+            let data = try? JSONSerialization.data(withJSONObject: obj, options: [.prettyPrinted]) {
             UIView.animate(withDuration: 0.3) {
                 self.webView.isHidden = true
-                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: respData, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
+                self.webView.loadHTMLString(self.getHtmlSource(template: .rawview, data: data, lang: "language-json", theme: UI.isDarkMode ? "dark" : "light"), baseURL: Bundle.main.bundleURL)
                 self.webView.isHidden = false
             }
         } else {
@@ -143,11 +151,31 @@ final class ResponseWebViewCell: UITableViewCell, WKNavigationDelegate, WKUIDele
         }
     }
     
-    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        Log.debug("web view did finish load")
+    func displayActivityIndicator() {
+        UIView.animate(withDuration: 0.3) {
+            self.activityIndicator.isHidden = false
+        }
+    }
+    
+    func hideActivityIndicator() {
         UIView.animate(withDuration: 0.3) {
             self.activityIndicator.isHidden = true
         }
+    }
+    
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        Log.debug("web view did finish load")
+        self.hideActivityIndicator()
+    }
+    
+    func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Swift.Void) {
+        if navigationAction.navigationType != .other && navigationAction.navigationType != .reload {
+            if self.type == .raw {  // Disable link navigation. The data detection is enabled so that base64 encoded images gets displayed in the raw view.
+                decisionHandler(.cancel)
+                return
+            }
+        }
+        decisionHandler(.allow)
     }
 }
 
@@ -321,7 +349,6 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
         if self.tableType == .header {
             let key = self.headerKeys[row]
             cell.keyLabel.text = key
-            //cell.keyLabel.text = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
             cell.valueLabel.text = self.headers[key]
             if row == self.headers.count - 1 {
                 cell.hideBorder()
@@ -394,7 +421,6 @@ final class ResponseKVCell: UITableViewCell, UITableViewDataSource, UITableViewD
                 val = _val
             }
         }
-        //key = "A machine is only as good as the man who programs it. A machine is only as good as the man who programs it"
         let text = val.count >= key.count ? val : key
         Log.debug("text: \(text)")
         let width = tableView.frame.width / 2 - 32
@@ -590,7 +616,11 @@ class ResponseTableViewController: RestorTableViewController {
     
     func updateUI() {
         Log.debug("update UI")
-        if self.data == nil { return }
+        if self.data == nil {
+            self.tabbarController?.hideHistoryButton()
+            return
+        }
+        self.tabbarController?.displayHistoryButton()
         if self.mode == .info {
             self.infoCell.updateUI()
             self.headersViewCell.updateUI()
@@ -681,6 +711,7 @@ class ResponseTableViewController: RestorTableViewController {
         }
     }
     
+    @available(*, deprecated)
     @objc func viewRequestHistoryDidTap(_ notif: Notification) {
         Log.debug("view request history did tap")
         guard let info = notif.userInfo, let req = info["request"] as? ERequest, let data = self.data, req.getId() == data.request?.getId() else { return }

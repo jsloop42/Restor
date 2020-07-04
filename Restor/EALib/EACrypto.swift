@@ -78,11 +78,14 @@ public struct AES {
     public func encrypt(string: String) -> Data? {
         return crypt(data: string.data(using: .utf8), option: CCOperation(kCCEncrypt))
     }
+    
+    public func encrypt(data: Data) -> Data? {
+        return crypt(data: data, option: CCOperation(kCCEncrypt))
+    }
 
     /// Decrypt the given data.
-    public func decrypt(data: Data?) -> String? {
-        guard let decryptedData = crypt(data: data, option: CCOperation(kCCDecrypt)) else { return nil }
-        return String(bytes: decryptedData, encoding: .utf8)
+    public func decrypt(data: Data?) -> Data? {
+        return crypt(data: data, option: CCOperation(kCCDecrypt))
     }
 
     private func crypt(data: Data?, option: CCOperation) -> Data? {

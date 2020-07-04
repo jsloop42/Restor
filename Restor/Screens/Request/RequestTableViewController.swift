@@ -144,6 +144,8 @@ class RequestTableViewController: RestorTableViewController {
         self.nc.addObserver(self, selector: #selector(self.responseDidReceive(_:)), name: .responseDidReceive, object: nil)
         self.nc.addObserver(self, selector: #selector(self.requestDidCancel(_:)), name: .requestDidCancel, object: nil)
         self.nc.addObserver(self, selector: #selector(self.envDidSelect(_:)), name: .envDidSelect, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.viewToast(_:)), name: .extrapolateDidFail, object: nil)
+        self.nc.addObserver(self, selector: #selector(self.viewToast(_:)), name: .invalidURL, object: nil)
     }
     
     func initHeadersTableViewManager() {
@@ -282,14 +284,23 @@ class RequestTableViewController: RestorTableViewController {
         }
     }
     
+    @objc func viewToast(_ notif: Notification) {
+        Log.debug("extrapolate did fail notif")
+        if let info = notif.userInfo as? [String: String], let msg = info["msg"] {
+            DispatchQueue.main.async {
+                UI.viewToast(msg, hideSec: 3, vc: self, completion: nil)
+            }
+        }
+    }
+    
     @IBAction func goButtonDidTap(_ sender: Any) {
         Log.debug("go button did tap")
+        if self.reqMan == nil { self.initManager() }
         guard let man = self.reqMan else { return }
         if self.isRequestInProgress {
             man.cancelRequest()
             return
         }
-        self.initManager()
         self.reqMan?.env = self.env
         man.start()
         self.isRequestInProgress = true
@@ -334,7 +345,10 @@ class RequestTableViewController: RestorTableViewController {
     
     func viewEditRequestVC() {
         Log.debug("view edit request vc")
-        if let req = self.request { self.nc.post(name: .editRequestVCShouldPresent, object: self, userInfo: ["request": req]) }
+        if let vc = UIStoryboard.editRequestVC {
+            AppState.editRequest = self.request
+            self.tabbarController.navigationController?.pushViewController(vc, animated: true)
+        }
     }
     
     func updateData() {

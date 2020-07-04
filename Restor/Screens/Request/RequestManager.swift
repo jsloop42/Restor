@@ -53,8 +53,7 @@ final class RequestManager {
         let urlReq = try self.requestToURLRequest(self.request)
         if urlReq == nil {
             Log.debug("urlrequest is nil -> moving to cancel state")
-            self.fsm.enter(RequestCancelState.self)
-            return
+            throw AppError.invalidURL
         }
         let state = self.fsm.state(forClass: RequestSendState.self)
         state?.urlReq = urlReq
@@ -125,7 +124,7 @@ final class RequestManager {
             }
             if history != nil {
                 info.history = history
-                history.cookies = info.cookiesData
+                if let cookies = info.cookiesData as NSObject? { history.cookies = cookies }
                 self.localdb.saveMainContext()
                 if let ws = self.localdb.getWorkspace(id: history.getWsId()), ws.isSyncEnabled { PersistenceService.shared.saveHistoryToCloud(history!) }
             }
@@ -175,8 +174,8 @@ final class RequestManager {
     }
 
     func extrapolate(_ string: String) -> ExtrapolateResult {
-        if self.envVars.isEmpty { return (string, false, false) }
         let isExp = self.shouldExtrapolate(string)
+        if self.envVars.isEmpty && isExp { return (string, true, false) }
         if !isExp { return (string, false, false) }
         let substr = string.slice(from: "{{", to: "}}") ?? ""
         if substr.isEmpty { return (string, isExp, false) }
@@ -192,6 +191,16 @@ final class RequestManager {
             throw AppError.extrapolate
         }
         return exp
+    }
+    
+    func addContentType(_ value: String, urlReq: URLRequest) -> URLRequest {
+        var urlReq = urlReq
+        let contentType = urlReq.value(forHTTPHeaderField: "Content-Type") ?? ""
+        let contentTypeLower = urlReq.value(forHTTPHeaderField: "content-type") ?? ""
+        if (contentType.isEmpty && contentTypeLower.isEmpty) {
+            urlReq.addValue(value, forHTTPHeaderField: "Content-Type")
+        }
+        return urlReq
     }
     
     func requestToURLRequest(_ req: ERequest) throws -> URLRequest? {
@@ -221,30 +230,37 @@ final class RequestManager {
                 }
             }
         }
+        headers["X-Restor-Id"] = UUID().uuidString.lowercased()
         let method = self.localdb.getRequestMethodData(at: request.selectedMethodIndex.toInt(), projId: projId)
         guard let aUrl = urlComp.url else { return nil }
         var urlReq = URLRequest(url: aUrl, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 60)
-        var bodyData: Data?
         if let body = request.body {
             let bodyType = RequestBodyType(rawValue: body.selected.toInt()) ?? .json
             switch bodyType {
             case .json:
-                if let x = body.json { bodyData = x.data(using: .utf8) }
+                if let x = body.json {
+                    urlReq.httpBody = x.data(using: .utf8)
+                    urlReq = self.addContentType("application/json", urlReq: urlReq)
+                }
             case .xml:
-                if let x = body.xml { bodyData = x.data(using: .utf8) }
+                if let x = body.xml {
+                    urlReq.httpBody = x.data(using: .utf8)
+                    urlReq = self.addContentType("text/xml", urlReq: urlReq)
+                }
             case .raw:
-                if let x = body.raw { bodyData = x.data(using: .utf8) }
+                if let x = body.raw { urlReq.httpBody = x.data(using: .utf8) }
             case .form:
                 urlReq = self.getFormData(req, urlReq: urlReq)
             case .multipart:
                 urlReq = self.getMultipartData(req, urlReq: urlReq)
             case .binary:
                 urlReq = self.getBinaryData(req, urlReq: urlReq)
+                urlReq = self.addContentType("application/octet-stream", urlReq: urlReq)
             }
         }
         urlReq.httpMethod = method?.name
         urlReq.allHTTPHeaderFields = headers
-        urlReq.httpBody = bodyData
+        Log.debug("curl: \(urlReq.curl())")
         return urlReq
     }
     

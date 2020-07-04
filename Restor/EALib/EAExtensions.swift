@@ -17,25 +17,27 @@ public extension Calendar.Component {
 public extension Date {
     /// Returns the year from the date.
     var year: Int { Calendar.current.component(.year, from: self) }
-    
     /// Returns month as `Int` starting from `1...12`.
     var month: Int { Calendar.current.component(.month, from: self) }
-    
     var week: Int { Calendar.current.component(.weekOfYear, from: self) }
-    
     var weekday: Int { Calendar.current.component(.weekday, from: self) }
-    
     var weekOfMonth: Int { Calendar.current.component(.weekOfMonth, from: self) }
-    
     var day: Int { Calendar.current.component(.day, from: self) }
-    
     var hour: Int { Calendar.current.component(.hour, from: self) }
-    
     var minute: Int { Calendar.current.component(.minute, from: self) }
-    
     var second: Int { Calendar.current.component(.second, from: self) }
-    
     var nanos: Int { Calendar.current.component(.nanosecond, from: self) }
+    var yesterday: Date { self.adjust(.day, offset: -1) }
+    var today: Date { self.startOfDay }
+    var tomorrow: Date { self.adjust(.day, offset: 1) }
+    var dayAfter: Date { self.adjust(.day, offset: 2) }
+    var dayBefore: Date { self.adjust(.day, offset: -2) }
+    var isLastDayOfMonth: Bool { return self.tomorrow.month != month }
+    
+    /// Create a `Date` object from timestamp in nanoseconds
+    init(nanos: Int64) {
+        self.init(timeIntervalSince1970: TimeInterval(nanos / 1000000))
+    }
     
     /// Get timestamp
     func currentTimeMillis() -> Int64 {
@@ -87,6 +89,18 @@ public extension Date {
     }
     
     var fmt_YYYY_MM_dd_HH_mm_ss: String { self.fmt("YYYY-MM-dd HH:mm:ss") }
+    /// Returns formatted date based on user locale
+    var fmt_dd_MMM_YYYY_HH_mm_ss: String {
+        if self.localeIdentifier == "en_US" {
+            return self.fmt("MMM dd YYYY HH:mm:ss")
+        }
+        return self.fmt("dd MMM YYYY HH:mm:ss")
+    }
+    
+    /// Returns langauge identifier of the format `en_US`, `en_GB`
+    var localeIdentifier: String {
+        NSLocale.current.identifier
+    }
     
     private func fmt(_ str: String) -> String {
         let df = DateFormatter()

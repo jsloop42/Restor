@@ -84,6 +84,8 @@ public protocol Entity: NSManagedObject {
     func setIsSynced(_ status: Bool)
     func setMarkedForDelete(_ status: Bool)
     func willSave()
+//    func fromDictionary(_ dict: [String: Any])
+//    func toDictionary() -> [String: Any]
 }
 
 extension Entity {

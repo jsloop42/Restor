@@ -16,6 +16,15 @@ extension Notification.Name {
 
 class EnvPickerCell: UITableViewCell {
     @IBOutlet weak var titleLabel: UILabel!
+    @IBOutlet weak var bottomBorder: UIView!
+    
+    func hideBottomBorder() {
+        self.bottomBorder.isHidden = true
+    }
+    
+    func displayBottomBorder() {
+        self.bottomBorder.isHidden = false
+    }
 }
 
 class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
@@ -23,12 +32,15 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
     @IBOutlet weak var navView: UIView!
     @IBOutlet weak var navTitleLabel: UILabel!
     @IBOutlet weak var doneBtn: UIButton!
+    @IBOutlet weak var cancelBtn: UIButton!
+    @IBOutlet weak var helpTextLabel: UILabel!
     private lazy var localDB = { CoreDataService.shared }()
     private lazy var app = { App.shared }()
     var frc: NSFetchedResultsController<EEnv>!
     var selectedIndex: Int = -1
     var nc = NotificationCenter.default
     var env: EEnv?
+    var ws: EWorkspace?
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
@@ -51,6 +63,7 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
         self.navView.backgroundColor = App.Color.navBarBg
         self.navTitleLabel.backgroundColor = App.Color.navBarBg
         self.doneBtn.backgroundColor = App.Color.navBarBg
+        self.cancelBtn.backgroundColor = App.Color.navBarBg
         self.tableView.rowHeight = UITableView.automaticDimension
         self.tableView.estimatedRowHeight = 44
         self.tableView.delegate = self
@@ -58,10 +71,12 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
     }
 
     func initData() {
-        if let frc = self.localDB.getFetchResultsController(obj: EEnv.self) as? NSFetchedResultsController<EEnv> {
+        self.ws = self.app.getSelectedWorkspace()
+        if let frc = self.localDB.getFetchResultsController(obj: EEnv.self, predicate: NSPredicate(format: "wsId == %@", self.ws!.getId())) as? NSFetchedResultsController<EEnv> {
             self.frc = frc
             self.frc.delegate = self
             try? self.frc.performFetch()
+            self.checkHelpShouldDisplay()
             self.tableView.reloadData()
         }
     }
@@ -71,11 +86,32 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
         self.frc.delegate = nil
         try? self.frc.performFetch()
         self.frc.delegate = self
+        self.checkHelpShouldDisplay()
         self.tableView.reloadData()
     }
     
     func close() {
         self.dismiss(animated: true, completion: nil)
+    }
+    
+    func checkHelpShouldDisplay() {
+        if self.frc.numberOfRows(in: 0) == 0 {
+            self.displayHelpText()
+        } else {
+            self.hideHelpText()
+        }
+    }
+    
+    func displayHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = false
+        }
+    }
+    
+    func hideHelpText() {
+        UIView.animate(withDuration: 0.3) {
+            self.helpTextLabel.isHidden = true
+        }
     }
     
     @IBAction func doneDidTap(_ sender: Any) {
@@ -105,6 +141,11 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
                 self.env = nil
             }
         }
+        if row == self.frc.numberOfRows(in: indexPath.section) - 1 {
+            cell.displayBottomBorder()
+        } else {
+            cell.hideBottomBorder()
+        }
         return cell
     }
 
@@ -115,6 +156,10 @@ class EnvironmentPickerViewController: UIViewController, UITableViewDelegate, UI
             self.selectedIndex = indexPath.row
         }
         self.tableView.reloadData()
+    }
+    
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return 44
     }
 }
 

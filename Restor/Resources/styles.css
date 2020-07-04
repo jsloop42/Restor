@@ -1,12 +1,8 @@
 :root {
     color-scheme: light dark;
 }
-@font-face {
-    font-family: 'Source Code Pro';
-    src: url('SourceCodePro-Regular.ttf') format('truetype')
-}
 html, body {
-    font-family: "Source Code Pro", "Courier", monospace;
+    font-family: "Andale Mono", "Menlo", "SF Mono", "Monaco", "Consolas", "Courier", monospace;
     font-size: 1em;
     background-color: rgb(255, 255, 255) !important;
 }
@@ -21,6 +17,7 @@ pre {
     padding: 0.75em 0.5em !important;
     top: 0;
     left: 0;
+    line-height: 0
 }
 code {
     font-size: 14px !important;

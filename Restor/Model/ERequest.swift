@@ -131,4 +131,74 @@ public class ERequest: NSManagedObject, Entity {
             }
         }
     }
+    
+    public static func fromDictionary(_ dict: [String: Any]) -> ERequest? {
+        guard let id = dict["id"] as? String, let wsId = dict["wsId"] as? String else { return nil }
+        let db = CoreDataService.shared
+        guard let req = db.createRequest(id: id, wsId: wsId, name: "") else { return nil }
+        if let x = dict["created"] as? Int64 { req.created = x }
+        if let x = dict["modified"] as? Int64 { req.modified = x }
+        if let x = dict["changeTag"] as? Int64 { req.changeTag = x }
+        if let x = dict["desc"] as? String { req.desc = x }
+        if let x = dict["name"] as? String { req.name = x }
+        if let x = dict["validateSSL"] as? Bool { req.validateSSL = x }
+        if let x = dict["selectedMethodIndex"] as? Int64 { req.selectedMethodIndex = x }
+        if let x = dict["url"] as? String { req.url = x }
+        if let x = dict["version"] as? Int64 { req.version = x }
+        if let dict = dict["body"] as? [String: Any] {
+            if let body = ERequestBodyData.fromDictionary(dict) {
+                req.body = body
+            }
+        }
+        if let xs = dict["headers"] as? [[String: Any]] {
+            xs.forEach { dict in
+                if let reqData = ERequestData.fromDictionary(dict) {
+                    reqData.header = req
+                }
+            }
+        }
+        if let xs = dict["params"] as? [[String: Any]] {
+            xs.forEach { dict in
+                if let reqData = ERequestData.fromDictionary(dict) {
+                    reqData.param = req
+                }
+            }
+        }
+        req.markForDelete = false
+        db.saveMainContext()
+        return req
+    }
+    
+    public func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        dict["created"] = self.created
+        dict["modified"] = self.modified
+        dict["changeTag"] = self.changeTag
+        dict["id"] = self.id
+        dict["wsId"] = self.wsId
+        dict["desc"] = self.desc
+        dict["name"] = self.name
+        dict["validateSSL"] = self.validateSSL
+        dict["selectedMethodIndex"] = self.selectedMethodIndex
+        dict["url"] = self.url
+        dict["version"] = self.version
+        if let body = self.body {
+            dict["body"] = body.toDictionary()
+        }
+        let db = CoreDataService.shared
+        let headers = db.getHeadersRequestData(self.getId())
+        var xs: [[String: Any]] = []
+        headers.forEach { header in
+            xs.append(header.toDictionary())
+        }
+        dict["headers"] = xs
+        xs = []
+        let params = db.getParamsRequestData(self.getId())
+        params.forEach { param in
+            xs.append(param.toDictionary())
+        }
+        dict["params"] = xs
+        xs = []
+        return dict
+    }
 }

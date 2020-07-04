@@ -836,7 +836,6 @@ class PersistenceService {
         self.deleteEntitesFromCloud(delxs, ctx: self.syncToCloudCtx)
         delxs = []
         if done { self.isSyncToCloudInProgress = false }
-        // TODO: delete env, env vars
         Log.debug("sync to cloud queued - saves: \(self.syncToCloudSaveIds.count), deletes: \(self.syncToCloudDeleteIds.count)")
         self.checkSyncToCloudState()
     }
@@ -1635,6 +1634,14 @@ class PersistenceService {
         ctx.performAndWait {
             guard let image = image, image.markForDelete else { return }
             self.deleteEntitesFromCloud([image], ctx: ctx)
+        }
+    }
+    
+    func deleteDataMarkedForDelete(history: EHistory?, wsId: String, ctx: NSManagedObjectContext? = nil) {
+        let ctx = ctx != nil ? ctx! : self.localdb.getChildMOC()
+        ctx.performAndWait {
+            guard let history = history, history.markForDelete else { return }
+            self.deleteEntitesFromCloud([history], ctx: ctx)
         }
     }
     

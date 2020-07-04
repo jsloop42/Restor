@@ -236,6 +236,20 @@ public final class EAUtils {
         }
         return str
     }
+    
+    func appVersion() -> String? {
+        return Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String
+    }
+    
+    func imageDataToString(_ data: Data?) -> String? {
+        guard let data = data else { return nil }
+        return data.base64EncodedString()
+    }
+    
+    func stringToImageData(_ base64: String?) -> Data? {
+        guard let b64 = base64 else { return nil }
+        return Data(base64Encoded: b64)
+    }
 }
 
 class Log {
