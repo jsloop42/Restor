@@ -109,6 +109,7 @@ public extension Date {
         return df.string(from: self)
     }
     
+    // Ref: https://github.com/melvitax/DateHelper/blob/master/Sources/DateHelper.swift
     enum DateComparisonType {
         // Day
         /// Checks if date today.
