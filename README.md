@@ -16,5 +16,5 @@ Main features:
 • Supports projects and workspaces  
 • SSL validation  
 • Encrypts content locally  
-• Optional syncing with iCloud
+• Optional syncing with iCloud  
 • Does not collect any analytics
